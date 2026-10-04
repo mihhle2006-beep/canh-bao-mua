@@ -81,8 +81,6 @@ def phan_tich_ngay(ma, bay_gio, lam_moi=False, **them):
             return json.load(fh)
     try:
         import ptcp
-        from ptcp import cau_hinh as pc
-        pc.DUNG_VNSTOCK = C.PTCP_DUNG_VNSTOCK
         tham_so = {"symbol": ma, "nhom": "-", "start": C.NGAY_BAT_DAU, **C.SU_KIEN.get(ma, {}), **them}
         with contextlib.redirect_stdout(io.StringIO()):
             k = ptcp.main(tuong_tac=False, im_lang=True, xuat_file=False, **tham_so)

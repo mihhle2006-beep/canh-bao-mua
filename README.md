@@ -1,4 +1,4 @@
-# Cảnh báo MUA đa khung – MWG, DHC, GMD
+# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ) – MWG, DHC, GMD
 
 Quét các mã theo dõi theo **4 khung** (tuần → ngày → giờ → phút), tiêu chí lấy từ bộ lọc cổ phiếu
 (chiến lược `ky_thuat` / `diem_mua`), và **gửi Telegram ngay khi một mã đạt đủ tiêu chí mua**.
@@ -31,6 +31,36 @@ Chỉ dùng **nến đã đóng** (giờ, phút, tuần) → tín hiệu không 
 
 **Trạng thái:** ĐỨNG NGOÀI (tuần xấu) → THEO DÕI (ngày chưa đạt) → CHỜ XÁC NHẬN GIỜ → CHỜ ĐIỂM VÀO →
 (R/R thấp / CHỜ SAU SỰ KIỆN / EV THẤP) → **MUA NGAY**.
+
+## Cảnh báo BÁN cho mã đang giữ
+Bot đọc **`danh_muc.csv` của repo riêng tư `danh-muc`** (mã có `so_cp` > 0 = đang giữ) và quét cùng lúc với cảnh báo mua:
+
+| Mức | Khi nào |
+|---|---|
+| 🔴 CẮT LỖ | giá ≤ `cat_lo_dat` (thiếu thì `cat_lo_goc`) |
+| 🟢 CHỐT LỜI | giá ≥ `muc_tieu_dat` (thiếu thì `gia_muc_tieu`) |
+| 🟠 CÂN NHẮC BÁN | MACD tuần < Signal / giá dưới SuperTrend ngày / ptcp khuyến nghị BÁN |
+| 🟡 DỜI CẮT LỖ | lãi ≥ 1R mà cắt lỗ còn dưới giá vốn → gợi ý nâng lên hoà vốn |
+
+Mỗi mức báo **1 lần khi xuất hiện**, nếu vẫn còn thì nhắc lại 1 lần/ngày. Tổng kết 15:20 có thêm mục 💼 VỊ THẾ ĐANG GIỮ.
+Mã đang giữ mà là tín hiệu MUA NGAY → tin ghi rõ "MUA THÊM".
+
+**Bảo mật (repo này công khai):** tin có số CP / giá vốn chỉ gửi Telegram, **không in ra log Actions**; mã chỉ có
+trong danh mục không hiện tên trong log, không ghi vào `lich_su_tin_hieu.csv`; trạng thái chống báo trùng của lệnh
+bán lưu trong cache Actions (`cache_ptcp/`), không commit. `danh_muc.csv` nằm trong `.gitignore`.
+
+**Cài đặt (1 lần):**
+1. GitHub → Settings (tài khoản) → Developer settings → **Fine-grained personal access tokens** → Generate:
+   *Repository access*: **Only select repositories → danh-muc**; *Permissions → Repository → Contents: Read-only*;
+   thời hạn tuỳ chọn (hết hạn thì tạo lại).
+2. Repo **canh-bao-mua** → Settings → Secrets and variables → Actions:
+   - Secrets: `DANH_MUC_TOKEN` = token vừa tạo
+   - Variables: `DANH_MUC_REPO` = `ten-ban/danh-muc` (tuỳ chọn `DANH_MUC_PATH` nếu file không ở gốc repo)
+3. Chạy thử: Actions → Canh bao mua → Run workflow → `tong_ket`. Log phải có dòng
+   `Vị thế đang giữ: N mã (nguồn: repo danh-muc)`; nếu báo `GitHub HTTP 404` → sai tên repo hoặc token chưa được cấp repo đó.
+
+Cắt lỗ / mục tiêu đã đặt do repo `danh-muc` cập nhật mỗi ngày 15:45 → bot tự dùng mức mới, không phải nhập 2 nơi.
+Chạy trên máy: đặt `danh_muc.csv` cạnh `chay.py`; bỏ cảnh báo bán: `python chay.py --khong_ban`.
 
 ## Lịch chạy (GitHub Actions)
 - Mỗi **15 phút** trong phiên (9:00–11:30, 13:00–14:45): chỉ gửi tin khi một mã **vừa chuyển** sang MUA NGAY.

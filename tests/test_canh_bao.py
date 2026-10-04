@@ -235,3 +235,131 @@ def test_xac_suat_va_kich_ban(du_lieu_tot):
     for chu in ("🎯 Mục tiêu", "Chạm MỤC TIÊU trước", "Chạm CẮT LỖ trước", "3 kịch bản", "🟢 TÍCH CỰC", "🔴 TIÊU CỰC"):
         assert chu in tin
     assert "Chạm MỤC TIÊU trước" in thong_bao.tin_tong_ket([kq], {"nhan": "VN-Index"}, BAY_GIO)
+
+
+def test_nguon_gia_tu_chuyen_va_ghi_nguon(monkeypatch, tmp_path):
+    """VNDirect & DNSE lỗi → tự chuyển sang SSI; ghi lại nguồn đã dùng; không còn vnstock/Vietstock."""
+    monkeypatch.setattr(du_lieu, "THU_MUC_CACHE", str(tmp_path))
+    j = {"t": [1759370400, 1759456800], "o": [70000, 71000], "h": [72000, 72500], "l": [69500, 70500],
+         "c": [71500, 72000], "v": [1e6, 1.2e6]}
+
+    def gia_lap(url, params, so_lan=3):
+        if "iboard-api.ssi" in url:
+            return {"data": j}
+        raise ValueError("HTTP 403")
+
+    monkeypatch.setattr(du_lieu, "_get", gia_lap)
+    df = du_lieu.tai("GMD", "D", "2025-01-01")
+    assert df is not None and df.close.iloc[-1] == 72.0                 # đồng → nghìn đồng
+    assert du_lieu.NGUON_DA_DUNG[("GMD", "D")] == "SSI"
+    assert [n for n, _ in du_lieu.cac_nguon("GMD", 0, 1, "D")] == ["VNDirect", "DNSE", "SSI", "VCI", "Yahoo"]
+
+
+def test_yahoo_chi_gia_ngay():
+    import pytest
+    with pytest.raises(ValueError):
+        du_lieu.tu_yahoo("GMD", 0, 1, "15")
+
+
+def test_ptcp_moi_khong_con_vnstock_vietstock():
+    from ptcp import du_lieu as pd_
+    import ptcp
+    assert ptcp.__version__.startswith("3.")
+    assert not hasattr(pd_, "tu_vnstock") and not hasattr(pd_, "lay_cp_vietstock")
+
+
+# ------------------------------------------------------------------ cảnh báo BÁN cho vị thế đang giữ
+from canh_bao import vi_the  # noqa: E402
+
+CSV_DANH_MUC = ("\ufeffma,so_cp,gia_von,gia_muc_tieu,cat_lo_dat,ngay_mua,muc_tieu_dat,de_xuat,cat_lo_goc\n"
+                "DHC,47,34.4,40,35.89,25/08/2026,40.00,x,32.27\n"
+                "MWG,23,73.9,80,71.00,03/09/2026,80.00,x,70.00\n"
+                "GMD,,,,,,,CHƯA MUA,\n")
+
+
+def _kq(gia, tuan_dat=True, kn="NẮM GIỮ"):
+    return {"gia": gia, "khung": [{"khung": "Tuần", "dat": tuan_dat}], "ptcp": {"khuyen_nghi": kn}}
+
+
+def test_doc_danh_muc_chi_lay_ma_dang_giu():
+    vt = vi_the.phan_tich_csv(CSV_DANH_MUC)
+    assert set(vt) == {"DHC", "MWG"}                                      # GMD chưa mua → bỏ
+    assert vt["DHC"]["cat_lo"] == 35.89 and vt["DHC"]["muc_tieu"] == 40 and vt["DHC"]["so_cp"] == 47
+
+
+def test_muc_canh_bao_ban():
+    vt = vi_the.phan_tich_csv(CSV_DANH_MUC)["MWG"]                        # vốn 73,9 | CL 71 | MT 80 | CL gốc 70
+    assert vi_the.danh_gia_ban(vt, _kq(70.8))["muc"] == "CAT_LO"
+    assert vi_the.danh_gia_ban(vt, _kq(80.2))["muc"] == "CHOT_LOI"
+    assert vi_the.danh_gia_ban(vt, _kq(74.5, tuan_dat=False))["muc"] == "CAN_NHAC_BAN"
+    assert vi_the.danh_gia_ban(vt, _kq(74.5, kn="BÁN"))["muc"] == "CAN_NHAC_BAN"
+    assert vi_the.danh_gia_ban(vt, _kq(78.0))["muc"] == "DOI_CAT_LO"      # lãi 4,1 ≥ 1R (73,9 − 70 = 3,9)
+    assert vi_the.danh_gia_ban(vt, _kq(75.0))["muc"] == "GIU"
+    kb = vi_the.danh_gia_ban(vt, _kq(70.8))
+    assert kb["lai_lo_pct"] == pytest.approx((70.8 / 73.9 - 1) * 100)
+
+
+def test_chong_bao_trung_ban():
+    st = {}
+    assert vi_the.can_bao_ban("MWG", "CAT_LO", "2026-10-02 10:00", st)
+    assert not vi_the.can_bao_ban("MWG", "CAT_LO", "2026-10-02 10:15", st)    # cùng mức, cùng ngày → im
+    assert vi_the.can_bao_ban("MWG", "CAT_LO", "2026-10-05 09:15", st)        # ngày mới, vẫn dưới CL → nhắc lại
+    assert not vi_the.can_bao_ban("MWG", "GIU", "2026-10-05 09:30", st)
+    assert vi_the.can_bao_ban("MWG", "CHOT_LOI", "2026-10-05 10:00", st)
+
+
+def test_doc_tu_github_khong_lo_noi_dung_loi(monkeypatch):
+    class R:
+        status_code, content = 404, b'{"message":"Not Found"}'
+    goi = {}
+
+    def gia_lap(url, **k):
+        goi.update(url=url, h=k["headers"])
+        return R()
+    monkeypatch.setenv("DANH_MUC_TOKEN", "bi_mat")
+    monkeypatch.setenv("DANH_MUC_REPO", "ban/danh-muc")
+    monkeypatch.setattr(vi_the.requests, "get", gia_lap)
+    vt, nguon = vi_the.doc_danh_muc(path_cuc_bo="khong_co.csv")
+    assert vt == {} and "404" in nguon and "bi_mat" not in nguon
+    assert goi["url"] == "https://api.github.com/repos/ban/danh-muc/contents/danh_muc.csv"
+    assert goi["h"]["Authorization"] == "Bearer bi_mat"
+    R.status_code, R.content = 200, CSV_DANH_MUC.encode("utf-8")
+    vt, nguon = vi_the.doc_danh_muc(path_cuc_bo="khong_co.csv")
+    assert set(vt) == {"DHC", "MWG"} and nguon == "repo danh-muc"
+
+
+def test_tin_rieng_tu_khong_in_log_tren_actions(monkeypatch, capsys):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)
+    thong_bao.gui("Đang giữ 47 CP | giá vốn 34,40", rieng_tu=True)
+    out = capsys.readouterr().out
+    assert "47 CP" not in out and "34,40" not in out
+
+
+def test_chay_bao_ban_va_an_ma_chi_co_trong_danh_muc(du_lieu_tot, tmp_path, capsys, monkeypatch):
+    dn, dh, dp, vni = du_lieu_tot
+    os.chdir(tmp_path)
+    g = float(dn.close.iloc[-1])
+    csv = f"ma,so_cp,gia_von,cat_lo_dat,muc_tieu_dat\nXYZ,100,{g * 1.2:.2f},{g * 1.05:.2f},{g * 1.5:.2f}\n"
+    (tmp_path / "danh_muc.csv").write_text(csv, encoding="utf-8")
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+
+    def tai_gia(ma, khung="D", *a, **k):
+        if ma == "VNINDEX":
+            return vni
+        return {"D": dn, "60": dh}.get(khung, dp)
+    da_gui = []
+    with mock.patch.object(chay, "tai", side_effect=tai_gia), \
+            mock.patch.object(chay, "phan_tich_ngay", return_value=PT_TOT), \
+            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False: da_gui.append((nd, rieng_tu))):
+        assert chay.main(["--ma", "AAA", "--gio", "2026-10-02 10:50"]) == 0
+    log = capsys.readouterr().out
+    ban = [(nd, rt) for nd, rt in da_gui if "CẮT LỖ – XYZ" in nd]
+    assert len(ban) == 1 and ban[0][1] is True                           # giá < cắt lỗ → báo, tin riêng tư
+    assert "XYZ" not in log and "+ 1 mã trong danh mục" in log           # mã chỉ có trong danh mục không lộ ra log
+    assert not os.path.exists("lich_su_tin_hieu.csv") or "XYZ" not in open("lich_su_tin_hieu.csv").read()
+    with mock.patch.object(chay, "tai", side_effect=tai_gia), \
+            mock.patch.object(chay, "phan_tich_ngay", return_value=PT_TOT), \
+            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False: da_gui.append((nd, rieng_tu))):
+        chay.main(["--ma", "AAA", "--gio", "2026-10-02 11:05"])
+    assert sum("CẮT LỖ – XYZ" in nd for nd, _ in da_gui) == 1            # lần quét sau không báo trùng

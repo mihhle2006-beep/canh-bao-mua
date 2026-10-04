@@ -62,7 +62,6 @@ THU_MUC_CACHE = "cache_gia"
 DUNG_PTCP = True                   # True: lấy cắt lỗ/mục tiêu/EV/sự kiện từ ptcp; False: chỉ dùng tiêu chí 4 khung
 EV_NGUONG = 1.0                    # % – EV sau phí (ptcp) tối thiểu để phát MUA NGAY (= ngưỡng ptcp)
 YEU_CAU_PTCP_MUA = False           # True: CHỈ báo khi khuyến nghị cuối của ptcp là MUA / MUA TỪNG PHẦN (chặt nhất)
-PTCP_DUNG_VNSTOCK = False          # ptcp không tự cài vnstock khi chạy trên GitHub (nhanh hơn)
 SU_KIEN = {                        # ngày công bố KQKD / GDKHQ đã biết → ptcp chặn mua trong 5 phiên trước sự kiện
     # "MWG": {"ngay_kqkd": "20/10/2026", "ngay_gdkhq": "05/11/2026"},
 }

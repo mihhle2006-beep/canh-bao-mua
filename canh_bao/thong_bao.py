@@ -11,9 +11,13 @@ from . import cau_hinh as C
 KY_HIEU = {True: "✔", False: "✘", None: "–"}
 
 
-def gui(noi_dung):
+def gui(noi_dung, rieng_tu=False):
+    """rieng_tu=True: tin có số liệu vị thế (số CP, giá vốn…) → KHÔNG in ra log (repo công khai, log ai cũng xem)."""
     token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-    print(noi_dung)
+    if rieng_tu and os.environ.get("GITHUB_ACTIONS"):
+        print(f"(tin riêng tư {len(noi_dung)} ký tự – chỉ gửi Telegram, không in log)")
+    else:
+        print(noi_dung)
     if not (token and chat):
         print("(chưa đặt TELEGRAM_TOKEN / TELEGRAM_CHAT_ID → chỉ in ra màn hình)")
         return False
