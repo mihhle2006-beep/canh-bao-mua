@@ -52,6 +52,9 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN }}      # token CHỈ ĐỌC repo danh-muc (cảnh báo BÁN)
+          DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
+          DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
         run: python chay.py --che_do ${{ inputs.che_do || 'tu_dong' }}
 
       - name: Lưu trạng thái chống báo trùng & lịch sử tín hiệu
