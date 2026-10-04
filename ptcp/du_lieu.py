@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Lấy dữ liệu giá / thông tin doanh nghiệp: API, vnstock, CSV, cache, nhớ trong phiên."""
+"""Lấy dữ liệu giá / thông tin doanh nghiệp / chỉ số cơ bản: API công khai, CSV, cache, nhớ trong phiên."""
 # flake8: noqa: F401
 import sys
 import os
@@ -95,11 +95,24 @@ def tu_vndirect(symbol, start, end, resolution="D"):
     return _tu_dang_tohlcv(_goi_api(url, params=p), ngay=resolution == "D")
 
 
+# VNDirect finfo: host đúng hiện nay là api-finfo (KHÔNG phải finfo-api) – giữ host cũ làm dự phòng
+VND_FINFO_HOST = ("https://api-finfo.vndirect.com.vn", "https://finfo-api.vndirect.com.vn")
+
+
+def _goi_finfo(duong_dan, params, so_lan=None):
+    loi = None
+    for host in VND_FINFO_HOST:
+        try:
+            return _goi_api(host + duong_dan, params=params, so_lan=so_lan)
+        except ValueError as e:
+            loi = e
+    raise ValueError(str(loi)[:120])
+
+
 def tu_vnd_finfo(symbol, start, end):
     """[MỚI] VNDirect finfo – giá ngày ĐÃ ĐIỀU CHỈNH (adOpen/adHigh/adLow/adClose)."""
-    url = "https://finfo-api.vndirect.com.vn/v4/stock_prices"
     p = {"sort": "date", "q": f"code:{symbol}~date:gte:{start}~date:lte:{end}", "size": 9999, "page": 1}
-    d = (_goi_api(url, params=p) or {}).get("data") or []
+    d = (_goi_finfo("/v4/stock_prices", p) or {}).get("data") or []
     if not d:
         raise ValueError("không có dữ liệu")
     x = pd.DataFrame(d)
@@ -177,15 +190,14 @@ def tu_cafef(symbol, start, end):
 # NGUỒN BỔ SUNG: DNSE (Entrade) & VCI (Vietcap) – API công khai, CHƯA KIỂM CHỨNG chính thức
 # --------------------------------------------------------------------------
 DIA_CHI_NGUON = {
-    "vnstock": "thư viện Python vnstock (nguồn VCI/TCBS)",
     "VNDirect": "dchart-api.vndirect.com.vn",
-    "VND finfo": "finfo-api.vndirect.com.vn",
+    "VND finfo": "api-finfo.vndirect.com.vn",
+    "Yahoo": "query1.finance.yahoo.com / yfinance",
     "TCBS": "apipubaws.tcbs.com.vn",
     "SSI": "iboard-api.ssi.com.vn",
     "CafeF": "s.cafef.vn",
     "DNSE": "services.entrade.com.vn",
     "VCI": "trading.vietcap.com.vn",
-    "Vietstock": "finance.vietstock.vn",
     "CSV": "file người dùng cung cấp",
     "Cache": f"thư mục {THU_MUC_CACHE}/ (lần chạy trước)",
     "CTCK": "báo cáo CTCK do người dùng nạp vào DU_LIEU_CTCK (tuỳ chọn)",
@@ -213,53 +225,8 @@ def tu_vci(symbol, start, end, khung="ONE_DAY", la_chi_so=False):
     return df[df.time >= pd.Timestamp(start)]
 
 
-_VNSTOCK = {"da_thu": False, "mod": None}
-
-
-def tu_vnstock(symbol, start, end, interval="1D"):
-    """
-    [MỚI] Nguồn qua thư viện vnstock (cộng đồng bảo trì khi API thay đổi). Tự cài lần đầu nếu cfg.TU_CAI_VNSTOCK.
-    Thử lần lượt nguồn VCI → TCBS bên trong vnstock. interval: '1D' | '1H'.
-    """
-    if not cfg.DUNG_VNSTOCK:
-        raise ValueError("đã tắt (cfg.DUNG_VNSTOCK = False)")
-    if _VNSTOCK["mod"] is None:
-        if _VNSTOCK["da_thu"]:
-            raise ValueError("không dùng được vnstock")
-        _VNSTOCK["da_thu"] = True
-        try:
-            import vnstock as _vn                     # noqa: F401
-        except ImportError:
-            if not cfg.TU_CAI_VNSTOCK:
-                raise ValueError("chưa cài vnstock")
-            _print_goc("  (Cài thư viện vnstock lần đầu ...)")
-            subprocess.call([sys.executable, "-m", "pip", "install", "vnstock", "-q"],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            try:
-                import vnstock as _vn                 # noqa: F401
-            except ImportError:
-                raise ValueError("cài vnstock thất bại")
-        _VNSTOCK["mod"] = _vn
-    vn = _VNSTOCK["mod"]
-    loi = None
-    for nguon in ("VCI", "TCBS"):
-        try:
-            if hasattr(vn, "Vnstock"):                                    # vnstock ≥ 3
-                df = vn.Vnstock().stock(symbol=symbol, source=nguon).quote.history(
-                    start=start, end=end, interval=interval)
-            else:                                                         # vnstock 0.x (cũ)
-                df = vn.stock_historical_data(symbol, start, end, "1D" if interval == "1D" else "1H")
-            if df is not None and len(df):
-                df = df.rename(columns=lambda c_: str(c_).lower()).rename(columns={"tradingdate": "time"})
-                return df[["time", "open", "high", "low", "close", "volume"]]
-        except Exception as e:
-            loi = e
-    raise ValueError(f"vnstock lỗi: {str(loi)[:60]}")
-
-
 def cac_nguon_ngay(symbol, start, end):
-    return [("vnstock", lambda: tu_vnstock(symbol, start, end, "1D")),
-            ("VNDirect", lambda: tu_vndirect(symbol, start, end, "D")),
+    return [("VNDirect", lambda: tu_vndirect(symbol, start, end, "D")),
             ("VND finfo", lambda: tu_vnd_finfo(symbol, start, end)),
             ("TCBS", lambda: tu_tcbs_ngay(symbol, start, end)),
             ("SSI", lambda: tu_ssi(symbol, start, end, "1D")),
@@ -269,8 +236,7 @@ def cac_nguon_ngay(symbol, start, end):
 
 
 def cac_nguon_gio(symbol, start, end):
-    return [("vnstock", lambda: tu_vnstock(symbol, start, end, "1H")),
-            ("VNDirect", lambda: tu_vndirect(symbol, start, end, "60")),
+    return [("VNDirect", lambda: tu_vndirect(symbol, start, end, "60")),
             ("TCBS", lambda: tu_tcbs_gio(symbol)),
             ("SSI", lambda: tu_ssi(symbol, start, end, "60")),
             ("DNSE", lambda: tu_dnse(symbol, start, end, "1H")),
@@ -441,7 +407,6 @@ def tai_vnindex(start, csv=None):
         return chuan_hoa(tu_csv(csv), la_chi_so=True)
     end = str(date.today())
     return thu_cac_nguon("VNINDEX", [
-        ("vnstock", lambda: tu_vnstock("VNINDEX", start, end, "1D")),
         ("VNDirect", lambda: tu_vndirect("VNINDEX", start, end, "D")),
         ("TCBS", lambda: tu_tcbs_ngay("VNINDEX", start, end, loai="index")),
         ("SSI", lambda: tu_ssi("VNINDEX", start, end, "1D")),
@@ -451,61 +416,259 @@ def tai_vnindex(start, csv=None):
         khoa_cache="VNINDEX_ngay", la_chi_so=True)
 
 
+def _tim_so(d, *khoa):
+    for k in khoa:
+        v = d.get(k)
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            continue
+        if v > 0:
+            return v
+    return None
+
+
 def lay_thong_tin_dn(symbol):
-    """Thử lấy số CP lưu hành, tỷ lệ sở hữu NN, sàn, ngành từ TCBS (có kiểm tra phản hồi trước khi đọc JSON)."""
-    kq = {}
+    """
+    Thông tin DN & SỐ CỔ PHIẾU từ NHIỀU nguồn (không dùng Vietstock) để đối chiếu chéo:
+      • TCBS overview  : CP lưu hành, sở hữu NN, sàn, ngành
+      • VNDirect finfo : KL niêm yết, sàn
+      • Yahoo (yfinance): CP lưu hành, vốn hoá (dùng kiểm tra chéo vốn hoá tự tính)
+    Trả về: san, nganh, so_huu_nn, so_cp (lưu hành – nguồn ưu tiên), ung_vien_cp = {"luu_hanh": {nguồn: số},
+    "niem_yet": {nguồn: số}}, von_hoa_yahoo (tỷ đồng).
+    """
+    kq = {"ung_vien_cp": {"luu_hanh": {}, "niem_yet": {}}}
+    uv = kq["ung_vien_cp"]
+    # 1. TCBS
     try:
         j = _goi_api(f"https://apipubaws.tcbs.com.vn/tcanalysis/v1/ticker/{symbol}/overview",
-                     headers={"Origin": "https://tcinvest.tcbs.com.vn"})
-        cp = j.get("outstandingShare")
+                     headers={"Origin": "https://tcinvest.tcbs.com.vn"}, so_lan=1)
+        cp = _tim_so(j, "outstandingShare")
         if cp:
-            kq["so_cp"] = cp * 1e6 if cp < 1e5 else cp           # API thường trả theo triệu CP
+            uv["luu_hanh"]["TCBS"] = cp * 1e6 if cp < 1e5 else cp           # API thường trả theo triệu CP
+        ph = _tim_so(j, "issueShare")
+        if ph:
+            uv.setdefault("phat_hanh", {})["TCBS"] = ph * 1e6 if ph < 1e5 else ph
         nn = j.get("foreignPercent")
         if nn is not None:
-            kq["so_huu_nn"] = nn * 100 if nn <= 1 else nn       # có thể là tỷ lệ 0–1
+            kq["so_huu_nn"] = nn * 100 if nn <= 1 else nn
         if j.get("exchange"):
             kq["san"] = j["exchange"]
         if j.get("industry"):
             kq["nganh"] = j["industry"]
-        in_ra(f"  Lấy thông tin doanh nghiệp từ TCBS ... OK")
-        ghi_nguon("Thông tin DN (số CP lưu hành, sở hữu NN, sàn, ngành)", "TCBS",
-                  ", ".join(k for k in kq) or "không có trường nào")
+        ghi_nguon("Thông tin DN (CP lưu hành, sở hữu NN, sàn, ngành)", "TCBS", "OK")
     except Exception as e:
-        in_ra(f"  Lấy thông tin doanh nghiệp từ TCBS ... lỗi ({str(e)[:70]})")
         ghi_nguon("Thông tin DN", "—", f"TCBS lỗi: {str(e)[:60]}")
-    if "so_cp" not in kq:
-        try:      # [MỚI] dự phòng: VNDirect finfo
-            j = _goi_api("https://finfo-api.vndirect.com.vn/v4/stocks", params={"q": f"code:{symbol}"}, so_lan=1)
-            d = (j.get("data") or [{}])[0]
-            if d.get("floor"):
-                kq.setdefault("san", d["floor"])
-            if d.get("listedShare"):
-                kq["so_cp"] = float(d["listedShare"])
-            ghi_nguon("Thông tin DN (sàn, KL niêm yết)", "VND finfo", ", ".join(kq) or "—")
-        except Exception:
-            pass
+    # 2. VNDirect finfo
+    try:
+        j = _goi_finfo("/v4/stocks", {"q": f"code:{symbol}"}, so_lan=1)
+        d = next((x for x in (j.get("data") or []) if str(x.get("code", "")).upper() == symbol), {})
+        if d.get("floor"):
+            kq.setdefault("san", d["floor"])
+        ny = _tim_so(d, "listedShare", "listedQuantity", "listedVolume")
+        if ny:
+            uv["niem_yet"]["VNDirect"] = ny
+        lh = _tim_so(d, "outstandingShare", "outstandingShares")
+        if lh:
+            uv["luu_hanh"]["VNDirect"] = lh
+        ghi_nguon("Thông tin DN (sàn, KL niêm yết)", "VND finfo", "OK" if (ny or lh) else "không có trường số CP")
+    except Exception as e:
+        ghi_nguon("Thông tin DN", "—", f"VND finfo lỗi: {str(e)[:60]}")
+    # 3. Yahoo
+    try:
+        import yfinance as yf
+        info = yf.Ticker(f"{symbol}.VN").info or {}
+        cp = _tim_so(info, "sharesOutstanding", "impliedSharesOutstanding")
+        if cp:
+            uv["luu_hanh"]["Yahoo"] = cp
+        if _tim_so(info, "marketCap") and info.get("currency") in (None, "VND"):
+            kq["von_hoa_yahoo"] = info["marketCap"] / 1e9
+        ghi_nguon("Thông tin DN (CP lưu hành, vốn hoá)", "Yahoo", "OK" if cp else "không có số CP")
+    except Exception as e:
+        ghi_nguon("Thông tin DN", "—", f"Yahoo lỗi: {str(e)[:60]}")
+    for ten in cfg.THU_TU_NGUON_SO_CP:                    # nguồn ưu tiên cho CP lưu hành
+        if ten in uv["luu_hanh"]:
+            kq["so_cp"], kq["nguon_so_cp"] = uv["luu_hanh"][ten], ten
+            break
+    tom = ", ".join(f"{n} {so_vn(v)}" for n, v in uv["luu_hanh"].items()) or "không nguồn nào có"
+    in_ra(f"  Số CP lưu hành theo các nguồn: {tom}")
     return kq
 
 
-def lay_chi_so_co_ban(symbol):
-    """[MỚI] P/E, P/B, ROE quý gần nhất từ TCBS (best-effort, có thể lỗi bất cứ lúc nào)."""
-    try:
-        j = _goi_api(f"https://apipubaws.tcbs.com.vn/tcanalysis/v1/finance/{symbol}/financialratio",
-                     params={"yearly": 0, "isAll": "false"}, so_lan=1,
-                     headers={"Origin": "https://tcinvest.tcbs.com.vn"})
-        rows = j if isinstance(j, list) else (j.get("data") or [])
-        if not rows:
-            return {}
-        r = rows[0]
-        roe = r.get("roe")
-        kq = {"P/E": r.get("priceToEarning"), "P/B": r.get("priceToBook"),
-              "ROE %": roe * 100 if roe is not None and abs(roe) < 2 else roe,
-              "ky": f"Q{r.get('quarter')}/{r.get('year')}"}
-        ghi_nguon("Chỉ số cơ bản (P/E, P/B, ROE)", "TCBS", kq["ky"])
-        return {k: v for k, v in kq.items() if v is not None}
-    except Exception as e:
-        ghi_nguon("Chỉ số cơ bản", "—", f"TCBS lỗi: {str(e)[:60]}")
+# --------------------------------------------------------------------------
+# CHỈ SỐ CƠ BẢN: VNDirect (api-finfo) → TCBS → Yahoo. P/E TÍNH LẠI = giá hiện tại ÷ EPS 4 quý gần nhất.
+# VNDirect /v4/ratios: tham số q + sort=reportDate:desc, MỖI chỉ số gọi riêng 1 lần (gộp nhiều mã → bị trộn).
+# --------------------------------------------------------------------------
+_MA_VND = {"PRICE_TO_EARNINGS": "P/E", "PRICE_TO_BOOK": "P/B", "EPS_TR": "EPS 4Q", "ROAE_TR_AVG5Q": "ROE %"}
+
+
+def _ty_le(v):
+    return v * 100 if v is not None and abs(v) < 2 else v
+
+
+def _co_ban_vndirect(symbol):
+    kq, ky = {}, ""
+    for ma_cs, khoa in _MA_VND.items():
+        try:
+            j = _goi_finfo("/v4/ratios", {"q": f"code:{symbol}~ratioCode:{ma_cs}", "sort": "reportDate:desc",
+                                          "size": 1}, so_lan=1)
+            d = (j.get("data") or [None])[0]
+            if d and str(d.get("ratioCode", ma_cs)) == ma_cs and str(d.get("code", symbol)).upper() == symbol:
+                v = d.get("value")
+                if v is not None:
+                    kq[khoa] = float(v)
+                    if khoa == "EPS 4Q" and d.get("reportDate"):
+                        ky = str(d["reportDate"])[:10]
+        except Exception:
+            continue
+    if "ROE %" in kq:
+        kq["ROE %"] = _ty_le(kq["ROE %"])
+    if kq:
+        kq["ky"] = f"EPS kỳ {ky}" if ky else "mới nhất"
+    return kq
+
+
+def _co_ban_tcbs(symbol):
+    j = _goi_api(f"https://apipubaws.tcbs.com.vn/tcanalysis/v1/finance/{symbol}/financialratio",
+                 params={"yearly": 0, "isAll": "false"}, so_lan=1,
+                 headers={"Origin": "https://tcinvest.tcbs.com.vn"})
+    rows = j if isinstance(j, list) else (j.get("data") or [])
+    if not rows:
         return {}
+    r = rows[0]
+    kq = {"P/E": r.get("priceToEarning"), "P/B": r.get("priceToBook"), "ROE %": _ty_le(r.get("roe")),
+          "EPS 4Q": r.get("earningPerShare"), "ky": f"Q{r.get('quarter')}/{r.get('year')}"}
+    return {k: v for k, v in kq.items() if v is not None}
+
+
+def _co_ban_yahoo(symbol):
+    try:
+        import yfinance as yf
+    except ImportError:
+        raise ValueError("chưa cài yfinance")
+    info = yf.Ticker(f"{symbol}.VN").info or {}
+    kq = {"P/E": info.get("trailingPE"), "P/B": info.get("priceToBook"),
+          "ROE %": _ty_le(info.get("returnOnEquity")),
+          "EPS 4Q": info.get("trailingEps") if info.get("financialCurrency") in (None, "VND") else None,
+          "ky": "TTM"}
+    return {k: v for k, v in kq.items() if v is not None}
+
+
+NGUON_CO_BAN = [("VNDirect", _co_ban_vndirect), ("TCBS", _co_ban_tcbs), ("Yahoo", _co_ban_yahoo)]
+
+
+# --------------------------------------------------------------------------
+# LNST 4 QUÝ GẦN NHẤT (tỷ đồng) – để tự tính EPS = LNST 4 quý ÷ số CP lưu hành
+# Ưu tiên LNST thuộc cổ đông công ty mẹ (đúng cách tính EPS theo VAS); không có thì LNST hợp nhất.
+# --------------------------------------------------------------------------
+def _lnst_tcbs(symbol):
+    j = _goi_api(f"https://apipubaws.tcbs.com.vn/tcanalysis/v1/finance/{symbol}/incomestatement",
+                 params={"yearly": 0, "isAll": "true"}, so_lan=1, headers={"Origin": "https://tcinvest.tcbs.com.vn"})
+    rows = j if isinstance(j, list) else (j.get("data") or [])
+    rows = sorted([r for r in rows if r.get("year") and r.get("quarter")],
+                  key=lambda r: (r["year"], r["quarter"]), reverse=True)[:4]
+    ds = []
+    for r in rows:
+        v = r.get("shareHolderIncome", r.get("postTaxProfit"))
+        if v is None:
+            return None
+        ds.append((f"Q{r['quarter']}/{r['year']}", float(v)))           # TCBS: tỷ đồng
+    return ds
+
+
+def _lnst_yahoo(symbol):
+    import yfinance as yf
+    t = yf.Ticker(f"{symbol}.VN")
+    if (t.info or {}).get("financialCurrency") not in (None, "VND"):
+        raise ValueError("đơn vị tiền không phải VND")
+    df = t.quarterly_income_stmt
+    hang = next((h for h in ("Net Income Common Stockholders", "Net Income",
+                             "Net Income From Continuing Operation Net Minority Interest") if h in df.index), None)
+    if hang is None:
+        return None
+    s = df.loc[hang].dropna().sort_index(ascending=False)[:4]
+    return [(f"Q{(c.month - 1) // 3 + 1}/{c.year}", float(v) / 1e9) for c, v in s.items()]   # đồng → tỷ
+
+
+NGUON_LNST = [("TCBS", _lnst_tcbs), ("Yahoo", _lnst_yahoo)]
+
+
+def _bon_quy_lien_tiep(ds):
+    """Đúng 4 quý liên tiếp, mới nhất trước (Q2/2026, Q1/2026, Q4/2025, Q3/2025)."""
+    if not ds or len(ds) < 4:
+        return False
+    so = [int(k.split("/")[1]) * 4 + int(k[1]) for k, _ in ds[:4]]
+    return all(a - b == 1 for a, b in zip(so, so[1:]))
+
+
+def lay_lnst_4_quy(symbol):
+    """→ (tổng LNST 4 quý tỷ đồng, [(kỳ, LNST)], nguồn) hoặc (None, [], lý do)."""
+    loi = []
+    for ten, ham in NGUON_LNST:
+        try:
+            ds = ham(symbol)
+            if _bon_quy_lien_tiep(ds):
+                return sum(v for _, v in ds[:4]), ds[:4], ten
+            loi.append(f"{ten}: không đủ 4 quý liên tiếp")
+        except Exception as e:
+            loi.append(f"{ten}: {str(e)[:40]}")
+    return None, [], "; ".join(loi)
+
+
+def lay_chi_so_co_ban(symbol, gia=None, so_cp_luu_hanh=None, lnst_4q=None):
+    """
+    P/E, P/B, ROE, EPS. P/B & ROE: VNDirect → TCBS → Yahoo (nguồn sau bù chỗ thiếu).
+    P/E = Thị giá (gia, nghìn đồng) / EPS, với EPS = LNST 4 quý gần nhất / số CP lưu hành – TỰ TÍNH:
+      LNST 4 quý: tham số lnst_4q (tỷ đồng, nhập từ BCTC) → TCBS → Yahoo
+      Số CP lưu hành: so_cp_luu_hanh (cơ cấu cổ phiếu của báo cáo: phát hành − CP quỹ)
+    Không đủ dữ liệu tự tính → dùng EPS 4 quý của nguồn (VNDirect EPS_TR...), ghi rõ cách tính.
+    """
+    kq, nguon, loi = {}, [], []
+    for ten, ham in NGUON_CO_BAN:
+        if all(k in kq for k in ("P/E", "P/B", "ROE %", "EPS 4Q")):
+            break
+        try:
+            d = ham(symbol)
+        except Exception as e:
+            loi.append(f"{ten}: {str(e)[:40]}")
+            continue
+        moi = [k for k in d if k != "ky" and k not in kq]
+        if moi:
+            for k in moi:
+                kq[k] = d[k]
+            nguon.append(f"{ten} ({d.get('ky', '')})")
+        else:
+            loi.append(f"{ten}: không có số liệu")
+
+    # ---- EPS tự tính = LNST 4 quý / CP lưu hành ----
+    if lnst_4q is not None:
+        tong, ds_quy, nguon_ln = float(lnst_4q), [], "nhập tay (BCTC)"
+    elif so_cp_luu_hanh:
+        tong, ds_quy, nguon_ln = lay_lnst_4_quy(symbol)
+    else:
+        tong, ds_quy, nguon_ln = None, [], "thiếu số CP lưu hành"
+    if tong is not None and so_cp_luu_hanh:
+        kq["EPS 4Q nguồn"] = kq.get("EPS 4Q")
+        kq["LNST 4 quý (tỷ đồng)"] = tong
+        kq["EPS 4Q"] = tong * 1e9 / so_cp_luu_hanh
+        kq["cach_tinh_eps"] = (f"LNST 4 quý {'+'.join(k for k, _ in ds_quy) or ''} = {tong:,.1f} tỷ ({nguon_ln}) "
+                               f"÷ {so_cp_luu_hanh:,.0f} CP lưu hành")
+        nguon.append(f"LNST {nguon_ln}")
+    elif kq.get("EPS 4Q") is not None:
+        kq["cach_tinh_eps"] = "EPS 4 quý do nguồn công bố (chưa tự tính được: " + str(nguon_ln)[:60] + ")"
+
+    if not nguon:
+        ghi_nguon("Chỉ số cơ bản", "—", "; ".join(loi)[:120])
+        return {}
+    if gia and kq.get("EPS 4Q"):
+        kq["P/E nguồn"] = kq.get("P/E")
+        kq["P/E"] = gia * 1000 / kq["EPS 4Q"]          # EPS âm → P/E âm (doanh nghiệp lỗ)
+        kq["cach_tinh_pe"] = f"P/E = {gia:,.2f} nghìn ÷ EPS {kq['EPS 4Q']:,.0f} đ"
+    kq["nguon"] = " + ".join(nguon)
+    kq["ky"] = nguon[0].split("(", 1)[-1].rstrip(")")
+    ghi_nguon("Chỉ số cơ bản (P/E, P/B, ROE, EPS)", nguon[0].split(" (")[0],
+              kq["nguon"] + (f" | {kq['cach_tinh_eps']}" if kq.get("cach_tinh_eps") else ""))
+    return kq
 
 
 def _so(x):
@@ -516,78 +679,6 @@ def _so(x):
         return float(x) if x == x and x > 0 else None
     d = re.sub(r"[^\d]", "", str(x))
     return float(d) if d else None
-
-
-def lay_cp_vietstock(symbol):
-    """
-    Lấy KL CP NIÊM YẾT, KL CP LƯU HÀNH và VỐN ĐIỀU LỆ từ Vietstock (finance.vietstock.vn).
-      (1) API nội bộ /company/tradinginfo (cần cookie + __RequestVerificationToken của trang)
-      (2) Dự phòng: đọc thẳng nhãn 'KL CP niêm yết' / 'KL CP lưu hành' / 'Vốn điều lệ' trên trang HTML
-    Vietstock không có API công khai chính thức → có thể lỗi bất cứ lúc nào; khi lỗi hãy nhập tay.
-    """
-    kq, cach = {}, []
-    ss = requests.Session()
-    ss.headers.update({**HEADERS, "Referer": "https://finance.vietstock.vn/"})
-    trang = ""
-    for url in (f"https://finance.vietstock.vn/{symbol}/ho-so-doanh-nghiep.htm",
-                f"https://finance.vietstock.vn/{symbol}.htm"):
-        for _k in range(2):                       # [MỚI] thử lại 1 lần
-            try:
-                r = ss.get(url, timeout=THOI_GIAN_CHO)
-                if r.ok and symbol.upper() in r.text.upper():
-                    trang += _html.unescape(r.text)
-                    break
-            except Exception:
-                pass
-            time.sleep(1)
-    if not trang:
-        in_ra("  Lấy số CP từ Vietstock ... lỗi (không tải được trang)")
-        ghi_nguon("Số CP (Vietstock)", "—", "không tải được trang Vietstock")
-        return kq
-
-    # (1) API tradinginfo
-    tk = re.search(r'name="__RequestVerificationToken"[^>]*value="([^"]+)"', trang)
-    if tk:
-        try:
-            rr = ss.post("https://finance.vietstock.vn/company/tradinginfo",
-                         data={"code": symbol, "s": "0", "t": "", "__RequestVerificationToken": tk.group(1)},
-                         timeout=THOI_GIAN_CHO)
-            if rr.status_code != 200 or rr.text.strip()[:1] not in "{[":     # [MỚI] kiểm tra trước khi .json()
-                raise ValueError(f"tradinginfo HTTP {rr.status_code} / không phải JSON")
-            j = rr.json()
-            j = j[0] if isinstance(j, list) and j else j
-            thap = {str(k).lower(): v for k, v in (j or {}).items()}
-            for khoa, ten in (("klcpny", "niem_yet"), ("klcplh", "luu_hanh")):
-                if _so(thap.get(khoa)):
-                    kq[ten] = _so(thap[khoa])
-            if kq:
-                cach.append("API tradinginfo")
-        except Exception:
-            pass
-
-    # (2) Đọc nhãn trên trang
-    chu = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", trang))
-    mau = {"niem_yet": r"KL\s*CP\s*(?:đang\s*)?niêm\s*yết",
-           "luu_hanh": r"KL\s*CP\s*(?:đang\s*)?lưu\s*hành",
-           "von_dieu_le": r"Vốn\s*điều\s*lệ"}
-    for ten, m in mau.items():
-        if ten in kq:
-            continue
-        f = re.search(m + r"[^\d]{0,40}([\d][\d.,]{4,})", chu, re.I)
-        if f and _so(f.group(1)):
-            kq[ten] = _so(f.group(1))
-            cach.append(f"nhãn '{ten}'")
-    # Vốn điều lệ phải tính bằng đồng (≥ 1 tỷ) mới suy ra được số CP; loại các giá trị ghi theo tỷ/triệu
-    if kq.get("von_dieu_le") and kq["von_dieu_le"] < 1e9:
-        kq.pop("von_dieu_le")
-    for k in ("niem_yet", "luu_hanh"):
-        if kq.get(k) and kq[k] < 1e5:          # quá nhỏ → có thể là đơn vị triệu CP hoặc đọc nhầm
-            kq.pop(k)
-    in_ra(f"  Lấy số CP từ Vietstock ... {'OK' if kq else 'không đọc được số liệu'}")
-    ghi_nguon("Số CP (Vietstock: niêm yết, lưu hành, VĐL)", "Vietstock" if kq else "—",
-              (", ".join(f"{k}={so_vn(v)}" for k, v in kq.items()) + f" [{', '.join(cach)}]") if kq
-              else "trang tải được nhưng không tìm thấy số liệu")
-    return kq
 
 
 # ==========================================================================
