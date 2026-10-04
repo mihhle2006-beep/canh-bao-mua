@@ -214,7 +214,7 @@ def in_nguon_du_lieu(bang_doi_chieu):
         in_ra(f"\n  Đối chiếu giá đóng cửa với nguồn khác (nguồn chính: {NGUON_DA_DUNG.get('NGÀY', '?')}):")
         in_ra(ve_bang(bang_doi_chieu))
     in_ra("\n  Nguồn kiểm chứng thủ công: hsx.vn / hnx.vn (KL niêm yết, CP quỹ), BCTC & báo cáo thường niên "
-          "của doanh nghiệp, cafef.vn / vietstock.vn (cổ tức, sở hữu nước ngoài).")
+          "của doanh nghiệp, VSDC (vsd.vn – số CP đăng ký), cafef.vn (cổ tức, sở hữu nước ngoài).")
     in_ra("  Các API VNDirect/TCBS/DNSE/VCI là API công khai không chính thức – có thể thay đổi bất cứ lúc nào.")
 
 
@@ -245,9 +245,9 @@ def in_thong_tin_giao_dich(symbol, tt, gia_mt, nguon_mt, qd):
         in_ra(f"    • {cg}")
     bdc = tt.get("doi_chieu_cp")
     if bdc is not None:
-        in_ra("  Đối chiếu số CP giữa các nguồn (ưu tiên: nhập tay > Vietstock > TCBS):")
-        in_ra(ve_bang(bdc, dinh_dang={**{c: (lambda x: so_vn(x)) for c in ("Dùng trong báo cáo", "Vietstock", "TCBS")},
-                                      "Lệch Vietstock %": "{:+.2f}", "Lệch TCBS %": "{:+.2f}"}))
+        in_ra("  Đối chiếu số CP giữa các nguồn (ưu tiên: nhập tay > TCBS > VNDirect > Yahoo):")
+        cot_so = [c for c in bdc.columns if c not in ("Chỉ tiêu", "Nguồn", "Lệch tối đa %")]
+        in_ra(ve_bang(bdc, dinh_dang={**{c: (lambda x: so_vn(x)) for c in cot_so}, "Lệch tối đa %": "{:.2f}"}))
     in_ra(f"  Giá cao nhất 52 tuần        : {so_vn(tt['cao52'] * 1000)} đồng  "
           f"(ngày {tt['ngay_cao52']:%d/%m/%Y}, giá hiện tại thấp hơn đỉnh {so_vn(-tt['cach_dinh52'], 1)}%)")
     in_ra(f"  Giá thấp nhất 52 tuần       : {so_vn(tt['thap52'] * 1000)} đồng  "
@@ -371,7 +371,8 @@ def in_boi_canh(symbol, bc, nhom_ma, ttr=None):
 
 def in_co_ban(symbol, cb):
     in_ra(f"\n{'#' * 84}\n PHẦN H. CƠ BẢN TỐI THIỂU & CHẤT XÚC TÁC\n{'#' * 84}")
-    for ten in ("P/E", "P/B", "ROE %", "Dư nợ margin (tỷ đồng)", "Dư nợ margin / VCSH (lần)"):
+    for ten in ("P/E", "EPS 4 quý (đồng)", "LNST 4 quý (tỷ đồng)", "P/B", "ROE %", "Dư nợ margin (tỷ đồng)",
+                "Dư nợ margin / VCSH (lần)"):
         if ten in cb:
             v, ng = cb[ten]
             in_ra(f"  {ten:<28}: {fmt(v) if not isinstance(v, str) else v:<12} [{ng}]")
