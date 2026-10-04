@@ -16,6 +16,7 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
+from canh_bao import du_lieu
 from canh_bao.danh_gia import phan_tich_ma
 from canh_bao.ptcp_ngay import phan_tich_ngay
 from canh_bao.du_lieu import gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
@@ -80,6 +81,11 @@ def main(argv=None):
             so_bao += 1
     ghi_trang_thai(trang_thai)
     print(f"Đã báo {so_bao} tín hiệu MUA NGAY.")
+    if du_lieu.NGUON_DA_DUNG:
+        dem = {}
+        for n in du_lieu.NGUON_DA_DUNG.values():
+            dem[n] = dem.get(n, 0) + 1
+        print("Nguồn giá đã dùng: " + ", ".join(f"{n} ({k} lần)" for n, k in dem.items()))
     return 0
 
 
