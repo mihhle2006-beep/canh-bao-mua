@@ -130,11 +130,9 @@ HE_SO_THI_TRUONG_XAU = 0.5   # khối lượng × 0.5 cho mỗi yếu tố xấu
 SO_PHIEN_SU_KIEN = 5         # KQKD / GDKHQ trong 5 phiên tới → không mở vị thế mới
 
 
-# --- [MỚI] Nguồn dữ liệu vnstock ---
-DUNG_VNSTOCK = True          # thử thư viện vnstock TRƯỚC các API tự viết
-
-
-TU_CAI_VNSTOCK = True        # chưa có → tự 'pip install vnstock' lần đầu
+THU_TU_NGUON_SO_CP = ["TCBS", "VNDirect", "Yahoo"]   # ưu tiên khi chọn số CP lưu hành (nhập tay luôn đứng đầu)
+LECH_SO_CP_PCT = 0.5          # các nguồn lệch nhau > 0,5% số CP → cảnh báo
+LECH_VON_HOA_PCT = 2.0        # vốn hoá tự tính lệch Yahoo > 2% → cảnh báo
 
 
 N_HIEU_DUNG_MIN = 10         # [MỚI] số mẫu hiệu dụng < 10 → gắn nhãn "độ tin cậy THẤP"
