@@ -11,6 +11,13 @@ Quét các mã theo dõi theo **4 khung** (tuần → ngày → giờ → phút)
 | **15 phút** | Điểm vào | (MACD 15p cắt lên Signal trong 3 nến HOẶC phá đỉnh 20 nến kèm KL ≥ 1,5×) VÀ giá ≥ VWAP phiên VÀ RSI 15p ≤ 75 |
 | Rủi ro | | Cắt lỗ thống nhất (đáy xác nhận − 0,5 ATR / giá − 2 ATR / −7%, tối thiểu 1,5 ATR); mục tiêu = đỉnh cũ xác nhận / đỉnh 52T / giá + 3 ATR; **R/R ≥ 2** |
 
+### Nguồn dữ liệu
+- **Giá 4 khung (tuần/ngày/giờ/phút):** VNDirect → DNSE → SSI iBoard → VCI → Yahoo, tự chuyển nguồn khi lỗi
+  (nguồn không hỗ trợ khung nào thì bỏ qua: VCI chỉ ngày & giờ, Yahoo chỉ ngày). Mọi nguồn lỗi → dùng cache.
+  Cuối mỗi lần chạy in dòng *"Nguồn giá đã dùng"* để biết nguồn nào đang sống.
+- **ptcp** (thư mục `ptcp/`, bản 3.4): không dùng vnstock / Vietstock; số CP đối chiếu TCBS → VNDirect → Yahoo;
+  P/E = giá ÷ (LNST 4 quý ÷ CP lưu hành). Khi sửa ptcp, chép nguyên thư mục `ptcp/` mới đè lên.
+
 ### Phần lấy từ bộ phân tích cổ phiếu (ptcp – thư mục `ptcp/`)
 Mỗi mã được chạy **phân tích ngày đầy đủ của ptcp 1 lần/ngày** (lưu `cache_ptcp/`, lần tổng kết 15:20 chạy lại):
 - **Cắt lỗ thống nhất & mục tiêu đề xuất** của ptcp (đỉnh cũ, kháng cự, AB=CD, Fibo, nền giá, MA, vùng KL, đỉnh 52T;
