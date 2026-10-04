@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-DỮ LIỆU GIÁ: VNDirect → DNSE (tự chuyển nguồn), thử lại khi lỗi, cache cục bộ khi mọi nguồn lỗi.
+DỮ LIỆU GIÁ: VNDirect → DNSE → SSI iBoard → VCI → Yahoo (tự chuyển nguồn; nguồn nào không hỗ trợ khung đó thì bỏ qua),
+thử lại khi lỗi, cache cục bộ khi mọi nguồn lỗi. Không dùng vnstock / Vietstock.
   • Khung: ngày "D", giờ "60", phút "5"/"15"/"30". Giá cổ phiếu theo NGHÌN ĐỒNG (tự quy đổi nếu nguồn trả đồng).
   • bo_nen_chua_dong: bỏ nến đang chạy (chưa kết thúc) → tín hiệu không "nhấp nháy" trong lúc nến chưa đóng.
 """
@@ -58,6 +59,56 @@ def tu_dnse(ma, tu, den, khung, chi_so=False):
     return _tu_unix(_get(url, {"symbol": ma, "resolution": DNSE_KHUNG[khung], "from": tu, "to": den}), khung)
 
 
+SSI_KHUNG = {"D": "1D", "60": "60", "30": "30", "15": "15", "5": "5"}
+VCI_KHUNG = {"D": "ONE_DAY", "60": "ONE_HOUR"}          # phút: VCI chỉ có 1 phút → bỏ qua cho gọn
+
+
+def tu_ssi(ma, tu, den, khung, chi_so=False):
+    j = _get("https://iboard-api.ssi.com.vn/statistics/charts/history",
+             {"resolution": SSI_KHUNG[khung], "symbol": ma, "from": tu, "to": den})
+    return _tu_unix(j.get("data", j) if isinstance(j, dict) else None, khung)
+
+
+def tu_vci(ma, tu, den, khung, chi_so=False):
+    if khung not in VCI_KHUNG:
+        raise ValueError("không hỗ trợ khung này")
+    so_nen = max((den - tu) // 86400, 5) * (1 if khung == "D" else 7) + 10
+    r = requests.post("https://trading.vietcap.com.vn/api/chart/OHLCChart/gap-chart",
+                      json={"timeFrame": VCI_KHUNG[khung], "symbols": [ma], "to": den, "countBack": int(so_nen)},
+                      headers={**HEADERS, "Content-Type": "application/json",
+                               "Referer": "https://trading.vietcap.com.vn/", "Origin": "https://trading.vietcap.com.vn"},
+                      timeout=20)
+    if r.status_code != 200:
+        raise ValueError(f"HTTP {r.status_code}")
+    j = r.json()
+    df = _tu_unix(j[0] if isinstance(j, list) and j else None, khung)
+    return df[df.time >= pd.Timestamp(tu, unit="s")]
+
+
+def tu_yahoo(ma, tu, den, khung, chi_so=False):
+    if chi_so or khung != "D":
+        raise ValueError("chỉ hỗ trợ giá ngày cổ phiếu")
+    j = _get(f"https://query1.finance.yahoo.com/v8/finance/chart/{ma}.VN",
+             {"period1": tu, "period2": den, "interval": "1d"}, so_lan=2)
+    r = (j.get("chart", {}).get("result") or [None])[0]
+    if not r or not r.get("timestamp"):
+        raise ValueError("không có dữ liệu")
+    q = r["indicators"]["quote"][0]
+    return _tu_unix({"t": r["timestamp"], "o": q["open"], "h": q["high"], "l": q["low"], "c": q["close"],
+                     "v": q["volume"]}, khung)
+
+
+def cac_nguon(ma, tu, den, khung, chi_so=False):
+    return [("VNDirect", lambda: tu_vndirect(ma, tu, den, khung)),
+            ("DNSE", lambda: tu_dnse(ma, tu, den, khung, chi_so)),
+            ("SSI", lambda: tu_ssi(ma, tu, den, khung, chi_so)),
+            ("VCI", lambda: tu_vci(ma, tu, den, khung, chi_so)),
+            ("Yahoo", lambda: tu_yahoo(ma, tu, den, khung, chi_so))]
+
+
+NGUON_DA_DUNG = {}           # (mã, khung) → nguồn – in ra để biết nguồn nào đang sống
+
+
 def chuan_hoa(df, chi_so=False):
     df = df.copy()
     df["time"] = pd.to_datetime(df["time"])
@@ -90,12 +141,12 @@ def tai(ma, khung="D", tu_ngay="2021-01-01", chi_so=False):
     else:
         tu = int(pd.Timestamp(tu_ngay).timestamp())
     loi = []
-    for ten, ham in (("VNDirect", lambda: tu_vndirect(ma, tu, den, khung)),
-                     ("DNSE", lambda: tu_dnse(ma, tu, den, khung, chi_so))):
+    for ten, ham in cac_nguon(ma, tu, den, khung, chi_so):
         try:
             df = chuan_hoa(ham(), chi_so)
             if df.empty:
                 raise ValueError("rỗng")
+            NGUON_DA_DUNG[(ma, khung)] = ten
             try:
                 df.to_csv(_cache(f"{ma}_{khung}"))
             except OSError:
