@@ -48,18 +48,23 @@ NHẬT KÝ CẬP NHẬT (đối chiếu từng mục của đề xuất)
  8. Bối cảnh vào quyết định: VN-Index xấu / RS ở đáy 1 năm → giảm khối lượng hoặc chưa mua;
     KQKD / GDKHQ trong 5 phiên tới → chờ sau sự kiện.
  9. Colab: chạy không cần hỏi  main(tuong_tac=False, symbol="ABC", ...),  quét nhiều mã  quet_nhieu_ma([...]),
-    nhớ dữ liệu đã tải trong phiên, nguồn vnstock (tự cài lần đầu).
+    nhớ dữ liệu đã tải trong phiên.
+ CẬP NHẬT LẦN 3
+10. Bỏ nguồn vnstock. VNDirect finfo dùng host đúng api-finfo. Chỉ số cơ bản: VNDirect → TCBS → Yahoo;
+    P/E tính lại = giá hiện tại ÷ EPS 4 quý gần nhất (P/E của nguồn giữ để đối chiếu).
 
 CHẠY TRÊN GOOGLE COLAB: xem README.md (unzip → %run chay.py, hoặc from ptcp import main, quet_nhieu_ma).
 KIỂM THỬ: !python -m pytest -q tests  – chạy sau mỗi lần sửa code.
 
 NGUỒN DỮ LIỆU
   Giá ngày/giờ & VNINDEX: VNDirect → VND finfo → TCBS → SSI → CafeF → DNSE → VCI (tự chuyển nguồn khi lỗi),
-  cache cục bộ, hoặc file CSV. Báo cáo CTCK: tuỳ chọn, tự điền vào DU_LIEU_CTCK (mặc định trống – dùng cho mọi mã). Thông tin DN: Vietstock + TCBS.
+  cache cục bộ, hoặc file CSV. Chỉ số cơ bản: VNDirect (api-finfo) → TCBS → Yahoo. Báo cáo CTCK: tuỳ chọn, tự điền vào DU_LIEU_CTCK (mặc định trống – dùng cho mọi mã). Số CP & thông tin DN: TCBS → VNDirect → Yahoo (đối chiếu chéo, không dùng Vietstock).
   Cuối báo cáo in nguồn đã dùng, thời điểm lấy, đối chiếu giá đóng cửa giữa các nguồn.
 
 Đơn vị giá: NGHÌN ĐỒNG.   Công cụ tham khảo – KHÔNG phải khuyến nghị đầu tư.
 """
+__version__ = "3.4"
+
 from . import cau_hinh
 from . import cau_hinh as cfg
 from .chuong_trinh import main, quet_nhieu_ma, KHOA_THAM_SO
