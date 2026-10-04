@@ -708,48 +708,69 @@ CHU_GIAI_CP = [
 ]
 
 
-def co_cau_co_phieu(kl_phat_hanh, kl_niem_yet, cp_quy, vs=None, kl_lh_tcbs=None, nhan_nhap="Nhập tay"):
+def co_cau_co_phieu(kl_phat_hanh, kl_niem_yet, cp_quy, ung_vien=None, nhan_nhap="Nhập tay", lech_pct=0.5):
     """
     Phân biệt 3 khái niệm (theo quy định Việt Nam) – xem CHU_GIAI_CP.
-    Thứ tự ưu tiên nguồn: NHẬP TAY (BCTC/BCTN/HOSE-HNX) > VIETSTOCK > TCBS.
-    Đối chiếu chéo Vietstock & TCBS, cảnh báo khi lệch > 0.5%.
+    ung_vien = {"luu_hanh": {nguồn: số}, "niem_yet": {nguồn: số}, "phat_hanh": {nguồn: số}} từ lay_thong_tin_dn.
+    Ưu tiên: NHẬP TAY (BCTC/BCTN/HOSE-HNX) > nguồn online theo thứ tự trong dict (TCBS → VNDirect → Yahoo).
+    Đối chiếu chéo mọi nguồn, cảnh báo khi lệch > lech_pct %.
     """
-    vs = vs or {}
+    uv = ung_vien or {}
+    lh_uv, ny_uv, ph_uv = uv.get("luu_hanh", {}), uv.get("niem_yet", {}), uv.get("phat_hanh", {})
+    dau = lambda d: next(iter(d.items()), (None, None))
     canh_bao, nguon = [], {}
 
-    def chon(ten, *ung_vien):
-        for gt, n in ung_vien:
-            if gt:
-                nguon[ten] = n
-                return gt
-        nguon[ten] = "—"
-        return None
+    # KL phát hành & niêm yết
+    if kl_phat_hanh:
+        nguon["phat_hanh"] = nhan_nhap
+    elif ph_uv:
+        nguon["phat_hanh"], kl_phat_hanh = dau(ph_uv)
+    if kl_niem_yet:
+        nguon["niem_yet"] = nhan_nhap
+    elif ny_uv:
+        nguon["niem_yet"], kl_niem_yet = dau(ny_uv)
 
-    vdl_cp = vs["von_dieu_le"] / 10000 if vs.get("von_dieu_le") else None
-    kl_phat_hanh = chon("phat_hanh", (kl_phat_hanh, nhan_nhap), (vdl_cp, "Vietstock (VĐL / 10.000đ)"))
-    kl_niem_yet = chon("niem_yet", (kl_niem_yet, nhan_nhap), (vs.get("niem_yet"), "Vietstock"))
-
+    # CP quỹ
     if cp_quy is not None:
         nguon["cp_quy"] = nhan_nhap
-    elif vs.get("niem_yet") and vs.get("luu_hanh") and vs["niem_yet"] >= vs["luu_hanh"]:
-        cp_quy = vs["niem_yet"] - vs["luu_hanh"]
-        nguon["cp_quy"] = "Suy ra: Vietstock niêm yết − lưu hành"
-        if cp_quy:
-            canh_bao.append("CP quỹ suy ra = Vietstock niêm yết − lưu hành (giả định toàn bộ CP đã niêm yết) – "
-                            "kiểm tra lại mục 'Cổ phiếu quỹ' trên BCTC.")
+    elif kl_phat_hanh and lh_uv and not kl_phat_hanh == 0:
+        n_lh, v_lh = dau(lh_uv)
+        cp_quy = max(kl_phat_hanh - v_lh, 0)
+        nguon["cp_quy"] = f"Suy ra: phát hành − lưu hành ({n_lh})"
     else:
         cp_quy = 0
         nguon["cp_quy"] = "Mặc định 0 (chưa có dữ liệu)"
 
-    if kl_phat_hanh:
+    # KL lưu hành – dùng để tính VỐN HOÁ & EPS
+    if kl_phat_hanh and nguon.get("phat_hanh") == nhan_nhap:
         kl_luu_hanh = kl_phat_hanh - cp_quy
         nguon["luu_hanh"] = "Tính = phát hành − CP quỹ"
-    else:
-        kl_luu_hanh = chon("luu_hanh", (vs.get("luu_hanh"), "Vietstock"), (kl_lh_tcbs, "TCBS"))
-        if kl_luu_hanh:
+    elif lh_uv:
+        nguon["luu_hanh"], kl_luu_hanh = dau(lh_uv)
+        if not kl_phat_hanh:
             kl_phat_hanh = kl_luu_hanh + cp_quy
             nguon["phat_hanh"] = f"Suy ra = lưu hành ({nguon['luu_hanh']}) + CP quỹ"
-            canh_bao.append("KL phát hành được SUY RA từ KL lưu hành + CP quỹ – nên kiểm tra với vốn điều lệ.")
+    elif kl_phat_hanh:
+        kl_luu_hanh = kl_phat_hanh - cp_quy
+        nguon["luu_hanh"] = "Tính = phát hành − CP quỹ"
+    elif kl_niem_yet:
+        kl_luu_hanh = kl_niem_yet - cp_quy
+        nguon["luu_hanh"] = f"Tạm = niêm yết ({nguon['niem_yet']}) − CP quỹ"
+        canh_bao.append("Không có số CP lưu hành từ nguồn nào → tạm dùng KL niêm yết − CP quỹ; kiểm tra lại với BCTC.")
+    else:
+        kl_luu_hanh = None
+        nguon["luu_hanh"] = "—"
+    nguon.setdefault("phat_hanh", "—")
+    nguon.setdefault("niem_yet", "—")
+    # Chưa biết CP quỹ mà KL niêm yết > KL lưu hành → phần chênh nhiều khả năng là CP quỹ
+    if (nguon["cp_quy"].startswith("Mặc định") and kl_niem_yet and kl_luu_hanh and kl_niem_yet > kl_luu_hanh
+            and nguon["phat_hanh"] != nhan_nhap):
+        cp_quy = kl_niem_yet - kl_luu_hanh
+        nguon["cp_quy"] = f"Suy ra: niêm yết ({nguon['niem_yet']}) − lưu hành ({nguon['luu_hanh']})"
+        kl_phat_hanh = kl_luu_hanh + cp_quy
+        nguon["phat_hanh"] = "Suy ra = lưu hành + CP quỹ"
+        canh_bao.append("CP quỹ SUY RA = KL niêm yết − KL lưu hành (giả định toàn bộ CP đã niêm yết) – kiểm tra "
+                        "mục 'Cổ phiếu quỹ' trên BCTC.")
 
     if not kl_niem_yet and kl_phat_hanh:
         kl_niem_yet = kl_phat_hanh
@@ -763,26 +784,31 @@ def co_cau_co_phieu(kl_phat_hanh, kl_niem_yet, cp_quy, vs=None, kl_lh_tcbs=None,
             canh_bao.append(f"Có {so_vn(chua_niem_yet)} CP đã phát hành nhưng CHƯA niêm yết "
                             f"(chờ niêm yết bổ sung / bị hạn chế chuyển nhượng).")
         elif chua_niem_yet < 0:
-            canh_bao.append("KL niêm yết LỚN HƠN KL phát hành – số liệu có thể sai hoặc vốn điều lệ trên Vietstock "
-                            "chưa cập nhật, hãy kiểm tra.")
+            canh_bao.append("KL niêm yết LỚN HƠN KL phát hành – số liệu một nguồn có thể chưa cập nhật, hãy kiểm tra.")
     if cp_quy:
         canh_bao.append(f"Công ty có {so_vn(cp_quy)} cổ phiếu quỹ → không tính vào vốn hoá & EPS.")
 
-    # Bảng đối chiếu chéo các nguồn
-    lech = lambda a, b: (a / b - 1) * 100 if a and b else np.nan
-    dong = [["KL CP đã phát hành", kl_phat_hanh, nguon["phat_hanh"], vdl_cp, np.nan],
-            ["KL CP niêm yết", kl_niem_yet, nguon["niem_yet"], vs.get("niem_yet"), np.nan],
-            ["Cổ phiếu quỹ", cp_quy, nguon["cp_quy"], np.nan, np.nan],
-            ["KL CP lưu hành", kl_luu_hanh, nguon["luu_hanh"] if "luu_hanh" in nguon else "—",
-             vs.get("luu_hanh"), kl_lh_tcbs]]
-    bang = pd.DataFrame(dong, columns=["Chỉ tiêu", "Dùng trong báo cáo", "Nguồn", "Vietstock", "TCBS"])
-    bang["Lệch Vietstock %"] = [lech(r["Dùng trong báo cáo"], r["Vietstock"]) for _, r in bang.iterrows()]
-    bang["Lệch TCBS %"] = [lech(r["Dùng trong báo cáo"], r["TCBS"]) for _, r in bang.iterrows()]
-    for _, r in bang.iterrows():
-        for cot in ("Lệch Vietstock %", "Lệch TCBS %"):
-            if not np.isnan(r[cot]) and abs(r[cot]) > 0.5:
-                canh_bao.append(f"{r['Chỉ tiêu']} lệch {so_vn(r[cot], 2)}% so với {cot.split()[1]} – "
-                                f"có thể do phát hành mới / CP quỹ / dữ liệu chưa cập nhật.")
+    # Bảng đối chiếu: mỗi nguồn 1 cột
+    ds_nguon = list(dict.fromkeys(list(lh_uv) + list(ny_uv) + list(ph_uv)))
+    dong = []
+    for ten, gt, d in (("KL CP đã phát hành", kl_phat_hanh, ph_uv), ("KL CP niêm yết", kl_niem_yet, ny_uv),
+                       ("Cổ phiếu quỹ", cp_quy, {}), ("KL CP lưu hành", kl_luu_hanh, lh_uv)):
+        khoa = {"KL CP đã phát hành": "phat_hanh", "KL CP niêm yết": "niem_yet", "Cổ phiếu quỹ": "cp_quy",
+                "KL CP lưu hành": "luu_hanh"}[ten]
+        r = {"Chỉ tiêu": ten, "Dùng trong báo cáo": gt, "Nguồn": nguon.get(khoa, "—")}
+        for n in ds_nguon:
+            r[n] = d.get(n, np.nan)
+        cac = [v for v in d.values() if v]
+        r["Lệch tối đa %"] = (max(cac) / min(cac) - 1) * 100 if len(cac) >= 2 else np.nan
+        if gt and cac:
+            r["Lệch tối đa %"] = max(r["Lệch tối đa %"] if r["Lệch tối đa %"] == r["Lệch tối đa %"] else 0,
+                                     max(abs(gt / v - 1) * 100 for v in cac))
+        dong.append(r)
+        if r["Lệch tối đa %"] == r["Lệch tối đa %"] and r["Lệch tối đa %"] > lech_pct:
+            canh_bao.append(f"{ten} lệch tới {so_vn(r['Lệch tối đa %'], 2)}% giữa các nguồn ("
+                            + ", ".join(f"{n} {so_vn(v)}" for n, v in d.items()) + ") – có thể do phát hành mới "
+                            "/ CP quỹ / nguồn chưa cập nhật; nên đối chiếu BCTC.")
+    bang = pd.DataFrame(dong)
     return {"kl_phat_hanh": kl_phat_hanh, "kl_niem_yet": kl_niem_yet, "cp_quy": cp_quy,
             "kl_luu_hanh": kl_luu_hanh, "chua_niem_yet": chua_niem_yet, "canh_bao_cp": canh_bao,
             "doi_chieu_cp": bang}
