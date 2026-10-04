@@ -30,12 +30,12 @@ from .cau_hinh import (
     RUI_RO_KHUYEN_NGHI, SO_MUC_TIEU,
 )
 from .in_an import (
-    BAO_CAO_TEXT, _CHAY, _print_goc, fmt, in_bang, in_ra,
+    BAO_CAO_TEXT, _CHAY, _print_goc, fmt, in_bang, in_ra, so_vn,
     ve_bang,
 )
 from .du_lieu import (
     CANH_BAO_DU_LIEU, DIA_CHI_NGUON, NGUON_DA_DUNG, NHAT_KY_NGUON, _tai_ngay, cac_nguon_gio,
-    chuan_hoa, doi_chieu_nguon, ghi_nguon, gop_tuan, lay_chi_so_co_ban, lay_cp_vietstock,
+    chuan_hoa, doi_chieu_nguon, ghi_nguon, gop_tuan, lay_chi_so_co_ban,
     lay_thong_tin_dn, tai_nhom_nganh, tai_vnindex, thu_cac_nguon, tu_csv,
 )
 from .chi_bao import (
@@ -81,13 +81,15 @@ KHOA_THAM_SO = {
     "kl_ph": "KL CP đã phát hành", "kl_ny": "KL CP niêm yết", "cp_quy": "CP quỹ",
     "so_huu_nn": "sở hữu NN %", "beta": "Beta", "nhom": "mã cùng ngành (list hoặc 'A,B', '-' = bỏ)",
     "pb": "P/B", "roe": "ROE %", "margin": "dư nợ margin (tỷ đồng)",
+    "lnst_4q": "LNST 4 quý gần nhất (tỷ đồng, từ BCTC) – để tính EPS",
     "ngay_kqkd": "ngày công bố KQKD dd/mm/yyyy", "ngay_gdkhq": "ngày GDKHQ dd/mm/yyyy",
 }
 
 
-def hoi(cau, mac_dinh=None, kieu=str, khoa=None):
+def hoi(cau, mac_dinh=None, kieu=str, khoa=None, chi_tham_so=False):
     """
     Hỏi người dùng; nhấn Enter = dùng giá trị mặc định.
+    chi_tham_so=True: KHÔNG hỏi – chỉ dùng giá trị truyền vào main(...) nếu có, không thì lấy tự động từ nguồn.
     [MỚI] Nếu tham số đã truyền vào main(...) theo 'khoa' → dùng luôn, không hỏi.
           Chế độ không tương tác (main(tuong_tac=False)) → dùng mặc định cho mọi câu chưa truyền.
     """
@@ -103,7 +105,7 @@ def hoi(cau, mac_dinh=None, kieu=str, khoa=None):
             except ValueError:
                 return mac_dinh
         return v
-    if not _CHAY["tuong_tac"]:
+    if chi_tham_so or not _CHAY["tuong_tac"]:
         return mac_dinh
     goi_y = f" [{mac_dinh}]" if mac_dinh is not None else ""
     s = input(f"{cau}{goi_y}: ").strip()
@@ -202,27 +204,26 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     if rui_ro_pct > 3:
         in_ra(f"  ⚠ {rui_ro_pct:g}% vốn/lệnh là rất cao – thông lệ 1–2%, tối đa 3%.")
     so_nguyen = lambda x: float(str(x).replace(".", "").replace(",", "").replace(" ", ""))
-    in_ra("  -- Cơ cấu cổ phiếu (BCTC / BCTN / HOSE-HNX; bỏ trống = lấy Vietstock → TCBS) --")
-    for cg in CHU_GIAI_CP:
-        in_ra(f"     • {cg}")
-    if pre:
-        in_ra(f"     (số nạp sẵn lấy từ {pre['nguon_cp']})")
-    kl_ph    = hoi("KL CP ĐÃ PHÁT HÀNH", pre.get("kl_phat_hanh"), so_nguyen, khoa="kl_ph")
-    kl_ny    = hoi("KL CP ĐANG NIÊM YẾT", pre.get("kl_niem_yet"), so_nguyen, khoa="kl_ny")
-    cp_quy   = hoi("Số CỔ PHIẾU QUỸ", pre.get("cp_quy"), so_nguyen, khoa="cp_quy")
-    so_huu_nn = hoi("Sở hữu nước ngoài % (bỏ trống = online → CTCK)", None, float, khoa="so_huu_nn")
-    beta_nhap = hoi("Beta (bỏ trống = tự tính so VNINDEX → CTCK)", None, float, khoa="beta")
+    # Số CP (phát hành/niêm yết/quỹ), sở hữu NN, beta, P/B, ROE, P/E, vốn hoá: KHÔNG hỏi nữa – lấy tự động
+    # (TCBS → VNDirect → Yahoo, đối chiếu chéo; beta tự tính so VNINDEX). Muốn ghi đè: truyền vào main(kl_ph=..., ...).
+    if _CHAY["tuong_tac"]:
+        in_ra("  (Số CP, vốn hoá, sở hữu NN, beta, P/E, P/B, ROE: lấy tự động từ nguồn dữ liệu – không cần nhập)")
+    kl_ph    = hoi("KL CP ĐÃ PHÁT HÀNH", pre.get("kl_phat_hanh"), so_nguyen, khoa="kl_ph", chi_tham_so=True)
+    kl_ny    = hoi("KL CP ĐANG NIÊM YẾT", pre.get("kl_niem_yet"), so_nguyen, khoa="kl_ny", chi_tham_so=True)
+    cp_quy   = hoi("Số CỔ PHIẾU QUỸ", pre.get("cp_quy"), so_nguyen, khoa="cp_quy", chi_tham_so=True)
+    so_huu_nn = hoi("Sở hữu nước ngoài %", None, float, khoa="so_huu_nn", chi_tham_so=True)
+    beta_nhap = hoi("Beta", None, float, khoa="beta", chi_tham_so=True)
     dung_pre_cp = bool(pre) and (kl_ph, kl_ny, cp_quy) == (pre.get("kl_phat_hanh"), pre.get("kl_niem_yet"),
                                                          pre.get("cp_quy"))
     csv_vni  = hoi("File CSV VNINDEX (bỏ trống)", None, khoa="csv_vni")
     nhom_mac_dinh = ",".join(pre.get("nhom_nganh", NHOM_NGANH.get(symbol, [])))
     nhom_str = hoi("Mã cùng ngành để so sánh (cách nhau ',', '-' = bỏ qua)", nhom_mac_dinh or None, khoa="nhom")
     nhom_ma = [m.strip().upper() for m in (nhom_str or "").split(",") if m.strip() and m.strip() != "-"]
-    in_ra("  -- Cơ bản tối thiểu (bỏ trống = online/CTCK) --")
-    pb_nhap  = hoi("P/B (lần)", None, float, khoa="pb")
-    roe_nhap = hoi("ROE (%)", None, float, khoa="roe")
+    pb_nhap  = hoi("P/B (lần)", None, float, khoa="pb", chi_tham_so=True)
+    roe_nhap = hoi("ROE (%)", None, float, khoa="roe", chi_tham_so=True)
+    lnst_nhap = hoi("LNST 4 quý (tỷ đồng)", None, float, khoa="lnst_4q", chi_tham_so=True)
     la_ctck  = symbol in MA_CTCK
-    margin   = hoi("Dư nợ margin (tỷ đồng)", None, float, khoa="margin") if la_ctck else None
+    margin   = hoi("Dư nợ margin (tỷ đồng)", None, float, khoa="margin", chi_tham_so=True) if la_ctck else None
     ngay_kqkd = hoi("Ngày công bố KQKD tiếp theo (dd/mm/yyyy, bỏ trống = theo quy định)", None, khoa="ngay_kqkd")
     ngay_gdkhq = hoi("Ngày GDKHQ sắp tới (dd/mm/yyyy, bỏ trống nếu không có)", pre.get("gdkhq"), khoa="ngay_gdkhq")
 
@@ -238,7 +239,6 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     vni = tai_vnindex(start, csv_vni)
     if vni is None:
         in_ra("  ⚠ Không có dữ liệu VNINDEX → không tính Beta / so sánh hiệu suất.")
-    vs = lay_cp_vietstock(symbol)
     info = lay_thong_tin_dn(symbol)
     san = _chuan_san(san_nhap) or _chuan_san(info.get("san"))
     if not san:
@@ -257,13 +257,20 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
                                    ("MT CTCK", mt_ctck), ("Tổng vốn", von_trieu), ("Sàn", san_nhap)) if v]
     if nhap_tay:
         ghi_nguon("Số liệu nhập tay", "Người dùng", ", ".join(nhap_tay))
-    cc = co_cau_co_phieu(kl_ph, kl_ny, cp_quy, vs, info.get("so_cp"),
-                         nhan_nhap=f"CTCK/BCTC: {pre['nguon_cp']}" if dung_pre_cp else "Nhập tay")
+    cc = co_cau_co_phieu(kl_ph, kl_ny, cp_quy, info.get("ung_vien_cp"),
+                         nhan_nhap=f"CTCK/BCTC: {pre['nguon_cp']}" if dung_pre_cp else "Tham số main()",
+                         lech_pct=cfg.LECH_SO_CP_PCT)
     if dung_pre_cp:
         ghi_nguon("Cơ cấu cổ phiếu", "CTCK", pre["nguon_cp"])
     if not cc["kl_luu_hanh"]:
-        CANH_BAO_DU_LIEU.append("THIẾU số CP lưu hành → không có vốn hoá/EPS (nhập tay KL phát hành & CP quỹ).")
+        CANH_BAO_DU_LIEU.append("THIẾU số CP lưu hành → không có vốn hoá/EPS (truyền main(kl_ph=..., cp_quy=...)).")
     tt = thong_tin_giao_dich(df_ngay, vni, cc, so_huu_nn, beta_nhap)
+    if info.get("von_hoa_yahoo") and tt.get("von_hoa") == tt.get("von_hoa"):        # kiểm tra chéo vốn hoá
+        lech = (tt["von_hoa"] / info["von_hoa_yahoo"] - 1) * 100
+        tt["von_hoa_yahoo"] = info["von_hoa_yahoo"]
+        if abs(lech) > cfg.LECH_VON_HOA_PCT:
+            cc["canh_bao_cp"].append(f"Vốn hoá tự tính {so_vn(tt['von_hoa'], 0)} tỷ lệch {lech:+.1f}% so với Yahoo "
+                                     f"({so_vn(info['von_hoa_yahoo'], 0)} tỷ) – kiểm tra số CP lưu hành.")
     tt["nguon_beta"] = "Nhập tay" if beta_nhap is not None else "Tự tính 52 tuần so VNINDEX"
     if (tt["beta"] is None or tt["beta"] != tt["beta"]) and pre.get("beta"):
         tt["beta"], tt["nguon_beta"] = pre["beta"], f"CTCK – {pre['nguon_beta']}"
@@ -331,18 +338,23 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     bt0 = backtest_quy_tac(d_ngay, kq["Tuần"]["df"], n_phien, loc_tuan=False)
 
     cb = {"la_ctck": la_ctck, "lich": lich, "ngay_kqkd": ngay_kqkd, "ngay_gdkhq": ngay_gdkhq, "thieu": []}
-    online = lay_chi_so_co_ban(symbol) if xuat_file else {}
+    online = lay_chi_so_co_ban(symbol, ht, cc["kl_luu_hanh"], lnst_nhap) \
+        if (xuat_file or _CHAY["tuong_tac"] or lnst_nhap is not None) else {}
     chi_so_ctck = {t: (v, n) for t, v, n in pre.get("chi_so", [])}
     for ten, nhap, khoa_ctck in (("P/E", None, "P/E TTM (lần)"), ("P/B", pb_nhap, "P/B (lần)"),
                                  ("ROE %", roe_nhap, "ROE (%)")):
         if nhap is not None:
-            cb[ten] = (nhap, "Nhập tay")
+            cb[ten] = (nhap, "Tham số main()")
         elif ten in online:
-            cb[ten] = (online[ten], f"TCBS {online.get('ky', '')}")
+            cb[ten] = (online[ten], online.get("cach_tinh_pe", online.get("nguon", "")) if ten == "P/E"
+                       else online.get("nguon", ""))
         elif khoa_ctck in chi_so_ctck:
             cb[ten] = chi_so_ctck[khoa_ctck]
         elif ten != "P/E":
             cb["thieu"].append(ten)
+    for ten, khoa in (("EPS 4 quý (đồng)", "EPS 4Q"), ("LNST 4 quý (tỷ đồng)", "LNST 4 quý (tỷ đồng)")):
+        if online.get(khoa) is not None:
+            cb[ten] = (online[khoa], online.get("cach_tinh_eps", ""))
     if margin is not None:
         cb["Dư nợ margin (tỷ đồng)"] = (margin, "Nhập tay")
     tt5 = lap_tom_tat(symbol, ht, df_ngay.index[-1], qd, stop, kb, qr, dx, df_ngay, kq)
