@@ -661,6 +661,30 @@ def kich_ban_chinh(df_ngay, kq, ht, stop, mt_chinh, mt_nhap, so_cp, gia_von, n_p
     else:
         hien_tai = "CƠ SỞ, nghiêng TIÊU CỰC (MACD ngày dưới Signal)"
 
+    # [MỚI] Thống kê nghiêng về kịch bản nào (xác suất TRỘN) – tách bạch với đà kỹ thuật ở trên
+    xs = ms["tron"]
+    xs_cs = sum(x for x in (xs.get("giua"), xs.get("ngang")) if x == x and x is not None)
+    nhom_xs = [("TÍCH CỰC", xs.get("tren")), ("CƠ SỞ", xs_cs), ("TIÊU CỰC", xs.get("duoi"))]
+    nhom_xs = [(t, x) for t, x in nhom_xs if x is not None and x == x]
+    thong_ke = ""
+    canh_bao_kb = []
+    if nhom_xs:
+        ten_max, x_max = max(nhom_xs, key=lambda t: t[1])
+        chi_tiet = {"TÍCH CỰC": f"chạm {mt_tc:,.2f} ({p(mt_tc):+.1f}%) trước khi chạm cắt lỗ",
+                    "CƠ SỞ": f"không chạm cắt lỗ lẫn MT tích cực (dao động {cat_lo:,.2f} – {mt_tc:,.2f})",
+                    "TIÊU CỰC": f"chạm cắt lỗ {cat_lo:,.2f} ({p(cat_lo):+.1f}%) trước khi lên {mt_tc:,.2f} "
+                                f"({p(mt_tc):+.1f}%)"}[ten_max]
+        thong_ke = f"nghiêng {ten_max} – {x_max:.0f}% {chi_tiet}"
+        x_duoi = xs.get("duoi")
+        if x_duoi is not None and x_duoi == x_duoi and x_duoi >= 50 and abs(p(cat_lo)) < bd:
+            canh_bao_kb.append(
+                f"Cắt lỗ chỉ cách giá {abs(p(cat_lo)):.1f}% – nhỏ hơn biến động thường thấy trong {n_phien} phiên "
+                f"(±{bd:.1f}%) → dễ bị quét; cân nhắc nới cắt lỗ / giảm khối lượng, hoặc chờ giá về gần hỗ trợ "
+                f"{hotro:,.2f} rồi mới mua")
+        if ten_max == "TIÊU CỰC" and "TÍCH CỰC" in hien_tai:
+            canh_bao_kb.append("Đà kỹ thuật ngắn hạn tốt nhưng thống kê bất lợi → ưu tiên quản trị rủi ro hơn "
+                               "là mua đuổi")
+
     # D3 – biên độ: σ phẳng 1 năm, σ EWMA, phân vị thực nghiệm lợi suất n phiên (trọng số gần đây)
     rn = np.log(df_ngay.close.shift(-n_phien) / df_ngay.close).dropna().values
     wn = _trong_so_gan_day(len(rn), tong)
@@ -681,7 +705,8 @@ def kich_ban_chinh(df_ngay, kq, ht, stop, mt_chinh, mt_nhap, so_cp, gia_von, n_p
             "ev_dk": ev_dk, "ev_qd": ev_qd, "ev_gop": ev_gop, "gop": gop, "gop_ct": gop_ct, "ev_co_so": ev_co_so,
             "ev_truoc_wf": ev_truoc, "lech_wf": lech_wf, "dk_mo_ta": dk[1] if dk else "—", "dk_du": bool(dk_du),
             "p_thang": ms["tron"]["tren"] + ms["tron"]["giua"] if ms["tron"]["so_mau"] else np.nan,
-            "hien_tai": hien_tai, "bien_do": bien_do, "sigma_nam": sigma * np.sqrt(252) * 100,
+            "hien_tai": hien_tai, "thong_ke": thong_ke, "canh_bao_kb": canh_bao_kb, "n_phien": n_phien,
+            "bien_do": bien_do, "sigma_nam": sigma * np.sqrt(252) * 100,
             "sigma_ewma_nam": s_ewma * np.sqrt(252) * 100, "kc": kc, "hotro": hotro, "cat_lo": cat_lo,
             "mt_cs": mt_cs, "mt_tc": mt_tc, "gia_tc": gia_tieu_cuc, "hotro_that": hotro_that, "so_mau": ms["all"]["so_mau"],
             "so_mau1": ms["1y"]["so_mau"], "n": n_phien, "xs_cham_stop": xs_cham_stop, "t_cham_stop": t_cham_stop,

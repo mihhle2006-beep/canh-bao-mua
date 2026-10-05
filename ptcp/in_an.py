@@ -51,9 +51,49 @@ def _la_bang(dong):
     return len(dong) >= 3 and sum(1 for d in dong if "   " in d.strip()) >= 2
 
 
+_RE_KE = re.compile(r"^\s*([#═=─\-]{20,})\s*$")
+_RE_TIEU_DE = re.compile(r"^\s*(PHẦN [A-Z]\b|[A-J]\d*\.\s|J\d\.|KHUNG |TÓM TẮT|KẾT LUẬN|NGUỒN DỮ LIỆU|BÁO CÁO|"
+                         r"ĐỐI CHIẾU|DANH MỤC|PHÂN TÍCH)")
+
+
+def _to_mau(s):
+    """Tô xanh lá đường kẻ & tiêu đề mục khi IN (file báo cáo .txt/.html vẫn là chữ thường)."""
+    from .mau import BAT_MAU, xanh, xanh_nhat
+    if not BAT_MAU:
+        return s
+    ra = []
+    for d in s.split("\n"):
+        if _RE_KE.match(d):
+            ra.append(xanh_nhat(d))
+        elif _RE_TIEU_DE.match(d) and len(d) < 160:
+            ra.append(xanh(d))
+        else:
+            ra.append(d)
+    return "\n".join(ra)
+
+
+_RE_MUC = re.compile(r"^\s*(TÓM TẮT|PHẦN ([A-J])\.|([A-J]\d)\.\s|XUẤT KẾT QUẢ)")
+MUC_GON = {"TÓM TẮT", "C", "D2", "J4"}
+
+
+def _loc_gon(s):
+    """Chế độ in gọn: chỉ giữ dòng thuộc Tóm tắt, Phần C, D2, J4 (+ dòng báo đã lưu file ✔ / cảnh báo ⚠)."""
+    giu = []
+    for d in s.split("\n"):
+        m = _RE_MUC.match(d)
+        if m:
+            _CHAY["muc"] = m.group(3) or m.group(2) or ("TÓM TẮT" if m.group(1) == "TÓM TẮT" else "XUAT")
+        muc = _CHAY.get("muc", "")
+        if muc in MUC_GON or muc.startswith("C") or d.lstrip().startswith(("✔ Đã", "⚠ Không")) or \
+                (muc == "XUAT" and "✔" in d):
+            giu.append(d)
+    return "\n".join(giu) if giu else None
+
+
 def in_ra(*args, sep=" ", end="\n", file=None, flush=False):
     """[MỚI] Thay print: tự xuống dòng theo độ rộng màn hình & ghi lại báo cáo (không ghi đè print của notebook)."""
-    s = sep.join(str(a) for a in args)
+    from .so import vn_hoa
+    s = vn_hoa(sep.join(str(a) for a in args))          # số kiểu Việt Nam ở mọi đầu ra (màn hình, .txt, .html)
     if file is not None:
         return _print_goc(s, end=end, file=file, flush=flush)
     if _CHAY.get("im_lang"):
@@ -72,10 +112,14 @@ def in_ra(*args, sep=" ", end="\n", file=None, flush=False):
                                  break_on_hyphens=False) or [""]
         s = "\n".join(moi)
     BAO_CAO_TEXT.append(s + end)
-    _print_goc(s, end=end, flush=flush)
+    if _CHAY.get("gon"):
+        s = _loc_gon(s)
+        if s is None:
+            return
+    _print_goc(_to_mau(s), end=end, flush=flush)
 
 
-def ve_bang(df, doi_ten=None, dinh_dang=None, an=None, rong=None, thut=2):
+def ve_bang(df, doi_ten=None, dinh_dang=None, an=None, rong=None, thut=2, can_phai=None):
     """
     [MỚI] Vẽ bảng dạng văn bản gọn cho màn hình hẹp (thay DataFrame.to_string):
       • cột chữ căn trái, cột số căn phải; tiêu đề tự xuống 2–3 dòng để cột số hẹp lại;
@@ -83,13 +127,15 @@ def ve_bang(df, doi_ten=None, dinh_dang=None, an=None, rong=None, thut=2):
       • nếu vẫn tràn, cột CHỮ dài nhất tự xuống dòng trong ô → bảng không bị tách thành nhiều khối.
     doi_ten: {cột: tên hiển thị}; dinh_dang: {cột: "{:+.1f}" hoặc hàm}; an: các cột bỏ đi.
     """
+    from .so import la_cot_ty_le, so4
     if df is None or not len(df):
         return " " * thut + "(không có dữ liệu)"
     d = df.drop(columns=[c for c in (an or []) if c in df.columns])
     doi_ten, dinh_dang = doi_ten or {}, dinh_dang or {}
     W = (rong or _do_rong()) - thut
     cols = list(d.columns)
-    la_so = {c: pd.api.types.is_numeric_dtype(d[c]) and not pd.api.types.is_bool_dtype(d[c]) for c in cols}
+    la_so = {c: (pd.api.types.is_numeric_dtype(d[c]) and not pd.api.types.is_bool_dtype(d[c]))
+             or c in (can_phai or ()) for c in cols}
 
     def o(c, v):
         if v is None or (isinstance(v, float) and np.isnan(v)) or (v is pd.NaT):
@@ -104,6 +150,8 @@ def ve_bang(df, doi_ten=None, dinh_dang=None, an=None, rong=None, thut=2):
         if isinstance(v, (float, np.floating)):
             if np.isnan(v):
                 return "–"
+            if la_cot_ty_le(doi_ten.get(c, c)):                 # % và "lần": tối đa 4 chữ số thập phân
+                return so4(v, dau="+" in str(f or ""))
             v = 0.0 if abs(v) < 5e-3 else float(v)
             return (f or "{:,.2f}").format(v)
         if isinstance(v, pd.Timestamp):
@@ -121,7 +169,7 @@ def ve_bang(df, doi_ten=None, dinh_dang=None, an=None, rong=None, thut=2):
     tong = sum(w.values()) + len(sep) * (len(cols) - 1)
     quan = None
     if tong > W:
-        chu = [c for c in cols if not la_so[c]]
+        chu = [c for c in cols if not la_so[c] and c not in (can_phai or ())]
         if chu:
             quan = max(chu, key=lambda c: w[c])
             w[quan] = max(14, W - (tong - w[quan]))

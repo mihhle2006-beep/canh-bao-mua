@@ -46,7 +46,7 @@ SO_NEN_HIEN_THI = {"Tuần": 156, "Ngày": 250, "Giờ": 200}
 MA_NGAN, MA_DAI = 50, 200    # đường trung bình động giá đóng cửa vẽ trên biểu đồ (MA50, MA200)
 
 
-MAU_MA = {MA_NGAN: "darkorange", MA_DAI: "purple"}
+MAU_MA = {MA_NGAN: "#F9A825", MA_DAI: "#6D4C41"}      # MA ngắn vàng hổ phách, MA dài nâu (nền xanh lá chủ đạo)
 
 
 KEO_DAI = {"Tuần": 12, "Ngày": 25, "Giờ": 30}       # kéo dài đường xu hướng sang tương lai
@@ -130,7 +130,11 @@ HE_SO_THI_TRUONG_XAU = 0.5   # khối lượng × 0.5 cho mỗi yếu tố xấu
 SO_PHIEN_SU_KIEN = 5         # KQKD / GDKHQ trong 5 phiên tới → không mở vị thế mới
 
 
-THU_TU_NGUON_SO_CP = ["TCBS", "VNDirect", "Yahoo"]   # ưu tiên khi chọn số CP lưu hành (nhập tay luôn đứng đầu)
+THU_TU_NGUON_SO_CP = ["TCBS", "vnstock", "VNDirect", "Yahoo"]   # ưu tiên khi chọn số CP lưu hành (nhập tay luôn đứng đầu)
+DUNG_VNSTOCK = True           # dùng thư viện vnstock (bản Cộng đồng) làm nguồn; trên Colab tự cài
+IN_GON = False                # True / main(gon=True): màn hình chỉ in Tóm tắt, Phần C, D2, J4 – file vẫn đầy đủ
+SO_MA_SO_SANH_FA = 2          # Phần J5: số mã cùng ngành (đầu danh sách) đem so sánh 10 tiêu chí (như FiinTrade)
+CHO_VNSTOCK = False           # True: hết lượt vnstock thì CHỜ (chậm, đúng hạn mức) thay vì chuyển nguồn khác
 LECH_SO_CP_PCT = 0.5          # các nguồn lệch nhau > 0,5% số CP → cảnh báo
 LECH_VON_HOA_PCT = 2.0        # vốn hoá tự tính lệch Yahoo > 2% → cảnh báo
 

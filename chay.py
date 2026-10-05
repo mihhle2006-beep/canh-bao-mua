@@ -26,6 +26,7 @@ from canh_bao.thong_bao import (can_bao, doc_trang_thai, dong_khung, ghi_lich_su
                                 tin_mua_ngay, tin_tong_ket)
 from canh_bao.tieu_chi import thi_truong
 from canh_bao import vi_the
+from canh_bao import trinh_bay
 
 
 def main(argv=None):
@@ -57,7 +58,7 @@ def main(argv=None):
     vni = tai("VNINDEX", "D", C.NGAY_BAT_DAU, chi_so=True)
     tt = thi_truong(vni, bay_gio)
     print(tt["nhan"])
-    ds = []
+    ds, du_lieu_ngay = [], {}
     for ma in ds_ma:
         dn = tai(ma, "D", C.NGAY_BAT_DAU)
         if dn is None:
@@ -68,6 +69,7 @@ def main(argv=None):
         dh, dp = tai(ma, "60"), tai(ma, C.KHUNG_PHUT)
         pt = phan_tich_ngay(ma, bay_gio, lam_moi=(che_do == "tong_ket")) if C.DUNG_PTCP else None
         kq = phan_tich_ma(ma, dn, dh, dp, vni, tt, bay_gio, pt)
+        du_lieu_ngay[ma] = dn
         if ma in vt:
             kq["ban"] = vi_the.danh_gia_ban(vt[ma], kq, dn)
         ds.append(kq)
@@ -80,11 +82,15 @@ def main(argv=None):
         return 0
 
     if che_do == "tong_ket":
-        noi_dung = tin_tong_ket([k for k in ds if k["ma"] not in an], tt, bay_gio)
+        cong_khai = [k for k in ds if k["ma"] not in an]
+        noi_dung = tin_tong_ket(cong_khai, tt, bay_gio)
         giu = [k for k in ds if "ban" in k]
         if giu:
             noi_dung += "\n\n💼 VỊ THẾ ĐANG GIỮ\n" + "\n".join(vi_the.dong_tong_ket(vt[k["ma"]], k["ban"]) for k in giu)
-        gui(noi_dung, rieng_tu=bool(giu)) if not a.khong_gui else print(noi_dung)
+        anh = trinh_bay.ve_bang_tong_ket([trinh_bay.dong_bang_tong_ket(k) for k in cong_khai],
+                                         f"TỔNG KẾT {pd.Timestamp(bay_gio):%d/%m/%Y} – {tt['nhan']}") \
+            if C.GUI_ANH else None
+        gui(noi_dung, rieng_tu=bool(giu), anh=anh) if not a.khong_gui else print(noi_dung)
         return 0
 
     trang_thai = doc_trang_thai()
@@ -95,7 +101,9 @@ def main(argv=None):
             noi_dung = tin_mua_ngay(kq, bay_gio)
             if kq["ma"] in vt:
                 noi_dung += f"\n💼 Đang giữ {vt[kq['ma']]['so_cp']:,.0f} CP – đây là tín hiệu MUA THÊM"
-            gui(noi_dung, rieng_tu=kq["ma"] in vt) if not a.khong_gui else print(noi_dung)
+            anh = trinh_bay.ve_bieu_do_ma(kq["ma"], du_lieu_ngay[kq["ma"]], kq["gia"], kq.get("muc_tieu"),
+                                          kq.get("cat_lo"), tieu_de=f"{kq['ma']} – MUA NGAY") if C.GUI_ANH else None
+            gui(noi_dung, rieng_tu=kq["ma"] in vt, anh=anh) if not a.khong_gui else print(noi_dung)
             if kq["ma"] not in an:                       # lịch sử commit lên repo công khai → bỏ mã ẩn
                 ghi_lich_su(kq, bay_gio)
             so_bao += 1
@@ -109,7 +117,11 @@ def main(argv=None):
         kb = kq.get("ban")
         if kb and vi_the.can_bao_ban(kq["ma"], kb["muc"], bay_gio, tt_ban):
             noi_dung = vi_the.tin_ban(vt[kq["ma"]], kb, kq, bay_gio)
-            gui(noi_dung, rieng_tu=True) if not a.khong_gui else print(noi_dung)
+            v = vt[kq["ma"]]
+            anh = trinh_bay.ve_bieu_do_ma(kq["ma"], du_lieu_ngay[kq["ma"]], kq["gia"], v.get("muc_tieu"), v.get("cat_lo"),
+                                          v.get("gia_von"), tieu_de=f"{kq['ma']} – {vi_the.NHAN[kb['muc']]}") \
+                if C.GUI_ANH else None
+            gui(noi_dung, rieng_tu=True, anh=anh) if not a.khong_gui else print(noi_dung)
             so_ban += 1
     if vt:
         vi_the.ghi_trang_thai_ban(tt_ban)

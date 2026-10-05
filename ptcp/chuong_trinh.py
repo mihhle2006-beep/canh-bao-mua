@@ -35,9 +35,10 @@ from .in_an import (
 )
 from .du_lieu import (
     CANH_BAO_DU_LIEU, DIA_CHI_NGUON, NGUON_DA_DUNG, NHAT_KY_NGUON, _tai_ngay, cac_nguon_gio,
-    chuan_hoa, doi_chieu_nguon, ghi_nguon, gop_tuan, lay_chi_so_co_ban,
+    chuan_bi_vnstock, chuan_hoa, doi_chieu_nguon, ghi_nguon, gop_tuan, lay_bctc_nam, lay_chi_so_co_ban,
     lay_thong_tin_dn, tai_nhom_nganh, tai_vnindex, thu_cac_nguon, tu_csv,
 )
+from . import fiintrade
 from .chi_bao import (
     _duong, duong_xu_huong, phan_tich_tin_hieu, tim_dinh_day, tinh_chi_bao,
 )
@@ -160,11 +161,12 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
       xuat_file=False: không vẽ biểu đồ / xuất file (dùng khi quét nhiều mã).
     Trả về dict kết quả (khuyến nghị, EV, cắt lỗ, mục tiêu, ...).
     """
-    sai = set(tham_so) - set(KHOA_THAM_SO)
+    sai = set(tham_so) - set(KHOA_THAM_SO) - {"gon"}
     if sai:
         raise ValueError(f"Tham số không hợp lệ: {sorted(sai)}. Dùng được: {', '.join(KHOA_THAM_SO)}")
     _THAM_SO.clear(); _THAM_SO.update(tham_so)
     _CHAY["tuong_tac"], _CHAY["im_lang"] = tuong_tac, im_lang
+    _CHAY["gon"], _CHAY["muc"] = bool(tham_so.pop("gon", cfg.IN_GON) if "gon" in tham_so else cfg.IN_GON), ""
     BAO_CAO_TEXT.clear(); NHAT_KY_NGUON.clear(); NGUON_DA_DUNG.clear(); CANH_BAO_DU_LIEU.clear()
     in_ra("=" * 84)
     in_ra(" PHÂN TÍCH TỔNG HỢP: % TĂNG/GIẢM + MACD ĐỈNH ĐÁY + ĐIỂM MUA + MỤC TIÊU + QUẢN TRỊ RỦI RO")
@@ -227,6 +229,8 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     ngay_kqkd = hoi("Ngày công bố KQKD tiếp theo (dd/mm/yyyy, bỏ trống = theo quy định)", None, khoa="ngay_kqkd")
     ngay_gdkhq = hoi("Ngày GDKHQ sắp tới (dd/mm/yyyy, bỏ trống nếu không có)", pre.get("gdkhq"), khoa="ngay_gdkhq")
 
+    if not csv_ngay:
+        chuan_bi_vnstock()                       # Colab: tự cài vnstock (bản Cộng đồng) nếu thiếu
     thu_muc = f"ket_qua_{symbol}_{date.today():%Y%m%d}"
     if xuat_file:
         os.makedirs(thu_muc, exist_ok=True)
@@ -357,10 +361,21 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
             cb[ten] = (online[khoa], online.get("cach_tinh_eps", ""))
     if margin is not None:
         cb["Dư nợ margin (tỷ đồng)"] = (margin, "Nhập tay")
+    # [MỚI] PHẦN J – phân tích kiểu FiinTrade (chỉ khi xuất báo cáo / chạy hỏi đáp; không đổi khuyến nghị)
+    fj = None
+    if xuat_file or _CHAY["tuong_tac"]:
+        in_ra("\nĐang lấy BCTC năm cho phân tích 10 tiêu chí ...")
+        bctc = lay_bctc_nam(symbol)
+        bctc_nganh = {m: lay_bctc_nam(m, im_lang=True) for m in list(nhom)[:cfg.SO_MA_SO_SANH_FA]}
+        fj = fiintrade.phan_tich(symbol, d_ngay, vni, nhom, tt, cb, online, bctc, bctc_nganh,
+                                 info.get("nganh", ""), MA_CTCK)
     tt5 = lap_tom_tat(symbol, ht, df_ngay.index[-1], qd, stop, kb, qr, dx, df_ngay, kq)
     canh_bao_tt = CANH_BAO_DU_LIEU + canh_bao_dl + stop["canh_bao"] + ttr["canh_bao"]
     if kb["ms"]["tron"].get("tin_cay_thap"):
         canh_bao_tt.append("Mẫu thống kê hiệu dụng nhỏ → xác suất/EV có độ tin cậy THẤP.")
+    if fj and fj["fa"] and fj["fa"]["so_nguy_hiem"] >= 2:
+        canh_bao_tt.append(f"Phân tích tài chính 10 tiêu chí: {fj['fa']['so_nguy_hiem']} tiêu chí NGUY HIỂM "
+                           f"({fj['fa']['tom_tat']}) – xem Phần J5.")
 
     # ==================================================================
     # GIAI ĐOẠN 3 – IN BÁO CÁO
@@ -389,6 +404,8 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
         in_ra(f"\n{'─' * 84}\n KHUNG {ten.upper()}  ({len(d)} nến)\n{'─' * 84}")
         in_dinh_day(ten, kq[ten]["pv"], kq[ten]["xh"])
         in_tin_hieu(ten, kq[ten]["ds"], kq[ten]["diem"])
+        kq[ten]["nen"] = fiintrade.nen_va_tich_luy(d, ten)          # [MỚI] tích lũy & mô hình nến 3 nến gần nhất
+        fiintrade.in_nen_khung(ten, kq[ten]["nen"])
         if kq[ten]["mt"]:
             in_muc_tieu(ten, kq[ten]["mt"], ht, stop)
 
@@ -459,6 +476,8 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     in_boi_canh(symbol, bc, list(nhom), ttr)
     in_co_ban(symbol, cb)
     in_backtest(bt, bt0, n_phien)
+    if fj:
+        fiintrade.in_phan_J(symbol, fj)
 
     bang_doi_chieu = None
     if xuat_file and NGUON_DA_DUNG.get("NGÀY") in DIA_CHI_NGUON and NGUON_DA_DUNG.get("NGÀY") not in ("CSV", "Cache"):
@@ -471,7 +490,7 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
                "tom_tat": tt5, "thu_muc": thu_muc if xuat_file else None,
                # [MỚI] dùng cho phân tích DANH MỤC (dmuc) – không đổi kết quả phân tích 1 mã
                "df_ngay": df_ngay, "tt": tt, "canh_bao": canh_bao_tt, "mt_nhap": mt_nhap,
-               "gia_von": gia_von, "so_cp": so_cp, "kh": kh, "ngay_mua": ngay_mua}
+               "gia_von": gia_von, "so_cp": so_cp, "kh": kh, "ngay_mua": ngay_mua, "fiintrade": fj}
     if not xuat_file:
         return ket_qua
 
@@ -479,6 +498,9 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     # GIAI ĐOẠN 4 – XUẤT FILE (PNG, Excel, CSV, HTML, TXT, ZIP)
     # ==================================================================
     in_ra(f"\n{'=' * 84}\n XUẤT KẾT QUẢ → thư mục {thu_muc}/\n{'=' * 84}")
+    from .bieu_do import ve_tom_tat_1_trang
+    anh_tom_tat = fp(f"{symbol}_tom_tat.png")
+    ve_tom_tat_1_trang(symbol, df_ngay, df_ngay.index[-1], ht, qd, stop, qr, dx, kb, fj, anh_tom_tat)
     png = [fp(f"{symbol}_quan_tri_rui_ro.png"), fp(f"{symbol}_kich_ban.png")]
     ve_quan_tri_rui_ro(symbol, df_ngay, dx, qr, png[0], kq["Ngày"]["pv"], ctck_gan_nhat(symbol))
     ve_kich_ban(symbol, df_ngay, kb, png[1], kq["Ngày"]["pv"])
@@ -568,6 +590,8 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
             bt["bang"].to_excel(w, sheet_name="I Backtest", index=False)
             if wf is not None:
                 wf["bang"].to_excel(w, sheet_name="Walk-forward", index=False)
+            if fj:
+                fiintrade.ghi_excel(w, fj)
             pd.DataFrame(NHAT_KY_NGUON).to_excel(w, sheet_name="Nguon du lieu", index=False)
             if bang_ctck is not None:
                 bang_ctck.to_excel(w, sheet_name="Bao cao CTCK", index=False)
@@ -581,17 +605,33 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
                 w, sheet_name="Muc tieu", index=False)
             pd.DataFrame([[t, kh, nd, dd_] for t in kq for kh, nd, dd_ in kq[t]["ds"]],
                          columns=["Khung", "", "Tín hiệu", "Điểm"]).to_excel(w, sheet_name="Tin hieu mua", index=False)
+            pd.DataFrame([[t, kq[t]["nen"]["so_nen_tich_luy"], kq[t]["nen"]["nen_thap"], kq[t]["nen"]["nen_cao"],
+                           " | ".join(f"{a}: {b}" for a, b in kq[t]["nen"]["mo_hinh"])] for t in kq if "nen" in kq[t]],
+                         columns=["Khung", "Số nến tích lũy", "Đáy nền", "Đỉnh nền", "Mô hình nến 3 nến gần nhất"]
+                         ).to_excel(w, sheet_name="B Nen & tich luy", index=False)
             for ten in kq:
                 kq[ten]["pv"].drop(columns=["pos"]).to_excel(w, sheet_name=f"Dinh day {ten_file[ten]}", index=False)
             bang_khung.to_excel(w, sheet_name="Khung thoi gian", index=False)
             bang_phien.to_excel(w, sheet_name="Phan loai phien", index=False)
             d_ngay.drop(columns=["pos"]).round(4).to_excel(w, sheet_name="Du lieu ngay")
+        pass                                             # trang trí Excel ở dưới (sau khi có thẻ số liệu)
         in_ra(f"  ✔ Đã xuất Excel: {fp(f'{symbol}_phan_tich_tong_hop.xlsx')}")
     except PermissionError:
         in_ra("  ⚠ Không ghi được Excel – hãy đóng file Excel cũ rồi chạy lại.")
 
     in_ra("\n(Công cụ tham khảo dựa trên dữ liệu quá khứ – không phải khuyến nghị đầu tư)")
-    xuat_html(fp(f"{symbol}_bao_cao.html"), symbol, tt5, qd, cac_bang + [("Backtest", bt["bang"].tail(20))], png)
+    fa_ = (fj or {}).get("fa") or {}
+    the = [("Khuyến nghị", qd["khuyen_nghi"], qd["mau"]), ("Giá (nghìn đồng)", f"{ht:,.2f}", "#1f2d1f"),
+           ("Cắt lỗ", f"{stop['gia']:,.2f} ({stop['pct']:+.1f}%)", "#C62828"),
+           ("MT đề xuất", f"{dx['chon']:,.2f} ({(dx['chon'] / ht - 1) * 100:+.1f}%)", "#1B5E20"),
+           ("R/R", f"{qr['rr']:.2f}", "#1f2d1f"), ("EV sau phí", f"{kb['ev_qd']:+.2f}%", "#1f2d1f"),
+           ("Tài chính 10 tiêu chí", f"{fa_['diem']:.0f}/100" if fa_ and fa_.get("diem") == fa_.get("diem") else "–",
+            "#1B5E20")]
+    from .excel_xanh import trang_tri_excel
+    trang_tri_excel(fp(f"{symbol}_phan_tich_tong_hop.xlsx"), the=the, anh=[anh_tom_tat, png[0], png[1]],
+                    tieu_de=tt5["tieu_de"])
+    xuat_html(fp(f"{symbol}_bao_cao.html"), symbol, tt5, qd, cac_bang + [("Backtest", bt["bang"].tail(20))], png,
+              the=the, fj=fj, anh_tom_tat=anh_tom_tat)
     with open(fp(f"{symbol}_bao_cao.txt"), "w", encoding="utf-8") as f:
         f.write("".join(BAO_CAO_TEXT))
     file_zip = f"{thu_muc}.zip"

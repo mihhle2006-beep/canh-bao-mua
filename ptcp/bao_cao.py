@@ -157,7 +157,11 @@ def in_kich_ban_chinh(kb, ht):
         in_ra(f"     Đang giữ    : {r['Đang nắm giữ']}")
         in_ra(f"     Chưa có CP  : {r['Chưa có cổ phiếu']}")
         in_ra(f"     Mốc giá     : {r['Ghi chú mốc']}")
-    in_ra(f"\n  Trạng thái hiện tại nghiêng về : {kb['hien_tai']}")
+    in_ra(f"\n  Đà kỹ thuật hiện tại : {kb['hien_tai']}")
+    if kb.get("thong_ke"):
+        in_ra(f"  Thống kê {kb.get('n_phien', '')} phiên tới : {kb['thong_ke']}")
+    for c in kb.get("canh_bao_kb", []):
+        in_ra(f"    ⚠ {c}")
     ms = kb["ms"]
     in_ra(f"\n  LỢI SUẤT KỲ VỌNG nếu mua & tuân thủ kế hoạch – theo LUẬT GIAO DỊCH VN (mua giá mở cửa phiên sau, "
           f"bán từ T+{T_CONG}, khoá sàn, gap; trừ phí {PHI_GD_KHU_HOI:g}% + trượt giá 2×{TRUOT_GIA_PCT:g}%):")
@@ -459,45 +463,110 @@ def in_tom_tat(tt5, qd, canh_bao):
 
 
 def _bang_html(df, so_le=2):
+    from .so import la_cot_ty_le, so4, vn_hoa
     if df is None or not len(df):
         return "<p><i>(không có dữ liệu)</i></p>"
-    return df.to_html(index=False, na_rep="–", border=0, classes="bang",
-                      float_format=lambda x: f"{x:,.{so_le}f}")
+    d = df.reset_index(drop=True)
+    so = {c: pd.api.types.is_numeric_dtype(d[c]) and not pd.api.types.is_bool_dtype(d[c]) for c in d.columns}
+
+    def o(c, v):
+        if v is None or (isinstance(v, float) and v != v) or v is pd.NaT:
+            return "–"
+        if isinstance(v, float):
+            return so4(v) if la_cot_ty_le(c) else f"{v:,.{so_le}f}"
+        if isinstance(v, pd.Timestamp):
+            return f"{v:%d/%m/%Y}"
+        return str(v)
+    dau = "".join(f"<th{' class=so' if so[c] else ''}>{_html.escape(str(c))}</th>" for c in d.columns)
+    than = "".join("<tr>" + "".join(f"<td{' class=so' if so[c] else ''}>{_html.escape(o(c, v))}</td>"
+                                    for c, v in r.items()) + "</tr>" for _, r in d.iterrows())
+    return vn_hoa(f'<table class="bang"><tr>{dau}</tr>{than}</table>')
 
 
-def xuat_html(file_html, symbol, tt5, qd, cac_bang, cac_png):
-    anh = ""
-    for f in cac_png:
-        if os.path.exists(f):
-            with open(f, "rb") as fh:
-                anh += (f'<figure><img src="data:image/png;base64,{base64.b64encode(fh.read()).decode()}"/>'
-                        f"<figcaption>{_html.escape(os.path.basename(f))}</figcaption></figure>")
-    kt = "".join(f"<li>{'✔' if ok else ('–' if ok is None else '✘')} {_html.escape(t)}</li>"
-                 for t, ok in qd["kiem_tra"])
-    bang = "".join(f"<h3>{_html.escape(t)}</h3>{_bang_html(b)}" for t, b in cac_bang)
+def xuat_html(file_html, symbol, tt5, qd, cac_bang, cac_png, the=None, fj=None, anh_tom_tat=None):
+    """Báo cáo HTML dạng DASHBOARD – tông xanh lá: thẻ số liệu, mục lục, ảnh tóm tắt, bảng, Phần J, biểu đồ."""
+    from .so import vn_hoa
+    e = lambda x: _html.escape(vn_hoa(str(x)))
+
+    def anh_b64(f):
+        if not f or not os.path.exists(f):
+            return ""
+        with open(f, "rb") as fh:
+            return (f'<figure><img src="data:image/png;base64,{base64.b64encode(fh.read()).decode()}"/>'
+                    f"<figcaption>{_html.escape(os.path.basename(f))}</figcaption></figure>")
+
+    the_html = "".join(f'<div class="o"><div class="nhan">{e(n)}</div><div class="so" style="color:{m}">{e(v)}</div></div>'
+                       for n, v, m in (the or []))
+    kt = "".join(f"<li>{'✔' if ok else ('–' if ok is None else '✘')} {e(t)}</li>" for t, ok in qd["kiem_tra"])
+    TEN = {"Muc tieu (3 moc moi khung)": "Mục tiêu (3 mốc mỗi khung)", "Kich ban chinh": "Kịch bản chính",
+           "Quan tri rui ro": "Quản trị rủi ro", "Bien do thong ke": "Biên độ thống kê",
+           "Boi canh thi truong": "Bối cảnh thị trường", "Phan loai phien": "Phân loại phiên",
+           "Bien dong theo khung": "Biến động theo khung", "Backtest": "Kiểm định lịch sử (backtest)"}
+    cac_bang = [(TEN.get(t, t), b) for t, b in cac_bang if t != "Tom tat"]      # tóm tắt đã có ở trên
+    muc = [("tom-tat", "Tóm tắt")] + [(f"b{k}", t) for k, (t, _) in enumerate(cac_bang)]
+    phan_j = ""
+    if fj:
+        for ma_, ten in (("J1", "J1. Tổng quan"), ("J2", "J2. Tài chính – BCTC theo năm"), ("J3", "J3. Kỹ thuật"),
+                         ("J4", "J4. Biến động giá (%)"), ("J5", "J5. Phân tích tài chính 10 tiêu chí")):
+            df = fj.get(ma_)
+            if df is None:
+                continue
+            muc.append((ma_, ten))
+            bang = _bang_html(df)
+            if ma_ == "J5":
+                for nhan, lop in (("Rất tốt", "f5"), ("Tốt", "f4"), ("Trung bình", "f3"), ("Cảnh báo", "f2"),
+                                  ("Nguy hiểm", "f1")):
+                    bang = bang.replace(f"<td>{nhan}</td>", f'<td class="{lop}">{nhan}</td>')
+            if ma_ == "J4":                                           # % tăng xanh, giảm đỏ
+                import re as _re
+                bang = _re.sub(r"<td class=so>(-[\d.,]+)</td>", r'<td class=so style="color:#C62828">\1</td>', bang)
+                bang = _re.sub(r"<td class=so>(\d[\d.,]*)</td>", r'<td class=so style="color:#2E7D32">\1</td>', bang)
+            kl = ""
+            if ma_ == "J4" and fj.get("J4_ket_luan"):
+                kl = "<ul>" + "".join(f"<li>{e(x)}</li>" for x in fj["J4_ket_luan"]) + "</ul>"
+            phan_j += f'<h2 id="{ma_}">{e(ten)}</h2><div class="cuon">{bang}</div>{kl}'
+    muc += [("bieu-do", "Biểu đồ"), ("day-du", "Báo cáo đầy đủ")]
+    bang_html = "".join(f'<h2 id="b{k}">{e(t)}</h2><div class="cuon">{_bang_html(b)}</div>'
+                        for k, (t, b) in enumerate(cac_bang))
+    nav = "".join(f'<a href="#{a}">{e(t)}</a>' for a, t in muc)
     van_ban = _html.escape("".join(BAO_CAO_TEXT))
     noi_dung = f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"><title>{symbol} – phân tích kỹ thuật</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>{symbol} – phân tích cổ phiếu</title>
 <style>
-body{{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0 auto;max-width:1200px;padding:16px;color:#222}}
-.tt{{border:2px solid {qd['mau']};border-radius:8px;padding:12px 18px;background:#fafafa}}
-.kn{{display:inline-block;background:{qd['mau']};color:#fff;padding:4px 12px;border-radius:4px;font-weight:700}}
-.bang{{border-collapse:collapse;font-size:13px;margin:6px 0 18px}} .bang td,.bang th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:right}}
-.bang th{{background:#f0f0f0}} .bang td:first-child,.bang th:first-child{{text-align:left}}
-div.cuon{{overflow-x:auto}} img{{max-width:100%}} figure{{margin:12px 0}} figcaption{{font-size:12px;color:#777}}
-pre{{background:#f6f6f6;padding:12px;overflow-x:auto;font-size:12px;line-height:1.35}}
+*{{box-sizing:border-box}} body{{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;color:#1f2d1f;background:#f6faf6}}
+header{{background:linear-gradient(120deg,#1B5E20,#2E7D32);color:#fff;padding:22px 24px}} header h1{{margin:0;font-size:24px}}
+nav{{position:sticky;top:0;background:#fff;border-bottom:2px solid #C8E6C9;padding:8px 16px;z-index:5;overflow-x:auto;white-space:nowrap}}
+nav a{{color:#1B5E20;text-decoration:none;margin-right:16px;font-weight:600}}
+main{{max-width:1250px;margin:0 auto;padding:16px}} h2{{color:#1B5E20;border-bottom:3px solid #2E7D32;padding-bottom:4px;margin-top:34px}}
+.the{{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px}} .o{{flex:1 1 170px;background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-top:4px solid #2E7D32}}
+.o .nhan{{font-size:12px;color:#666}} .o .so{{font-size:20px;font-weight:700;margin-top:4px}}
+.tt{{background:#fff;border-left:6px solid {qd['mau']};border-radius:10px;padding:12px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08)}}
+.kn{{display:inline-block;background:{qd['mau']};color:#fff;padding:4px 12px;border-radius:14px;font-weight:700}}
+.cuon{{overflow-x:auto;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin:8px 0 16px}}
+.bang{{border-collapse:collapse;font-size:13px;width:100%}} .bang th{{background:#1B5E20;color:#fff;padding:7px 9px;text-align:left}}
+.bang td{{padding:6px 9px;border-bottom:1px solid #E8F5E9;text-align:left;vertical-align:top}} .bang .so{{text-align:right;white-space:nowrap}}
+.bang tr:nth-child(even) td{{background:#F1F8E9}} .bang td:first-child{{font-weight:600}}
+td.f5{{background:#4A90E2!important;color:#fff}} td.f4{{background:#66BB6A!important;color:#fff}} td.f3{{background:#FFEE58!important}}
+td.f2{{background:#FFA726!important}} td.f1{{background:#EF5350!important;color:#fff}}
+img{{max-width:100%;border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}} figure{{margin:12px 0}}
+figcaption{{font-size:12px;color:#777}} summary{{color:#2E7D32;font-weight:600;cursor:pointer}}
+pre{{background:#F1F8E9;padding:12px;overflow-x:auto;font-size:12px;line-height:1.35}}
+footer{{color:#777;font-size:12px;text-align:center;padding:24px}}
 </style></head><body>
-<h1>{_html.escape(tt5['tieu_de'])}</h1>
-<div class="tt"><p><span class="kn">{_html.escape(qd['khuyen_nghi'])}</span></p>
-<ol>{''.join(f'<li>{_html.escape(d[3:])}</li>' for d in tt5['dong'])}</ol>
-<p><b>Đang nắm giữ:</b> {_html.escape(qd['dang_giu'])}</p><p><b>Kiểm tra điều kiện:</b></p><ul>{kt}</ul></div>
-<h2>Bảng chính</h2><div class="cuon">{bang}</div>
-<h2>Biểu đồ</h2>{anh}
-<h2>Báo cáo đầy đủ</h2><details><summary>Mở báo cáo dạng văn bản</summary><pre>{van_ban}</pre></details>
-<p><i>Phân tích kỹ thuật tham khảo, không phải khuyến nghị đầu tư.</i></p></body></html>"""
+<header><h1>{e(tt5['tieu_de'])}</h1></header>
+<nav>{nav}</nav><main>
+<div class="the">{the_html}</div>
+<h2 id="tom-tat">Tóm tắt</h2>{anh_b64(anh_tom_tat)}
+<div class="tt"><p><span class="kn">{e(qd['khuyen_nghi'])}</span></p>
+<ol>{''.join(f'<li>{e(d[3:])}</li>' for d in tt5['dong'])}</ol>
+<p><b>Đang nắm giữ:</b> {e(qd['dang_giu'])}</p><p><b>Kiểm tra điều kiện:</b></p><ul>{kt}</ul></div>
+{bang_html}{phan_j}
+<h2 id="bieu-do">Biểu đồ</h2>{''.join(anh_b64(f) for f in cac_png)}
+<h2 id="day-du">Báo cáo đầy đủ</h2><details><summary>Mở báo cáo dạng văn bản</summary><pre>{van_ban}</pre></details>
+</main><footer>Công cụ tham khảo dựa trên dữ liệu quá khứ – không phải khuyến nghị đầu tư.</footer></body></html>"""
     with open(file_html, "w", encoding="utf-8") as f:
         f.write(noi_dung)
-    in_ra(f"  ✔ Đã xuất HTML: {file_html}")
+    in_ra(f"  ✔ Đã lưu báo cáo HTML: {file_html}")
 
 
 def xuat_csv(thu_muc, cac_bang):

@@ -11,8 +11,24 @@ from . import cau_hinh as C
 KY_HIEU = {True: "✔", False: "✘", None: "–"}
 
 
-def gui(noi_dung, rieng_tu=False):
-    """rieng_tu=True: tin có số liệu vị thế (số CP, giá vốn…) → KHÔNG in ra log (repo công khai, log ai cũng xem)."""
+def _chia(noi_dung, toi_da=3800):
+    """Chia tin dài theo DÒNG (không cắt giữa thẻ HTML)."""
+    phan, cur = [], ""
+    for d in noi_dung.split("\n"):
+        if len(cur) + len(d) + 1 > toi_da and cur:
+            phan.append(cur)
+            cur = ""
+        cur += d + "\n"
+    return phan + ([cur] if cur.strip() else [])
+
+
+def gui(noi_dung, rieng_tu=False, anh=None):
+    """
+    Gửi Telegram: số kiểu Việt Nam, định dạng HTML (tiêu đề/nhãn đậm); anh = đường dẫn PNG → gửi ảnh trước
+    (chú thích = dòng đầu), rồi tin chữ. rieng_tu=True: tin có số liệu vị thế → KHÔNG in ra log (repo công khai).
+    """
+    from .trinh_bay import dinh_dang_html, vn_hoa
+    noi_dung = vn_hoa(noi_dung)
     token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if rieng_tu and os.environ.get("GITHUB_ACTIONS"):
         print(f"(tin riêng tư {len(noi_dung)} ký tự – chỉ gửi Telegram, không in log)")
@@ -21,10 +37,23 @@ def gui(noi_dung, rieng_tu=False):
     if not (token and chat):
         print("(chưa đặt TELEGRAM_TOKEN / TELEGRAM_CHAT_ID → chỉ in ra màn hình)")
         return False
+    goc = f"https://api.telegram.org/bot{token}"
     ok = True
-    for i in range(0, len(noi_dung), 3900):
-        r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                          data={"chat_id": chat, "text": noi_dung[i:i + 3900]}, timeout=30)
+    if anh and C.GUI_ANH and os.path.exists(anh):
+        try:
+            with open(anh, "rb") as fh:
+                r = requests.post(f"{goc}/sendPhoto", data={"chat_id": chat, "caption": noi_dung.split("\n")[0][:1000]},
+                                  files={"photo": fh}, timeout=60)
+            if r.status_code != 200:
+                print("Telegram (ảnh) lỗi:", r.text[:200])
+        except requests.RequestException as e:
+            print("Telegram (ảnh) lỗi:", str(e)[:100])
+    for phan in _chia(noi_dung):
+        r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": dinh_dang_html(phan.rstrip()),
+                                                       "parse_mode": "HTML", "disable_web_page_preview": "true"},
+                          timeout=30)
+        if r.status_code != 200:                                     # HTML lỗi → gửi lại dạng chữ thường
+            r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": phan.rstrip()}, timeout=30)
         if r.status_code != 200:
             print("Telegram lỗi:", r.text[:200])
             ok = False

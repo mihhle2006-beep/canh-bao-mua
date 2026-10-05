@@ -63,7 +63,7 @@ NGUỒN DỮ LIỆU
 
 Đơn vị giá: NGHÌN ĐỒNG.   Công cụ tham khảo – KHÔNG phải khuyến nghị đầu tư.
 """
-__version__ = "3.4"
+__version__ = "beta 1.0"   # thêm nguồn vnstock (tự chuyển nguồn khi hết lượt) + Phần J phân tích kiểu FiinTrade
 
 from . import cau_hinh
 from . import cau_hinh as cfg

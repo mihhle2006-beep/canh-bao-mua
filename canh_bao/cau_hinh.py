@@ -54,6 +54,7 @@ PHIEN = [("09:00", "11:30"), ("13:00", "14:45")]
 GIO_TONG_KET = "15:00"             # sau giờ này chế độ tu_dong = gửi bản tổng kết cuối ngày
 
 # --- Thông báo ---
+GUI_ANH = True                     # gửi kèm ảnh biểu đồ (MUA NGAY / cảnh báo bán) & ảnh bảng tổng kết
 BAO_LAI_TRONG_NGAY = False         # False: chỉ báo khi mã CHUYỂN sang MUA NGAY (không lặp mỗi 15 phút); True: báo mọi lần chạy
 FILE_TRANG_THAI = "trang_thai_canh_bao.json"
 THU_MUC_CACHE = "cache_gia"

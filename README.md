@@ -32,6 +32,13 @@ Chỉ dùng **nến đã đóng** (giờ, phút, tuần) → tín hiệu không 
 **Trạng thái:** ĐỨNG NGOÀI (tuần xấu) → THEO DÕI (ngày chưa đạt) → CHỜ XÁC NHẬN GIỜ → CHỜ ĐIỂM VÀO →
 (R/R thấp / CHỜ SAU SỰ KIỆN / EV THẤP) → **MUA NGAY**.
 
+## Trình bày tin Telegram
+- Số ghi **kiểu Việt Nam** (78.700 · 5,6%); tiêu đề & nhãn **in đậm**, ghi chú *nghiêng* (HTML Telegram – lỗi định dạng
+  thì tự gửi lại dạng chữ thường).
+- **MUA NGAY / cảnh báo bán gửi kèm ảnh**: giá 6 tháng, MA20/MA50, mục tiêu – cắt lỗ (– giá vốn nếu đang giữ).
+- **Tổng kết 15:20 gửi kèm ảnh bảng**: mỗi mã 1 dòng (giá, trạng thái, 4 khung ✔/✘, mục tiêu, cắt lỗ, R/R, ptcp),
+  tô màu theo trạng thái. Tắt ảnh: `GUI_ANH = False` trong `canh_bao/cau_hinh.py`.
+
 ## Cảnh báo BÁN cho mã đang giữ
 Bot đọc **`danh_muc.csv` của repo riêng tư `danh-muc`** (mã có `so_cp` > 0 = đang giữ) và quét cùng lúc với cảnh báo mua:
 

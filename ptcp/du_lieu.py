@@ -192,6 +192,7 @@ def tu_cafef(symbol, start, end):
 DIA_CHI_NGUON = {
     "VNDirect": "dchart-api.vndirect.com.vn",
     "VND finfo": "api-finfo.vndirect.com.vn",
+    "vnstock": "thư viện vnstock bản Cộng đồng (vnstocks.com) – KBS/VCI",
     "Yahoo": "query1.finance.yahoo.com / yfinance",
     "TCBS": "apipubaws.tcbs.com.vn",
     "SSI": "iboard-api.ssi.com.vn",
@@ -232,7 +233,25 @@ def cac_nguon_ngay(symbol, start, end):
             ("SSI", lambda: tu_ssi(symbol, start, end, "1D")),
             ("CafeF", lambda: tu_cafef(symbol, start, end)),
             ("DNSE", lambda: tu_dnse(symbol, start, end, "1D")),
-            ("VCI", lambda: tu_vci(symbol, start, end, "ONE_DAY"))]
+            ("VCI", lambda: tu_vci(symbol, start, end, "ONE_DAY")),
+            ("vnstock", lambda: tu_vnstock(symbol, start, end))]
+
+
+def tu_vnstock(symbol, start, end):
+    """Thư viện vnstock bản Cộng đồng (nguồn KBS → VCI bên trong; có giới hạn lượt gọi/phút)."""
+    if not cfg.DUNG_VNSTOCK:
+        raise ValueError("đã tắt (cfg.DUNG_VNSTOCK = False)")
+    from . import vnstock_nguon
+    return vnstock_nguon.gia(symbol, start, end)
+
+
+def chuan_bi_vnstock():
+    """Gọi đầu mỗi lần chạy: Colab → tự cài vnstock nếu thiếu; đặt chế độ chờ khi hết lượt theo cfg.CHO_VNSTOCK."""
+    if not cfg.DUNG_VNSTOCK:
+        return False
+    from . import vnstock_nguon
+    vnstock_nguon.CHO_KHI_HET_LUOT = bool(cfg.CHO_VNSTOCK)
+    return vnstock_nguon.dam_bao_cai()
 
 
 def cac_nguon_gio(symbol, start, end):
@@ -268,16 +287,24 @@ def doi_chieu_nguon(symbol, df, nguon_chinh, so_phien=40):
             continue
         try:
             khac = chuan_hoa(ham())
-        except Exception as e:
+        except (Exception, SystemExit) as e:         # vnstock hết lượt gọi SystemExit
             rows.append([ten, 0, np.nan, np.nan, f"không lấy được ({str(e)[:40]})"])
             continue
         ghep = pd.concat([df.close, khac.close], axis=1, join="inner").dropna().tail(so_phien)
         if ghep.empty:
             rows.append([ten, 0, np.nan, np.nan, "không có phiên trùng"])
             continue
-        lech = (ghep.iloc[:, 1] / ghep.iloc[:, 0] - 1).abs() * 100
-        danh_gia = "✔ khớp" if lech.max() <= 0.5 else (
-            "◐ lệch nhẹ" if lech.max() <= 2 else "⚠ lệch lớn – kiểm tra điều chỉnh cổ tức/chia tách hoặc đơn vị giá")
+        ty_le = ghep.iloc[:, 1] / ghep.iloc[:, 0]
+        lech = (ty_le - 1).abs() * 100
+        if lech.max() <= 0.5:
+            danh_gia = "✔ khớp"
+        elif ty_le.std() * 100 < 0.05 and len(ghep) >= 5:
+            danh_gia = (f"◐ lệch KHÔNG ĐỔI {(ty_le.mean() - 1) * 100:+.2f}% mọi phiên → nguồn này dùng cách ĐIỀU CHỈNH "
+                        f"giá khác (cổ tức/chia tách) – không phải sai ngày/đơn vị; báo cáo dùng {nguon_chinh}")
+        elif lech.max() <= 2:
+            danh_gia = "◐ lệch nhẹ"
+        else:
+            danh_gia = "⚠ lệch lớn – kiểm tra điều chỉnh cổ tức/chia tách hoặc đơn vị giá"
         rows.append([ten, len(ghep), lech.mean(), lech.max(), danh_gia])
     return pd.DataFrame(rows, columns=["Nguồn đối chiếu", "Số phiên trùng", "Lệch TB %", "Lệch tối đa %", "Đánh giá"])
 
@@ -376,7 +403,7 @@ def thu_cac_nguon(ten, cac_nguon, khoa_cache=None, la_chi_so=False, im_lang=Fals
             if khoa_cache:
                 _luu_cache(df, khoa_cache)
             return df
-        except Exception as e:
+        except (Exception, SystemExit) as e:          # thư viện ngoài (vnstock) có thể gọi SystemExit khi hết lượt
             out(f"lỗi ({str(e)[:70]})")
             da_thu.append(f"{ten_nguon} ({str(e)[:30]})")
     if khoa_cache:
@@ -412,7 +439,8 @@ def tai_vnindex(start, csv=None):
         ("SSI", lambda: tu_ssi("VNINDEX", start, end, "1D")),
         ("CafeF", lambda: tu_cafef("VNINDEX", start, end)),
         ("DNSE", lambda: tu_dnse("VNINDEX", start, end, "1D", "index")),
-        ("VCI", lambda: tu_vci("VNINDEX", start, end, "ONE_DAY", la_chi_so=True))],
+        ("VCI", lambda: tu_vci("VNINDEX", start, end, "ONE_DAY", la_chi_so=True)),
+        ("vnstock", lambda: tu_vnstock("VNINDEX", start, end))],
         khoa_cache="VNINDEX_ngay", la_chi_so=True)
 
 
@@ -474,7 +502,18 @@ def lay_thong_tin_dn(symbol):
         ghi_nguon("Thông tin DN (sàn, KL niêm yết)", "VND finfo", "OK" if (ny or lh) else "không có trường số CP")
     except Exception as e:
         ghi_nguon("Thông tin DN", "—", f"VND finfo lỗi: {str(e)[:60]}")
-    # 3. Yahoo
+    # 3. vnstock (KBS/VCI) – số CP lưu hành trong bảng chỉ số
+    if cfg.DUNG_VNSTOCK:
+        try:
+            from . import vnstock_nguon
+            d = vnstock_nguon.co_ban(symbol)
+            _VNSTOCK_CB[symbol] = d                       # dùng lại cho chỉ số cơ bản → đỡ tốn lượt gọi
+            if d.get("so_cp"):
+                uv["luu_hanh"]["vnstock"] = d["so_cp"]
+            ghi_nguon("Thông tin DN (CP lưu hành)", "vnstock", "OK" if d.get("so_cp") else "không có số CP")
+        except (Exception, SystemExit) as e:
+            ghi_nguon("Thông tin DN", "—", f"vnstock lỗi: {str(e)[:60]}")
+    # 4. Yahoo
     try:
         import yfinance as yf
         info = yf.Ticker(f"{symbol}.VN").info or {}
@@ -554,7 +593,22 @@ def _co_ban_yahoo(symbol):
     return {k: v for k, v in kq.items() if v is not None}
 
 
-NGUON_CO_BAN = [("VNDirect", _co_ban_vndirect), ("TCBS", _co_ban_tcbs), ("Yahoo", _co_ban_yahoo)]
+_VNSTOCK_CB = {}             # kết quả vnstock đã lấy trong phiên (dùng chung giữa các bước)
+
+
+def _co_ban_vnstock(symbol):
+    if not cfg.DUNG_VNSTOCK:
+        raise ValueError("đã tắt")
+    from . import vnstock_nguon
+    d = _VNSTOCK_CB.get(symbol) or vnstock_nguon.co_ban(symbol)
+    _VNSTOCK_CB[symbol] = d
+    kq = {"P/E": d.get("pe"), "P/B": d.get("pb"), "ROE %": d.get("roe"), "EPS 4Q": d.get("eps_ttm"),
+          "ky": d.get("ky_lnst", "mới nhất")}
+    return {k: v for k, v in kq.items() if v is not None}
+
+
+NGUON_CO_BAN = [("VNDirect", _co_ban_vndirect), ("vnstock", _co_ban_vnstock), ("TCBS", _co_ban_tcbs),
+                ("Yahoo", _co_ban_yahoo)]
 
 
 # --------------------------------------------------------------------------
@@ -590,7 +644,15 @@ def _lnst_yahoo(symbol):
     return [(f"Q{(c.month - 1) // 3 + 1}/{c.year}", float(v) / 1e9) for c, v in s.items()]   # đồng → tỷ
 
 
-NGUON_LNST = [("TCBS", _lnst_tcbs), ("Yahoo", _lnst_yahoo)]
+def _lnst_vnstock(symbol):
+    if not cfg.DUNG_VNSTOCK:
+        raise ValueError("đã tắt")
+    from . import vnstock_nguon
+    d = _VNSTOCK_CB.get(symbol, {})
+    return vnstock_nguon.lnst_quy(symbol, d.get("so_cp"), d.get("eps_ttm"))
+
+
+NGUON_LNST = [("TCBS", _lnst_tcbs), ("vnstock", _lnst_vnstock), ("Yahoo", _lnst_yahoo)]
 
 
 def _bon_quy_lien_tiep(ds):
@@ -610,9 +672,104 @@ def lay_lnst_4_quy(symbol):
             if _bon_quy_lien_tiep(ds):
                 return sum(v for _, v in ds[:4]), ds[:4], ten
             loi.append(f"{ten}: không đủ 4 quý liên tiếp")
-        except Exception as e:
+        except (Exception, SystemExit) as e:
             loi.append(f"{ten}: {str(e)[:40]}")
     return None, [], "; ".join(loi)
+
+
+# --------------------------------------------------------------------------
+# BCTC THEO NĂM (≥ 3–4 năm) – cho bộ 10 tiêu chí phân tích tài chính kiểu FiinGroup (Phần J5)
+# Nguồn: TCBS → vnstock → Yahoo. Chuẩn hoá: list MỚI NHẤT TRƯỚC (None = thiếu).
+# --------------------------------------------------------------------------
+KHOA_BCTC = ("doanh_thu", "ln_gop", "lnst", "cfo", "cr", "icr", "de", "roe", "von_gop", "vay_no")
+
+
+def _bctc_tcbs(symbol):
+    goc = "https://apipubaws.tcbs.com.vn/tcanalysis/v1/finance"
+    bang = {}
+    for ten in ("financialratio", "incomestatement", "cashflow", "balancesheet"):
+        try:
+            j = _goi_api(f"{goc}/{symbol}/{ten}", params={"yearly": 1, "isAll": "true"}, so_lan=1,
+                         headers={"Origin": "https://tcinvest.tcbs.com.vn"})
+            bang[ten] = {int(r["year"]): r for r in (j if isinstance(j, list) else []) if r.get("year")}
+        except Exception:
+            bang[ten] = {}
+    nam = sorted(set().union(*[set(b) for b in bang.values()]), reverse=True)[:5]
+    if len(nam) < 3:
+        raise ValueError("TCBS: không đủ 3 năm BCTC")
+    kq = {"nam": nam, **{k: [None] * len(nam) for k in KHOA_BCTC}}
+    for i, y in enumerate(nam):
+        r, kd, lc, cd = (bang[t].get(y, {}) for t in ("financialratio", "incomestatement", "cashflow", "balancesheet"))
+        kq["doanh_thu"][i], kq["ln_gop"][i] = _so(kd.get("revenue")), _so(kd.get("grossProfit"))
+        kq["lnst"][i] = _so(kd.get("shareHolderIncome", kd.get("postTaxProfit")))
+        kq["cfo"][i], kq["cr"][i] = _so(lc.get("fromSale")), _so(r.get("currentPayment"))
+        kq["icr"][i] = _so(r.get("ebitOnInterest"))
+        kq["de"][i] = _so(r.get("payableOnEquity", r.get("debtOnEquity")))
+        kq["roe"][i] = _ty_le(_so(r.get("roe")))
+        kq["von_gop"][i] = _so(cd.get("capital"))
+        vay = [_so(cd.get(k)) for k in ("shortDebt", "longDebt")]
+        kq["vay_no"][i] = sum(v for v in vay if v is not None) if any(v is not None for v in vay) else None
+    return kq
+
+
+def _bctc_vnstock(symbol):
+    if not cfg.DUNG_VNSTOCK:
+        raise ValueError("đã tắt")
+    from . import vnstock_nguon
+    return vnstock_nguon.bctc_nam(symbol)
+
+
+def _bctc_yahoo(symbol):
+    import yfinance as yf
+    t = yf.Ticker(f"{symbol}.VN")
+    kd, cd, lc = t.income_stmt, t.balance_sheet, t.cashflow
+    if kd is None or kd.empty:
+        raise ValueError("Yahoo: không có BCTC năm")
+    cot = sorted(kd.columns, reverse=True)[:5]
+    kq = {"nam": [c.year for c in cot], **{k: [None] * len(cot) for k in KHOA_BCTC}}
+
+    def h(df, *ten):
+        return next((df.loc[x] for x in ten if df is not None and x in df.index), None)
+
+    ty = lambda s_, c: (float(s_[c]) / 1e9 if s_ is not None and c in s_.index and s_[c] == s_[c] else None)
+    dt, lg, ln = h(kd, "Total Revenue"), h(kd, "Gross Profit"), h(kd, "Net Income Common Stockholders", "Net Income")
+    ebit, lv = h(kd, "EBIT"), h(kd, "Interest Expense")
+    tsnh, nnh = h(cd, "Current Assets"), h(cd, "Current Liabilities")
+    no, vcsh = h(cd, "Total Liabilities Net Minority Interest"), h(cd, "Stockholders Equity")
+    vg, vay, cfo = h(cd, "Common Stock", "Capital Stock"), h(cd, "Total Debt"), h(lc, "Operating Cash Flow")
+    for i, c in enumerate(cot):
+        kq["doanh_thu"][i], kq["ln_gop"][i], kq["lnst"][i] = ty(dt, c), ty(lg, c), ty(ln, c)
+        kq["cfo"][i], kq["von_gop"][i], kq["vay_no"][i] = ty(cfo, c), ty(vg, c), ty(vay, c)
+        a, b = ty(tsnh, c), ty(nnh, c)
+        kq["cr"][i] = a / b if a is not None and b else None
+        e, l_ = ty(ebit, c), ty(lv, c)
+        kq["icr"][i] = e / abs(l_) if e is not None and l_ else None
+        n, v = ty(no, c), ty(vcsh, c)
+        kq["de"][i] = n / v if n is not None and v and v > 0 else None
+        kq["roe"][i] = kq["lnst"][i] / v * 100 if kq["lnst"][i] is not None and v and v > 0 else None
+    return kq
+
+
+NGUON_BCTC_NAM = [("TCBS", _bctc_tcbs), ("vnstock", _bctc_vnstock), ("Yahoo", _bctc_yahoo)]
+
+
+def lay_bctc_nam(symbol, im_lang=False):
+    """BCTC năm của 1 mã → dict (kèm 'nguon') hoặc None. Lấy nguồn có nhiều ô dữ liệu nhất."""
+    tot, diem_tot, loi = None, 0, []
+    for ten, ham in NGUON_BCTC_NAM:
+        try:
+            kq = ham(symbol)
+            diem = sum(v is not None for k in KHOA_BCTC for v in kq[k][:4])
+            if diem > diem_tot:
+                tot, diem_tot = dict(kq, nguon=ten), diem
+            if diem >= 30:
+                break
+        except (Exception, SystemExit) as e:
+            loi.append(f"{ten}: {str(e)[:40]}")
+    if not im_lang:
+        ghi_nguon(f"BCTC năm {symbol} (10 tiêu chí)", tot["nguon"] if tot else "—",
+                  f"{len(tot['nam'])} năm, {diem_tot} ô dữ liệu" if tot else "; ".join(loi)[:120])
+    return tot
 
 
 def lay_chi_so_co_ban(symbol, gia=None, so_cp_luu_hanh=None, lnst_4q=None):
@@ -629,7 +786,7 @@ def lay_chi_so_co_ban(symbol, gia=None, so_cp_luu_hanh=None, lnst_4q=None):
             break
         try:
             d = ham(symbol)
-        except Exception as e:
+        except (Exception, SystemExit) as e:
             loi.append(f"{ten}: {str(e)[:40]}")
             continue
         moi = [k for k in d if k != "ky" and k not in kq]

@@ -261,11 +261,11 @@ def test_yahoo_chi_gia_ngay():
         du_lieu.tu_yahoo("GMD", 0, 1, "15")
 
 
-def test_ptcp_moi_khong_con_vnstock_vietstock():
+def test_ptcp_ban_moi_di_kem():
     from ptcp import du_lieu as pd_
     import ptcp
-    assert ptcp.__version__.startswith("3.")
-    assert not hasattr(pd_, "tu_vnstock") and not hasattr(pd_, "lay_cp_vietstock")
+    import ptcp.fiintrade  # noqa: F401  – bản mới có Phần J
+    assert "beta" in ptcp.__version__ and not hasattr(pd_, "lay_cp_vietstock")
 
 
 # ------------------------------------------------------------------ cảnh báo BÁN cho vị thế đang giữ
@@ -351,7 +351,7 @@ def test_chay_bao_ban_va_an_ma_chi_co_trong_danh_muc(du_lieu_tot, tmp_path, caps
     da_gui = []
     with mock.patch.object(chay, "tai", side_effect=tai_gia), \
             mock.patch.object(chay, "phan_tich_ngay", return_value=PT_TOT), \
-            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False: da_gui.append((nd, rieng_tu))):
+            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False, **k: da_gui.append((nd, rieng_tu))):
         assert chay.main(["--ma", "AAA", "--gio", "2026-10-02 10:50"]) == 0
     log = capsys.readouterr().out
     ban = [(nd, rt) for nd, rt in da_gui if "CẮT LỖ – XYZ" in nd]
@@ -360,6 +360,46 @@ def test_chay_bao_ban_va_an_ma_chi_co_trong_danh_muc(du_lieu_tot, tmp_path, caps
     assert not os.path.exists("lich_su_tin_hieu.csv") or "XYZ" not in open("lich_su_tin_hieu.csv").read()
     with mock.patch.object(chay, "tai", side_effect=tai_gia), \
             mock.patch.object(chay, "phan_tich_ngay", return_value=PT_TOT), \
-            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False: da_gui.append((nd, rieng_tu))):
+            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False, **k: da_gui.append((nd, rieng_tu))):
         chay.main(["--ma", "AAA", "--gio", "2026-10-02 11:05"])
     assert sum("CẮT LỖ – XYZ" in nd for nd, _ in da_gui) == 1            # lần quét sau không báo trùng
+
+
+# ------------------------------------------------------------------ trình bày tin Telegram
+from canh_bao import trinh_bay  # noqa: E402
+
+
+def test_so_kieu_viet_nam_va_html():
+    assert trinh_bay.vn_hoa("Giá 1,234.56 (+5.0%) lúc 10:30 02/10") == "Giá 1.234,56 (+5,0%) lúc 10:30 02/10"
+    h = trinh_bay.dinh_dang_html("🟢 MUA NGAY – GMD @ 78,70\nKích hoạt: MACD <cắt lên>\n(Tham khảo – tự kiểm tra)")
+    assert h.startswith("<b>🟢 MUA NGAY") and "<b>Kích hoạt:</b> MACD &lt;cắt lên&gt;" in h and "<i>(Tham" in h
+
+
+def test_anh_bieu_do_va_bang_tong_ket(du_lieu_tot):
+    dn = du_lieu_tot[0]
+    g = float(dn.close.iloc[-1])
+    f = trinh_bay.ve_bieu_do_ma("AAA", dn, g, g * 1.15, g * 0.93, g * 0.98, "AAA – MUA NGAY")
+    assert f and os.path.getsize(f) > 10_000
+    dong = [{"Mã": "AAA", "Giá": "78,70", "Trạng thái": "MUA NGAY", "Tuần": "✔"},
+            {"Mã": "BBB", "Giá": "34,40", "Trạng thái": "THEO DÕI", "Tuần": "✘"}]
+    assert os.path.exists(trinh_bay.ve_bang_tong_ket(dong, "TỔNG KẾT 05/10/2026"))
+
+
+def test_gui_html_loi_thi_gui_lai_chu_thuong(monkeypatch, tmp_path):
+    goi = []
+
+    class R:
+        def __init__(self, ma):
+            self.status_code, self.text = ma, "x"
+
+    def gia_lap(url, data=None, files=None, timeout=None):
+        goi.append((url.rsplit("/", 1)[1], dict(data)))
+        return R(400 if data.get("parse_mode") == "HTML" else 200)
+    monkeypatch.setenv("TELEGRAM_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "c")
+    monkeypatch.setattr(thong_bao.requests, "post", gia_lap)
+    anh = tmp_path / "a.png"
+    anh.write_bytes(b"png")
+    assert thong_bao.gui("TIÊU ĐỀ 1,234.5\nnội dung", anh=str(anh))
+    assert [g[0] for g in goi] == ["sendPhoto", "sendMessage", "sendMessage"]
+    assert goi[0][1]["caption"] == "TIÊU ĐỀ 1.234,5" and "parse_mode" not in goi[2][1]
