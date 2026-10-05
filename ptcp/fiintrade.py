@@ -116,7 +116,7 @@ def _ytd(df):
 
 
 # ---------------------------------------------------------------- tổng hợp
-def phan_tich(symbol, d_ngay, vni, nhom, tt, cb, online, bctc, bctc_nganh, nganh="", ma_ctck=()):
+def phan_tich(symbol, d_ngay, vni, nhom, tt, cb, online, bctc, bctc_nganh, nganh="", ma_ctck=(), khuyen_nghi=None):
     """
     d_ngay: DataFrame ngày đã có chỉ báo (RSI...). nhom: {mã cùng ngành: df}. tt: thong_tin_giao_dich.
     cb: chỉ số cơ bản Phần H; online: kết quả lay_chi_so_co_ban; bctc: BCTC năm của mã;
@@ -211,7 +211,97 @@ def phan_tich(symbol, d_ngay, vni, nhom, tt, cb, online, bctc, bctc_nganh, nganh
                                    f"BCTC đến năm {fa['nam']} ({fa['nguon']})",
                      **{m: so_le(f["diem"], 0) for m, f in so_sanh.items()}})
         j5 = pd.DataFrame(rows)
-    return {"nganh": nganh, "J1": j1, "J2": j2, "J3": j3, "J4": j4, "J4_ket_luan": ket_luan_j4(symbol, j4), "J5": j5, "fa": fa}
+    kl4 = ket_luan_j4(symbol, j4)
+    ket_luan = ket_luan_chung(symbol, ht=ht, pe=gia_tri("P/E"), pb=gia_tri("P/B"), roe=gia_tri("ROE %"), fa=fa,
+                              bctc=bctc, ma={n_: (float(s.iloc[-1]) if len(s.dropna()) else np.nan,
+                                                   float(s.iloc[-6]) if len(s.dropna()) > 6 else np.nan)
+                                              for n_, s in ma.items()},
+                              rsi=rsi, rs52=(_bien_dong(d, 252), _bien_dong(vni, 252)), kl_bien_dong=kl4,
+                              khuyen_nghi=khuyen_nghi)
+    return {"nganh": nganh, "J1": j1, "J2": j2, "J3": j3, "J4": j4, "J4_ket_luan": kl4, "J5": j5, "fa": fa,
+            "ket_luan": ket_luan}
+
+
+def ket_luan_chung(symbol, ht, pe, pb, roe, fa, bctc, ma, rsi, rs52, kl_bien_dong=(), khuyen_nghi=None):
+    """
+    KẾT LUẬN CHUNG PHẦN J: chấm 4 nhóm (định giá · sức khỏe tài chính · kỹ thuật · sức mạnh giá), mỗi ý +1/0/−1
+    → TÍCH CỰC (≥ +3) / TIÊU CỰC (≤ −2) / TRUNG TÍNH; liệt kê điểm mạnh – điểm yếu và đối chiếu khuyến nghị Phần C.
+    """
+    co = lambda x: x is not None and x == x
+    y = []                                               # (nhóm, diễn giải, điểm)
+
+    # 1. Định giá & hiệu quả
+    if co(pe):
+        if pe <= 0:
+            y.append(("Định giá", f"P/E {pe:.1f} – doanh nghiệp đang lỗ", -1))
+        elif pe < 10:
+            y.append(("Định giá", f"P/E {pe:.1f} – rẻ", 1))
+        elif pe <= 20:
+            y.append(("Định giá", f"P/E {pe:.1f} – hợp lý", 0))
+        else:
+            y.append(("Định giá", f"P/E {pe:.1f} – cao", -1))
+    if co(pb):
+        y.append(("Định giá", f"P/B {pb:.2f}" + (" – dưới giá trị sổ sách" if pb < 1 else
+                                                  " – cao" if pb > 3 else ""), 1 if pb < 1 else (-1 if pb > 3 else 0)))
+    if co(roe):
+        y.append(("Hiệu quả", f"ROE {roe:.1f}%" + (" – cao" if roe >= 15 else " – thấp" if roe < 10 else ""),
+                  1 if roe >= 15 else (-1 if roe < 10 else 0)))
+
+    # 2. Sức khỏe tài chính (10 tiêu chí) & tăng trưởng lợi nhuận
+    if fa and co(fa.get("diem")):
+        d_ = fa["diem"]
+        y.append(("Tài chính", f"điểm 10 tiêu chí {d_:.0f}/100" + (" – khỏe" if d_ >= 70 else " – yếu" if d_ < 50 else
+                                                                   " – trung bình"), 1 if d_ >= 70 else (-1 if d_ < 50 else 0)))
+        if fa["so_nguy_hiem"]:
+            y.append(("Tài chính", f"{fa['so_nguy_hiem']} tiêu chí NGUY HIỂM ({fa['tom_tat']})",
+                      -1 if fa["so_nguy_hiem"] >= 2 else 0))
+    ln = (bctc or {}).get("lnst") or []
+    if len(ln) >= 2 and co(ln[0]) and co(ln[1]) and ln[1]:
+        g = (ln[0] - ln[1]) / abs(ln[1]) * 100
+        y.append(("Tài chính", f"LNST năm {bctc['nam'][0]} {g:+.1f}% so năm trước",
+                  1 if g > 10 else (-1 if g < -10 else 0)))
+
+    # 3. Kỹ thuật
+    m50, m200 = ma.get(50, (np.nan, np.nan)), ma.get(200, (np.nan, np.nan))
+    if co(m50[0]) and co(m200[0]):
+        tren = (ht > m50[0]) + (ht > m200[0])
+        y.append(("Kỹ thuật", "giá trên cả MA50 & MA200 – xu hướng tăng" if tren == 2 else
+                  "giá dưới cả MA50 & MA200 – xu hướng giảm" if tren == 0 else
+                  f"giá {'trên MA50, dưới MA200' if ht > m50[0] else 'dưới MA50, trên MA200'} – chưa rõ xu hướng",
+                  1 if tren == 2 else (-1 if tren == 0 else 0)))
+    if co(m50[0]) and co(m50[1]):
+        y.append(("Kỹ thuật", f"MA50 đang {'đi lên' if m50[0] > m50[1] else 'đi xuống'}", 1 if m50[0] > m50[1] else -1))
+    if co(rsi):
+        if rsi > 70:
+            y.append(("Kỹ thuật", f"RSI {rsi:.0f} – quá mua, dễ điều chỉnh", -1))
+        elif rsi < 30:
+            y.append(("Kỹ thuật", f"RSI {rsi:.0f} – quá bán", 0))
+
+    # 4. Sức mạnh giá so thị trường
+    bd, vn = rs52
+    if co(bd) and co(vn):
+        c = bd - vn
+        y.append(("Sức mạnh giá", f"1 năm {bd:+.1f}% vs VN-Index {vn:+.1f}% ({c:+.1f} điểm)",
+                  1 if c > 10 else (-1 if c < -10 else 0)))
+
+    tong = sum(x[2] for x in y)
+    nhan = "TÍCH CỰC" if tong >= 3 else ("TIÊU CỰC" if tong <= -2 else "TRUNG TÍNH")
+    manh = [f"{n}: {t}" for n, t, s in y if s > 0]
+    yeu = [f"{n}: {t}" for n, t, s in y if s < 0]
+    goi_y = ""
+    kn = str(khuyen_nghi or "")
+    if kn:
+        if nhan == "TÍCH CỰC" and "MUA" in kn and "CHƯA" not in kn and "KHÔNG" not in kn:
+            goi_y = f"Nền tảng & kỹ thuật cùng ủng hộ khuyến nghị {kn} ở Phần C."
+        elif nhan == "TÍCH CỰC":
+            goi_y = (f"Doanh nghiệp/cổ phiếu đang tốt nhưng Phần C khuyến nghị {kn} – chưa có điểm mua có lợi thế "
+                     "thống kê; đưa vào danh sách theo dõi, chờ điều kiện ở Phần C.")
+        elif nhan == "TIÊU CỰC":
+            goi_y = f"Nhiều điểm yếu – thận trọng; Phần C: {kn}."
+        else:
+            goi_y = f"Chưa nổi bật mặt nào; quyết định theo Phần C: {kn}."
+    return {"nhan": nhan, "diem": tong, "y": y, "manh": manh, "yeu": yeu, "bien_dong": list(kl_bien_dong),
+            "goi_y": goi_y}
 
 
 def ket_luan_j4(symbol, j4):
@@ -313,10 +403,6 @@ def in_phan_J(symbol, kq):
 
     _tieu_de("J4. BIẾN ĐỘNG GIÁ (%) – mã · VN-Index · cùng ngành")
     in_ra(ve_bang(kq["J4"], dinh_dang={c: "{:+.1f}" for c in kq["J4"].columns if c != "Khung"}))
-    if kq.get("J4_ket_luan"):
-        in_ra("\n  Kết luận")
-        for d in kq["J4_ket_luan"]:
-            in_ra(f"   • {d}")
 
     if kq["J5"] is not None:
         _tieu_de("J5. PHÂN TÍCH TÀI CHÍNH 10 TIÊU CHÍ (phương pháp luận FiinGroup)")
@@ -331,6 +417,27 @@ def in_phan_J(symbol, kq):
         fa = kq["fa"]
         if fa["so_nguy_hiem"]:
             in_ra(f"\n  ⚠ {symbol} có {fa['so_nguy_hiem']} tiêu chí NGUY HIỂM: {fa['tom_tat']}")
+    in_ket_luan_J(symbol, kq.get("ket_luan"))
+
+
+def in_ket_luan_J(symbol, kl):
+    """Kết luận chung cuối Phần J (tổng hợp J1–J5)."""
+    if not kl:
+        return
+    _tieu_de(f"KẾT LUẬN CHUNG PHẦN J – {symbol}: {kl['nhan']} (điểm {kl['diem']:+d})")
+    nhom = {}
+    for n, t, s in kl["y"]:
+        nhom.setdefault(n, []).append(("▲" if s > 0 else "▼" if s < 0 else "•") + " " + t)
+    for n, ds in nhom.items():
+        in_ra(f"  {n:<13}: " + " · ".join(ds))
+    for k, d in enumerate(kl["bien_dong"]):
+        in_ra(f"  {'Biến động' if k == 0 else '':<13}{':' if k == 0 else ' '} {d}")
+    in_ra("")
+    in_ra("  Điểm mạnh : " + ("; ".join(kl["manh"]) if kl["manh"] else "không có điểm nổi bật"))
+    in_ra("  Điểm yếu  : " + ("; ".join(kl["yeu"]) if kl["yeu"] else "không có điểm yếu đáng kể"))
+    if kl.get("goi_y"):
+        in_ra(f"  ➜ {kl['goi_y']}")
+    in_ra("  ⓘ Kết luận Phần J mô tả chất lượng doanh nghiệp & trạng thái cổ phiếu; khuyến nghị giao dịch vẫn theo Phần C.")
 
 
 MAU_MUC = {"Rất tốt": "FF4A90E2", "Tốt": "FF2ECC71", "Trung bình": "FFF1C40F", "Cảnh báo": "FFF39C12",
@@ -357,9 +464,6 @@ def ghi_excel(w, kq):
             continue
         kq[ten].to_excel(w, sheet_name=sheet, index=False)
         _do_rong_cot(w.sheets[sheet], kq[ten])
-        if ten == "J4" and kq.get("J4_ket_luan"):
-            pd.DataFrame({"Kết luận": kq["J4_ket_luan"]}).to_excel(w, sheet_name=sheet, index=False,
-                                                                     startrow=len(kq["J4"]) + 2)
         if ten != "J5":
             continue
         ws = w.sheets[sheet]
@@ -375,3 +479,13 @@ def ghi_excel(w, kq):
                 ws.conditional_format(1, 0, n_dong, n_cot - 1, {
                     "type": "cell", "criteria": "==", "value": f'"{nhan}"',
                     "format": w.book.add_format({"bg_color": "#" + mau[2:]})})
+
+    kl = kq.get("ket_luan")
+    if kl:
+        dong = [["Kết luận chung", f"{kl['nhan']} (điểm {kl['diem']:+d})", ""]]
+        dong += [[n, t, "▲ tích cực" if s > 0 else ("▼ tiêu cực" if s < 0 else "• trung tính")] for n, t, s in kl["y"]]
+        dong += [["Biến động", d, ""] for d in kl["bien_dong"]]
+        dong += [["Điểm mạnh", "; ".join(kl["manh"]) or "–", ""], ["Điểm yếu", "; ".join(kl["yeu"]) or "–", ""],
+                 ["Gợi ý", kl.get("goi_y") or "–", ""]]
+        pd.DataFrame(dong, columns=["Nhóm", "Nội dung", "Đánh giá"]).to_excel(w, sheet_name="J Ket luan chung",
+                                                                             index=False)

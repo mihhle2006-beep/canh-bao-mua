@@ -368,7 +368,7 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
         bctc = lay_bctc_nam(symbol)
         bctc_nganh = {m: lay_bctc_nam(m, im_lang=True) for m in list(nhom)[:cfg.SO_MA_SO_SANH_FA]}
         fj = fiintrade.phan_tich(symbol, d_ngay, vni, nhom, tt, cb, online, bctc, bctc_nganh,
-                                 info.get("nganh", ""), MA_CTCK)
+                                 info.get("nganh", ""), MA_CTCK, khuyen_nghi=qd.get("khuyen_nghi"))
     tt5 = lap_tom_tat(symbol, ht, df_ngay.index[-1], qd, stop, kb, qr, dx, df_ngay, kq)
     canh_bao_tt = CANH_BAO_DU_LIEU + canh_bao_dl + stop["canh_bao"] + ttr["canh_bao"]
     if kb["ms"]["tron"].get("tin_cay_thap"):

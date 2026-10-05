@@ -132,7 +132,7 @@ SO_PHIEN_SU_KIEN = 5         # KQKD / GDKHQ trong 5 phiên tới → không mở
 
 THU_TU_NGUON_SO_CP = ["TCBS", "vnstock", "VNDirect", "Yahoo"]   # ưu tiên khi chọn số CP lưu hành (nhập tay luôn đứng đầu)
 DUNG_VNSTOCK = True           # dùng thư viện vnstock (bản Cộng đồng) làm nguồn; trên Colab tự cài
-IN_GON = False                # True / main(gon=True): màn hình chỉ in Tóm tắt, Phần C, D2, J4 – file vẫn đầy đủ
+IN_GON = False                # True / main(gon=True): màn hình chỉ in Tóm tắt, Phần C, D2, Kết luận chung Phần J – file vẫn đầy đủ
 SO_MA_SO_SANH_FA = 2          # Phần J5: số mã cùng ngành (đầu danh sách) đem so sánh 10 tiêu chí (như FiinTrade)
 CHO_VNSTOCK = False           # True: hết lượt vnstock thì CHỜ (chậm, đúng hạn mức) thay vì chuyển nguồn khác
 LECH_SO_CP_PCT = 0.5          # các nguồn lệch nhau > 0,5% số CP → cảnh báo

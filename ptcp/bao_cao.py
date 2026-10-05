@@ -521,10 +521,23 @@ def xuat_html(file_html, symbol, tt5, qd, cac_bang, cac_png, the=None, fj=None, 
                 import re as _re
                 bang = _re.sub(r"<td class=so>(-[\d.,]+)</td>", r'<td class=so style="color:#C62828">\1</td>', bang)
                 bang = _re.sub(r"<td class=so>(\d[\d.,]*)</td>", r'<td class=so style="color:#2E7D32">\1</td>', bang)
-            kl = ""
-            if ma_ == "J4" and fj.get("J4_ket_luan"):
-                kl = "<ul>" + "".join(f"<li>{e(x)}</li>" for x in fj["J4_ket_luan"]) + "</ul>"
-            phan_j += f'<h2 id="{ma_}">{e(ten)}</h2><div class="cuon">{bang}</div>{kl}'
+            phan_j += f'<h2 id="{ma_}">{e(ten)}</h2><div class="cuon">{bang}</div>'
+    if fj and fj.get("ket_luan"):
+        kl = fj["ket_luan"]
+        mau_kl = {"TÍCH CỰC": "#2E7D32", "TIÊU CỰC": "#C62828"}.get(kl["nhan"], "#F9A825")
+        dong_y = "".join(f'<li><b>{e(n)}</b>: <span style="color:{"#2E7D32" if s_ > 0 else "#C62828" if s_ < 0 else "#555"}">'
+                         f'{"▲" if s_ > 0 else "▼" if s_ < 0 else "•"} {e(t)}</span></li>' for n, t, s_ in kl["y"])
+        dong_y += "".join(f"<li><b>Biến động</b>: {e(d)}</li>" for d in kl["bien_dong"])
+        muc.append(("J-ket-luan", "Kết luận Phần J"))
+        phan_j += (f'<h2 id="J-ket-luan">Kết luận chung Phần J</h2><div class="the-kl" style="border-left:6px solid '
+                   f'{mau_kl};background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08)">'
+                   f'<div style="font-size:22px;font-weight:700;color:{mau_kl}">{e(kl["nhan"])} '
+                   f'<span style="font-size:14px;color:#555">(điểm {kl["diem"]:+d})</span></div><ul>{dong_y}</ul>'
+                   f'<p><b>Điểm mạnh:</b> {e("; ".join(kl["manh"]) or "không có điểm nổi bật")}</p>'
+                   f'<p><b>Điểm yếu:</b> {e("; ".join(kl["yeu"]) or "không có điểm yếu đáng kể")}</p>'
+                   + (f'<p>➜ <b>{e(kl["goi_y"])}</b></p>' if kl.get("goi_y") else "")
+                   + '<p style="color:#777;font-size:12px">Kết luận Phần J mô tả chất lượng doanh nghiệp &amp; '
+                     'trạng thái cổ phiếu; khuyến nghị giao dịch vẫn theo Phần C.</p></div>')
     muc += [("bieu-do", "Biểu đồ"), ("day-du", "Báo cáo đầy đủ")]
     bang_html = "".join(f'<h2 id="b{k}">{e(t)}</h2><div class="cuon">{_bang_html(b)}</div>'
                         for k, (t, b) in enumerate(cac_bang))

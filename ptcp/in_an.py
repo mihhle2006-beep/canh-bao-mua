@@ -72,17 +72,18 @@ def _to_mau(s):
     return "\n".join(ra)
 
 
-_RE_MUC = re.compile(r"^\s*(TÓM TẮT|PHẦN ([A-J])\.|([A-J]\d)\.\s|XUẤT KẾT QUẢ)")
-MUC_GON = {"TÓM TẮT", "C", "D2", "J4"}
+_RE_MUC = re.compile(r"^\s*(TÓM TẮT|PHẦN ([A-J])\.|([A-J]\d)\.\s|XUẤT KẾT QUẢ|KẾT LUẬN CHUNG PHẦN J)")
+MUC_GON = {"TÓM TẮT", "C", "D2", "J_KL"}
 
 
 def _loc_gon(s):
-    """Chế độ in gọn: chỉ giữ dòng thuộc Tóm tắt, Phần C, D2, J4 (+ dòng báo đã lưu file ✔ / cảnh báo ⚠)."""
+    """Chế độ in gọn: chỉ giữ Tóm tắt, Phần C, D2, Kết luận chung Phần J (+ dòng đã lưu file ✔ / cảnh báo ⚠)."""
     giu = []
     for d in s.split("\n"):
         m = _RE_MUC.match(d)
         if m:
-            _CHAY["muc"] = m.group(3) or m.group(2) or ("TÓM TẮT" if m.group(1) == "TÓM TẮT" else "XUAT")
+            _CHAY["muc"] = m.group(3) or m.group(2) or {"TÓM TẮT": "TÓM TẮT"}.get(m.group(1)) or \
+                ("J_KL" if m.group(1).startswith("KẾT LUẬN CHUNG") else "XUAT")
         muc = _CHAY.get("muc", "")
         if muc in MUC_GON or muc.startswith("C") or d.lstrip().startswith(("✔ Đã", "⚠ Không")) or \
                 (muc == "XUAT" and "✔" in d):
