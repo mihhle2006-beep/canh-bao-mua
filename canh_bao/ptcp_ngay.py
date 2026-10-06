@@ -69,7 +69,29 @@ def _rut_gon(k):
         "canh_bao_su_kien": list(ttr.get("canh_bao", [])), "vni_xau": bool(ttr.get("vni_xau")),
         "rs_yeu": bool(ttr.get("rs_yeu")), "he_so": _so(ttr.get("he_so")) or 1.0,
         "kich_ban": _kich_ban(kb), "n_phien": int(kb.get("n") or 63),
+        "loi_the_tin_hieu": _so(kb.get("loi_the_tin_hieu")),
+        "co_ban": [t for t, ok in qd.get("kiem_tra", []) if t.startswith("Cơ bản") and ok is False],
+        "vung_mua": _vung_mua(k), "backtest": _backtest(k),
     }
+
+
+def _vung_mua(k):
+    """Vùng mua điều chỉnh của ptcp (mã chưa nắm giữ) + phễu lịch sử. ptcp cũ không có → None."""
+    vm = k.get("vm")
+    if not vm:
+        return None
+    ls = ((k.get("bt_vm") or {}).get("co_dinh") or {}).get("vung") or {}
+    return {"lo": _so(vm["lo"]), "hi": _so(vm["hi"]), "cat_lo": _so(vm["stop"]), "muc_tieu": _so(vm["muc_tieu"]),
+            "rr": _so(vm["rr"]), "trang_thai": str(vm["trang_thai"]), "tuan_ok": bool(vm["tuan_ok"]),
+            "xs_ve_vung": _so(ls.get("xs_ve_vung")), "xs_1R": _so(ls.get("xs_1R")), "so_lenh": int(ls.get("so_lenh") or 0)}
+
+
+def _backtest(k):
+    """Kết luận backtest Phần I: câu hành động (dòng cuối) + có lợi thế hay không."""
+    kl = k.get("ket_luan_bt")
+    if not kl or not kl.get("dong"):
+        return None
+    return {"hanh_dong": str(kl["dong"][-1]), "co_loi_the": bool(kl.get("co_loi_the"))}
 
 
 def phan_tich_ngay(ma, bay_gio, lam_moi=False, **them):
@@ -81,6 +103,7 @@ def phan_tich_ngay(ma, bay_gio, lam_moi=False, **them):
             return json.load(fh)
     try:
         import ptcp
+        ptcp.cau_hinh.GHI_NHAT_KY = False                    # bot tự ghi nhật ký (canh_bao/nhat_ky.py) – tránh ghi trùng
         tham_so = {"symbol": ma, "nhom": "-", "start": C.NGAY_BAT_DAU, **C.SU_KIEN.get(ma, {}), **them}
         with contextlib.redirect_stdout(io.StringIO()):
             k = ptcp.main(tuong_tac=False, im_lang=True, xuat_file=False, **tham_so)

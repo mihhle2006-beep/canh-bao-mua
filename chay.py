@@ -7,6 +7,7 @@ CẢNH BÁO MUA ĐA KHUNG – chạy:
   python chay.py --ma MWG,FPT          (đổi danh sách mã; mặc định trong canh_bao/cau_hinh.py)
   python chay.py --khong_gui           (chỉ in, không gửi Telegram)
   python chay.py --khong_ban           (bỏ cảnh báo BÁN cho mã đang giữ)
+  python chay.py --che_do lich_su      (chấm lại mọi tín hiệu đã ghi, in bảng độ chính xác, xuất Excel)
 CẢNH BÁO BÁN: vị thế đọc từ danh_muc.csv của repo riêng tư danh-muc (DANH_MUC_TOKEN, DANH_MUC_REPO) – xem vi_the.py.
 Phân tích NGÀY bằng bộ ptcp (khuyến nghị, EV, cắt lỗ/mục tiêu, sự kiện) chạy 1 lần/ngày/mã (cache_ptcp/),
 lần tổng kết 15:20 chạy lại để cập nhật cho phiên sau.
@@ -25,13 +26,13 @@ from canh_bao.du_lieu import gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phie
 from canh_bao.thong_bao import (can_bao, doc_trang_thai, dong_khung, ghi_lich_su, ghi_trang_thai, gui,
                                 tin_mua_ngay, tin_tong_ket)
 from canh_bao.tieu_chi import thi_truong
-from canh_bao import vi_the
+from canh_bao import nhat_ky, vi_the
 from canh_bao import trinh_bay
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="Cảnh báo mua đa khung")
-    p.add_argument("--che_do", default="tu_dong", choices=["tu_dong", "trong_phien", "tong_ket"])
+    p.add_argument("--che_do", default="tu_dong", choices=["tu_dong", "trong_phien", "tong_ket", "lich_su"])
     p.add_argument("--ma", default=",".join(C.MA_THEO_DOI))
     p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-02 10:30'")
     p.add_argument("--khong_gui", action="store_true")
@@ -47,6 +48,8 @@ def main(argv=None):
         else:
             print(f"{bay_gio:%H:%M %d/%m} ngoài giờ giao dịch → không làm gì.")
             return 0
+    if che_do == "lich_su":
+        return xem_lich_su()
     ds_ma = [m.strip().upper() for m in a.ma.split(",") if m.strip()]
     vt, nguon_vt = ({}, "tắt (--khong_ban)") if a.khong_ban else vi_the.doc_danh_muc()
     an = [m for m in vt if m not in ds_ma]                  # mã chỉ có trong danh mục: không in chi tiết ra log
@@ -87,6 +90,8 @@ def main(argv=None):
         giu = [k for k in ds if "ban" in k]
         if giu:
             noi_dung += "\n\n💼 VỊ THẾ ĐANG GIỮ\n" + "\n".join(vi_the.dong_tong_ket(vt[k["ma"]], k["ban"]) for k in giu)
+        if C.GHI_NHAT_KY:
+            noi_dung += _nhat_ky_tong_ket(ds, an, du_lieu_ngay, bay_gio, kem_rieng=bool(giu))
         anh = trinh_bay.ve_bang_tong_ket([trinh_bay.dong_bang_tong_ket(k) for k in cong_khai],
                                          f"TỔNG KẾT {pd.Timestamp(bay_gio):%d/%m/%Y} – {tt['nhan']}") \
             if C.GUI_ANH else None
@@ -106,6 +111,8 @@ def main(argv=None):
             gui(noi_dung, rieng_tu=kq["ma"] in vt, anh=anh) if not a.khong_gui else print(noi_dung)
             if kq["ma"] not in an:                       # lịch sử commit lên repo công khai → bỏ mã ẩn
                 ghi_lich_su(kq, bay_gio)
+            if C.GHI_NHAT_KY:
+                nhat_ky.ghi_mua_ngay(kq, bay_gio, rieng_tu=kq["ma"] in an)
             so_bao += 1
     ghi_trang_thai(trang_thai)
     if an:
@@ -122,6 +129,8 @@ def main(argv=None):
                                           v.get("gia_von"), tieu_de=f"{kq['ma']} – {vi_the.NHAN[kb['muc']]}") \
                 if C.GUI_ANH else None
             gui(noi_dung, rieng_tu=True, anh=anh) if not a.khong_gui else print(noi_dung)
+            if C.GHI_NHAT_KY:
+                nhat_ky.ghi_ban(kq, kb, bay_gio)
             so_ban += 1
     if vt:
         vi_the.ghi_trang_thai_ban(tt_ban)
@@ -131,6 +140,42 @@ def main(argv=None):
         for n in du_lieu.NGUON_DA_DUNG.values():
             dem[n] = dem.get(n, 0) + 1
         print("Nguồn giá đã dùng: " + ", ".join(f"{n} ({k} lần)" for n, k in dem.items()))
+    return 0
+
+
+def _tai_ngay(ma):
+    return tai(ma, "D", C.NGAY_BAT_DAU)
+
+
+def _nhat_ky_tong_ket(ds, an, du_lieu_ngay, bay_gio, kem_rieng=False):
+    """Ghi khuyến nghị ptcp hôm nay, chấm lại tín hiệu cũ, trả các dòng độ chính xác để gắn vào tin tổng kết."""
+    try:
+        nhat_ky.nhap_lich_su_cu()
+        for kq in ds:
+            nhat_ky.ghi_ptcp(kq, bay_gio, rieng_tu=kq["ma"] in an)
+        xong = nhat_ky.cap_nhat(_tai_ngay, du_lieu_ngay)
+        print(f"Nhật ký tín hiệu: {xong} tín hiệu vừa có kết luận ĐÚNG/SAI.")
+        d = nhat_ky.dong_tong_ket()
+        if kem_rieng:                                  # tin này là tin riêng tư → được kèm thống kê lệnh bán
+            d += nhat_ky.dong_tong_ket(nhat_ky.FILE_RIENG, "📊 ĐỘ CHÍNH XÁC (riêng: cảnh báo bán, mã trong danh mục)")
+        return ("\n\n" + "\n".join(d)) if d else ""
+    except Exception as e:                             # nhật ký lỗi không được làm hỏng tin tổng kết
+        print(f"⚠ Nhật ký tín hiệu lỗi: {str(e)[:150]}")
+        return ""
+
+
+def xem_lich_su():
+    """Chấm lại & in bảng độ chính xác. Trên Actions (repo công khai) chỉ in phần công khai."""
+    import os
+    rieng = not os.environ.get("GITHUB_ACTIONS")
+    xong = nhat_ky.cap_nhat(_tai_ngay)
+    print(f"Vừa có kết luận: {xong} tín hiệu")
+    with pd.option_context("display.width", 200, "display.max_columns", 20):
+        for ten, path in [("CÔNG KHAI", nhat_ky.FILE_CONG_KHAI)] + ([("RIÊNG", nhat_ky.FILE_RIENG)] if rieng else []):
+            tk = nhat_ky.thong_ke(nhat_ky.doc(path))
+            print(f"\n=== ĐỘ CHÍNH XÁC – {ten} ===")
+            print(tk.round(1).to_string(index=False) if len(tk) else "(chưa có tín hiệu)")
+    print("\nĐã xuất", nhat_ky.xuat_excel(rieng=rieng))
     return 0
 
 

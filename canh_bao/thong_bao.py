@@ -113,6 +113,16 @@ def dong_ptcp(pt):
     if pt.get("vni_xau") or pt.get("rs_yeu"):
         d.append(f"ptcp: {'VN-Index xấu ' if pt.get('vni_xau') else ''}{'RS ở đáy 1 năm ' if pt.get('rs_yeu') else ''}"
                  f"→ khối lượng × {pt.get('he_so', 1):g}")
+    vm = pt.get("vung_mua")
+    if vm and not pt.get("mua"):
+        ls = (f" | lịch sử: về vùng {_f(vm.get('xs_ve_vung'), 0)}%, +1R {_f(vm.get('xs_1R'), 0)}%"
+              if vm.get("so_lenh") else "")
+        d.append(f"Vùng mua {_f(vm['lo'])}–{_f(vm['hi'])} ({vm['trang_thai'].split(' →')[0].lower()}"
+                 f"{'' if vm.get('tuan_ok') else ', tuần chưa ủng hộ'}) | CL {_f(vm.get('cat_lo'))}{ls}")
+    bt = pt.get("backtest")
+    if bt:
+        hd = bt["hanh_dong"]
+        d.append(f"Backtest: {hd[:150] + '…' if len(hd) > 150 else hd}")
     return d
 
 

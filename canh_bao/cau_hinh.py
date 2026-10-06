@@ -8,7 +8,7 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
   PHÚT  – điểm vào (kích hoạt "MUA NGAY")
 """
 # --- Mã theo dõi ---
-MA_THEO_DOI = ["MWG", "DHC", "GMD" , "VPB" , "VHM" , "NAB"]
+MA_THEO_DOI = ["MWG", "DHC", "GMD"]
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
@@ -66,3 +66,9 @@ YEU_CAU_PTCP_MUA = False           # True: CHỈ báo khi khuyến nghị cuối
 SU_KIEN = {                        # ngày công bố KQKD / GDKHQ đã biết → ptcp chặn mua trong 5 phiên trước sự kiện
     # "MWG": {"ngay_kqkd": "20/10/2026", "ngay_gdkhq": "05/11/2026"},
 }
+
+# --- Nhật ký & chấm điểm tín hiệu (canh_bao/nhat_ky.py) ---
+GHI_NHAT_KY = True                 # ghi mọi tín hiệu (MUA NGAY, khuyến nghị ptcp, cảnh báo bán) & tự chấm ĐÚNG/SAI
+KY_HAN_MUA = 63                    # phiên – hạn chấm lệnh mua khi ptcp không cho kỳ hạn (= SO_PHIEN_XAC_SUAT)
+KY_HAN_BAN = 20                    # phiên – sau cảnh báo bán bao lâu thì so giá để chấm
+# T+2, phí + trượt giá, ngưỡng trần/sàn, "ít mẫu": lấy từ ptcp/cau_hinh.py (một bộ máy chấm chung – ptcp/nhat_ky.py)

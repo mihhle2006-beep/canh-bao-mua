@@ -1,4 +1,4 @@
-# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ) – MWG, DHC, GMD, VPB, VHM, NAB
+# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ) – MWG, DHC, GMD
 
 Quét các mã theo dõi theo **4 khung** (tuần → ngày → giờ → phút), tiêu chí lấy từ bộ lọc cổ phiếu
 (chiến lược `ky_thuat` / `diem_mua`), và **gửi Telegram ngay khi một mã đạt đủ tiêu chí mua**.
@@ -15,8 +15,10 @@ Quét các mã theo dõi theo **4 khung** (tuần → ngày → giờ → phút)
 - **Giá 4 khung (tuần/ngày/giờ/phút):** VNDirect → DNSE → SSI iBoard → VCI → Yahoo, tự chuyển nguồn khi lỗi
   (nguồn không hỗ trợ khung nào thì bỏ qua: VCI chỉ ngày & giờ, Yahoo chỉ ngày). Mọi nguồn lỗi → dùng cache.
   Cuối mỗi lần chạy in dòng *"Nguồn giá đã dùng"* để biết nguồn nào đang sống.
-- **ptcp** (thư mục `ptcp/`, bản 3.4): không dùng vnstock / Vietstock; số CP đối chiếu TCBS → VNDirect → Yahoo;
-  P/E = giá ÷ (LNST 4 quý ÷ CP lưu hành). Khi sửa ptcp, chép nguyên thư mục `ptcp/` mới đè lên.
+- **ptcp – MỘT nguồn duy nhất:** bot KHÔNG giữ bản sao ptcp nữa. Mỗi lần chạy, bước *"Lấy ptcp"* của workflow clone
+  repo **danh-muc** (token chỉ đọc `DANH_MUC_TOKEN` đã có) và chép `ptcp_phan_tich/ptcp` vào cạnh `chay.py` → sửa ptcp
+  một lần trong danh-muc là bot, danh mục và Colab cùng dùng bản mới. Đổi repo/thư mục: Variables `PTCP_REPO`,
+  `PTCP_PATH`. Chạy trên máy: `python lay_ptcp.py --tu ../ptcp_phan_tich/ptcp`.
 
 ### Phần lấy từ bộ phân tích cổ phiếu (ptcp – thư mục `ptcp/`)
 Mỗi mã được chạy **phân tích ngày đầy đủ của ptcp 1 lần/ngày** (lưu `cache_ptcp/`, lần tổng kết 15:20 chạy lại):
@@ -26,6 +28,10 @@ Mỗi mã được chạy **phân tích ngày đầy đủ của ptcp 1 lần/ng
 - **Sự kiện** KQKD / GDKHQ trong 5 phiên tới (khai báo `SU_KIEN` trong cấu hình) → `CHỜ SAU SỰ KIỆN`.
 - VN-Index xấu / RS ở đáy 1 năm → ghi hệ số khối lượng; khuyến nghị cuối của ptcp hiện trong mọi tin.
 - `YEU_CAU_PTCP_MUA = True` → chỉ báo khi chính ptcp cũng khuyến nghị MUA (chặt nhất).
+- **Vùng mua điều chỉnh** của ptcp (mã chưa mua): vùng hỗ trợ trùng nhau, trạng thái (chờ về vùng / trong vùng /
+  đã xác nhận), cắt lỗ dưới vùng và phễu lịch sử (% lần giá về vùng, % lệnh đạt +1R) – hiện trong tin khi ptcp chưa MUA.
+- **Kết luận backtest** Phần I của ptcp (câu hành động: ÁP DỤNG / KHÔNG giao dịch ngắn hạn / ĐỨNG NGOÀI) – 1 dòng
+  trong tin MUA NGAY và tổng kết.
 
 Chỉ dùng **nến đã đóng** (giờ, phút, tuần) → tín hiệu không nhấp nháy giữa chừng nến.
 
@@ -63,11 +69,35 @@ bán lưu trong cache Actions (`cache_ptcp/`), không commit. `danh_muc.csv` n�
 2. Repo **canh-bao-mua** → Settings → Secrets and variables → Actions:
    - Secrets: `DANH_MUC_TOKEN` = token vừa tạo
    - Variables: `DANH_MUC_REPO` = `ten-ban/danh-muc` (tuỳ chọn `DANH_MUC_PATH` nếu file không ở gốc repo)
+   - Token này cũng dùng để **lấy ptcp** từ repo danh-muc (bước "Lấy ptcp") – nếu ptcp nằm ở repo khác, đặt
+     Variable `PTCP_REPO` và cấp thêm repo đó cho token.
 3. Chạy thử: Actions → Canh bao mua → Run workflow → `tong_ket`. Log phải có dòng
    `Vị thế đang giữ: N mã (nguồn: repo danh-muc)`; nếu báo `GitHub HTTP 404` → sai tên repo hoặc token chưa được cấp repo đó.
 
 Cắt lỗ / mục tiêu đã đặt do repo `danh-muc` cập nhật mỗi ngày 15:45 → bot tự dùng mức mới, không phải nhập 2 nơi.
 Chạy trên máy: đặt `danh_muc.csv` cạnh `chay.py`; bỏ cảnh báo bán: `python chay.py --khong_ban`.
+
+## Nhật ký & chấm điểm tín hiệu (ĐÚNG / SAI)
+Module `canh_bao/nhat_ky.py` ghi lại mọi tín hiệu bot đã phát rồi **tự chấm bằng giá thực tế** ở mỗi lần tổng kết 15:20.
+Bộ chấm là **`ptcp/nhat_ky.py`** – cùng một cách chấm với Phần K của ptcp trên Colab và repo danh-muc.
+
+| Loại | Ghi khi | Chấm ĐÚNG khi |
+|---|---|---|
+| **MUA NGAY** | gửi tin MUA NGAY | lệnh mua ở giá lúc báo chạm **mục tiêu trước cắt lỗ**, hoặc hết hạn mà lãi sau phí > 0 |
+| **ptcp – nhóm MUA** | khuyến nghị ptcp **đổi** sang MUA / MUA TỪNG PHẦN | như trên, mua giả định ở giá mở cửa phiên sau |
+| **ptcp – CHỜ / ĐỨNG NGOÀI** | khuyến nghị đổi sang THEO DÕI, CHỜ…, CHƯA MUA, KHÔNG MUA MỚI | lệnh mua giả định đó **lỗ** (tránh được lỗ); lãi → SAI (bỏ lỡ) |
+| **BÁN** (mã đang giữ) | gửi 🔴 CẮT LỖ / 🟢 CHỐT LỜI / 🟠 CÂN NHẮC BÁN | sau `KY_HAN_BAN` (20) phiên giá đóng cửa ≤ giá lúc báo |
+
+- Chấm theo luật VN như backtest của ptcp: T+2, phiên khoá trần không mua được, khoá sàn không bán được, gap,
+  cắt lỗ và mục tiêu cùng phiên → tính cắt lỗ, trừ phí + trượt giá 0,6%. Hạn lệnh mua = kỳ hạn ptcp (63 phiên).
+- Kết quả: `ĐÚNG` · `SAI` · `ĐANG CHỜ` (có lãi/lỗ tạm tính) · `BỎ QUA` (không vào được lệnh / thiếu mức giá).
+- Tin tổng kết có thêm mục **📊 ĐỘ CHÍNH XÁC TÍN HIỆU** (tỷ lệ đúng, TB lãi/lỗ theo từng nhóm; < 30 mẫu ghi "ít mẫu").
+- Xem chi tiết: `python chay.py --che_do lich_su` → in bảng + xuất `danh_gia_tin_hieu.xlsx` (sheet *Thống kê*, *Nhật ký*
+  tô màu xanh/đỏ/vàng). Lần đầu tự nhập các tin MUA NGAY cũ từ `lich_su_tin_hieu.csv`.
+- **Bảo mật:** `lich_su_danh_gia.csv` (commit, công khai) chỉ có mã theo dõi; cảnh báo BÁN & mã chỉ có trong danh mục
+  nằm ở `cache_ptcp/lich_su_danh_gia_rieng.csv` (cache Actions, không commit) và chỉ hiện trong tin Telegram riêng tư.
+  Cache Actions có thể bị xoá nếu repo không chạy > 7 ngày → muốn giữ lâu dài thì tải file về định kỳ.
+- Tắt: `GHI_NHAT_KY = False`; chỉnh `KY_HAN_MUA`, `KY_HAN_BAN`, `CHI_PHI_KHU_HOI` trong `canh_bao/cau_hinh.py`.
 
 ## Lịch chạy (GitHub Actions)
 - Mỗi **15 phút** trong phiên (9:00–11:30, 13:00–14:45): chỉ gửi tin khi một mã **vừa chuyển** sang MUA NGAY.

@@ -178,7 +178,12 @@ def test_chay_mo_phong(du_lieu_tot, tmp_path, capsys):
         assert g.call_count == 1
         chay.main(["--ma", "AAA", "--gio", "2026-10-02 15:30"])                 # tổng kết
         assert g.call_count == 2 and "TỔNG KẾT" in g.call_args[0][0]
+        assert "ĐỘ CHÍNH XÁC TÍN HIỆU" in g.call_args[0][0]                  # nhật ký gắn vào tổng kết
+        assert chay.main(["--che_do", "lich_su"]) == 0
     assert os.path.exists("lich_su_tin_hieu.csv")
+    nk = pd.read_csv("lich_su_danh_gia.csv")
+    assert set(nk["loai"]) == {"MUA_NGAY", "PTCP"} and len(nk) == 2       # 1 tin MUA NGAY + 1 khuyến nghị ptcp
+    assert os.path.exists("danh_gia_tin_hieu.xlsx")
     assert chay.main(["--gio", "2026-10-02 12:00"]) == 0                       # nghỉ trưa → không làm gì
 
 
@@ -264,7 +269,8 @@ def test_yahoo_chi_gia_ngay():
 def test_ptcp_ban_moi_di_kem():
     from ptcp import du_lieu as pd_
     import ptcp
-    import ptcp.fiintrade  # noqa: F401  – bản mới có Phần J
+    import ptcp.chuyen_sau  # noqa: F401  – Phần J (phân tích chuyên sâu)
+    import ptcp.vung_mua  # noqa: F401  – vùng mua điều chỉnh + backtest
     assert "beta" in ptcp.__version__ and not hasattr(pd_, "lay_cp_vietstock")
 
 
@@ -403,3 +409,35 @@ def test_gui_html_loi_thi_gui_lai_chu_thuong(monkeypatch, tmp_path):
     assert thong_bao.gui("TIÊU ĐỀ 1,234.5\nnội dung", anh=str(anh))
     assert [g[0] for g in goi] == ["sendPhoto", "sendMessage", "sendMessage"]
     assert goi[0][1]["caption"] == "TIÊU ĐỀ 1.234,5" and "parse_mode" not in goi[2][1]
+
+
+def test_ptcp_rut_gon_co_vung_mua_va_backtest(tmp_path, monkeypatch):
+    """ptcp mới: JSON rút gọn có vùng mua + kết luận backtest, ghi được JSON, tin nhắn hiện đủ dòng."""
+    import json
+    import numpy as np
+    import pandas as pd_
+    import ptcp
+    from canh_bao import ptcp_ngay, thong_bao
+    rng = np.random.default_rng(3)
+    n = 1500
+    idx = pd_.bdate_range(end="2026-10-02", periods=n)
+
+    def gia(seed, g0, sig):
+        r = np.random.default_rng(seed).normal(0.0005, sig, n)
+        c = g0 * np.exp(np.cumsum(r))
+        return pd_.DataFrame({"date": idx, "open": c * np.exp(rng.normal(0, .005, n)), "close": c,
+                              "high": c * 1.012, "low": c * 0.988, "volume": 1e6}).assign(
+            high=lambda d: d[["open", "close", "high"]].max(axis=1), low=lambda d: d[["open", "close", "low"]].min(axis=1))
+    gia(3, 20, .02).to_csv(tmp_path / "m.csv", index=False)
+    gia(9, 1000, .01).to_csv(tmp_path / "v.csv", index=False)
+    monkeypatch.chdir(tmp_path)
+    ptcp.cau_hinh.GHI_NHAT_KY = False
+    k = ptcp.main(tuong_tac=False, im_lang=True, xuat_file=False, symbol="TEST", san="HOSE", nhom="-",
+                  csv_ngay=str(tmp_path / "m.csv"), csv_vni=str(tmp_path / "v.csv"))
+    pt = ptcp_ngay._rut_gon(k)
+    json.dumps(pt, ensure_ascii=False)
+    assert pt["backtest"] and pt["backtest"]["hanh_dong"]
+    dong = thong_bao.dong_ptcp(dict(pt, mua=False))
+    assert any(x.startswith("Backtest:") for x in dong)
+    if pt["vung_mua"]:
+        assert any(x.startswith("Vùng mua") for x in dong)
