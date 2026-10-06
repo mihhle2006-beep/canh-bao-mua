@@ -301,7 +301,7 @@ def co_ban(ma):
     return kq
 
 
-# ---------------------------------------------------------------- BCTC NĂM (10 tiêu chí FiinGroup)
+# ---------------------------------------------------------------- BCTC NĂM (10 tiêu chí tài chính)
 def bctc_nam(ma):
     Finance = _lop("Finance")
     loi = []

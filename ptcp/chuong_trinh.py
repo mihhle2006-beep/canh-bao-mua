@@ -38,7 +38,8 @@ from .du_lieu import (
     chuan_bi_vnstock, chuan_hoa, doi_chieu_nguon, ghi_nguon, gop_tuan, lay_bctc_nam, lay_chi_so_co_ban,
     lay_thong_tin_dn, tai_nhom_nganh, tai_vnindex, thu_cac_nguon, tu_csv,
 )
-from . import fiintrade
+from . import chuyen_sau
+from .vung_mua import backtest_vung_mua, vung_mua_hien_tai
 from .chi_bao import (
     _duong, duong_xu_huong, phan_tich_tin_hieu, tim_dinh_day, tinh_chi_bao,
 )
@@ -51,6 +52,8 @@ from .phan_tich import (
     quan_tri_rui_ro, quyet_dinh_cuoi, thong_tin_giao_dich, tinh_cat_lo, tinh_muc_tieu, trang_thai_tuong_tu,
     vung_hoi_tu,
 )
+from .loi import tinh_khuyen_nghi
+from . import nhat_ky
 from .bo_sung import (
     backtest_quy_tac, boi_canh_thi_truong, danh_gia_thi_truong, lich_cong_bo_kqkd, phan_tich_khoi_luong,
 )
@@ -58,7 +61,7 @@ from .bieu_do import (
     ve_bieu_do_tang_giam, ve_boi_canh, ve_khoi_luong, ve_khung, ve_kich_ban, ve_quan_tri_rui_ro,
 )
 from .bao_cao import (
-    in_backtest, in_bao_cao_ctck, in_boi_canh, in_co_ban, in_dinh_day, in_khoi_luong,
+    in_backtest, in_vung_mua, in_bao_cao_ctck, in_lich_su_khuyen_nghi, in_boi_canh, in_co_ban, in_dinh_day, in_khoi_luong,
     in_kich_ban_chinh, in_muc_tieu, in_nguon_du_lieu, in_phan_E, in_thong_tin_giao_dich, in_tin_hieu,
     in_tom_tat, in_walk_forward, lap_tom_tat, xuat_csv, xuat_html,
 )
@@ -296,41 +299,24 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     bang_phien, pct = phan_loai_phien(df_ngay, cfg.NGUONG_TRAN_SAN)
     mtg, mgg, xu, dd = chuoi_tang_giam(pct)
 
-    cac_khung = {"Tuần": gop_tuan(df_ngay), "Ngày": df_ngay}
-    if df_gio is not None:
-        cac_khung["Giờ"] = df_gio
-    kq = {}
-    for ten, d in cac_khung.items():
-        d = tinh_chi_bao(d)
-        pv = tim_dinh_day(d, ten)
-        xh = duong_xu_huong(d, pv)
-        ds, tong, co = phan_tich_tin_hieu(d, pv, xh, ten)
-        kq[ten] = {"df": d, "pv": pv, "xh": xh, "ds": ds, "diem": tong, "co": co, "mt": None}
+    # Chỉ số cơ bản lấy TRƯỚC quyết định (bộ lọc cơ bản – LOC_CO_BAN); bot / quét nhiều mã cũng lấy khi bật lọc
+    online = lay_chi_so_co_ban(symbol, ht, cc["kl_luu_hanh"], lnst_nhap) \
+        if (xuat_file or _CHAY["tuong_tac"] or lnst_nhap is not None or cfg.LOC_CO_BAN) else {}
+    if roe_nhap is not None:
+        online = dict(online, **{"ROE %": roe_nhap})
+    loi = tinh_khuyen_nghi(df_ngay, df_gio, vni, tt, symbol=symbol, nhom=nhom, so_cp=so_cp, gia_von=gia_von,
+                           mt_nhap=mt_nhap, mt_ctck=mt_ctck, ky_han=ky_han, n_phien=n_phien, von_trieu=von_trieu,
+                           rui_ro_pct=rui_ro_pct, ngay_kqkd=ngay_kqkd, ngay_gdkhq=ngay_gdkhq,
+                           co_ban=online if cfg.LOC_CO_BAN else None)
+    kq, stop, hoi_tu, mt_chinh, dx, dk, wf, kb, bc, lich, ttr, qr, tg, qd = (
+        loi[k] for k in ("kq", "stop", "hoi_tu", "mt_chinh", "dx", "dk", "wf", "kb", "bc", "lich", "ttr", "qr", "tg",
+                         "qd"))
     d_ngay = kq["Ngày"]["df"]
-    stop = tinh_cat_lo(d_ngay, kq["Ngày"]["pv"], ht)
-    in_ra("\nĐang mô phỏng lịch sử cho các mục tiêu ...")
-    kq["Ngày"]["mt"] = tinh_muc_tieu(d_ngay, kq["Ngày"]["pv"], kq["Ngày"]["xh"], "Ngày", df_ngay, stop, n_phien)
-    kq["Tuần"]["mt"] = tinh_muc_tieu(kq["Tuần"]["df"], kq["Tuần"]["pv"], kq["Tuần"]["xh"], "Tuần", df_ngay, stop,
-                                     ky_han)
-    hoi_tu = vung_hoi_tu(kq["Ngày"]["mt"]["bang"], kq["Tuần"]["mt"]["bang"])
-    mt_chinh = {t: (kq[t]["mt"]["chinh"]["Giá mục tiêu"] if kq[t]["mt"]["chinh"] is not None else None)
-                for t in ("Ngày", "Tuần")}
     canh_bao_dl = kiem_tra_du_lieu(df_ngay, df_gio, kq["Ngày"]["pv"], kq["Tuần"]["pv"], BIEN_DO_SAN[san])
-
-    dx = de_xuat_muc_tieu(df_ngay, kq, ht, mt_nhap, hoi_tu, ky_han, mt_ctck or None)
     them = {"★ MT ngắn hạn (ngày)": mt_chinh["Ngày"], "★ MT trung hạn (tuần)": mt_chinh["Tuần"],
             "✎ MT tự nhập": mt_nhap, "◆ MT đề xuất": dx["chon"] if dx["chon"] != mt_nhap else None,
             "✘ Cắt lỗ": stop["gia"] if stop["gia"] < ht else None}
     bang_kb = phan_tich_kich_ban(df_ngay, so_cp, gia_von, n_phien, them)
-    dk = trang_thai_tuong_tu(d_ngay, kq["Tuần"]["df"])
-    wf = kiem_dinh_walk_forward(df_ngay, ht, list(kq["Ngày"]["mt"]["bang"]["Giá mục tiêu"]), stop["gia"], n_phien)
-    kb = kich_ban_chinh(df_ngay, kq, ht, stop, mt_chinh, dx["chon"], so_cp, gia_von, n_phien, dk, wf=wf, nhom=nhom)
-    bc = boi_canh_thi_truong(symbol, df_ngay, vni, nhom)
-    lich = lich_cong_bo_kqkd(df_ngay.index[-1])
-    ttr = danh_gia_thi_truong(bc, lich, df_ngay.index[-1], ngay_kqkd, ngay_gdkhq)
-    qr = quan_tri_rui_ro(df_ngay, kq, ht, dx, stop, tt, kb, gia_von, so_cp, von_trieu, rui_ro_pct, ttr["he_so"])
-    tg = ket_luan_mua(kq)
-    qd = quyet_dinh_cuoi(tg, kb, qr, dx, ht, stop, ttr)     # ← NGUỒN DUY NHẤT của khuyến nghị
     # [MỚI] Kế hoạch từ GIÁ MUA: cắt lỗ gốc tại ngày mua, mục tiêu theo R, so với VN-Index từ ngày mua
     _mtc = kq["Ngày"]["mt"]["chinh"]
     kh = ke_hoach_tu_gia_mua(df_ngay, gia_von, ngay_mua, vni, stop["gia"], mt_nhap,
@@ -340,10 +326,21 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     kl = phan_tich_khoi_luong(d_ngay)
     bt = backtest_quy_tac(d_ngay, kq["Tuần"]["df"], n_phien, loc_tuan=True)
     bt0 = backtest_quy_tac(d_ngay, kq["Tuần"]["df"], n_phien, loc_tuan=False)
+    bt_thoat = {k: backtest_quy_tac(d_ngay, kq["Tuần"]["df"], n_phien, loc_tuan=True, thoat=k)
+                for k in ("dong", "tung_phan", "dong_63")}            # [MỚI] so sánh cách THOÁT lệnh (+ hết hạn cứng)
+    # [MỚI] Vùng mua điều chỉnh (mã CHƯA nắm giữ) + backtest point-in-time của chính quy tắc chờ vùng
+    bt_vm = {k: backtest_vung_mua(d_ngay, kq["Tuần"]["df"], n_phien, thoat=k) for k in ("co_dinh", "dong", "tung_phan")}
+    vm = None if gia_von else vung_mua_hien_tai(d_ngay, kq["Tuần"]["df"])
+    nk = None
+    if cfg.GHI_NHAT_KY:                                                # [MỚI] PHẦN K – nhật ký khuyến nghị
+        try:
+            mt_ngan = mt_chinh["Ngày"] or dx.get("chon")
+            nk = nhat_ky.ghi_va_cham_ma(symbol, df_ngay, qd["khuyen_nghi"], ht, stop["gia"], mt_ngan, n_phien,
+                                        san, kb["ev_qd"], qr["rr"])
+        except Exception as e:                                         # nhật ký lỗi không làm hỏng phân tích
+            CANH_BAO_DU_LIEU.append(f"Nhật ký khuyến nghị lỗi: {str(e)[:100]}")
 
     cb = {"la_ctck": la_ctck, "lich": lich, "ngay_kqkd": ngay_kqkd, "ngay_gdkhq": ngay_gdkhq, "thieu": []}
-    online = lay_chi_so_co_ban(symbol, ht, cc["kl_luu_hanh"], lnst_nhap) \
-        if (xuat_file or _CHAY["tuong_tac"] or lnst_nhap is not None) else {}
     chi_so_ctck = {t: (v, n) for t, v, n in pre.get("chi_so", [])}
     for ten, nhap, khoa_ctck in (("P/E", None, "P/E TTM (lần)"), ("P/B", pb_nhap, "P/B (lần)"),
                                  ("ROE %", roe_nhap, "ROE (%)")):
@@ -356,20 +353,22 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
             cb[ten] = chi_so_ctck[khoa_ctck]
         elif ten != "P/E":
             cb["thieu"].append(ten)
-    for ten, khoa in (("EPS 4 quý (đồng)", "EPS 4Q"), ("LNST 4 quý (tỷ đồng)", "LNST 4 quý (tỷ đồng)")):
+    for ten, khoa in (("EPS 4 quý (đồng)", "EPS 4Q"), ("LNST 4 quý (tỷ đồng)", "LNST 4 quý (tỷ đồng)"),
+                      ("Tăng trưởng LNST 4 quý so cùng kỳ %", "Tăng trưởng LNST 4Q %")):
         if online.get(khoa) is not None:
             cb[ten] = (online[khoa], online.get("cach_tinh_eps", ""))
     if margin is not None:
         cb["Dư nợ margin (tỷ đồng)"] = (margin, "Nhập tay")
-    # [MỚI] PHẦN J – phân tích kiểu FiinTrade (chỉ khi xuất báo cáo / chạy hỏi đáp; không đổi khuyến nghị)
+    # [MỚI] PHẦN J – phân tích chuyên sâu (chỉ khi xuất báo cáo / chạy hỏi đáp; không đổi khuyến nghị)
     fj = None
     if xuat_file or _CHAY["tuong_tac"]:
         in_ra("\nĐang lấy BCTC năm cho phân tích 10 tiêu chí ...")
         bctc = lay_bctc_nam(symbol)
         bctc_nganh = {m: lay_bctc_nam(m, im_lang=True) for m in list(nhom)[:cfg.SO_MA_SO_SANH_FA]}
-        fj = fiintrade.phan_tich(symbol, d_ngay, vni, nhom, tt, cb, online, bctc, bctc_nganh,
+        fj = chuyen_sau.phan_tich(symbol, d_ngay, vni, nhom, tt, cb, online, bctc, bctc_nganh,
                                  info.get("nganh", ""), MA_CTCK, khuyen_nghi=qd.get("khuyen_nghi"))
-    tt5 = lap_tom_tat(symbol, ht, df_ngay.index[-1], qd, stop, kb, qr, dx, df_ngay, kq)
+    tt5 = lap_tom_tat(symbol, ht, df_ngay.index[-1], qd, stop, kb, qr, dx, df_ngay, kq, vm=vm,
+                      bt_vm=bt_vm.get("co_dinh"))
     canh_bao_tt = CANH_BAO_DU_LIEU + canh_bao_dl + stop["canh_bao"] + ttr["canh_bao"]
     if kb["ms"]["tron"].get("tin_cay_thap"):
         canh_bao_tt.append("Mẫu thống kê hiệu dụng nhỏ → xác suất/EV có độ tin cậy THẤP.")
@@ -404,8 +403,8 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
         in_ra(f"\n{'─' * 84}\n KHUNG {ten.upper()}  ({len(d)} nến)\n{'─' * 84}")
         in_dinh_day(ten, kq[ten]["pv"], kq[ten]["xh"])
         in_tin_hieu(ten, kq[ten]["ds"], kq[ten]["diem"])
-        kq[ten]["nen"] = fiintrade.nen_va_tich_luy(d, ten)          # [MỚI] tích lũy & mô hình nến 3 nến gần nhất
-        fiintrade.in_nen_khung(ten, kq[ten]["nen"])
+        kq[ten]["nen"] = chuyen_sau.nen_va_tich_luy(d, ten)          # [MỚI] tích lũy & mô hình nến 3 nến gần nhất
+        chuyen_sau.in_nen_khung(ten, kq[ten]["nen"])
         if kq[ten]["mt"]:
             in_muc_tieu(ten, kq[ten]["mt"], ht, stop)
 
@@ -424,8 +423,10 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
                   f"| EV {fmt(c['EV %'], 2, True)}%")
     if mt_nhap:
         in_ra(f"  Mục tiêu tự nhập (định giá)         : {mt_nhap:,.2f} ({(mt_nhap / ht - 1) * 100:+.1f}%)")
+    if vm:
+        in_vung_mua(vm, bt_vm.get("co_dinh"))
     h = _duong(kq["Ngày"]["xh"], "ho_tro")
-    if h and stop["gia"] < h["gia_nay"] < ht * 1.03:
+    if not vm and h and stop["gia"] < h["gia_nay"] < ht * 1.03:
         in_ra(f"  Vùng mua tham khảo (quanh hỗ trợ ngày): {h['gia_nay']:,.2f} – {h['gia_nay'] * 1.03:,.2f} "
               f"(chỉ khi có xác nhận đảo chiều)")
     in_ra(f"  CẮT LỖ THỐNG NHẤT                    : {stop['gia']:,.2f} ({stop['pct']:+.1f}%) – {stop['quy_tac']}")
@@ -475,9 +476,10 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     in_khoi_luong(kl)
     in_boi_canh(symbol, bc, list(nhom), ttr)
     in_co_ban(symbol, cb)
-    in_backtest(bt, bt0, n_phien)
+    kl_bt = in_backtest(bt, bt0, n_phien, bt_thoat, bt_vm, symbol)
+    in_lich_su_khuyen_nghi(symbol, nk)
     if fj:
-        fiintrade.in_phan_J(symbol, fj)
+        chuyen_sau.in_phan_J(symbol, fj)
 
     bang_doi_chieu = None
     if xuat_file and NGUON_DA_DUNG.get("NGÀY") in DIA_CHI_NGUON and NGUON_DA_DUNG.get("NGÀY") not in ("CSV", "Cache"):
@@ -486,11 +488,12 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     in_nguon_du_lieu(bang_doi_chieu)
 
     ket_qua = {"symbol": symbol, "san": san, "ngay": df_ngay.index[-1], "gia": ht, "qd": qd, "stop": stop, "kb": kb,
-               "qr": qr, "dx": dx, "tg": tg, "wf": wf, "ttr": ttr, "bt": bt, "bc": bc, "kl": kl, "kq": kq,
+               "qr": qr, "dx": dx, "tg": tg, "wf": wf, "ttr": ttr, "bt": bt, "bt_thoat": bt_thoat, "bt_vm": bt_vm, "vm": vm, "ket_luan_bt": kl_bt, "nhat_ky": nk,
+               "mt_chinh": mt_chinh, "cbl": loi["cbl"], "bc": bc, "kl": kl, "kq": kq,
                "tom_tat": tt5, "thu_muc": thu_muc if xuat_file else None,
                # [MỚI] dùng cho phân tích DANH MỤC (dmuc) – không đổi kết quả phân tích 1 mã
                "df_ngay": df_ngay, "tt": tt, "canh_bao": canh_bao_tt, "mt_nhap": mt_nhap,
-               "gia_von": gia_von, "so_cp": so_cp, "kh": kh, "ngay_mua": ngay_mua, "fiintrade": fj}
+               "gia_von": gia_von, "so_cp": so_cp, "kh": kh, "ngay_mua": ngay_mua, "chuyen_sau": fj}
     if not xuat_file:
         return ket_qua
 
@@ -588,10 +591,21 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
             if bc["bang"] is not None:
                 bc["bang"].to_excel(w, sheet_name="G Boi canh", index=False)
             bt["bang"].to_excel(w, sheet_name="I Backtest", index=False)
+            if bt_vm["co_dinh"]["vung"]["so_lenh"]:
+                bt_vm["co_dinh"]["vung"]["bang"].to_excel(w, sheet_name="I Backtest vung mua", index=False)
+            if kl_bt:
+                pd.DataFrame({"Kết luận backtest": kl_bt["dong"]}).to_excel(w, sheet_name="I Ket luan", index=False)
+            if vm:
+                pd.DataFrame([["Vùng mua", f"{vm['lo']:,.2f} – {vm['hi']:,.2f}"], ["Trạng thái", vm["trang_thai"]],
+                              ["Cắt lỗ", vm["stop"]], ["Mục tiêu (đỉnh nhịp)", vm["muc_tieu"]], ["R/R giữa vùng", vm["rr"]]]
+                             + [[f"Hỗ trợ: {t}", p] for t, p in vm["muc"]],
+                             columns=["Chỉ tiêu", "Giá trị"]).to_excel(w, sheet_name="C Vung mua", index=False)
+            if nk is not None and len(nk["bang"]):
+                nk["bang"].drop(columns=["id"]).to_excel(w, sheet_name="K Lich su khuyen nghi", index=False)
             if wf is not None:
                 wf["bang"].to_excel(w, sheet_name="Walk-forward", index=False)
             if fj:
-                fiintrade.ghi_excel(w, fj)
+                chuyen_sau.ghi_excel(w, fj)
             pd.DataFrame(NHAT_KY_NGUON).to_excel(w, sheet_name="Nguon du lieu", index=False)
             if bang_ctck is not None:
                 bang_ctck.to_excel(w, sheet_name="Bao cao CTCK", index=False)
@@ -630,7 +644,10 @@ def main(tuong_tac=True, im_lang=False, xuat_file=True, **tham_so):
     from .excel_xanh import trang_tri_excel
     trang_tri_excel(fp(f"{symbol}_phan_tich_tong_hop.xlsx"), the=the, anh=[anh_tom_tat, png[0], png[1]],
                     tieu_de=tt5["tieu_de"])
-    xuat_html(fp(f"{symbol}_bao_cao.html"), symbol, tt5, qd, cac_bang + [("Backtest", bt["bang"].tail(20))], png,
+    xuat_html(fp(f"{symbol}_bao_cao.html"), symbol, tt5, qd, cac_bang + [("Backtest", bt["bang"].tail(20))]
+              + ([("Ket luan backtest", pd.DataFrame({"Kết luận": kl_bt["dong"]}))] if kl_bt else [])
+              + ([("Lich su khuyen nghi", nk["bang"].drop(columns=["id"]).tail(30))] if nk is not None and len(nk["bang"])
+                 else []), png,
               the=the, fj=fj, anh_tom_tat=anh_tom_tat)
     with open(fp(f"{symbol}_bao_cao.txt"), "w", encoding="utf-8") as f:
         f.write("".join(BAO_CAO_TEXT))

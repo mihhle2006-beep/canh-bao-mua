@@ -187,7 +187,21 @@ def in_kich_ban_chinh(kb, ht):
     in_ra(f"  Cách ra EV quyết định:")
     in_ra(f"    (1) EV cơ sở = {'trộn của mã' if not g else f'{1 - TRONG_SO_GOP_NGANH:g}×trộn + {TRONG_SO_GOP_NGANH:g}×gộp ngành'}"
           f" = {kb['ev_co_so']:+.2f}%")
-    in_ra(f"    (2) {'min với có điều kiện' if kb['dk_du'] else 'không đủ mẫu có điều kiện'} → {kb['ev_truoc_wf']:+.2f}%")
+    if not kb["dk_du"]:
+        in_ra(f"    (2) không đủ mẫu có điều kiện → giữ EV cơ sở {kb['ev_truoc_wf']:+.2f}%")
+    elif cfg.CACH_TINH_EV == "than_trong":
+        in_ra(f"    (2) min với có điều kiện (thận trọng) → {kb['ev_truoc_wf']:+.2f}%")
+    else:
+        in_ra(f"    (2) {kb['w_dk']:.2f}×có điều kiện + {1 - kb['w_dk']:.2f}×cơ sở (trọng số theo mẫu hiệu dụng) "
+              f"→ {kb['ev_truoc_wf']:+.2f}%")
+    lt = kb.get("loi_the_tin_hieu")
+    if lt == lt and lt is not None:
+        if kb.get("co_tin_hieu"):
+            in_ra(f"    → LỢI THẾ CỦA TÍN HIỆU = EV có điều kiện − EV trộn = {lt:+.2f}% "
+                  + ("(tín hiệu có giá trị cộng thêm)" if lt > 0 else "(⚠ tín hiệu KHÔNG tốt hơn mua bất kỳ lúc nào)"))
+        else:
+            in_ra(f"    → Hôm nay KHÔNG có tín hiệu vào lệnh: mua ở trạng thái này lịch sử {lt:+.2f}% so với mua bất kỳ "
+                  f"lúc nào")
     in_ra(f"    (3) trừ thiên lệch chọn mục tiêu (walk-forward, phần D4) {kb['lech_wf']:.2f}% → {kb['ev_qd']:+.2f}%")
     in_ra(f"  >>> EV DÙNG ĐỂ QUYẾT ĐỊNH: {kb['ev_qd']:+.2f}% → "
           f"{'ĐẠT' if kb['ev_qd'] >= EV_NGUONG else 'KHÔNG ĐẠT'} ngưỡng {EV_NGUONG:g}%")
@@ -375,11 +389,15 @@ def in_boi_canh(symbol, bc, nhom_ma, ttr=None):
 
 def in_co_ban(symbol, cb):
     in_ra(f"\n{'#' * 84}\n PHẦN H. CƠ BẢN TỐI THIỂU & CHẤT XÚC TÁC\n{'#' * 84}")
-    for ten in ("P/E", "EPS 4 quý (đồng)", "LNST 4 quý (tỷ đồng)", "P/B", "ROE %", "Dư nợ margin (tỷ đồng)",
+    for ten in ("P/E", "EPS 4 quý (đồng)", "LNST 4 quý (tỷ đồng)", "Tăng trưởng LNST 4 quý so cùng kỳ %", "P/B", "ROE %",
+                "Dư nợ margin (tỷ đồng)",
                 "Dư nợ margin / VCSH (lần)"):
         if ten in cb:
             v, ng = cb[ten]
             in_ra(f"  {ten:<28}: {fmt(v) if not isinstance(v, str) else v:<12} [{ng}]")
+    if cfg.LOC_CO_BAN:
+        in_ra("  → Bộ lọc cơ bản ĐANG BẬT: lỗ / LNST giảm sâu → THEO DÕI; ROE thấp / P/E cao → MUA TỪNG PHẦN "
+              "(xem mục kiểm tra điều kiện ở Phần C; tắt: LOC_CO_BAN = False).")
     if cb.get("la_ctck") and "Dư nợ margin (tỷ đồng)" not in cb:
         in_ra("  Dư nợ margin               : chưa nhập (quan trọng với CTCK – lấy từ BCTC quý, thuyết minh "
               "'Các khoản cho vay')")
@@ -393,11 +411,119 @@ def in_co_ban(symbol, cb):
         in_ra(f"  ⚠ Thiếu: {', '.join(cb['thieu'])} – nhập tay khi chạy hoặc bổ sung vào DU_LIEU_CTCK.")
 
 
-def in_backtest(bt, bt0, n_giu):
+_TEN_VAO = {"macd": "Tín hiệu MACD ngày", "mua_ngay": "Mua ngay khi đủ điều kiện", "vung": "Chờ về vùng mua + xác nhận"}
+
+
+def _ten_thoat():
+    gh = (f" + gia hạn (≥ {cfg.GIA_HAN_KHI_R:g}R → siết {cfg.SIET_ATR:g}×ATR)" if cfg.GIA_HAN_LENH else "")
+    return {"co_dinh": f"Cố định (cắt lỗ / chốt R/R {RR_NGUONG:g})",
+            "dong": f"Cắt lỗ động ({cfg.TRAILING_ATR:g}×ATR, hoà vốn ≥ {cfg.HOA_VON_KHI_R:g}R){gh}",
+            "tung_phan": f"Chốt {cfg.CHOT_TUNG_PHAN_PCT:g}% ở R/R {RR_NGUONG:g} + cắt lỗ động{gh}",
+            "dong_63": f"Cắt lỗ động {cfg.TRAILING_ATR:g}×ATR, hết hạn cứng (cách cũ)"}
+
+
+def _loi_the(b):
+    return bool(b.get("so_lenh")) and b["tb"] > 0 and b["pf"] == b["pf"] and b["pf"] > 1.2
+
+
+def _dong_so(b):
+    return (f"{b['so_lenh']} lệnh | TB/lệnh {b['tb']:+.2f}% | thắng {b['ty_le_thang']:.0f}% | PF {fmt(b['pf'])} | "
+            f"tổng {b['tong']:+.1f}% | MDD {b['mdd']:.1f}%")
+
+
+def ket_luan_backtest(bt, bt0, bt_thoat=None, bt_vm=None, so_lenh_toi_thieu=5):
+    """
+    KẾT LUẬN Phần I (dùng cho in báo cáo & Excel/HTML): chọn tổ hợp VÀO × THOÁT tốt nhất (TB/lệnh, tối thiểu
+    'so_lenh_toi_thieu' lệnh), đánh giá bộ lọc tuần, cách thoát, so với mua & giữ, và câu hành động cụ thể.
+    """
+    bt_thoat = bt_thoat or {}
+    bt_vm = bt_vm or {}
+    ten_t = _ten_thoat()
+    to_hop = {("macd", "co_dinh"): bt}
+    to_hop.update({("macd", k): b for k, b in bt_thoat.items()})
+    for k, r in bt_vm.items():
+        to_hop[("vung", k)] = r["vung"]
+        to_hop[("mua_ngay", k)] = r["mua_ngay"]
+    hop_le = {k: b for k, b in to_hop.items() if b.get("so_lenh", 0) >= so_lenh_toi_thieu}
+    tot = max(hop_le.items(), key=lambda kv: kv[1]["tb"]) if hop_le else None
+    bh = bt["buy_hold"]
+    dong = []
+    # 1. quy tắc hiện tại
+    dong.append(f"Quy tắc MACD hiện tại {'CÓ' if _loi_the(bt) else 'KHÔNG có'} lợi thế: TB/lệnh {bt['tb']:+.2f}%, "
+                f"PF {fmt(bt['pf'])}, thắng {bt['ty_le_thang']:.0f}% trên {bt['so_lenh']} lệnh; tổng {bt['tong']:+.1f}% "
+                f"so với mua & giữ {bh:+.1f}% → {'tốt hơn' if bt['tong'] > bh else 'kém hơn'} mua & giữ.")
+    # 2. bộ lọc tuần
+    if bt0.get("so_lenh"):
+        chenh = round(bt["tb"] - bt0["tb"], 2)
+        tot_hon = chenh > 0
+        it_sut = bt["mdd"] > bt0["mdd"]
+        danh_gia = ("giữ bộ lọc" if (tot_hon or it_sut) else "bộ lọc không giúp ích trên mã này")
+        xu_huong = "tốt lên" if chenh > 0 else ("xấu đi" if chenh < 0 else "không đổi")
+        dong.append(f"Bộ lọc MACD tuần: {bt0['so_lenh']} → {bt['so_lenh']} lệnh, TB/lệnh {bt0['tb']:+.2f}% → "
+                    f"{bt['tb']:+.2f}% ({xu_huong}), MDD {bt0['mdd']:.1f}% → {bt['mdd']:.1f}% "
+                    f"({'giảm sụt giảm' if it_sut else 'sụt giảm sâu hơn'}) → {danh_gia}.")
+    # 3. cách thoát (cùng điểm vào MACD)
+    thoat = {k: b for (v, k), b in to_hop.items() if v == "macd" and k != "dong_63" and b.get("so_lenh")}
+    if len(thoat) > 1:
+        kt = max(thoat, key=lambda k: thoat[k]["tb"])
+        cai_thien = thoat[kt]["tb"] - bt["tb"]
+        if kt == "co_dinh":
+            dong.append("Cách thoát: chốt cố định đang tốt nhất – cắt lỗ động không cải thiện kết quả.")
+        else:
+            dong.append(f"Cách thoát: {ten_t[kt]} tốt nhất – TB/lệnh {bt['tb']:+.2f}% → {thoat[kt]['tb']:+.2f}% "
+                        f"({cai_thien:+.2f} điểm %), MDD {thoat[kt]['mdd']:.1f}%"
+                        + ("; đủ để quy tắc có lãi." if thoat[kt]["tb"] > 0 else
+                           "; giảm lỗ nhưng KHÔNG biến quy tắc thành có lãi → vấn đề nằm ở điểm VÀO."))
+    # 3b. gia hạn lệnh (cắt lỗ động: hết hạn cứng → gia hạn khi lãi ≥ xR & siết)
+    if cfg.GIA_HAN_LENH and bt_thoat.get("dong", {}).get("so_lenh") and bt_thoat.get("dong_63", {}).get("so_lenh"):
+        moi, cu = bt_thoat["dong"], bt_thoat["dong_63"]
+        so_gh = int(moi["bang"]["Lý do thoát"].str.contains("gia hạn|tối đa", regex=True).sum())
+        dong.append(f"Gia hạn lệnh (lãi ≥ {cfg.GIA_HAN_KHI_R:g}R tới hạn → giữ, siết {cfg.SIET_ATR:g}×ATR): "
+                    f"{so_gh} lệnh được giữ quá hạn; TB/lệnh {cu['tb']:+.2f}% → {moi['tb']:+.2f}%, tổng "
+                    f"{cu['tong']:+.1f}% → {moi['tong']:+.1f}% → "
+                    + ("gia hạn CÓ ÍCH trên mã này." if moi["tong"] > cu["tong"] + 0.05 else
+                       "không khác biệt." if abs(moi["tong"] - cu["tong"]) <= 0.05 else
+                       "gia hạn KÉM hơn hết hạn cứng trên mã này."))
+    # 4. cách vào (cùng cách thoát cố định)
+    if bt_vm.get("co_dinh"):
+        v, m = bt_vm["co_dinh"]["vung"], bt_vm["co_dinh"]["mua_ngay"]
+        ung = [(n, b) for n, b in (("macd", bt), ("mua_ngay", m), ("vung", v)) if b.get("so_lenh")]
+        if ung:
+            nv = max(ung, key=lambda x: x[1]["tb"])
+            dong.append("Cách vào (cùng thoát cố định): " + "; ".join(f"{_TEN_VAO[n]} {b['tb']:+.2f}%/lệnh"
+                                                                      for n, b in ung)
+                        + f" → tốt nhất: {_TEN_VAO[nv[0]]}."
+                        + (f" Chờ điều chỉnh: giá về vùng {fmt(v.get('xs_ve_vung'), 0)}% số lần, "
+                           f"đạt +1R trước cắt lỗ {fmt(v.get('xs_1R'), 0)}% số lệnh." if v.get("so_lenh") else ""))
+    # 5. hành động
+    if tot and _loi_the(tot[1]):
+        (vao, th), b = tot
+        hd = (f"ÁP DỤNG: {_TEN_VAO[vao]} + {ten_t[th]} ({b['so_lenh']} lệnh, TB/lệnh {b['tb']:+.2f}%, "
+              f"PF {fmt(b['pf'])}, thắng {b['ty_le_thang']:.0f}%)"
+              + (" – đặt lệnh chờ ở VÙNG MUA (Phần C), chỉ khớp khi có nến xác nhận." if vao == "vung" else ".")
+              + (f" Tuy vậy mua & giữ cả giai đoạn ({bh:+.1f}%) vẫn lãi hơn tổng các lệnh ({b['tong']:+.1f}%) – "
+                 f"với vị thế dài hạn nên nắm giữ thay vì lướt sóng." if bh > b["tong"] else ""))
+    elif tot:
+        (vao, th), b = tot
+        if bh > 0 and bh > max(x["tong"] for x in hop_le.values()):
+            hd = (f"KHÔNG giao dịch ngắn hạn theo tín hiệu kỹ thuật trên mã này: mọi tổ hợp vào/thoát đều thua "
+                  f"mua & giữ ({bh:+.1f}%). Nếu muốn sở hữu, quyết định theo định giá cơ bản và giải ngân dần ở vùng "
+                  f"mua, thoát bằng cắt lỗ động.")
+        else:
+            hd = (f"ĐỨNG NGOÀI giao dịch ngắn hạn: chưa tổ hợp vào/thoát nào có lợi thế; ít lỗ nhất là "
+                  f"{_TEN_VAO[vao]} + {ten_t[th]} (TB/lệnh {b['tb']:+.2f}%, PF {fmt(b['pf'])}). Chỉ xét mua khi "
+                  f"quy tắc này dương trở lại hoặc có lý do cơ bản rõ ràng.")
+    else:
+        hd = "Chưa có tổ hợp vào/thoát nào đủ số lệnh để so sánh – dựa vào Phần C & định giá cơ bản."
+    dong.append(hd)
+    return {"dong": dong, "tot": tot, "co_loi_the": bool(tot and _loi_the(tot[1]))}
+
+
+def in_backtest(bt, bt0, n_giu, bt_thoat=None, bt_vm=None, symbol=""):
     in_ra(f"\n{'#' * 84}\n PHẦN I. BACKTEST QUY TẮC VÀO LỆNH (tuần + ngày, giữ tối đa {n_giu} phiên)\n{'#' * 84}")
     if not bt["so_lenh"]:
         in_ra("  Không có lệnh nào trong lịch sử → chưa đánh giá được quy tắc.")
-        return
+        return None
     for ten, b in (("Có lọc MACD tuần (quy tắc của công cụ)", bt), ("Không lọc tuần (đối chứng)", bt0)):
         if not b["so_lenh"]:
             in_ra(f"  {ten}: không có lệnh")
@@ -405,21 +531,83 @@ def in_backtest(bt, bt0, n_giu):
         in_ra(f"  {ten}:")
         in_ra(f"    {b['so_lenh']} lệnh / {b['so_nam']:.1f} năm | thắng {b['ty_le_thang']:.0f}% | "
               f"TB/lệnh {b['tb']:+.2f}% (thắng {fmt(b['tb_thang'], 2, True)}%, thua {fmt(b['tb_thua'], 2, True)}%) | "
-              f"PF {fmt(b['pf'])} | tổng {b['tong']:+.1f}% | MDD {b['mdd']:.1f}% | giữ TB {b['giu_tb']:.0f} phiên"
-              + (" | ⚠ < 30 lệnh: độ tin cậy THẤP" if b["tin_cay_thap"] else ""))
+              f"PF {fmt(b['pf'])} | tổng {b['tong']:+.1f}% | MDD {b['mdd']:.1f}% | giữ TB {b['giu_tb']:.0f} phiên")
     in_ra(f"  Mua & giữ cùng giai đoạn: {bt['buy_hold']:+.1f}%")
-    co_loi_the = bt["tb"] > 0 and (bt["pf"] == bt["pf"] and bt["pf"] > 1.2)
-    loc_co_ich = bt0["so_lenh"] and bt["tb"] > bt0["tb"]
-    in_ra(f"  → Quy tắc {'CÓ' if co_loi_the else 'CHƯA có'} lợi thế (TB/lệnh > 0 và PF > 1.2); "
-          f"bộ lọc tuần {'có' if loc_co_ich else 'không'} cải thiện kết quả.")
-    in_ra("  Lưu ý: backtest trên chính mã này, không tính trượt giá & giới hạn biên độ; chỉ để tham khảo.")
+    ten = _ten_thoat()
+    if bt_thoat:
+        in_ra("  SO SÁNH CÁCH THOÁT LỆNH (cùng điểm vào MACD, có lọc tuần):")
+        for k, b in [("co_dinh", bt)] + list(bt_thoat.items()):
+            if b.get("so_lenh"):
+                in_ra(f"    {ten[k]:<46}: TB/lệnh {b['tb']:+.2f}% | thắng {b['ty_le_thang']:.0f}% | PF {fmt(b['pf'])} | "
+                      f"tổng {b['tong']:+.1f}% | MDD {b['mdd']:.1f}% | giữ TB {b['giu_tb']:.0f} phiên")
+    if bt_vm:
+        in_ra("  SO SÁNH CÁCH VÀO LỆNH (cùng điều kiện MACD tuần > Signal, cùng bộ mô phỏng thoát):")
+        for k in ("co_dinh", "dong", "tung_phan"):
+            if k not in bt_vm:
+                continue
+            in_ra(f"    Thoát: {ten[k]}")
+            for n, b in (("macd", bt if k == "co_dinh" else (bt_thoat or {}).get(k, {})),
+                         ("mua_ngay", bt_vm[k]["mua_ngay"]), ("vung", bt_vm[k]["vung"])):
+                in_ra(f"      {_TEN_VAO[n]:<30}: " + (_dong_so(b) if b.get("so_lenh") else "không có lệnh"))
+        v = bt_vm.get("co_dinh", {}).get("vung", {})
+        if v.get("so_thiet_lap"):
+            in_ra(f"    Phễu vùng mua: {v['so_thiet_lap']} lần thiết lập → giá về vùng {v['so_ve_vung']} lần "
+                  f"({fmt(v['xs_ve_vung'], 0)}%) → khớp sau xác nhận {v['so_lenh']} lệnh | chạm vùng rồi thủng "
+                  f"{v['so_thung_vung']} lần | đạt +1R trước cắt lỗ {fmt(v['xs_1R'], 0)}% số lệnh")
+    kl = ket_luan_backtest(bt, bt0, bt_thoat, bt_vm)
+    in_ra(f"  {'─' * 80}\n  KẾT LUẬN BACKTEST{(' – ' + symbol) if symbol else ''}")
+    for i, d in enumerate(kl["dong"], 1):
+        in_ra(f"   {i if i < len(kl['dong']) else '→'}{'.' if i < len(kl['dong']) else ''} {d}")
+    in_ra("  Lưu ý: backtest trên chính mã này (đã tính T+2, trần/sàn, phí & trượt giá); chỉ để tham khảo.")
+    return kl
+
+
+def in_lich_su_khuyen_nghi(symbol, nk):
+    """[MỚI] PHẦN K – các khuyến nghị ptcp đã đưa ra cho mã này và kết quả thực tế."""
+    in_ra(f"\n{'#' * 84}\n PHẦN K. LỊCH SỬ KHUYẾN NGHỊ CỦA {symbol} – ĐÚNG / SAI THEO GIÁ THỰC TẾ\n{'#' * 84}")
+    if nk is None:
+        in_ra("  Nhật ký đang tắt (GHI_NHAT_KY = False) hoặc lỗi – xem cảnh báo dữ liệu.")
+        return
+    in_ra(f"  File nhật ký: {nk['path']}" + (" | ✔ đã ghi khuyến nghị hôm nay" if nk["moi"]
+                                              else " | khuyến nghị không đổi so với lần ghi trước → không ghi thêm"))
+    if "/content/" in nk["path"] and "/drive/" not in nk["path"]:
+        in_ra("  ⚠ Đang lưu trong Colab (mất khi tắt máy) – mount Google Drive để giữ lịch sử: "
+              "from google.colab import drive; drive.mount('/content/drive')")
+    b = nk["bang"]
+    if len(b) <= 1 and not (b["ket_qua"].isin(["ĐÚNG", "SAI"])).any():
+        in_ra("  Chưa có khuyến nghị nào có kết luận ĐÚNG/SAI – lịch sử tích luỹ qua các lần chạy sau "
+              "(khuyến nghị MUA cần tới khi chạm mục tiêu / cắt lỗ hoặc hết hạn).")
+    for _, r in b.tail(12).iterrows():
+        pct = f"{r['ket_qua_pct']:+.1f}%" if r["ket_qua_pct"] == r["ket_qua_pct"] else ""
+        in_ra(f"  {r['ngay']}  {str(r['khuyen_nghi'])[:24]:<24} giá {r['gia']:>8,.2f} → {r['ket_qua'] or 'ĐANG CHỜ':<9}"
+              f" {pct:>7}  {r['giai_thich']}")
+    for _, r in nk["tk"].iterrows():
+        if r["Đã chấm"]:
+            nhan = "TB lệnh" if r["Nhóm"].endswith("MUA") else "TB nếu đã mua"
+            in_ra(f"  ► {r['Nhóm']}: đúng {r['Đúng']}/{r['Đã chấm']} ({r['Tỷ lệ đúng %']:.0f}%), {nhan} {r['TB kết quả %']:+.2f}%"
+                  + (" ⚠ ít mẫu" if r["Đã chấm"] < cfg.SO_MAU_TIN_CAY else ""))
+    tk = nk["tk_tat_ca"]
+    if len(tk) and tk["Đã chấm"].sum():
+        mua = tk[tk["Nhóm"] == "ptcp MUA"]
+        if len(mua) and mua["Đã chấm"].iloc[0]:
+            r = mua.iloc[0]
+            in_ra(f"  ► Toàn bộ nhật ký (mọi mã) – ptcp MUA: đúng {r['Đúng']}/{r['Đã chấm']} ({r['Tỷ lệ đúng %']:.0f}%), "
+                  f"TB {r['TB kết quả %']:+.2f}%")
+    in_ra("  Cách chấm: MUA = lệnh mua giả định giá mở cửa phiên sau với cắt lỗ / mục tiêu ngắn hạn của khuyến nghị "
+          "(T+2, trần/sàn, phí); CHỜ / ĐỨNG NGOÀI đúng khi lệnh mua đó lẽ ra bị lỗ.")
 
 
 # ==========================================================================
 # 10H. [MỚI] TÓM TẮT 5 DÒNG & XUẤT HTML / CSV
 # ==========================================================================
-def lap_tom_tat(symbol, ht, ngay, qd, stop, kb, qr, dx, df_ngay, kq):
-    if qd["mua"]:
+def lap_tom_tat(symbol, ht, ngay, qd, stop, kb, qr, dx, df_ngay, kq, vm=None, bt_vm=None):
+    v_ls = (bt_vm or {}).get("vung", {})
+    if not qd["mua"] and vm and vm["tuan_ok"]:
+        vung = (f"{vm['lo']:,.2f} – {vm['hi']:,.2f} (vùng điều chỉnh, {vm['so_loai']} hỗ trợ trùng nhau) – "
+                f"{vm['trang_thai'].split(' →')[0].lower()}; mua khi có nến xác nhận, cắt lỗ {vm['stop']:,.2f}"
+                + (f" | lịch sử: về vùng {fmt(v_ls['xs_ve_vung'], 0)}%, đạt +1R {fmt(v_ls['xs_1R'], 0)}% "
+                   f"({v_ls['so_lenh']} lệnh)" if v_ls.get("so_lenh") else ""))
+    elif qd["mua"]:
         vung = f"{max(stop['gia'] * 1.01, min(ht, qr['gia_mua_rr2']) * 0.97):,.2f} – {min(ht, qr['gia_mua_rr2']):,.2f}"
     elif kb["hotro_that"] and not qr["phong_thu"]:
         vung = (f"{kb['hotro']:,.2f} – {min(kb['hotro'] * 1.03, qr['gia_mua_rr2']):,.2f} "
@@ -448,6 +636,27 @@ def lap_tom_tat(symbol, ht, ngay, qd, stop, kb, qr, dx, df_ngay, kq):
         f"R/R {fmt(qr['rr'])} | XS chạm cắt lỗ trong {kb['n']} phiên {fmt(kb['xs_cham_stop'], 0)}%",
     ]
     return {"tieu_de": f"TÓM TẮT – {symbol} | phiên {ngay:%d/%m/%Y} | giá {ht:,.2f} nghìn đồng", "dong": dong}
+
+
+def in_vung_mua(vm, bt_vm=None):
+    """[MỚI] Phần C – vùng mua điều chỉnh cho mã CHƯA nắm giữ (chờ giá về vùng + nến xác nhận)."""
+    in_ra(f"  ◆ VÙNG MUA ĐIỀU CHỈNH (chưa nắm giữ): {vm['lo']:,.2f} – {vm['hi']:,.2f} "
+          f"({(vm['lo'] / vm['gia'] - 1) * 100:+.1f}% → {(vm['hi'] / vm['gia'] - 1) * 100:+.1f}% so với giá)")
+    in_ra("     Hỗ trợ trùng nhau: " + " · ".join(f"{t} {p:,.2f}" for t, p in vm["muc"]))
+    in_ra(f"     Trạng thái: {vm['trang_thai']}")
+    if not vm["tuan_ok"]:
+        in_ra("     ⚠ MACD tuần ≤ Signal → vùng chỉ để THEO DÕI, chưa đặt lệnh (quyền phủ quyết khung tuần).")
+    in_ra(f"     Điều kiện mua: giá chạm vùng rồi có nến đóng cửa > đỉnh phiên trước (nến tăng); mua giá mở cửa phiên sau, "
+          f"bỏ lệnh nếu mở cửa > {vm['hi'] + vm['atr']:,.2f} (không đuổi giá).")
+    in_ra(f"     Vô hiệu khi đóng cửa < {vm['lo'] - 0.5 * vm['atr']:,.2f} | Cắt lỗ (lệnh mua ở vùng) {vm['stop']:,.2f} | Mục tiêu "
+          f"{vm['muc_tieu']:,.2f} (đỉnh nhịp) → R/R giữa vùng {fmt(vm['rr'])}"
+          + ("" if vm["rr"] == vm["rr"] and vm["rr"] >= RR_NGUONG else f" (< {RR_NGUONG:g}: chỉ mua ở cận dưới)"))
+    v = (bt_vm or {}).get("vung", {})
+    if v.get("so_thiet_lap"):
+        in_ra(f"     Lịch sử mã (cùng quy tắc, thoát cố định): {v['so_thiet_lap']} lần thiết lập → về vùng "
+              f"{fmt(v['xs_ve_vung'], 0)}% → {v['so_lenh']} lệnh khớp | đạt +1R trước cắt lỗ {fmt(v['xs_1R'], 0)}%"
+              + (f" | TB/lệnh {v['tb']:+.2f}%, PF {fmt(v['pf'])}" if v.get("so_lenh") else "")
+              + " – xem so sánh cách vào lệnh ở Phần I.")
 
 
 def in_tom_tat(tt5, qd, canh_bao):
@@ -501,7 +710,8 @@ def xuat_html(file_html, symbol, tt5, qd, cac_bang, cac_png, the=None, fj=None, 
     TEN = {"Muc tieu (3 moc moi khung)": "Mục tiêu (3 mốc mỗi khung)", "Kich ban chinh": "Kịch bản chính",
            "Quan tri rui ro": "Quản trị rủi ro", "Bien do thong ke": "Biên độ thống kê",
            "Boi canh thi truong": "Bối cảnh thị trường", "Phan loai phien": "Phân loại phiên",
-           "Bien dong theo khung": "Biến động theo khung", "Backtest": "Kiểm định lịch sử (backtest)"}
+           "Bien dong theo khung": "Biến động theo khung", "Backtest": "Kiểm định lịch sử (backtest)",
+           "Lich su khuyen nghi": "Lịch sử khuyến nghị (đúng / sai)"}
     cac_bang = [(TEN.get(t, t), b) for t, b in cac_bang if t != "Tom tat"]      # tóm tắt đã có ở trên
     muc = [("tom-tat", "Tóm tắt")] + [(f"b{k}", t) for k, (t, _) in enumerate(cac_bang)]
     phan_j = ""

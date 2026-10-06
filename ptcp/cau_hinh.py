@@ -120,6 +120,8 @@ MUA_GIA_MO_CUA = True        # mua ở giá MỞ CỬA phiên sau ngày có tín
 WF_SO_KHOI = 5               # số khối thời gian cho kiểm định walk-forward bước chọn mục tiêu
 
 
+CACH_TINH_EV = "tin_hieu"     # [MỚI] "tin_hieu": EV chính = EV các phiên CÙNG TRẠNG THÁI TÍN HIỆU (co về EV cơ sở theo
+                             #   số mẫu hiệu dụng); "than_trong": cách cũ min(EV cơ sở, EV có điều kiện)
 TRONG_SO_GOP_NGANH = 0.5     # EV cơ sở = (1 − w) × EV của mã + w × EV gộp ngành (co về trung bình ngành)
 
 
@@ -132,8 +134,11 @@ SO_PHIEN_SU_KIEN = 5         # KQKD / GDKHQ trong 5 phiên tới → không mở
 
 THU_TU_NGUON_SO_CP = ["TCBS", "vnstock", "VNDirect", "Yahoo"]   # ưu tiên khi chọn số CP lưu hành (nhập tay luôn đứng đầu)
 DUNG_VNSTOCK = True           # dùng thư viện vnstock (bản Cộng đồng) làm nguồn; trên Colab tự cài
-IN_GON = False                # True / main(gon=True): màn hình chỉ in Tóm tắt, Phần C, D2, Kết luận chung Phần J – file vẫn đầy đủ
-SO_MA_SO_SANH_FA = 2          # Phần J5: số mã cùng ngành (đầu danh sách) đem so sánh 10 tiêu chí (như FiinTrade)
+IN_GON = False                # True / main(gon=True): màn hình chỉ in các mục trong MUC_GON – file vẫn đầy đủ
+# Mục in khi gọn: Tóm tắt · Phần C (thời điểm mua, vùng mua) · D2 kịch bản · E1 giá mục tiêu · G bối cảnh thị trường ·
+# H cơ bản & chất xúc tác · I_KL kết luận backtest · J_KL kết luận Phần J. Thêm "E2", "F", "K"… nếu muốn.
+MUC_GON = ("TÓM TẮT", "C", "D2", "E1", "G", "H", "I_KL", "J_KL")
+SO_MA_SO_SANH_FA = 2          # Phần J5: số mã cùng ngành (đầu danh sách) đem so sánh 10 tiêu chí
 CHO_VNSTOCK = False           # True: hết lượt vnstock thì CHỜ (chậm, đúng hạn mức) thay vì chuyển nguồn khác
 LECH_SO_CP_PCT = 0.5          # các nguồn lệch nhau > 0,5% số CP → cảnh báo
 LECH_VON_HOA_PCT = 2.0        # vốn hoá tự tính lệch Yahoo > 2% → cảnh báo
@@ -246,3 +251,29 @@ TU_DONG_TAI_VE = False       # True = trên Colab tự tải file .zip kết qu�
 #   }
 # ==========================================================================
 DU_LIEU_CTCK = {}
+
+
+# --- [MỚI] Bộ lọc CƠ BẢN trong hàm quyết định (Chiến lược Giá trị) ---
+LOC_CO_BAN = True             # True: chỉ số cơ bản được tham gia khuyến nghị (thiếu dữ liệu → bỏ qua, không chặn)
+CO_BAN_TANG_TRUONG_MIN = -30.0   # % – LNST 4 quý giảm sâu hơn mức này so với 4 quý trước → hạ MUA xuống THEO DÕI
+CO_BAN_ROE_MIN = 5.0          # % – ROE thấp hơn → hạ MUA xuống MUA TỪNG PHẦN
+CO_BAN_PE_MAX = None          # lần – P/E cao hơn → MUA TỪNG PHẦN (None = không xét; đặt theo ngành nếu muốn)
+
+# --- [MỚI] Quản trị vị thế đang giữ: cắt lỗ động & chốt lời từng phần ---
+TRAILING_ATR = 3.0            # cắt lỗ động = đỉnh cao nhất kể từ ngày mua − 3×ATR (chandelier)
+HOA_VON_KHI_R = 1.0           # lãi ≥ 1R → nâng cắt lỗ tối thiểu lên giá vốn (+ phí)
+CHOT_TUNG_PHAN_PCT = 50.0     # % khối lượng chốt ở mục tiêu thứ nhất; phần còn lại giữ theo cắt lỗ động
+# --- [MỚI] Hết hạn lệnh (áp cho cắt lỗ động & chốt từng phần; chốt cố định vẫn hết hạn cứng n_phien để đối chứng) ---
+#   Tới n_phien (mặc định 63): lãi < GIA_HAN_KHI_R×R → BÁN (lệnh không chạy);
+#   lãi ≥ GIA_HAN_KHI_R×R → KHÔNG bán, giữ tiếp theo cắt lỗ động SIẾT về SIET_ATR×ATR, tối đa HAN_TOI_DA phiên.
+GIA_HAN_LENH = True           # False = hết hạn cứng n_phien như cũ
+GIA_HAN_KHI_R = 1.0           # ngưỡng lãi (theo R) để được giữ quá hạn
+SIET_ATR = 2.0                # cắt lỗ động sau khi quá hạn = đỉnh đóng cửa từ ngày mua − 2×ATR (chặt hơn TRAILING_ATR)
+HAN_TOI_DA = 252              # phiên – trần an toàn kể cả khi xu hướng vẫn chạy
+
+# --- [MỚI] Nhật ký khuyến nghị (ptcp/nhat_ky.py) ---
+GHI_NHAT_KY = True            # mỗi lần main() chạy: ghi khuyến nghị (khi thay đổi) & chấm lại các khuyến nghị cũ
+FILE_NHAT_KY = None           # None = tự chọn: Google Drive (/content/drive/MyDrive/ptcp/nhat_ky_ptcp.csv) nếu đã
+                              #   mount, không thì ./nhat_ky_ptcp.csv. Repo danh-muc: đặt đường dẫn trong repo để commit.
+KY_HAN_BAN = 20               # phiên – hạn chấm cảnh báo bán
+SO_MAU_TIN_CAY = 30           # dưới số khuyến nghị đã chấm này → ghi "ít mẫu"

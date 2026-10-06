@@ -72,21 +72,38 @@ def _to_mau(s):
     return "\n".join(ra)
 
 
-_RE_MUC = re.compile(r"^\s*(TÓM TẮT|PHẦN ([A-J])\.|([A-J]\d)\.\s|XUẤT KẾT QUẢ|KẾT LUẬN CHUNG PHẦN J)")
-MUC_GON = {"TÓM TẮT", "C", "D2", "J_KL"}
+_RE_MUC = re.compile(r"^\s*(TÓM TẮT|PHẦN ([A-K])\.|([A-J]\d)\.\s|XUẤT KẾT QUẢ|KẾT LUẬN CHUNG PHẦN J|KẾT LUẬN BACKTEST)")
+_RE_GACH = re.compile(r"^\s*[#─=\-█]{10,}\s*$")
+# Mục giữ lại khi in gọn (đổi trong cau_hinh.py → MUC_GON). Mã mục: "TÓM TẮT", chữ phần ("C", "G", "H"…),
+# mục con ("D2", "E1"…), "I_KL" = Kết luận backtest, "J_KL" = Kết luận chung Phần J.
+MUC_GON_MAC_DINH = ("TÓM TẮT", "C", "D2", "E1", "G", "H", "I_KL", "J_KL")
+
+
+def _muc_gon():
+    return set(getattr(cfg, "MUC_GON", MUC_GON_MAC_DINH))
 
 
 def _loc_gon(s):
-    """Chế độ in gọn: chỉ giữ Tóm tắt, Phần C, D2, Kết luận chung Phần J (+ dòng đã lưu file ✔ / cảnh báo ⚠)."""
-    giu = []
-    for d in s.split("\n"):
+    """Chế độ in gọn: chỉ giữ các mục trong MUC_GON (+ dòng đã lưu file ✔ / cảnh báo ⚠). File vẫn đầy đủ."""
+    ds = s.split("\n")
+    muc_dong = []
+    for d in ds:
         m = _RE_MUC.match(d)
         if m:
-            _CHAY["muc"] = m.group(3) or m.group(2) or {"TÓM TẮT": "TÓM TẮT"}.get(m.group(1)) or \
-                ("J_KL" if m.group(1).startswith("KẾT LUẬN CHUNG") else "XUAT")
-        muc = _CHAY.get("muc", "")
-        if muc in MUC_GON or muc.startswith("C") or d.lstrip().startswith(("✔ Đã", "⚠ Không")) or \
-                (muc == "XUAT" and "✔" in d):
+            g1 = m.group(1)
+            _CHAY["muc"] = m.group(3) or m.group(2) or {"TÓM TẮT": "TÓM TẮT"}.get(g1) or \
+                ("J_KL" if g1.startswith("KẾT LUẬN CHUNG") else "I_KL" if g1.startswith("KẾT LUẬN BACKTEST")
+                 else "XUAT")
+        muc_dong.append(_CHAY.get("muc", ""))
+    # đường kẻ đứng TRƯỚC tiêu đề thuộc về mục kế tiếp (không để sót / thừa dòng kẻ)
+    for k in range(len(ds) - 2, -1, -1):
+        if _RE_GACH.match(ds[k]) or not ds[k].strip():
+            muc_dong[k] = muc_dong[k + 1]
+    giu_muc = _muc_gon()
+    giu = []
+    for d, muc in zip(ds, muc_dong):
+        if muc in giu_muc or (len(muc) == 2 and muc[0] in giu_muc) or d.lstrip().startswith(("✔ Đã", "⚠ Không")) \
+                or (muc == "XUAT" and "✔" in d):
             giu.append(d)
     return "\n".join(giu) if giu else None
 

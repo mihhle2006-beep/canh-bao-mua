@@ -10,19 +10,21 @@ KẾ HOẠCH VỊ THẾ TỪ GIÁ MUA – dùng chung cho chay.py (1 mã) và Da
     ngày mua, với cắt lỗ gốc → mục tiêu chính + các mốc kế tiếp. R/R tính từ giá mua.
   • Giá đã vượt mục tiêu lúc mua → dùng mục tiêu HIỆN TẠI của công cụ (phân tích hôm nay) làm mục tiêu tiếp theo.
   • R (= giá mua − cắt lỗ gốc) chỉ dùng để QUẢN LÝ CẮT LỖ (hoà vốn / khoá lãi), không dùng tạo mục tiêu.
-  • Cắt lỗ HIỆN TẠI đề xuất (chỉ cao hơn cắt lỗ gốc): hoà vốn khi lãi ≥ 1R, khoá 1R khi lãi ≥ 2R,
-    Chandelier (đóng cửa cao nhất từ ngày mua − 3×ATR), cắt lỗ kỹ thuật hôm nay – đều phải cách giá ≥ 1×ATR.
+  • Cắt lỗ HIỆN TẠI đề xuất (chỉ cao hơn cắt lỗ gốc): hoà vốn khi lãi ≥ HOA_VON_KHI_R×R, khoá 1R khi lãi ≥ 2R,
+    Chandelier (đóng cửa cao nhất từ ngày mua − TRAILING_ATR×ATR), cắt lỗ kỹ thuật hôm nay – đều phải cách giá ≥ 1×ATR.
+  • [MỚI] Kế hoạch BÁN: chốt CHOT_TUNG_PHAN_PCT% ở mục tiêu lúc mua, phần còn lại theo cắt lỗ động.
   • So với VN-Index từ ngày mua: % VN-Index cùng kỳ, % cổ phiếu (giá thị trường) cùng kỳ, lãi/lỗ thực theo giá vốn.
 """
 import numpy as np
 import pandas as pd
 
+from . import cau_hinh as cfg
 from .cau_hinh import PHI_GD_KHU_HOI, TRUOT_GIA_PCT
 from .chi_bao import tinh_chi_bao, tim_dinh_day
 from .phan_tich import tinh_cat_lo, tinh_muc_tieu
 from .chi_bao import duong_xu_huong
 
-CHANDELIER_ATR = 3.0
+CHANDELIER_ATR = cfg.TRAILING_ATR    # một chỗ cấu hình duy nhất: ptcp/cau_hinh.py (TRAILING_ATR)
 SO_PHIEN_KHANG_CU = 504            # kháng cự lấy từ đỉnh xác nhận trong ~2 năm gần nhất
 KHOANG_CACH_ATR_MIN = 1.0
 
@@ -82,18 +84,41 @@ def ke_hoach_tu_gia_mua(df_ngay, gia_von, ngay_mua=None, vni=None, cat_lo_ky_thu
     sau_chinh = cac_moc[cac_moc["Giá mục tiêu"] > mt_dx * 1.01]
     mt_2 = (float(sau_chinh["Giá mục tiêu"].iloc[0]), sau_chinh["Phương pháp"].iloc[0]) if len(sau_chinh) else None
 
+    # --- [MỚI] Hạn lệnh: tới H phiên mà lãi < GIA_HAN_KHI_R×R → bán; lãi đủ → giữ, siết cắt lỗ động ---
+    so_phien = int((df_ngay.index > nm).sum()) if nm is not None else None
+    lai_R = (ht - gia_von) / R if R > 0 else np.nan
+    he_so_cd, han_lenh, ban_vi_han = cfg.TRAILING_ATR, "", False
+    if so_phien is not None:
+        if not cfg.GIA_HAN_LENH:
+            ban_vi_han = so_phien >= H
+            han_lenh = (f"ĐÃ HẾT HẠN {H} phiên → bán" if ban_vi_han else f"còn {H - so_phien} phiên tới hạn {H} phiên")
+        elif so_phien >= cfg.HAN_TOI_DA:
+            ban_vi_han = True
+            han_lenh = f"đã giữ {so_phien} phiên ≥ hạn tối đa {cfg.HAN_TOI_DA} → BÁN"
+        elif so_phien >= H and not (lai_R >= cfg.GIA_HAN_KHI_R):
+            ban_vi_han = True
+            han_lenh = (f"đã giữ {so_phien} phiên ≥ {H} mà lãi {lai_R:+.1f}R < {cfg.GIA_HAN_KHI_R:g}R → BÁN "
+                        f"(lệnh không chạy)")
+        elif so_phien >= H:
+            he_so_cd = cfg.SIET_ATR
+            han_lenh = (f"ĐANG GIA HẠN: giữ {so_phien} phiên, lãi {lai_R:+.1f}R ≥ {cfg.GIA_HAN_KHI_R:g}R → giữ tiếp, cắt "
+                        f"lỗ động SIẾT {cfg.SIET_ATR:g}×ATR (tối đa {cfg.HAN_TOI_DA} phiên)")
+        else:
+            han_lenh = (f"giữ {so_phien}/{H} phiên – tới hạn: lãi < {cfg.GIA_HAN_KHI_R:g}R thì bán, đủ thì giữ tiếp & "
+                        f"siết cắt lỗ động {cfg.SIET_ATR:g}×ATR")
+
     # --- Cắt lỗ hiện tại đề xuất (chỉ dời lên từ cắt lỗ gốc) ---
     phi = PHI_GD_KHU_HOI + 2 * TRUOT_GIA_PCT
     ung = [("cắt lỗ gốc", cl_goc)]
-    if ht >= gia_von + R:
-        ung.append(("lãi ≥ 1R → hoà vốn", gia_von * (1 + phi / 100)))
+    if ht >= gia_von + cfg.HOA_VON_KHI_R * R:
+        ung.append((f"lãi ≥ {cfg.HOA_VON_KHI_R:g}R → hoà vốn", gia_von * (1 + phi / 100)))
     if ht >= gia_von + 2 * R:
         ung.append(("lãi ≥ 2R → khoá 1R", gia_von + R))
     if nm is not None:
         sau = df_ngay[df_ngay.index >= nm]
         if len(sau) >= 5:
-            ung.append((f"Chandelier (đỉnh {sau.close.max():,.2f} − {CHANDELIER_ATR:g}×ATR)",
-                        float(sau.close.max()) - CHANDELIER_ATR * atr))
+            ung.append((f"Chandelier (đỉnh {sau.close.max():,.2f} − {he_so_cd:g}×ATR)",
+                        float(sau.close.max()) - he_so_cd * atr))
     if cat_lo_ky_thuat is not None and cat_lo_ky_thuat == cat_lo_ky_thuat:
         ung.append(("cắt lỗ kỹ thuật hôm nay", float(cat_lo_ky_thuat)))
     hop_le = [(t, g) for t, g in ung if g <= ht - KHOANG_CACH_ATR_MIN * atr]
@@ -137,7 +162,12 @@ def ke_hoach_tu_gia_mua(df_ngay, gia_von, ngay_mua=None, vni=None, cat_lo_ky_thu
         "da_vuot_muc_tieu": da_vuot, "muc_tieu_tiep_theo": mt_tiep, "nguon_muc_tieu_tiep": nguon_tiep,
         "muc_tieu_hieu_luc": mt_tiep if da_vuot else mt_dx,
         "con_toi_muc_tieu_pct": (mt_dx / ht - 1) * 100, "so_vni": so_vni,
-        "dung_ngay_mua": nm is not None,
+        "dung_ngay_mua": nm is not None, "so_phien_giu": so_phien, "han_lenh": han_lenh, "ban_vi_han": ban_vi_han,
+        "ke_hoach_ban": (f"Chốt {cfg.CHOT_TUNG_PHAN_PCT:g}% khối lượng tại mục tiêu lúc mua {mt_dx:,.2f}; phần còn lại "
+                         f"giữ theo cắt lỗ động (đỉnh đóng cửa từ ngày mua − {he_so_cd:g}×ATR, tối thiểu hoà "
+                         f"vốn khi lãi ≥ {cfg.HOA_VON_KHI_R:g}R)"
+                         + (" → ĐÃ tới mục tiêu: chốt phần đầu nếu chưa chốt." if da_vuot else "")
+                         + (f" | Hạn lệnh: {han_lenh}" if han_lenh else "")),
     }
 
 
@@ -156,7 +186,8 @@ def bang_ke_hoach(kh):
             ("R/R từ giá mua", kh["rr_tu_gia_mua"]), ("Mục tiêu tự nhập", kh["mt_tu_nhap"]),
             ("Đã vượt mục tiêu lúc mua", "Có" if kh["da_vuot_muc_tieu"] else "Chưa"),
             ("Mục tiêu tiếp theo", kh["muc_tieu_tiep_theo"]), ("Nguồn mục tiêu tiếp theo", kh["nguon_muc_tieu_tiep"]),
-            ("Cắt lỗ hiện tại đề xuất", kh["cat_lo_hien_tai"]), ("Lý do", kh["ly_do_cat_lo"])]
+            ("Cắt lỗ hiện tại đề xuất", kh["cat_lo_hien_tai"]), ("Lý do", kh["ly_do_cat_lo"]),
+            ("Kế hoạch bán", kh["ke_hoach_ban"]), ("Hạn lệnh", kh.get("han_lenh") or "–")]
     if v:
         rows += [("Số ngày nắm giữ", v.get("so_ngay")), ("Cổ phiếu (giá TT) từ ngày mua %", v.get("cp_thi_truong_pct")),
                  ("VN-Index từ ngày mua %", v.get("vni_pct")), ("Chênh lệch lãi/lỗ − VN-Index (điểm %)", v.get("chenh_lech"))]
@@ -186,6 +217,9 @@ def dong_ke_hoach(kh):
             f"{r['Giá mục tiêu']:,.2f} {r['Phương pháp']} (EV {r['EV %']:+.1f}%)" for _, r in b.head(6).iterrows()))
     if kh["mt_tu_nhap"]:
         d.append(f"Mục tiêu tự nhập {f(kh['mt_tu_nhap'])} → R/R từ giá mua {kh['rr_mt_tu_nhap']:.1f}")
+    d.append(f"Kế hoạch BÁN: {kh['ke_hoach_ban']} (Phần I so sánh cách thoát này với chốt cứng trên lịch sử mã)")
+    if kh.get("ban_vi_han"):
+        d.append(f"⚠ HẠN LỆNH: {kh['han_lenh']}")
     d.append(f"Cắt lỗ HIỆN TẠI đề xuất: {f(kh['cat_lo_hien_tai'])} – {kh['ly_do_cat_lo']}"
              + (" | ⚠ GIÁ ĐÃ THỦNG CẮT LỖ GỐC" if kh["thung_cat_lo_goc"] else ""))
     if v.get("vni_pct") is not None:

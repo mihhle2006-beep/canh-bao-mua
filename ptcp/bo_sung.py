@@ -226,14 +226,18 @@ def lich_cong_bo_kqkd(hom_nay=None):
 # ==========================================================================
 # 10G. [MỚI] PHẦN I – BACKTEST QUY TẮC VÀO LỆNH CỦA CHÍNH CÔNG CỤ
 # ==========================================================================
-def backtest_quy_tac(d_ngay, d_tuan, n_giu, loc_tuan=True):
+def backtest_quy_tac(d_ngay, d_tuan, n_giu, loc_tuan=True, thoat="co_dinh"):
     """
     Quy tắc (phần tuần + ngày; khung giờ không backtest được vì dữ liệu giờ ngắn):
       VÀO  : MACD TUẦN (tuần đã hoàn tất, không nhìn trước) > Signal  VÀ  hôm nay MACD ngày cắt lên Signal
              hoặc cắt lên 0 → mua giá mở cửa phiên kế tiếp (phiên đó khoá trần cả phiên → bỏ lệnh).
-      THOÁT: cắt lỗ = max(giá − 2×ATR, giá −7%), tối thiểu 1.5×ATR; chốt lời tại R/R = 2; hết n_giu phiên → bán.
-      [SỬA] Theo luật VN: chỉ bán được từ T+2; cắt lỗ bị chạm trước đó → bán giá mở cửa phiên đầu tiên được bán;
-            phiên đóng cửa giá sàn → không bán được; gap được tính; trừ phí + trượt giá.
+      THOÁT (thoat):
+        "co_dinh"  : cắt lỗ = max(giá − 2×ATR, giá −7%), tối thiểu 1.5×ATR; chốt lời tại R/R = 2; hết n_giu → bán.
+        "dong"     : [MỚI] cùng cắt lỗ ban đầu nhưng KHÔNG chốt cứng – cắt lỗ động = max(cắt lỗ, đóng cửa cao nhất
+                     từ lúc mua − TRAILING_ATR×ATR), lãi ≥ HOA_VON_KHI_R×R → tối thiểu hoà vốn; hết n_giu → bán.
+        "tung_phan": [MỚI] chốt CHOT_TUNG_PHAN_PCT% ở R/R = 2, phần còn lại theo cắt lỗ động như "dong".
+      Theo luật VN: chỉ bán được từ T+2; cắt lỗ bị chạm trước đó → bán giá mở cửa phiên đầu tiên được bán;
+      phiên đóng cửa giá sàn → không bán được; gap được tính; trừ phí + trượt giá.
     """
     # Nhãn nến tuần = thứ Sáu: các phiên T2–T5 dùng tuần ĐÃ HOÀN TẤT trước đó; thứ Sáu dùng tuần vừa đóng cửa
     tuan_ok = (d_tuan.MACD > d_tuan.SIGNAL).astype(float).reindex(d_ngay.index, method="ffill").fillna(0).values > 0
@@ -252,24 +256,68 @@ def backtest_quy_tac(d_ngay, d_tuan, n_giu, loc_tuan=True):
         stop = max(vao - STOP_ATR_MAX * atr[i], vao * (1 - LO_CUNG_PCT / 100))
         if vao - stop < STOP_ATR_MIN * atr[i]:
             stop = vao - STOP_ATR_MIN * atr[i]
-        tp = vao + RR_NGUONG * (vao - stop)
-        ra, ly_do, ks, j = None, "hết hạn", None, i + 1
-        for j in range(i + 1, min(i + 1 + n_giu, len(c))):
-            ban_duoc = (j - (i + 1)) >= T_CONG and not san_khoa[j]
-            if ks is None and l[j] <= stop:
-                ks = j
-            if ks is not None and ban_duoc:
-                ra = min(stop, o[j]) if j == ks else o[j]
-                ly_do = "cắt lỗ" if j == ks else "cắt lỗ (trễ do T+2/khoá sàn)"
-                break
-            if ks is None and ban_duoc and h[j] >= tp:
-                ra, ly_do = max(tp, o[j]), "chốt lời"
-                break
-        if ra is None:
-            ra = c[j]
+        R = vao - stop
+        tp = vao + RR_NGUONG * R
+        j, ra, ly_do = mo_phong_thoat(i, vao, stop, tp, o, h, l, c, atr[i], san_khoa, n_giu, thoat)
         lenh.append([d_ngay.index[i + 1], vao, d_ngay.index[j], ra, (ra / vao - 1) * 100 - _chi_phi(),
                      j - i, ly_do])
         i = j + 1
+    return tong_hop_lenh(lenh, d_ngay, c)
+
+
+def mo_phong_thoat(i, vao, stop, tp, o, h, l, c, atr_i, san_khoa, n_giu, thoat="co_dinh"):
+    """
+    Mô phỏng THOÁT một lệnh mua giá 'vao' ở phiên i+1 (tín hiệu phiên i) theo luật VN – dùng chung cho
+    backtest quy tắc MACD và backtest vùng mua. Trả (j phiên bán, giá bán bình quân, lý do thoát).
+    """
+    phan = cfg.CHOT_TUNG_PHAN_PCT / 100 if thoat == "tung_phan" else (1.0 if thoat == "co_dinh" else 0.0)
+    R = vao - stop
+    # [MỚI] gia hạn: "dong" / "tung_phan" theo cfg.GIA_HAN_LENH; "dong_63" = cắt lỗ động hết hạn cứng (đối chứng)
+    gia_han = cfg.GIA_HAN_LENH and thoat in ("dong", "tung_phan")
+    han = max(n_giu, cfg.HAN_TOI_DA) if gia_han else n_giu
+    he_so, qua_han = cfg.TRAILING_ATR, False
+    cl, con, thu, ly_do, ks, j, dinh = stop, 1.0, 0.0, "hết hạn", None, i + 1, vao
+    for j in range(i + 1, min(i + 1 + han, len(c))):
+        ban_duoc = (j - (i + 1)) >= T_CONG and not san_khoa[j]
+        if ks is None and l[j] <= cl:
+            ks = j
+        if ks is not None and ban_duoc:
+            gia_cl = min(cl, o[j]) if j == ks else o[j]
+            thu += con * gia_cl
+            con = 0.0
+            ly_do = ("cắt lỗ" if cl <= stop + 1e-9 else "cắt lỗ động" + (" (gia hạn)" if qua_han else "")) \
+                + ("" if j == ks else " (trễ T+2/khoá sàn)")
+            break
+        if ks is None and ban_duoc and phan > 0 and con > 1 - phan + 1e-9 and h[j] >= tp:
+            thu += phan * max(tp, o[j])
+            con -= phan
+            ly_do = "chốt lời" if con <= 1e-9 else "chốt 1 phần + giữ"
+            if con <= 1e-9:
+                break
+        if gia_han and not qua_han and j - i == n_giu:   # tới hạn: lệnh không chạy → bán; đang lãi ≥ xR → giữ, siết
+            if c[j] - vao < cfg.GIA_HAN_KHI_R * R:
+                break
+            qua_han, he_so = True, cfg.SIET_ATR
+        if thoat != "co_dinh":                       # cập nhật cắt lỗ động SAU phiên j (dùng cho phiên sau)
+            dinh = max(dinh, c[j])
+            moi = dinh - he_so * atr_i
+            if c[j] >= vao + cfg.HOA_VON_KHI_R * R:
+                moi = max(moi, vao * (1 + _chi_phi() / 100))
+            cl = max(cl, moi)
+    if con > 1e-9:
+        thu += con * c[j]
+        if ly_do == "hết hạn" or ly_do == "chốt 1 phần + giữ":
+            ly_do = "hết hạn" if ly_do == "hết hạn" else "chốt 1 phần + hết hạn"
+            if qua_han:
+                ly_do += f" tối đa {han} phiên" if j - i == han else " (đang gia hạn – hết dữ liệu)"
+            elif gia_han and j - i == n_giu:
+                ly_do += f" – lãi < {cfg.GIA_HAN_KHI_R:g}R"
+    return j, thu, ly_do
+
+
+def tong_hop_lenh(lenh, d_ngay, c, i0=None):
+    """Bảng lệnh [ngày mua, giá mua, ngày bán, giá bán, lãi %, số phiên, lý do] → thống kê chung của Phần I."""
+    i0 = BO_QUA_DAU + 30 if i0 is None else i0
     bl = pd.DataFrame(lenh, columns=["Ngày mua", "Giá mua", "Ngày bán", "Giá bán", "Lãi/lỗ % (sau phí)",
                                      "Số phiên giữ", "Lý do thoát"])
     if not len(bl):
@@ -277,11 +325,11 @@ def backtest_quy_tac(d_ngay, d_tuan, n_giu, loc_tuan=True):
     r = bl["Lãi/lỗ % (sau phí)"]
     von = (1 + r / 100).cumprod()
     lai, lo = r[r > 0].sum(), -r[r <= 0].sum()
-    nam = (d_ngay.index[-1] - d_ngay.index[BO_QUA_DAU + 30]).days / 365.25
+    nam = (d_ngay.index[-1] - d_ngay.index[i0]).days / 365.25
     return {"bang": bl, "so_lenh": len(bl), "ty_le_thang": (r > 0).mean() * 100, "tb": r.mean(),
             "tb_thang": r[r > 0].mean() if (r > 0).any() else np.nan,
             "tb_thua": r[r <= 0].mean() if (r <= 0).any() else np.nan,
             "pf": lai / lo if lo > 0 else np.nan, "tong": (von.iloc[-1] - 1) * 100,
             "mdd": ((von / von.cummax()) - 1).min() * 100, "giu_tb": bl["Số phiên giữ"].mean(),
-            "buy_hold": (c[-1] / c[BO_QUA_DAU + 30] - 1) * 100, "so_nam": nam,
+            "buy_hold": (c[-1] / c[i0] - 1) * 100, "so_nam": nam,
             "tin_cay_thap": len(bl) < 30}

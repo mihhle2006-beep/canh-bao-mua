@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-PHÂN TÍCH TÀI CHÍNH 10 TIÊU CHÍ – theo phương pháp luận FiinGroup/FiinTrade (bản v1.0), 5 mức:
+PHÂN TÍCH TÀI CHÍNH 10 TIÊU CHÍ – 5 mức đánh giá:
   5 Rất tốt (Excellent) · 4 Tốt (Good) · 3 Trung bình (Neutral) · 2 Cảnh báo (Be Alert) · 1 Nguy hiểm (Watch out)
 Dữ liệu: BCTC 3–4 năm gần nhất (nguon/bctc_nam.py), danh sách MỚI NHẤT TRƯỚC. Xét điều kiện từ mức xấu → tốt
 đúng thứ tự trong tài liệu; thiếu dữ liệu → None ("không đủ dữ liệu").
