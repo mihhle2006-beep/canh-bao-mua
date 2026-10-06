@@ -66,9 +66,16 @@ def main():
             if r.returncode != 0:                      # không in thông báo lỗi gốc (có thể chứa URL kèm token)
                 sys.exit(f"✘ Không clone được {repo}: token sai/hết hạn hoặc chưa được cấp quyền đọc repo này.")
             chep(os.path.join(tmp, duong_dan), tmp)
+    co = sorted(f[:-3] for f in os.listdir(DICH) if f.endswith(".py"))
+    can = ["nhat_ky", "thong_ke", "du_lieu", "chuyen_sau", "vung_mua"]      # bot import trực tiếp các module này
+    thieu = [m for m in can if m not in co]
+    print(f"ptcp lấy được {len(co)} module: " + ", ".join(co))              # chỉ in TÊN module, không in nội dung
+    if thieu:
+        sys.exit("✘ Gói ptcp lấy từ repo THIẾU module: " + ", ".join(thieu)
+                 + " → bản ptcp trong repo danh-muc cũ/thiếu file. Up lại đủ ptcp_phan_tich/ptcp (bản beta 1.1, 28 file .py).")
     sys.path.insert(0, os.path.dirname(DICH))
     import ptcp
-    print(f"✔ ptcp {ptcp.__version__} – {len([f for f in os.listdir(DICH) if f.endswith('.py')])} module")
+    print(f"✔ ptcp {ptcp.__version__} – {len(co)} module")
 
 
 if __name__ == "__main__":
