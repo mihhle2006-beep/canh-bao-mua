@@ -1,4 +1,4 @@
-# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ) – MWG, DHC, GMD
+# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ) – MWG, DHC, GMD,VPB,NAB,VHM,VIB
 
 Quét các mã theo dõi theo **4 khung** (tuần → ngày → giờ → phút), tiêu chí lấy từ bộ lọc cổ phiếu
 (chiến lược `ky_thuat` / `diem_mua`), và **gửi Telegram ngay khi một mã đạt đủ tiêu chí mua**.
