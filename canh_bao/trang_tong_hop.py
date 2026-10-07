@@ -3,7 +3,8 @@
 TRANG TỔNG HỢP – 1 file HTML tự chứa (không thư viện ngoài) gom những thứ đang rải rác qua Telegram & Excel:
   ① Sức khoẻ thị trường: điểm 8 chỉ báo, CL đang áp dụng, VN-Index đi ngang hay có xu hướng
   ② Tín hiệu hôm nay: danh sách mua phiên tới (tin tổng kết) + trạng thái điểm vào 15' trong phiên
-  ③ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv)
+  ③ Mã từ bộ lọc Bo_Loc: ngày thêm, hạn 2 tuần, đã đạt điểm mua chưa (ma_bo_loc.json)
+  ④ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv)
   (chỉ bản RIÊNG) danh mục thật: lãi/lỗ, cắt lỗ, hành động – KHÔNG bao giờ ghi vào docs/
 
 Chỉ đọc file trạng thái (không cần ptcp, không tải giá) → dựng lại được sau mỗi lần chạy, kể cả trong phiên.
@@ -193,6 +194,26 @@ def _khoi_chinh_xac(nk):
     return _bang(["Loại", "Nhóm", "Tổng", "Đúng", "Sai", "Đang chờ", "Đúng %", "TB lãi/lỗ"], dong)
 
 
+def _khoi_bo_loc(bl, hom_nay=None):
+    ma = (bl or {}).get("ma") or {}
+    if not ma:
+        return '<p class="mo">Chưa có mã nào – Bo_Loc quét cuối phiên thứ 2 & thứ 5.</p>'
+    hom_nay = pd.Timestamp(hom_nay).normalize() if hom_nay is not None else pd.Timestamp.today().normalize()
+    dong = []
+    for m, v in sorted(ma.items(), key=lambda x: x[1].get("het_han") or ""):
+        het = pd.Timestamp(v["het_han"]) if v.get("het_han") else None
+        con = (het - hom_nay).days if het is not None else None
+        dong.append([f"<b>{_e(m)}</b>", _e(", ".join(v.get("chien_luoc") or [])),
+                     f"{pd.Timestamp(v['ngay_them']):%d/%m}" if v.get("ngay_them") else "–",
+                     (f"{het:%d/%m}" + (f' <span class="mo">(còn {con} ngày)</span>' if con is not None and con >= 0
+                                        else ' <span class="canh-bao">(quá hạn)</span>')) if het is not None else "–",
+                     f'<span class="nhan-tt tang">✔ {pd.Timestamp(v["dat_mua"]):%d/%m}</span>' if v.get("dat_mua")
+                     else '<span class="mo">chưa</span>'])
+    return (_bang(["Mã", "Chiến lược", "Ngày thêm", "Hạn", "Đạt điểm mua"], dong)
+            + f'<p class="mo">Hạn {C.BO_LOC_SO_NGAY} ngày từ ngày thêm; đạt điểm mua thì thêm {C.BO_LOC_SO_NGAY} ngày; '
+              f'hết hạn thì tự xoá.</p>')
+
+
 def _khoi_rieng(giu):
     from .vi_the import NHAN
     dong = []
@@ -206,32 +227,40 @@ def _khoi_rieng(giu):
 
 
 CSS = """
-:root{--nen:#f6f7f9;--the:#fff;--chu:#1b1f24;--mo:#5f6b7a;--vien:#e3e6ea;--nhan:#2457c5;--tang:#0f8a4b;
---giam:#c8352b;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0f1216;--the:#181c22;--chu:#e6e9ee;
---mo:#97a1ae;--vien:#2a3038;--nhan:#7aa7ff;--tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
-:root[data-theme="dark"]{--nen:#0f1216;--the:#181c22;--chu:#e6e9ee;--mo:#97a1ae;--vien:#2a3038;--nhan:#7aa7ff;
---tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
+:root{--nen:#f3f7f4;--the:#fff;--chu:#17221b;--mo:#5b6b61;--vien:#d9e6dd;--nhan:#1e7a46;--nhan-dam:#14532d;
+--nen-nhan:#e7f4ec;--tang:#15803d;--giam:#c8352b;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0c130f;--the:#131c16;--chu:#e4ece6;
+--mo:#94a59a;--vien:#24342a;--nhan:#4cc985;--nhan-dam:#173a26;--nen-nhan:#16291e;--tang:#3ccf86;--giam:#ff7b72;
+--vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
+:root[data-theme="dark"]{--nen:#0c130f;--the:#131c16;--chu:#e4ece6;--mo:#94a59a;--vien:#24342a;--nhan:#4cc985;
+--nhan-dam:#173a26;--nen-nhan:#16291e;--tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
 *{box-sizing:border-box}body{margin:0;background:var(--nen);color:var(--chu);
 font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 main{max-width:1080px;margin:0 auto;padding:20px 16px 48px}
-header h1{font-size:22px;margin:0}header p{margin:4px 0 0;color:var(--mo)}
-nav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}nav a{color:var(--nhan);text-decoration:none;
-padding:4px 10px;border:1px solid var(--vien);border-radius:999px;font-size:13px;background:var(--the)}
+header{background:var(--nhan-dam);color:#fff;border-radius:14px;padding:18px 20px}
+header h1{font-size:22px;margin:0}header p{margin:4px 0 0;color:#cfe8d8}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}nav a{color:var(--nhan);text-decoration:none;font-weight:500;
+padding:4px 12px;border:1px solid var(--vien);border-radius:999px;font-size:13px;background:var(--the)}
+nav a:hover{background:var(--nen-nhan);border-color:var(--nhan)}
 section{background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:16px;margin:16px 0}
-section h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;margin:18px 0 8px;color:var(--mo)}
+section h2{font-size:17px;margin:0 0 12px;padding-left:10px;border-left:4px solid var(--nhan)}
+h3{font-size:14px;margin:18px 0 8px;color:var(--mo)}
 .luoi-the{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-.the{border:1px solid var(--vien);border-radius:10px;padding:10px 12px}.the .nhan{font-size:12px;color:var(--mo)}
-.the .gia{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}.the .phu{font-size:12px;color:var(--mo)}
+.the{border:1px solid var(--vien);border-radius:10px;padding:10px 12px;background:var(--nen-nhan)}
+.the .nhan{font-size:12px;color:var(--mo)}
+.the .gia{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--nhan)}
+.the .phu{font-size:12px;color:var(--mo)}
 .vach{display:inline-flex;gap:3px;margin-top:4px}.vach span{width:14px;height:8px;border-radius:2px;
 background:var(--vien)}.vach span.bat{background:var(--nhan)}
 .chi-bao{list-style:none;padding:0;margin:8px 0 0;columns:2 280px}.chi-bao li{margin:2px 0;break-inside:avoid}
 .chi-bao .dat b{color:var(--tang)}.chi-bao .truot b{color:var(--giam)}
 .cuon{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{padding:6px 8px;border-bottom:1px solid var(--vien);text-align:left;white-space:nowrap}
-th{font-weight:600;color:var(--mo);font-size:12px}td{font-variant-numeric:tabular-nums}
+th{font-weight:600;color:var(--nhan);font-size:12px;background:var(--nen-nhan)}td{font-variant-numeric:tabular-nums}
+tbody tr:hover td{background:var(--nen-nhan)}
 .mo{color:var(--mo)}.tang{color:var(--tang)}.giam{color:var(--giam)}
 .nhan-tt{padding:1px 6px;border-radius:4px;border:1px solid var(--vien)}
+.nhan-tt.tang{background:var(--nen-nhan);border-color:var(--tang)}
 .canh-bao{color:var(--vang)}.tot{color:var(--tang)}
 .thanh{display:inline-block;width:60px;height:6px;background:var(--vien);border-radius:3px;vertical-align:middle}
 .thanh i{display:block;height:100%;background:var(--tang);border-radius:3px}
@@ -252,7 +281,8 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
     luc = pd.Timestamp(bay_gio) if bay_gio is not None else None
     muc = [("thi-truong", "① Sức khoẻ thị trường", _khoi_thi_truong(cl.get("thi_truong"))),
            ("tin-hieu", "② Tín hiệu hôm nay", _khoi_tin_hieu(cl, cb)),
-           ("chinh-xac", "③ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv")))]
+           ("bo-loc", "③ Mã từ bộ lọc Bo_Loc", _khoi_bo_loc(_doc_json(getattr(C, "FILE_MA_BO_LOC", "")), luc)),
+           ("chinh-xac", "④ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv")))]
     if giu:
         muc.insert(0, ("danh-muc", "💼 Danh mục thật (riêng tư)", _khoi_rieng(giu)))
     nav = "".join(f'<a href="#{i}">{_e(t)}</a>' for i, t, _ in muc)
