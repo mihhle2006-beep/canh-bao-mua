@@ -1,0 +1,80 @@
+# Cảnh báo MUA đa khung – chạy mỗi 15 phút trong phiên, tổng kết lúc 15:20 (giờ Việt Nam).
+# ptcp KHÔNG nằm trong repo này: bước "Lấy ptcp" chép từ repo danh-muc (một nguồn duy nhất).
+name: Canh bao mua
+
+on:
+  schedule:
+    - cron: "*/15 2-4 * * 1-5"     # 09:00–11:45 giờ VN (UTC+7) – code tự bỏ qua ngoài phiên
+    - cron: "*/15 6-7 * * 1-5"     # 13:00–14:45 giờ VN
+    - cron: "20 8 * * 1-5"         # 15:20 giờ VN – tổng kết cuối ngày (kèm chấm đúng/sai tín hiệu)
+  workflow_dispatch:
+    inputs:
+      che_do:
+        description: "tu_dong | trong_phien | tong_ket | lich_su"
+        default: "tong_ket"
+        type: choice
+        options: [tu_dong, trong_phien, tong_ket, lich_su]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canh-bao
+  cancel-in-progress: true
+
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt
+
+      - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
+        env:
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}                       # token CHỈ ĐỌC – dùng chung với cảnh báo BÁN
+          REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}          # mặc định: chính repo danh-muc
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp_phan_tich/ptcp' }}  # thư mục ptcp trong repo đó
+        run: python lay_ptcp.py
+
+      - name: Khôi phục cache giá, phân tích ngày & nhật ký riêng
+        uses: actions/cache@v5
+        with:
+          path: |
+            cache_gia
+            cache_ptcp
+          key: gia-${{ github.run_id }}
+          restore-keys: gia-
+
+      - name: Kiểm thử
+        run: python -m pytest -q
+
+      - name: Quét & gửi cảnh báo
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN }}      # token CHỈ ĐỌC repo danh-muc (cảnh báo BÁN)
+          DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
+          DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
+        run: python chay.py --che_do ${{ inputs.che_do || 'tu_dong' }}
+
+      - name: Lưu trạng thái chống báo trùng & nhật ký tín hiệu (công khai)
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # chỉ thêm file đang có – thiếu 1 file không được làm hỏng cả lần commit
+          for f in trang_thai_canh_bao.json lich_su_tin_hieu.csv lich_su_danh_gia.csv; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
+          git diff --cached --quiet && echo "Không có thay đổi" && exit 0
+          git commit -m "Trạng thái cảnh báo $(date -u +%F' '%H:%M) UTC"
+          git pull --rebase || true
+          git push || echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"
