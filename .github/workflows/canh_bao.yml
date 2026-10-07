@@ -15,6 +15,10 @@ on:
         default: "tong_ket"
         type: choice
         options: [tu_dong, trong_phien, tong_ket, lich_su]
+      ma:
+        description: "Chỉ xem mã này (VD FPT hoặc FPT,HPG) – bỏ trống = chạy bình thường; xem mã không ghi trạng thái"
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -54,7 +58,9 @@ jobs:
           key: gia-${{ github.run_id }}
           restore-keys: gia-
 
+      # lần chạy 15' trong phiên bỏ kiểm thử (~30 giây) để tin MUA NGAY đến sớm hơn – tổng kết / chạy tay vẫn kiểm thử
       - name: Kiểm thử
+        if: github.event.schedule != '*/15 2-4 * * 1-5' && github.event.schedule != '*/15 6-7 * * 1-5'
         run: python -m pytest -q
 
       - name: Quét & gửi cảnh báo
@@ -66,8 +72,12 @@ jobs:
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
           BO_LOC_TOKEN: ${{ secrets.BO_LOC_TOKEN }}          # token CHỈ ĐỌC repo Bo_Loc (bỏ trống nếu Bo_Loc công khai)
           BO_LOC_REPO: ${{ vars.BO_LOC_REPO }}               # để trống = cau_hinh.BO_LOC_REPO
+          MA: ${{ inputs.ma }}
         # lịch thứ Bảy → lich_su; chạy tay → chế độ đã chọn; còn lại → tu_dong
-        run: python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || inputs.che_do || 'tu_dong' }}
+        # có nhập mã → chỉ xem mã đó
+        run: |
+          if [ -n "$MA" ]; then python chay.py --chi_ma "$MA"; exit $?; fi
+          python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || inputs.che_do || 'tu_dong' }}
 
       - name: Tải file Excel độ chính xác (chế độ lịch sử)
         if: always() && hashFiles('danh_gia_tin_hieu.xlsx') != ''

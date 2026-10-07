@@ -48,6 +48,9 @@ jobs:
             bt-
             gia-
 
+      - name: Kiểm thử
+        run: python -m pytest -q
+
       - name: Backtest điểm vào 15' & điểm bán
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
