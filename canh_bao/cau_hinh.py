@@ -131,10 +131,10 @@ VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền 
 
 # --- MÃ TỪ BỘ LỌC (canh_bao/ma_bo_loc.py) ---
 #   Bo_Loc chạy cuối phiên thứ 2 & thứ 5 (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã Hành động MUA).
-#   Tổng kết 15:20 đọc file đó, thêm mã vào danh sách quét trong BO_LOC_SO_NGAY ngày. Vào nhóm mua 🟢/✅/🟡 = ĐẠT → giữ;
-#   hết hạn chưa đạt → tự xoá. Muốn bỏ hẳn 1 mã: xoá dòng của mã đó trong FILE_MA_BO_LOC.
+#   Tổng kết 15:20 đọc file đó, thêm mã vào danh sách quét trong BO_LOC_SO_NGAY ngày (vào nhóm mua 🟢/✅/🟡 = ĐẠT → báo);
+#   hết hạn → tự xoá, đạt hay chưa đều xoá. Muốn bỏ sớm 1 mã: xoá dòng của mã đó trong FILE_MA_BO_LOC.
 DUNG_BO_LOC = True
-BO_LOC_SO_NGAY = 14                # 2 tuần (ngày lịch, tính từ ngày quét của Bo_Loc)
+BO_LOC_SO_NGAY = 14                # 2 tuần (ngày lịch, tính từ ngày quét của Bo_Loc đã thêm mã)
 FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – chỉ mã & ngày)
 BO_LOC_REPO = "mihhle2006-beep/Bo_Loc"   # ghi đè bằng biến BO_LOC_REPO; repo riêng tư → secret BO_LOC_TOKEN
 BO_LOC_PATH = "ma_mua_bo_loc.json"

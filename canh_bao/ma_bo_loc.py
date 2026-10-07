@@ -5,9 +5,9 @@ MÃ TỪ BỘ LỌC (repo Bo_Loc) – theo dõi có thời hạn.
   Bo_Loc chạy cuối phiên thứ 2 & thứ 5 (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã có Hành động MUA).
   Tổng kết 15:20 ở đây:
     1) đọc file đó (lần quét MỚI mới xử lý) → thêm mã vào danh sách theo dõi, hạn BO_LOC_SO_NGAY ngày
-       (mã được lọc lại khi đang theo dõi → gia hạn từ ngày quét mới);
-    2) quét chiến lược cùng các mã cố định → mã vào nhóm mua 🟢 / ✅ / 🟡 = ĐẠT yêu cầu mua → giữ lại;
-    3) hết hạn mà chưa đạt → tự xoá.
+       tính từ ngày thêm (lọc lại khi đang theo dõi KHÔNG gia hạn);
+    2) quét chiến lược cùng các mã cố định → mã vào nhóm mua 🟢 / ✅ / 🟡 = ĐẠT yêu cầu mua (ghi nhận & báo);
+    3) hết hạn → tự xoá (kể cả mã đã đạt). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
   Trạng thái lưu ở FILE_MA_BO_LOC (công khai – chỉ có mã & ngày).
 """
 import json
@@ -88,8 +88,7 @@ def nhan_nguon(tt, nguon, co_dinh=()):
             ma_tt[ma] = {"ngay_them": f"{ngay_quet:%Y-%m-%d}", "het_han": het_han, "chien_luoc": list(cl),
                          "dat_mua": None}
             moi.append(ma)
-        elif not cu.get("dat_mua"):                             # lọc lại khi đang chờ → gia hạn
-            cu["het_han"] = max(cu.get("het_han") or "", het_han)
+        else:                                                   # lọc lại khi đang theo dõi → giữ hạn cũ
             cu["chien_luoc"] = sorted(set(cu.get("chien_luoc") or []) | set(cl))
     return moi
 
@@ -99,7 +98,7 @@ def danh_sach(tt):
 
 
 def danh_dau_dat(tt, ma_mua, bay_gio):
-    """Mã nằm trong nhóm mua của tin tổng kết → ĐẠT (giữ lại, không xoá theo hạn). → mã vừa đạt."""
+    """Mã nằm trong nhóm mua của tin tổng kết → ĐẠT (ghi nhận, vẫn xoá khi hết hạn). → mã vừa đạt."""
     vua = []
     for ma in ma_mua:
         v = (tt.get("ma") or {}).get(str(ma).upper())
@@ -110,10 +109,9 @@ def danh_dau_dat(tt, ma_mua, bay_gio):
 
 
 def xoa_het_han(tt, bay_gio):
-    """Hết hạn mà chưa đạt điểm mua → xoá. → mã đã xoá."""
+    """Quá BO_LOC_SO_NGAY ngày kể từ ngày thêm → xoá (đạt hay chưa đều xoá). → mã đã xoá."""
     hom_nay = _ngay(bay_gio)
-    xoa = [ma for ma, v in (tt.get("ma") or {}).items()
-           if not v.get("dat_mua") and v.get("het_han") and hom_nay > _ngay(v["het_han"])]
+    xoa = [ma for ma, v in (tt.get("ma") or {}).items() if v.get("het_han") and hom_nay > _ngay(v["het_han"])]
     for ma in xoa:
         del tt["ma"][ma]
     return xoa
@@ -129,5 +127,5 @@ def dong_tin(moi, dat, xoa, tt):
     if dat:
         dong.append(f"  ✅ đạt điểm mua: {', '.join(dat)}")
     if xoa:
-        dong.append(f"  🗑 xoá (quá {C.BO_LOC_SO_NGAY} ngày chưa đạt): {', '.join(xoa)}")
+        dong.append(f"  🗑 xoá (hết {C.BO_LOC_SO_NGAY} ngày): {', '.join(xoa)}")
     return "\n".join(dong)

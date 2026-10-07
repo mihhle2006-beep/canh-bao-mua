@@ -45,11 +45,12 @@ Bo_Loc quét cuối phiên **thứ 2 & thứ 5** (chiến lược `rieng` + `xu_
 Tổng kết 15:20 ở đây (`canh_bao/ma_bo_loc.py`):
 
 1. đọc file đó (chỉ khi là lần quét mới) → thêm mã vào danh sách quét, hạn **14 ngày** từ ngày quét
-   (mã đã có trong `MA_CHIEN_LUOC` / `MA_THEO_DOI` thì bỏ qua; được lọc lại khi đang chờ → gia hạn);
-2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua**, được giữ lại (đi tiếp cảnh báo 15' như mã khác);
-3. quá 14 ngày chưa đạt → **tự xoá**. Tin tổng kết có thêm dòng 🔎 (thêm / đạt / xoá).
+   (mã đã có trong `MA_CHIEN_LUOC` / `MA_THEO_DOI` thì bỏ qua; được lọc lại khi đang theo dõi → KHÔNG gia hạn);
+2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua**: báo trong tin và đi tiếp cảnh báo 15' như mã khác;
+3. hết 14 ngày → **tự xoá**, đạt hay chưa đều xoá (Bo_Loc lọc ra lại sau đó → thêm lại, hạn mới).
+   Tin tổng kết có thêm dòng 🔎 (thêm / đạt / xoá).
 
-Trạng thái lưu ở `ma_bo_loc.json` (công khai – chỉ mã & ngày; muốn bỏ hẳn 1 mã thì xoá dòng của mã đó).
+Trạng thái lưu ở `ma_bo_loc.json` (công khai – chỉ mã & ngày; muốn bỏ sớm 1 mã thì xoá dòng của mã đó).
 Cấu hình: `DUNG_BO_LOC`, `BO_LOC_SO_NGAY`, `BO_LOC_REPO` trong `cau_hinh.py`.
 Bo_Loc là repo riêng tư → tạo token CHỈ ĐỌC (Contents: Read) cho Bo_Loc, lưu secret **`BO_LOC_TOKEN`**.
 
