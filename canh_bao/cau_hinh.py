@@ -8,7 +8,7 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
   PHÚT  – điểm vào (kích hoạt "MUA NGAY")
 """
 # --- Mã theo dõi ---
-MA_THEO_DOI = ["MWG", "DHC", "GMD","vib","vpb","nab","vhm","phr"]
+MA_THEO_DOI = ["MWG", "DHC", "GMD"]
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
@@ -43,7 +43,7 @@ RSI_PHUT_MAX = 75                  # không mua đuổi khi RSI phút quá cao
 # --- Cắt lỗ / mục tiêu / R/R (cắt lỗ thống nhất như ptcp) ---
 BUFFER_ATR, STOP_ATR_MAX, STOP_ATR_MIN, LO_CUNG_PCT = 0.5, 2.0, 1.5, 7.0
 UPSIDE_TOI_THIEU = 3.0             # % – mục tiêu phải cao hơn giá ít nhất 3%
-NGUONG_HOI_TU = 3.0               # % – hai mốc cách nhau ≤ 3% thì coi là cùng vùng hội tụ (hoi_tu.py)
+SO_PHIEN_XAC_SUAT = 63             # kỳ hạn (phiên) tính XS chạm mục tiêu / cắt lỗ khi không có ptcp
 RR_TOI_THIEU = 2.0                 # R/R tối thiểu để phát "MUA NGAY" (= ngưỡng của ptcp)
 
 # --- Thị trường chung ---
@@ -69,6 +69,26 @@ SU_KIEN = {                        # ngày công bố KQKD / GDKHQ đã biết �
 
 # --- Nhật ký & chấm điểm tín hiệu (canh_bao/nhat_ky.py) ---
 GHI_NHAT_KY = True                 # ghi mọi tín hiệu (MUA NGAY, khuyến nghị ptcp, cảnh báo bán) & tự chấm ĐÚNG/SAI
-KY_HAN_MUA = 63                    # phiên – kỳ hạn chấm lệnh mua (nhat_ky.py) & tính XS fallback khi không có ptcp
+KY_HAN_MUA = 63                    # phiên – hạn chấm lệnh mua khi ptcp không cho kỳ hạn (= SO_PHIEN_XAC_SUAT)
 KY_HAN_BAN = 20                    # phiên – sau cảnh báo bán bao lâu thì so giá để chấm
 # T+2, phí + trượt giá, ngưỡng trần/sàn, "ít mẫu": lấy từ ptcp/cau_hinh.py (một bộ máy chấm chung – ptcp/nhat_ky.py)
+
+# --- HỆ THOÁT MỚI cho mã đang giữ (ptcp/he_thoat.py – gốc T2-3R-ma10 đã backtest trên 41 mã 2019–2026) ---
+#   lãi < 1R : cắt lỗ ban đầu (cat_lo_goc; thiếu thì max(giá vốn − 2×ATR, −7%), tối thiểu 1,5×ATR)
+#   lãi ≥ 1R : cắt lỗ động = đóng cửa cao nhất − 3×ATR, không dưới hoà vốn (+ phí)
+#   lãi ≥ 3R : chuyển KHUNG TUẦN – bán khi đóng cửa tuần < MA10 tuần; sàn khoá lãi 2R; KHÔNG chốt lời cố định
+#   63 phiên mà lãi < 1R : lệnh không chạy → bán.  Cắt lỗ chỉ dời LÊN; dùng mức cao hơn giữa hệ thống & cat_lo_dat.
+DUNG_HE_THOAT = True               # False: quay về cách cũ (cắt lỗ / mục tiêu đặt tay + MACD tuần / SuperTrend / ptcp)
+NGUONG_KHUNG_TUAN_R = 3.0          # lãi (theo R) để chuyển sang bán theo khung tuần
+DOI_CAT_LO_TOI_THIEU_PCT = 0.5     # chỉ nhắc "DỜI CẮT LỖ" khi mức hệ thống cao hơn mức đã đặt ≥ 0,5%
+
+# --- BẢN TIN CHIẾN LƯỢC CL1 / CL2 (canh_bao/chien_luoc_bot.py – dùng ptcp/chien_luoc.py & he_thoat.py) ---
+#   Điểm thị trường 8 chỉ báo (cuối tháng): ≥ 5 → CL2 (A0 70% + VN-Index 30%), ≤ 2 → CL1 (A0 50% + B 50%), 3–4 giữ.
+#   A0 = vào MACD ngày KHÔNG lọc tuần; B = vào MACD ngày lọc tuần + nhồi lệnh; cả hai thoát theo hệ thoát mới.
+DUNG_CHIEN_LUOC = True             # gửi bản tin chiến lược sau tin tổng kết 15:20 (tin CÔNG KHAI – không dùng danh mục)
+MA_CHIEN_LUOC = ["ANV", "BID", "BSR", "CEO", "CSV", "DBC", "DGC", "DGW", "DHC", "DIG", "FPT", "GAS", "GMD", "GVR",
+                 "HAG", "HAH", "HCM", "HPG", "HSG", "HVN", "KDH", "LPB", "MBB", "MSB", "MSN", "MWG", "NAB", "NKG",
+                 "NVL", "PLX", "PNJ", "POW", "PVD", "PVS", "SSI", "TCB", "VCB", "VHM", "VJC", "VNM", "VPB"]
+NGAY_BAT_DAU_CL = NGAY_BAT_DAU     # dữ liệu cho bản tin (≥ 1 năm để có MA200 & độ rộng thị trường)
+FILE_TRANG_THAI_CL = "trang_thai_chien_luoc.json"   # CL đang áp dụng (để báo khi ĐỔI) – không chứa dữ liệu riêng
+SO_MA_TRONG_TIN = 12               # số dòng tối đa mỗi mục (mua phiên tới / đang giữ) trong bản tin

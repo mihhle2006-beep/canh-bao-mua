@@ -84,10 +84,11 @@ def test_ghi_cap_nhat_thong_ke_va_rieng_tu():
     assert not N.ghi_ptcp(kq, "2026-09-02 15:20")                     # khuyến nghị không đổi → không ghi
     assert N.ghi_ban({"ma": "XYZ", "gia": 50.0}, {"muc": "CAT_LO"}, "2026-09-03 10:00")
     assert not N.ghi_ban({"ma": "XYZ", "gia": 50.0}, {"muc": "DOI_CAT_LO"}, "2026-09-03 10:00")
+    assert N.ghi_ban({"ma": "XYZ", "gia": 50.0}, {"muc": "BAN_TUAN"}, "2026-09-04 10:00")   # mức mới của hệ thoát
     assert "XYZ" not in open(N.FILE_CONG_KHAI, encoding="utf-8").read()   # cảnh báo bán không lên file công khai
     assert "XYZ" in open(N.FILE_RIENG, encoding="utf-8").read()
     gia = {"GMD": _gia([100, 101, 104, 108, 111, 112]), "XYZ": _gia([50] + [48] * 25)}
-    assert N.cap_nhat(gia.get) == 3
+    assert N.cap_nhat(gia.get) == 4
     tk = N.thong_ke(N.doc(N.FILE_CONG_KHAI))
     assert set(tk["Nhóm"]) == {"MUA NGAY", "ptcp MUA"} and (tk["Đúng"] == 1).all()
     assert any("đúng 1/1" in d for d in N.dong_tong_ket())

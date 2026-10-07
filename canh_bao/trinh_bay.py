@@ -29,7 +29,10 @@ def vn_hoa(chu):
 
 # ---------------------------------------------------------------- HTML cho Telegram
 _NHAN_DAM = ("Kích hoạt:", "Thị trường:", "Sự kiện:", "Xác suất lịch sử", "3 kịch bản", "Lý do:", "Đang giữ",
-             "Cắt lỗ đã đặt", "ptcp", "💼", "🎯", "➜")
+             "Cắt lỗ đã đặt", "ptcp", "💼", "🎯", "➜", "Kế hoạch thoát", "Hệ thoát", "Đang áp dụng", "Điểm thị trường",
+             "Điều kiện đổi", "Tỷ trọng", "Chia vốn", "① ", "② ", "③ ")
+_NHOM_DAM = ("🟢 ", "✅ ", "🟡 ", "⏳ ", "🔻 ")          # tiêu đề nhóm hành động: đậm phần trước ' – '
+
 
 
 def dinh_dang_html(noi_dung):
@@ -44,6 +47,9 @@ def dinh_dang_html(noi_dung):
             ra.append(f"<b>{phan[0]}</b>" + (f" – {phan[1]}" if len(phan) > 1 else ""))
         elif d.strip().startswith("(") and d.strip().endswith(")"):
             ra.append(f"<i>{e}</i>")
+        elif d.startswith(_NHOM_DAM) and " – " in e:
+            nhan, _, phan_sau = e.partition(" – ")
+            ra.append(f"<b>{nhan}</b> – <i>{phan_sau}</i>")
         elif any(d.strip().startswith(n) for n in _NHAN_DAM) and ":" in e:
             nhan, _, phan_sau = e.partition(":")
             ra.append(f"<b>{nhan}:</b>{phan_sau}")
@@ -177,4 +183,3 @@ def dong_bang_tong_ket(kq):
               "Cắt lỗ": f"{_so(cl)} ({(cl / g - 1) * 100:+.1f}%)" if cl and cl == cl and g else "–",
               "R/R": _so(kq.get("rr"), 1), "ptcp": pt.get("khuyen_nghi", "–")})
     return r
-

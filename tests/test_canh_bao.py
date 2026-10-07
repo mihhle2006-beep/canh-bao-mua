@@ -176,10 +176,13 @@ def test_chay_mo_phong(du_lieu_tot, tmp_path, capsys):
         assert g.call_count == 1 and "MUA NGAY – AAA" in g.call_args[0][0]
         chay.main(["--ma", "AAA", "--gio", "2026-10-02 10:50"])                 # chạy lại: không báo trùng
         assert g.call_count == 1
-        chay.main(["--ma", "AAA", "--gio", "2026-10-02 15:30"])                 # tổng kết
+        chay.main(["--ma", "AAA", "--gio", "2026-10-02 15:30", "--khong_chien_luoc"])   # tổng kết
         assert g.call_count == 2 and "TỔNG KẾT" in g.call_args[0][0]
         assert "ĐỘ CHÍNH XÁC TÍN HIỆU" in g.call_args[0][0]                  # nhật ký gắn vào tổng kết
         assert chay.main(["--che_do", "lich_su"]) == 0
+        with mock.patch.object(chay, "_ban_tin_chien_luoc") as b:                 # tổng kết kèm bản tin CL1/CL2
+            chay.main(["--ma", "AAA", "--gio", "2026-10-02 15:30"])
+        assert b.call_count == 1 and set(b.call_args[0][1]) == {"AAA"} and b.call_args[0][2] is vni
     assert os.path.exists("lich_su_tin_hieu.csv")
     nk = pd.read_csv("lich_su_danh_gia.csv")
     assert set(nk["loai"]) == {"MUA_NGAY", "PTCP"} and len(nk) == 2       # 1 tin MUA NGAY + 1 khuyến nghị ptcp

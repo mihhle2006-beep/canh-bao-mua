@@ -58,8 +58,7 @@ def _rut_gon(k):
         "ngay_du_lieu": f"{pd.Timestamp(k['ngay']):%Y-%m-%d}", "gia": _so(k["gia"]),
         "khuyen_nghi": qd["khuyen_nghi"], "hanh_dong": qd["hanh_dong"], "ly_do": qd.get("ly_do", []),
         "mua": bool(qd.get("mua")), "ev": _so(kb.get("ev_qd")), "xs_muc_tieu": _so(ms.get("tren")),
-        "xs_cat_lo": _so(ms.get("duoi")), "xs_phien_muc_tieu": _so(ms.get("t_tren")),
-        "rr": _so(qr.get("rr")), "cat_lo": _so(k["stop"]["gia"]),
+        "xs_cat_lo": _so(ms.get("duoi")), "rr": _so(qr.get("rr")), "cat_lo": _so(k["stop"]["gia"]),
         "cat_lo_theo": k["stop"].get("theo", ""), "atr": _so(k["stop"].get("atr")),
         "muc_tieu": _so(dx.get("chon")), "moc_muc_tieu": str(dx.get("moc", "")),
         "muc_tieu_ngay": _so(mt_ngay["Giá mục tiêu"]) if mt_ngay is not None else None,
@@ -72,8 +71,20 @@ def _rut_gon(k):
         "kich_ban": _kich_ban(kb), "n_phien": int(kb.get("n") or 63),
         "loi_the_tin_hieu": _so(kb.get("loi_the_tin_hieu")),
         "co_ban": [t for t, ok in qd.get("kiem_tra", []) if t.startswith("Cơ bản") and ok is False],
-        "vung_mua": _vung_mua(k), "backtest": _backtest(k),
+        "vung_mua": _vung_mua(k), "backtest": _backtest(k), "chien_luoc": _chien_luoc(k),
     }
+
+
+def _chien_luoc(k):
+    """Khuyến nghị theo CHIẾN LƯỢC (ptcp/theo_chien_luoc.py): nhóm, vùng mua, giá mua/bán, mục tiêu 1R/3R. Cũ → None."""
+    cl = k.get("chien_luoc")
+    if not cl:
+        return None
+    qd, m = cl["qd"], cl.get("mua") or {}
+    return {"nhom": cl["nhom"], "cl": int(cl["tt"]["cl"]), "diem": qd.get("diem_tt"),
+            "vung": [_so(m.get("tu")), _so(m.get("den"))] if m else None, "gia_kn_mua": _so(qd.get("gia_kn_mua")),
+            "gia_kn_ban": _so(qd.get("gia_kn_ban")), "muc_tieu_1": _so(qd.get("muc_tieu_1")),
+            "muc_tieu_2": _so(qd.get("muc_tieu_2")), "vo_hieu": str(m.get("vo_hieu", "")) if m else ""}
 
 
 def _vung_mua(k):

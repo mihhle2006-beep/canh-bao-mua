@@ -81,6 +81,22 @@ NHẬT KÝ CẬP NHẬT (đối chiếu từng mục của đề xuất)
 20. Gia hạn lệnh (GIA_HAN_LENH): tới n_phien mà lãi < 1R → bán; lãi ≥ 1R → giữ tiếp, cắt lỗ động siết 2×ATR, tối
     đa 252 phiên. Áp cho backtest Phần I, backtest_phuong_phap (so với "hết hạn cứng") và kế hoạch vị thế.
 
+ CẬP NHẬT LẦN 6
+21. backtest_phuong_phap: BỎ MÃ TRÙNG (mã nhập 2 lần từng bị chạy 2 lần → số lệnh của mã đó nhân đôi); 5 phép thử:
+    KTC bootstrap THEO QUÝ (thay theo mã), ổn định ≥ 60% số năm có lãi & nửa sau có lãi, bỏ 2% lệnh lãi nhất vẫn
+    > 0 → MẠNH 5/5, KHÁ 4/5. Excel thêm sheet "Theo nam", "Ly do thoat". Hàm cham_diem() dùng chung.
+22. Hệ thoát nhiều tầng (he_thoat.py) + backtest_he_thoat([...]) (backtest_thoat.py): T0 hiện tại → T1 không siết /
+    không hạn → T2 chuyển khung tuần ở 3R/2R (MA10 tuần / đáy 2 tuần) → T3 siết khi cao trào → T4 mua lại khi vượt
+    đỉnh cũ → T5 nhồi lệnh; biến thể nến trần (mua / ½ KL / chờ vượt đỉnh / bỏ qua) và thị trường giảm (không lọc /
+    chặn / ½ KL + siết – cần VN-Index). Đo % vốn của mã, giữ được lãi (MFE), bán rồi mua lại cao hơn, % mua & giữ
+    đạt được ở mã ×5, CAGR/MDD rổ, up/down capture so VN-Index, giai đoạn thử/kiểm tra; điểm mua hiện tại; biểu đồ.
+    T0 của bộ mô phỏng mới cho ĐÚNG các lệnh của backtest_quy_tac(thoat="dong") (có test).
+23. Theo kết quả giá thật 41 mã: gốc = T2-3R-ma10; mỗi lớp đo RIÊNG so với gốc (bỏ thang chồng lớp T3–T5). Thêm A0
+    (vào MACD KHÔNG lọc tuần) và B (nhồi lệnh). chien_luoc.py + chien_luoc_thang([...]): điểm thị trường 8 chỉ báo
+    (MA200, MA50/MA200, dốc MA200, động lượng 3/6 tháng, cách đỉnh 1 năm, độ rộng, biến động), vùng đệm ≥5 → CL2
+    (A0 70% + VNI 30%), ≤2 → CL1 (A0 50% + B 50%), 3–4 giữ nguyên; tỷ trọng mục tiêu từng mã; sheet "Ro gop".
+    Sửa chỉ số: % thời gian có vị thế tính theo mã, "giữ được lãi" cùng gốc giá mua đầu khi nhồi lệnh.
+
 CHẠY TRÊN GOOGLE COLAB: xem README.md (unzip → %run chay.py, hoặc from ptcp import main, quet_nhieu_ma).
 KIỂM THỬ: !python -m pytest -q tests  – chạy sau mỗi lần sửa code.
 
@@ -91,13 +107,16 @@ NGUỒN DỮ LIỆU
 
 Đơn vị giá: NGHÌN ĐỒNG.   Công cụ tham khảo – KHÔNG phải khuyến nghị đầu tư.
 """
-__version__ = "beta 1.1"   # nhật ký khuyến nghị, backtest point-in-time, EV theo tín hiệu, lọc cơ bản, thoát lệnh
+__version__ = "beta 1.3"   # + hệ thoát nhiều tầng, phép thử siết lại, chiến lược CL1/CL2 theo thị trường
 
 from . import cau_hinh
 from . import cau_hinh as cfg
 from .chuong_trinh import main, quet_nhieu_ma, KHOA_THAM_SO
 from .backtest_kn import backtest_khuyen_nghi, backtest_nhieu_ma
 from .backtest_pp import backtest_phuong_phap
+from .backtest_thoat import backtest_he_thoat
+from .chien_luoc import chien_luoc_thang
 from . import nhat_ky
 
-__all__ = ["main", "quet_nhieu_ma", "KHOA_THAM_SO", "cfg", "backtest_khuyen_nghi", "backtest_nhieu_ma", "backtest_phuong_phap", "nhat_ky"]
+__all__ = ["main", "quet_nhieu_ma", "KHOA_THAM_SO", "cfg", "backtest_khuyen_nghi", "backtest_nhieu_ma",
+           "backtest_phuong_phap", "backtest_he_thoat", "chien_luoc_thang", "nhat_ky"]

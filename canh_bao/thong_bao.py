@@ -102,16 +102,29 @@ def dong_muc_tieu(kq):
     return d
 
 
+def dong_ke_hoach_thoat(kq):
+    """Kế hoạch BÁN theo hệ thoát mới (ptcp/he_thoat.py) cho lệnh mua vừa báo – không chốt lời ở mục tiêu cố định."""
+    g, lo = kq.get("gia"), kq.get("cat_lo")
+    if not C.DUNG_HE_THOAT or not (g == g and lo == lo and g and lo and lo < g):
+        return []
+    R = g - lo
+    return [f"Kế hoạch thoát (hệ mới): cắt lỗ {_f(lo)} · ≥ 1R ({_f(g + R)}) dời lên hoà vốn & cắt lỗ động 3×ATR · "
+            f"≥ {C.NGUONG_KHUNG_TUAN_R:g}R ({_f(g + C.NGUONG_KHUNG_TUAN_R * R)}) chỉ bán khi đóng cửa tuần < MA10 "
+            f"tuần · 63 phiên chưa đạt 1R → bán. Mục tiêu trên chỉ để tham khảo, không chốt lời cứng."]
+
+
 def dong_ptcp(pt):
-    """1–3 dòng tóm tắt phân tích ngày của ptcp. XS chạm MT/CL đã hiển thị ở dong_muc_tieu → không lặp lại ở đây."""
+    """1–2 dòng tóm tắt phân tích ngày của ptcp."""
     if not pt:
         return []
-    dong_dau = f"ptcp ({pt['ngay_du_lieu']}): {pt['khuyen_nghi']} | EV {_f(pt.get('ev'))}%"
-    if pt.get("loi_the_tin_hieu") is not None:
-        dong_dau += f" | lợi thế tín hiệu {_f(pt.get('loi_the_tin_hieu'))}%"
-    d = [dong_dau]
-    if pt.get("co_ban"):
-        d.append("ptcp cơ bản chưa qua: " + " | ".join(pt["co_ban"]))
+    d = [f"ptcp ({pt['ngay_du_lieu']}): {pt['khuyen_nghi']} | EV {_f(pt.get('ev'))}% | XS chạm MT trước CL "
+         f"{_f(pt.get('xs_muc_tieu'), 0)}% | XS cắt lỗ {_f(pt.get('xs_cat_lo'), 0)}%"]
+    c = pt.get("chien_luoc")
+    if c:
+        vung = c.get("vung")
+        d.append(f"Chiến lược CL{c['cl']}: " + (f"vùng mua {_f(vung[0])}–{_f(vung[1])} | " if vung else "")
+                 + f"bán (cắt lỗ) {_f(c.get('gia_kn_ban'))} | mục tiêu tạm thời 1R {_f(c.get('muc_tieu_1'))} · "
+                   f"3R {_f(c.get('muc_tieu_2'))}")
     if pt.get("su_kien") or pt.get("canh_bao_su_kien"):
         d.append("Sự kiện: " + "; ".join(pt.get("su_kien", []) + pt.get("canh_bao_su_kien", [])))
     if pt.get("vni_xau") or pt.get("rs_yeu"):
@@ -137,6 +150,7 @@ def tin_mua_ngay(kq, bay_gio):
         dong_khung(kq),
         f"Kích hoạt: {kq['ly_do'].replace('đủ 4 khung: ', '')}",
         *dong_muc_tieu(kq),
+        *dong_ke_hoach_thoat(kq),
         f"Thị trường: {kq['thi_truong']['nhan']}"
         + (" → giảm ½ khối lượng" if kq["thi_truong"].get("tot") is False else ""),
         *dong_ptcp(kq.get("ptcp")),

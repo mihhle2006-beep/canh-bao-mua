@@ -1,4 +1,4 @@
-# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ) – MWG, DHC, GMD
+# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ + bản tin chiến lược CL1/CL2) – MWG, DHC, GMD
 
 Quét các mã theo dõi theo **4 khung** (tuần → ngày → giờ → phút), tiêu chí lấy từ bộ lọc cổ phiếu
 (chiến lược `ky_thuat` / `diem_mua`), và **gửi Telegram ngay khi một mã đạt đủ tiêu chí mua**.
@@ -48,12 +48,29 @@ Chỉ dùng **nến đã đóng** (giờ, phút, tuần) → tín hiệu không 
 ## Cảnh báo BÁN cho mã đang giữ
 Bot đọc **`danh_muc.csv` của repo riêng tư `danh-muc`** (mã có `so_cp` > 0 = đang giữ) và quét cùng lúc với cảnh báo mua:
 
+Mức bán theo **HỆ THOÁT MỚI** của ptcp (`ptcp/he_thoat.py`, gốc T2-3R-ma10 – cùng logic với backtest), tính lại
+mỗi lần chạy từ `ngay_mua` trên các **phiên đã đóng cửa**; cắt lỗ **chỉ dời lên**, **không chốt lời ở mục tiêu cố định**:
+
+| Tầng | Lãi hiện tại | Cắt lỗ |
+|---|---|---|
+| 0 | < 1R | cắt lỗ ban đầu `cat_lo_goc` (thiếu → giá − 2×ATR, tối đa −7%, tối thiểu 1,5×ATR). 1R = giá vốn − cắt lỗ ban đầu |
+| 1 | ≥ 1R | đóng cửa cao nhất − 3×ATR, không dưới hoà vốn + phí |
+| 2 (tuần) | ≥ 3R | bán khi **đóng cửa tuần < MA10 tuần**; sàn khoá lãi 2R |
+| – | 63 phiên mà < 1R | lệnh không chạy → bán |
+
+Cắt lỗ hiệu lực = mức **cao hơn** giữa hệ thống và `cat_lo_dat` trong danh mục (không bao giờ hạ cắt lỗ bạn đã đặt).
+
 | Mức | Khi nào |
 |---|---|
-| 🔴 CẮT LỖ | giá ≤ `cat_lo_dat` (thiếu thì `cat_lo_goc`) |
-| 🟢 CHỐT LỜI | giá ≥ `muc_tieu_dat` (thiếu thì `gia_muc_tieu`) |
-| 🟠 CÂN NHẮC BÁN | MACD tuần < Signal / giá dưới SuperTrend ngày / ptcp khuyến nghị BÁN |
-| 🟡 DỜI CẮT LỖ | lãi ≥ 1R mà cắt lỗ còn dưới giá vốn → gợi ý nâng lên hoà vốn |
+| 🔴 CẮT LỖ | giá ≤ cắt lỗ hiệu lực |
+| 🔴 BÁN – GÃY XU HƯỚNG TUẦN | đang ở tầng tuần và tuần đã đóng có đóng cửa < MA10 tuần → bán đầu phiên tới |
+| 🟠 BÁN – LỆNH KHÔNG CHẠY | giữ ≥ 63 phiên mà lãi chưa đạt 1R |
+| 🟡 DỜI CẮT LỖ | cắt lỗ hệ thống cao hơn `cat_lo_dat` ≥ 0,5% (lên tầng / cắt lỗ động đi lên) → sửa danh mục |
+
+Tin bán ghi tầng hiện tại, lãi theo R, mốc kế tiếp (1R → hoà vốn, 3R → khung tuần) và nhắc khi CP chưa về (T+2).
+Thiếu giá vốn / dữ liệu, ptcp cũ chưa có `theo_doi_vi_the`, hoặc `DUNG_HE_THOAT = False` → tự quay về cách cũ
+(🟢 CHỐT LỜI ở mục tiêu đặt tay, 🟠 CÂN NHẮC BÁN theo MACD tuần / SuperTrend / ptcp).
+Tin MUA NGAY có thêm dòng **Kế hoạch thoát** (giá 1R, 3R) – mục tiêu trong tin chỉ để tham khảo.
 
 Mỗi mức báo **1 lần khi xuất hiện**, nếu vẫn còn thì nhắc lại 1 lần/ngày. Tổng kết 15:20 có thêm mục 💼 VỊ THẾ ĐANG GIỮ.
 Mã đang giữ mà là tín hiệu MUA NGAY → tin ghi rõ "MUA THÊM".
@@ -86,7 +103,7 @@ Bộ chấm là **`ptcp/nhat_ky.py`** – cùng một cách chấm với Phần 
 | **MUA NGAY** | gửi tin MUA NGAY | lệnh mua ở giá lúc báo chạm **mục tiêu trước cắt lỗ**, hoặc hết hạn mà lãi sau phí > 0 |
 | **ptcp – nhóm MUA** | khuyến nghị ptcp **đổi** sang MUA / MUA TỪNG PHẦN | như trên, mua giả định ở giá mở cửa phiên sau |
 | **ptcp – CHỜ / ĐỨNG NGOÀI** | khuyến nghị đổi sang THEO DÕI, CHỜ…, CHƯA MUA, KHÔNG MUA MỚI | lệnh mua giả định đó **lỗ** (tránh được lỗ); lãi → SAI (bỏ lỡ) |
-| **BÁN** (mã đang giữ) | gửi 🔴 CẮT LỖ / 🟢 CHỐT LỜI / 🟠 CÂN NHẮC BÁN | sau `KY_HAN_BAN` (20) phiên giá đóng cửa ≤ giá lúc báo |
+| **BÁN** (mã đang giữ) | gửi 🔴 CẮT LỖ / 🔴 GÃY XU HƯỚNG TUẦN / 🟠 LỆNH KHÔNG CHẠY (cách cũ: CHỐT LỜI / CÂN NHẮC BÁN) | sau `KY_HAN_BAN` (20) phiên giá đóng cửa ≤ giá lúc báo |
 
 - Chấm theo luật VN như backtest của ptcp: T+2, phiên khoá trần không mua được, khoá sàn không bán được, gap,
   cắt lỗ và mục tiêu cùng phiên → tính cắt lỗ, trừ phí + trượt giá 0,6%. Hạn lệnh mua = kỳ hạn ptcp (63 phiên).
@@ -98,6 +115,34 @@ Bộ chấm là **`ptcp/nhat_ky.py`** – cùng một cách chấm với Phần 
   nằm ở `cache_ptcp/lich_su_danh_gia_rieng.csv` (cache Actions, không commit) và chỉ hiện trong tin Telegram riêng tư.
   Cache Actions có thể bị xoá nếu repo không chạy > 7 ngày → muốn giữ lâu dài thì tải file về định kỳ.
 - Tắt: `GHI_NHAT_KY = False`; chỉnh `KY_HAN_MUA`, `KY_HAN_BAN`, `CHI_PHI_KHU_HOI` trong `canh_bao/cau_hinh.py`.
+
+## Bản tin chiến lược CL1 / CL2 (theo thị trường)
+Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜNG** (`canh_bao/chien_luoc_bot.py`, dùng
+`ptcp/chien_luoc.py` + `ptcp/he_thoat.py` – cùng logic với `chien_luoc_thang` trên Colab):
+- **Điểm thị trường 8 chỉ báo** của VN-Index (✔/✘ từng chỉ báo): VNI > MA200, MA50 > MA200, MA200 dốc lên,
+  động lượng 6 tháng & 3 tháng > 0, cách đỉnh 1 năm < 10%, > 50% mã trên MA200, biến động 20 phiên < trung vị 1 năm.
+- **CL đang áp dụng**: chỉ đổi ở **phiên cuối tháng**, có vùng đệm: điểm ≥ 5 → CL2, ≤ 2 → CL1, 3–4 giữ nguyên
+  (tránh đổi qua lại). CL1 = A0 50% + B 50% (an toàn) · CL2 = A0 70% + ETF VN-Index 30% (lãi).
+  Có dòng *Điều kiện đổi* (cần thêm/mất bao nhiêu điểm).
+- **③ Hành động phiên tới** trên 41 mã đã backtest (`MA_CHIEN_LUOC`), chỉ thành phần đang có tỷ trọng, viết cho
+  người CHƯA mua (dùng chung `ptcp.chien_luoc.hanh_dong`):
+
+  | Nhóm | Khi nào | Làm gì |
+  |---|---|---|
+  | 🟢 MUA MỚI | tín hiệu MACD hôm nay | mua giá mở cửa, không mua nếu mở cửa > "mua ≤" |
+  | ✅ VÀO ĐƯỢC NHƯ LỆNH MỚI | hệ thống đang giữ, lãi < 1R, cắt lỗ cách ≤ 7% | mua đủ khối lượng, dùng cắt lỗ của hệ thống |
+  | 🟡 VÀO ½ KHỐI LƯỢNG | hệ thống lãi 1–2R, cắt lỗ cách ≤ 7% | mua một nửa |
+  | ⏳ CHỜ ĐIỀU CHỈNH | lãi ≥ 2R hoặc cắt lỗ cách > 7% | chờ giá về ≤ "chờ" (cách cắt lỗ 5%) hoặc tín hiệu mới |
+  | 🔻 BÁN PHIÊN TỚI | đóng cửa tuần < MA10 tuần | không mua; đang giữ thì bán |
+
+  Khối lượng = 1% vốn ÷ (giá mua − cắt lỗ). Ngưỡng chỉnh trong ptcp (`VT_RUI_RO_TOI_DA`, `VT_R_NHU_MOI`, `VT_R_NUA`).
+- Khi CL đổi so với lần chạy trước → gửi thêm tin **🔔 ĐỔI CHIẾN LƯỢC CLx → CLy** kèm tỷ trọng mới.
+- Đây là **mô phỏng của hệ thống – tin công khai**, không dùng danh mục thật.
+- Chỉ gửi bản tin: `python chay.py --che_do chien_luoc` · tổng kết không kèm bản tin: `--khong_chien_luoc` ·
+  tắt hẳn: `DUNG_CHIEN_LUOC = False`. Đổi danh sách mã: `MA_CHIEN_LUOC`; hiển thị tối đa `SO_MA_TRONG_TIN` dòng/mục.
+- CL hiện tại lưu ở `trang_thai_chien_luoc.json` (chỉ có số CL & điểm – công khai được) để biết khi nào ĐỔI; thiếu
+  file thì bot vẫn báo đổi nếu đổi đúng ở phiên cuối tháng vừa đóng.
+- Lần tổng kết tải thêm ~41 mã (dùng lại dữ liệu đã tải của mã theo dõi) → chạy lâu hơn khoảng 1–2 phút.
 
 ## Lịch chạy (GitHub Actions)
 - Mỗi **15 phút** trong phiên (9:00–11:30, 13:00–14:45): chỉ gửi tin khi một mã **vừa chuyển** sang MUA NGAY.
@@ -117,6 +162,7 @@ Bộ chấm là **`ptcp/nhat_ky.py`** – cùng một cách chấm với Phần 
 ```
 pip install -r requirements.txt
 python chay.py --che_do tong_ket --khong_gui
+python chay.py --che_do chien_luoc --khong_gui
 python -m pytest -q
 ```
 Công cụ tham khảo – không phải khuyến nghị đầu tư.

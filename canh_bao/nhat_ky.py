@@ -7,8 +7,8 @@ Loại tín hiệu (cột `loai`):
   MUA_NGAY – tin MUA NGAY trong phiên → lệnh mua ở giá lúc báo, cắt lỗ / mục tiêu như trong tin.
   PTCP     – khuyến nghị cuối ngày của ptcp, ghi khi khuyến nghị của mã THAY ĐỔI. Nhóm MUA: mua giả định giá mở
              cửa phiên sau; nhóm CHỜ / ĐỨNG NGOÀI: ĐÚNG khi lệnh mua giả định đó lẽ ra lỗ, SAI khi lẽ ra lãi.
-  BAN      – cảnh báo bán mã đang giữ (CAT_LO / CHOT_LOI / CAN_NHAC_BAN; DOI_CAT_LO không chấm).
-             ĐÚNG nếu sau KY_HAN_BAN phiên giá đóng cửa ≤ giá lúc báo.
+  BAN      – cảnh báo bán mã đang giữ (CAT_LO / BAN_TUAN / HET_HAN – hệ thoát mới; CHOT_LOI / CAN_NHAC_BAN – cách
+             cũ; DOI_CAT_LO không chấm). ĐÚNG nếu sau KY_HAN_BAN phiên giá đóng cửa ≤ giá lúc báo.
 Luật chấm (T+2, khoá trần/sàn, gap, phí + trượt giá) – xem ptcp/nhat_ky.py.
 
 File:
@@ -31,6 +31,7 @@ from . import cau_hinh as C
 
 FILE_CONG_KHAI = "lich_su_danh_gia.csv"
 FILE_RIENG = os.path.join("cache_ptcp", "lich_su_danh_gia_rieng.csv")
+MUC_CHAM_BAN = ("CAT_LO", "BAN_TUAN", "HET_HAN", "CHOT_LOI", "CAN_NHAC_BAN")
 
 
 def _path(rieng_tu):
@@ -73,7 +74,7 @@ def ghi_ptcp(kq, bay_gio, rieng_tu=False):
 
 def ghi_ban(kq, kb, bay_gio):
     """Cảnh báo bán → luôn vào file RIÊNG."""
-    if kb.get("muc") not in ("CAT_LO", "CHOT_LOI", "CAN_NHAC_BAN"):
+    if kb.get("muc") not in MUC_CHAM_BAN:
         return False
     t = pd.Timestamp(bay_gio)
     return _nk.them_dong({"id": f"BAN|{kq['ma']}|{kb['muc']}|{t:%Y-%m-%d}", "thoi_diem": f"{t:%Y-%m-%d %H:%M}",
