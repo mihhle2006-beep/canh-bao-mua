@@ -227,18 +227,19 @@ def _khoi_rieng(giu):
 
 
 CSS = """
-:root{--nen:#f3f7f4;--the:#fff;--chu:#17221b;--mo:#5b6b61;--vien:#d9e6dd;--nhan:#1e7a46;--nhan-dam:#14532d;
---nen-nhan:#e7f4ec;--tang:#15803d;--giam:#c8352b;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
+:root{--nen:#f2fbf5;--the:#fff;--chu:#14261a;--mo:#56705f;--vien:#cdeed9;--nhan:#16a34a;--nhan-dam:#22c55e;
+--nen-nhan:#e9fbef;--tang:#15803d;--giam:#c8352b;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0c130f;--the:#131c16;--chu:#e4ece6;
---mo:#94a59a;--vien:#24342a;--nhan:#4cc985;--nhan-dam:#173a26;--nen-nhan:#16291e;--tang:#3ccf86;--giam:#ff7b72;
+--mo:#94a59a;--vien:#24382b;--nhan:#4ade80;--nhan-dam:#16a34a;--nen-nhan:#15291c;--tang:#4ade80;--giam:#ff7b72;
 --vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
-:root[data-theme="dark"]{--nen:#0c130f;--the:#131c16;--chu:#e4ece6;--mo:#94a59a;--vien:#24342a;--nhan:#4cc985;
---nhan-dam:#173a26;--nen-nhan:#16291e;--tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
+:root[data-theme="dark"]{--nen:#0c130f;--the:#131c16;--chu:#e4ece6;--mo:#94a59a;--vien:#24342a;--nhan:#4ade80;
+--nhan-dam:#16a34a;--nen-nhan:#15291c;--tang:#4ade80;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
 *{box-sizing:border-box}body{margin:0;background:var(--nen);color:var(--chu);
 font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 main{max-width:1080px;margin:0 auto;padding:20px 16px 48px}
-header{background:var(--nhan-dam);color:#fff;border-radius:14px;padding:18px 20px}
-header h1{font-size:22px;margin:0}header p{margin:4px 0 0;color:#cfe8d8}
+header{background:linear-gradient(135deg,#4ade80,var(--nhan-dam));color:#fff;border-radius:14px;padding:18px 20px;
+text-shadow:0 1px 2px rgba(0,60,20,.35)}
+header h1{font-size:22px;margin:0}header p{margin:4px 0 0;color:#f0fff4}
 nav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}nav a{color:var(--nhan);text-decoration:none;font-weight:500;
 padding:4px 12px;border:1px solid var(--vien);border-radius:999px;font-size:13px;background:var(--the)}
 nav a:hover{background:var(--nen-nhan);border-color:var(--nhan)}
