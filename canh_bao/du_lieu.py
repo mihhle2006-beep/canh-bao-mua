@@ -133,7 +133,7 @@ def _cache(khoa):
     return os.path.join(THU_MUC_CACHE, re.sub(r"[^\w\-]", "_", khoa) + ".csv")
 
 
-def tai(ma, khung="D", tu_ngay="2021-01-01", chi_so=False):
+def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
     """Tải nến; mọi nguồn lỗi → dùng cache (in cảnh báo). Trả DataFrame hoặc None."""
     den = int(time.time()) + 86400
     if SO_NGAY_LAY.get(khung):
