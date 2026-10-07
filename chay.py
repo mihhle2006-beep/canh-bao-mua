@@ -20,8 +20,7 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import (chien_luoc_bot, diem_vao, du_lieu, giao_dich_ao, nhat_ky, tong_ket_cl, trang_tong_hop,
-                      vi_the)
+from canh_bao import chien_luoc_bot, diem_vao, du_lieu, nhat_ky, tong_ket_cl, trang_tong_hop, vi_the
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
 
@@ -87,9 +86,6 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         _nhat_ky(ra, bay_gio)
     kq_bt = tong_ket_cl.doc_ket_qua_backtest()
     tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
-    ao = _gia_lap(ra, ds_kn, bay_gio, kq_bt) if C.DUNG_GIAO_DICH_AO else None
-    if ao:                                                     # vốn ảo – công khai
-        tin, cong_khai = f"{tin}\n\n{ao}", f"{cong_khai}\n\n{ao}"
     if doi:
         nd = chien_luoc_bot.tin_doi(ra, cl_cu)
         gui(nd) if not khong_gui else print(nd)
@@ -116,21 +112,12 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
 
 
 def _an_toan(ten, f, *a, **k):
-    """Phần phụ (giả lập, trang tổng hợp) lỗi không được làm hỏng tin cảnh báo."""
+    """Phần phụ (trang tổng hợp) lỗi không được làm hỏng tin cảnh báo."""
     try:
         return f(*a, **k)
     except Exception as e:
         print(f"⚠ {ten} lỗi: {type(e).__name__}: {str(e)[:150]}")
         return None
-
-
-def _gia_lap(ra, ds_kn, bay_gio, kq_bt):
-    def chay_():
-        tt, su_kien = giao_dich_ao.chay(ra, [k for k in ds_kn if k["nhom"] in tong_ket_cl.NHOM_MUA], bay_gio)
-        print(f"Giả lập: NAV {tt['nav'] / 1000:,.1f} tr · {len(tt['vi_the'])} mã · {len(su_kien)} sự kiện")
-        return giao_dich_ao.tin(tt, su_kien, giao_dich_ao.doc_csv(giao_dich_ao.FILE_LENH, giao_dich_ao.COT_LENH),
-                                giao_dich_ao.doc_csv(giao_dich_ao.FILE_VON, giao_dich_ao.COT_VON), kq_bt)
-    return _an_toan("Giả lập", chay_)
 
 
 def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):

@@ -3,9 +3,8 @@
 TRANG TỔNG HỢP – 1 file HTML tự chứa (không thư viện ngoài) gom những thứ đang rải rác qua Telegram & Excel:
   ① Sức khoẻ thị trường: điểm 8 chỉ báo, CL đang áp dụng, VN-Index đi ngang hay có xu hướng
   ② Tín hiệu hôm nay: danh sách mua phiên tới (tin tổng kết) + trạng thái điểm vào 15' trong phiên
-  ③ Danh mục giả lập: NAV so với VN-Index, vị thế, lệnh gần đây (canh_bao/giao_dich_ao.py)
-  ④ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv)
-  ⑤ (chỉ bản RIÊNG) danh mục thật: lãi/lỗ, cắt lỗ, hành động – KHÔNG bao giờ ghi vào docs/
+  ③ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv)
+  (chỉ bản RIÊNG) danh mục thật: lãi/lỗ, cắt lỗ, hành động – KHÔNG bao giờ ghi vào docs/
 
 Chỉ đọc file trạng thái (không cần ptcp, không tải giá) → dựng lại được sau mỗi lần chạy, kể cả trong phiên.
 Bản công khai: docs/index.html → bật GitHub Pages (Settings → Pages → Branch main, thư mục /docs).
@@ -18,7 +17,6 @@ import numpy as np
 import pandas as pd
 
 from . import cau_hinh as C
-from . import giao_dich_ao as GA
 
 FILE_RIENG = "trang_tong_hop_rieng.html"
 
@@ -105,41 +103,6 @@ def do_chinh_xac(nk):
     return pd.DataFrame(out)
 
 
-# ------------------------------------------------------------------ biểu đồ đường vốn (SVG inline)
-def _svg_von(von):
-    v = von.dropna(subset=["nav"]) if len(von) else von
-    if len(v) < 2:
-        return '<p class="mo">Chưa đủ phiên để vẽ đường vốn – bot giao dịch giả lập từ phiên sau ngày bắt đầu.</p>'
-    W, H, L, R, T, B = 640, 220, 44, 12, 12, 26
-    nav = (v.nav.astype(float) / float(v.nav.iloc[0]) - 1) * 100
-    vn = v.vni.astype(float)
-    vn = (vn / vn.dropna().iloc[0] - 1) * 100 if vn.notna().any() else vn
-    gt = pd.concat([nav, vn.dropna(), pd.Series([0.0])])
-    lo, hi = float(gt.min()), float(gt.max())
-    if hi - lo < 2:
-        lo, hi = lo - 1, hi + 1
-    n = len(v)
-    x = lambda i: L + (W - L - R) * i / (n - 1)                     # noqa: E731
-    y = lambda p: T + (H - T - B) * (hi - p) / (hi - lo)            # noqa: E731
-
-    def duong(s):
-        return " ".join(f"{x(i):.1f},{y(p):.1f}" for i, p in enumerate(s) if p == p)
-
-    vach = []
-    for k in range(5):
-        p = lo + (hi - lo) * k / 4
-        vach.append(f'<line x1="{L}" x2="{W - R}" y1="{y(p):.1f}" y2="{y(p):.1f}" class="luoi"/>'
-                    f'<text x="{L - 6}" y="{y(p) + 4:.1f}" text-anchor="end">{_f(p, 1)}%</text>')
-    ngay = list(v.ngay.astype(str))
-    neo = {0: "start", n - 1: "end"}
-    nhan = "".join(f'<text x="{x(i):.1f}" y="{H - 6}" text-anchor="{neo.get(i, "middle")}">'
-                   f'{pd.Timestamp(ngay[i]):%d/%m}</text>' for i in sorted({0, n // 2, n - 1}))
-    return (f'<div class="bieu-do"><svg viewBox="0 0 {W} {H}" role="img" aria-label="NAV giả lập so với VN-Index (%)">'
-            f'{"".join(vach)}<line x1="{L}" x2="{W - R}" y1="{y(0):.1f}" y2="{y(0):.1f}" class="truc"/>{nhan}'
-            f'<polyline points="{duong(vn)}" class="dg-vni"/><polyline points="{duong(nav)}" class="dg-nav"/></svg></div>'
-            '<div class="chu-giai"><span class="k-nav"></span>NAV giả lập <span class="k-vni"></span>VN-Index</div>')
-
-
 # ------------------------------------------------------------------ các khối HTML
 def _bang(cot, dong, lop=""):
     if not dong:
@@ -184,6 +147,7 @@ def _khoi_thi_truong(tt):
             + f'</p><ul class="chi-bao">{ds}</ul>')
 
 
+NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
 TEN_NHOM = {"MUA_MOI": "🟢 Mua mới", "VAO_NHU_MOI": "✅ Vào như lệnh mới", "VAO_NUA": "🟡 Vào ½",
             "CHO": "⏳ Chờ điều chỉnh", "DUOI_VON": "⛔ HT đang lỗ", "BAN": "⛔ HT sắp bán"}
 
@@ -193,8 +157,8 @@ def _khoi_tin_hieu(cl, cb):
     if kn is None:                                                   # file cũ: chỉ có danh sách mua
         kn = (cl.get("ds_mua") or {}).get("ma") or []
     hl = (cl.get("ds_mua") or {}).get("hieu_luc")
-    mua = [k for k in kn if k.get("nhom") in GA.NHOM_MUA]
-    khac = [k for k in kn if k.get("nhom") not in GA.NHOM_MUA]
+    mua = [k for k in kn if k.get("nhom") in NHOM_MUA]
+    khac = [k for k in kn if k.get("nhom") not in NHOM_MUA]
     out = [f"<h3>Danh sách mua phiên {pd.Timestamp(hl):%d/%m}</h3>" if hl else "<h3>Danh sách mua phiên tới</h3>",
            _bang(["Mã", "Nhóm", "Giá", "Vùng mua", "Cắt lỗ", "MT 1R → 3R", "Lý do"],
                  [[f"<b>{_e(k['ma'])}</b>", TEN_NHOM.get(k.get("nhom"), _e(k.get("nhom"))), _f(k.get("gia")),
@@ -213,40 +177,6 @@ def _khoi_tin_hieu(cl, cb):
                         f'{_e(r.get("Trạng thái"))}</span>', _e(r.get("Giờ")), _f(r.get("Giá mua")),
                         f'<span class="mo">{_e(r.get("Lý do"))}</span>'] for r in p["ds"]])]
     return "".join(out)
-
-
-def _khoi_gia_lap(tt, lenh, von, kq_bt):
-    if not tt:
-        return '<p class="mo">Chưa bắt đầu – tài khoản ảo được mở ở lần tổng kết 15:20 kế tiếp.</p>'
-    x = GA.thong_ke(tt, lenh, von)
-    bt = GA._bt_goc(kq_bt)
-    con = C.SO_PHIEN_GIA_LAP_TOI_THIEU - x["so_phien"]
-    the = (_the("NAV", f"{_f(x['nav'] / 1000, 0)} tr", f'<span class="{_mau(x["lai_pct"])}">'
-                f'{_f(x["lai_pct"], 1, True)}%</span> từ {pd.Timestamp(tt["bat_dau"]):%d/%m/%Y}')
-           + _the("VN-Index cùng kỳ", f'<span class="{_mau(x["vni_pct"])}">{_f(x["vni_pct"], 1, True)}%</span>',
-                  f"{x['so_phien']} phiên")
-           + _the("Sụt giảm lớn nhất", f"{_f(x['mdd'], 1)}%", f"backtest {_f(bt['MDD %'], 1)}%" if bt else "")
-           + _the("Lệnh đã đóng", f"{x['so_lenh']}",
-                  f"thắng {_f(x['thang_pct'], 0)}% · TB {_f(x['tb_lenh_pct'], 2, True)}%"
-                  + (f"<br>backtest: {_f(bt['Thắng %'], 0)}% · {_f(bt['TB/lệnh %'], 2, True)}%" if bt else "")))
-    tien = ('<p class="canh-bao">Còn <b>%d phiên</b> nữa mới đủ %d phiên (~3 tháng) để đánh giá – chưa nên dùng tiền '
-            'thật.</p>' % (con, C.SO_PHIEN_GIA_LAP_TOI_THIEU) if con > 0 else
-            '<p class="tot">Đã đủ %d phiên – so kết quả với backtest trước khi dùng tiền thật.</p>'
-            % C.SO_PHIEN_GIA_LAP_TOI_THIEU)
-    vt = [[f"<b>{_e(m)}</b>", _e(TEN_NHOM.get(v.get("nhom"), v.get("nhom"))), f"{pd.Timestamp(v['ngay_mua']):%d/%m}",
-           _f(v["gia_mua"]), f"{int(v['so_cp']):,}".replace(",", "."), _f(v["cat_lo"]),
-           f"tầng {v.get('tang', 0)}" + (f" · <b>bán: {_e(tt['ban_cho'][m])}</b>" if m in tt["ban_cho"] else "")]
-          for m, v in sorted(tt["vi_the"].items())]
-    ln = lenh.tail(15).iloc[::-1] if len(lenh) else lenh
-    lg = [[f"<b>{_e(r.ma)}</b>", f"{pd.Timestamp(r.ngay_mua):%d/%m} → {pd.Timestamp(r.ngay_ban):%d/%m}",
-           f"{_f(r.gia_mua)} → {_f(r.gia_ban)}", f'<span class="{_mau(r.lai_pct)}">{_f(r.lai_pct, 1, True)}%</span>',
-           _e(r.ly_do)] for r in ln.itertuples()]
-    cho = ", ".join(f"{o['ma']} ({_f(o.get('tu'))}–{_f(o.get('den'))})" for o in tt["lenh_cho"])
-    return (f'<div class="luoi-the">{the}</div>{tien}{_svg_von(von)}'
-            f'<h3>Đang giữ ({len(vt)}) · tiền mặt {_f(x["tien_pct"], 0)}%</h3>'
-            + _bang(["Mã", "Nhóm", "Ngày mua", "Giá mua", "Số CP", "Cắt lỗ", "Hệ thoát"], vt)
-            + (f'<p class="mo">Lệnh mua chờ phiên tới: {_e(cho)}</p>' if cho else "")
-            + "<h3>Lệnh gần đây</h3>" + _bang(["Mã", "Ngày", "Giá", "Lãi/lỗ sau phí", "Lý do bán"], lg))
 
 
 def _khoi_chinh_xac(nk):
@@ -319,15 +249,10 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
     """Dựng trang. giu = [(vt, kb, mt)] → thêm mục danh mục thật (chỉ dùng cho bản RIÊNG, không ghi vào docs/)."""
     path = path or (FILE_RIENG if giu else C.FILE_TRANG)
     cl, cb = _doc_json(C.FILE_TRANG_THAI_CL), _doc_json(C.FILE_TRANG_THAI)
-    tt = GA.doc()
-    lenh, von = GA.doc_csv(GA.FILE_LENH, GA.COT_LENH), GA.doc_csv(GA.FILE_VON, GA.COT_VON)
-    if kq_bt is None:
-        kq_bt = _doc_json(C.FILE_BACKTEST)
     luc = pd.Timestamp(bay_gio) if bay_gio is not None else None
     muc = [("thi-truong", "① Sức khoẻ thị trường", _khoi_thi_truong(cl.get("thi_truong"))),
            ("tin-hieu", "② Tín hiệu hôm nay", _khoi_tin_hieu(cl, cb)),
-           ("gia-lap", "③ Danh mục giả lập (vốn ảo)", _khoi_gia_lap(tt, lenh, von, kq_bt)),
-           ("chinh-xac", "④ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv")))]
+           ("chinh-xac", "③ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv")))]
     if giu:
         muc.insert(0, ("danh-muc", "💼 Danh mục thật (riêng tư)", _khoi_rieng(giu)))
     nav = "".join(f'<a href="#{i}">{_e(t)}</a>' for i, t, _ in muc)

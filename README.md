@@ -144,32 +144,16 @@ Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜ
   file thì bot vẫn báo đổi nếu đổi đúng ở phiên cuối tháng vừa đóng.
 - Lần tổng kết tải thêm ~41 mã (dùng lại dữ liệu đã tải của mã theo dõi) → chạy lâu hơn khoảng 1–2 phút.
 
-## Giao dịch giả lập (vốn ảo) – `canh_bao/giao_dich_ao.py`
-Bot **tự mua bán bằng vốn ảo** (`VON_AO_TRIEU`, mặc định 1 tỷ) theo đúng tín hiệu thật, trên **giá thật của các phiên
-sau** ngày phát tín hiệu. Backtest chỉ chạy trên quá khứ; phần này chạy 2–3 tháng về phía trước trước khi bỏ tiền thật.
-
-| Bước (mỗi phiên, chạy lúc tổng kết 15:20) | Luật |
-|---|---|
-| Bán chờ | tín hiệu bán lúc đóng cửa phiên trước (gãy MA10 tuần, lệnh không chạy, đóng cửa ≤ cắt lỗ) → bán **giá mở cửa**; cần T+2, khoá sàn thì chờ |
-| Mua chờ | nhóm 🟢 / ✅ / 🟡 của tin tổng kết hôm trước, **đúng phiên hiệu lực** → mua giá mở cửa nếu mở cửa **trong vùng mua**; ngoài vùng / khoá trần → bỏ |
-| Khối lượng | `RUI_RO_MOI_LENH_PCT` % NAV ÷ (giá mua − cắt lỗ), 🟡 × ½, tối đa `TY_TRONG_TOI_DA_AO` % NAV, không vượt tiền mặt, lô 100 |
-| Cắt lỗ trong phiên | giá thấp nhất ≤ cắt lỗ (từ T+2) → bán ở min(mở cửa, cắt lỗ) – gap xuống thì chịu gap |
-| Cuối phiên | **hệ thoát** (`vi_the.danh_gia_ban` – cùng hàm với danh mục thật) dời cắt lỗ lên / xếp lệnh bán |
-| Phí | mua `PHI_MUA_AO_PCT` 0,15%, bán `PHI_BAN_AO_PCT` 0,25% (gồm thuế 0,1%) |
-
-- Tin tổng kết có thêm mục **🧪 GIAO DỊCH GIẢ LẬP**: NAV, lãi/lỗ so với VN-Index cùng kỳ, sụt giảm lớn nhất, lệnh
-  phiên vừa rồi, tỷ lệ thắng & TB/lệnh **so với backtest** (A0: thắng 34%, TB +3,8%/lệnh). Chưa đủ
-  `SO_PHIEN_GIA_LAP_TOI_THIEU` (60) phiên → luôn nhắc "chưa nên dùng tiền thật".
-- File **công khai** (commit – chỉ là vốn ảo): `giao_dich_ao.json` (tiền, vị thế, lệnh chờ), `giao_dich_ao_lenh.csv`
-  (lệnh đã đóng), `giao_dich_ao_von.csv` (đường vốn + VN-Index). Bỏ lỡ ngày nào → lần sau tự xử lý bù từng phiên;
-  chạy lại cùng ngày không mua/bán trùng.
-- Bắt đầu lại từ đầu: xoá 3 file trên. Tắt: `DUNG_GIAO_DICH_AO = False`.
-- Giới hạn: khớp lệnh theo nến ngày (giá mở cửa) – không mô phỏng điểm vào 15', nên kết quả thật có thể khác một chút.
+## Giao dịch giả lập (vốn ảo) → repo riêng `gia_lap`
+Bot mua bán bằng vốn ảo theo đúng tín hiệu của repo này, trên giá thật các phiên sau – chạy ở repo riêng tư
+**`gia_lap`** (16:30 mỗi ngày). `gia_lap` đọc danh sách mua từ `trang_thai_chien_luoc.json` mà tổng kết 15:20 commit
+lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ thoát) và `canh_bao/thong_bao.py` (Telegram).
+→ Đừng đổi tên / cấu trúc khoá `ds_mua` trong file này mà không sửa `gia_lap`.
 
 ## Trang tổng hợp – `canh_bao/trang_tong_hop.py`
 Một trang web thay cho việc đọc rải rác qua Telegram & Excel: ① sức khoẻ thị trường (8 chỉ báo, CL, đi ngang/xu
-hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ danh mục giả lập (NAV so với
-VN-Index, vị thế, lệnh gần đây) · ④ độ chính xác của bot (ĐÚNG/SAI theo loại tín hiệu). Tự sáng/tối, xem tốt trên
+hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ độ chính xác của bot (ĐÚNG/SAI
+theo loại tín hiệu). Danh mục giả lập có báo cáo riêng ở repo `gia_lap` (repo riêng tư → không lên trang công khai). Tự sáng/tối, xem tốt trên
 điện thoại, không dùng thư viện ngoài.
 - **Bản công khai** `docs/index.html`: dựng lại sau mỗi lần chạy (cả 15' trong phiên) và commit. Bật 1 lần:
   Settings → **Pages** → Source *Deploy from a branch* → Branch `main`, thư mục `/docs` → trang ở
