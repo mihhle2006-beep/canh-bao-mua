@@ -61,7 +61,7 @@ def main(argv=None):
 
 # ------------------------------------------------------------------ TỔNG KẾT 15:20
 def tong_ket(bay_gio, vt, them=(), khong_gui=False):
-    co_dinh = [m.upper() for m in list(C.MA_CHIEN_LUOC) + list(C.MA_THEO_DOI)]
+    co_dinh = [m.upper() for m in C.MA_THEO_DOI]                # VN30 + MA_THEM (cau_hinh.py)
     tt_bl, moi_bl = {}, []
     if getattr(C, "DUNG_BO_LOC", False):
         tt_bl = ma_bo_loc.doc()
