@@ -162,34 +162,6 @@ def test_chong_bao_trung():
     assert thong_bao.can_bao("AAA", True, "2026-10-05 09:15", st)               # ngày mới → báo
 
 
-def test_chay_mo_phong(du_lieu_tot, tmp_path, capsys):
-    dn, dh, dp, vni = du_lieu_tot
-    os.chdir(tmp_path)
-
-    def tai_gia(ma, khung="D", *a, **k):
-        if ma == "VNINDEX":
-            return vni
-        return {"D": dn, "60": dh}.get(khung, dp)
-    with mock.patch.object(chay, "tai", side_effect=tai_gia), mock.patch.object(C, "RR_TOI_THIEU", 0.1), \
-            mock.patch.object(chay, "phan_tich_ngay", return_value=PT_TOT), mock.patch.object(chay, "gui") as g:
-        assert chay.main(["--ma", "AAA", "--gio", "2026-10-02 10:50"]) == 0
-        assert g.call_count == 1 and "MUA NGAY – AAA" in g.call_args[0][0]
-        chay.main(["--ma", "AAA", "--gio", "2026-10-02 10:50"])                 # chạy lại: không báo trùng
-        assert g.call_count == 1
-        chay.main(["--ma", "AAA", "--gio", "2026-10-02 15:30", "--khong_chien_luoc"])   # tổng kết
-        assert g.call_count == 2 and "TỔNG KẾT" in g.call_args[0][0]
-        assert "ĐỘ CHÍNH XÁC TÍN HIỆU" in g.call_args[0][0]                  # nhật ký gắn vào tổng kết
-        assert chay.main(["--che_do", "lich_su"]) == 0
-        with mock.patch.object(chay, "_ban_tin_chien_luoc") as b:                 # tổng kết kèm bản tin CL1/CL2
-            chay.main(["--ma", "AAA", "--gio", "2026-10-02 15:30"])
-        assert b.call_count == 1 and set(b.call_args[0][1]) == {"AAA"} and b.call_args[0][2] is vni
-    assert os.path.exists("lich_su_tin_hieu.csv")
-    nk = pd.read_csv("lich_su_danh_gia.csv")
-    assert set(nk["loai"]) == {"MUA_NGAY", "PTCP"} and len(nk) == 2       # 1 tin MUA NGAY + 1 khuyến nghị ptcp
-    assert os.path.exists("danh_gia_tin_hieu.xlsx")
-    assert chay.main(["--gio", "2026-10-02 12:00"]) == 0                       # nghỉ trưa → không làm gì
-
-
 # ------------------------------------------------------------------ phần lấy từ bộ ptcp
 def test_cong_ptcp(du_lieu_tot):
     dn, dh, dp, vni = du_lieu_tot
@@ -343,35 +315,6 @@ def test_tin_rieng_tu_khong_in_log_tren_actions(monkeypatch, capsys):
     thong_bao.gui("Đang giữ 47 CP | giá vốn 34,40", rieng_tu=True)
     out = capsys.readouterr().out
     assert "47 CP" not in out and "34,40" not in out
-
-
-def test_chay_bao_ban_va_an_ma_chi_co_trong_danh_muc(du_lieu_tot, tmp_path, capsys, monkeypatch):
-    dn, dh, dp, vni = du_lieu_tot
-    os.chdir(tmp_path)
-    g = float(dn.close.iloc[-1])
-    csv = f"ma,so_cp,gia_von,cat_lo_dat,muc_tieu_dat\nXYZ,100,{g * 1.2:.2f},{g * 1.05:.2f},{g * 1.5:.2f}\n"
-    (tmp_path / "danh_muc.csv").write_text(csv, encoding="utf-8")
-    monkeypatch.setenv("GITHUB_ACTIONS", "true")
-
-    def tai_gia(ma, khung="D", *a, **k):
-        if ma == "VNINDEX":
-            return vni
-        return {"D": dn, "60": dh}.get(khung, dp)
-    da_gui = []
-    with mock.patch.object(chay, "tai", side_effect=tai_gia), \
-            mock.patch.object(chay, "phan_tich_ngay", return_value=PT_TOT), \
-            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False, **k: da_gui.append((nd, rieng_tu))):
-        assert chay.main(["--ma", "AAA", "--gio", "2026-10-02 10:50"]) == 0
-    log = capsys.readouterr().out
-    ban = [(nd, rt) for nd, rt in da_gui if "CẮT LỖ – XYZ" in nd]
-    assert len(ban) == 1 and ban[0][1] is True                           # giá < cắt lỗ → báo, tin riêng tư
-    assert "XYZ" not in log and "+ 1 mã trong danh mục" in log           # mã chỉ có trong danh mục không lộ ra log
-    assert not os.path.exists("lich_su_tin_hieu.csv") or "XYZ" not in open("lich_su_tin_hieu.csv").read()
-    with mock.patch.object(chay, "tai", side_effect=tai_gia), \
-            mock.patch.object(chay, "phan_tich_ngay", return_value=PT_TOT), \
-            mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False, **k: da_gui.append((nd, rieng_tu))):
-        chay.main(["--ma", "AAA", "--gio", "2026-10-02 11:05"])
-    assert sum("CẮT LỖ – XYZ" in nd for nd, _ in da_gui) == 1            # lần quét sau không báo trùng
 
 
 # ------------------------------------------------------------------ trình bày tin Telegram

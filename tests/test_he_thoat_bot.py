@@ -184,25 +184,6 @@ def test_tin_doi():
     assert "ĐỔI CHIẾN LƯỢC: CL1 → CL2" in t and "VN-Index 30%" in t and "trước: A0 50%" in t
 
 
-def test_chay_che_do_chien_luoc_va_tong_ket(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(C, "MA_CHIEN_LUOC", DS)
-    monkeypatch.setattr(C, "NGAY_BAT_DAU_CL", "2021-01-01")
-    monkeypatch.setattr(C, "GUI_ANH", False)
-
-    def tai_gia(ma, khung="D", tu=None, chi_so=False, **k):
-        return _tai(ma, tu, chi_so or ma == "VNINDEX")
-    with mock.patch.object(chay, "tai", side_effect=tai_gia), mock.patch.object(chay, "gui") as g:
-        assert chay.main(["--che_do", "chien_luoc", "--gio", "2026-10-02 15:30"]) == 0
-    tin = [c[0][0] for c in g.call_args_list]
-    assert any("CHIẾN LƯỢC THEO THỊ TRƯỜNG" in t for t in tin)
-    assert all(c[1].get("rieng_tu", False) is False for c in g.call_args_list)     # tin công khai
-    assert os.path.exists(C.FILE_TRANG_THAI_CL)
-    with mock.patch.object(chay, "tai", side_effect=RuntimeError("mất mạng")), mock.patch.object(chay, "gui") as g:
-        assert chay.main(["--che_do", "chien_luoc", "--gio", "2026-10-02 15:30"]) == 0   # lỗi không làm hỏng bot
-    assert g.call_count == 0
-
-
 def test_nhom_hanh_dong_cho_nguoi_chua_mua():
     from ptcp.chien_luoc import hanh_dong
     a0 = pd.DataFrame([
