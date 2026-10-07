@@ -73,9 +73,10 @@ def nhan_nguon(tt, nguon, co_dinh=()):
     if not nguon or not nguon.get("ngay_quet"):
         return []
     ma_tt = tt.setdefault("ma", {})
-    if nguon["ngay_quet"] <= (tt.get("ngay_quet_da_nhan") or ""):
+    lan_quet = nguon.get("luc") or nguon["ngay_quet"]          # "YYYY-MM-DD HH:MM" – 1 ngày quét nhiều lần vẫn nhận
+    if lan_quet <= (tt.get("ngay_quet_da_nhan") or ""):
         return []
-    tt["ngay_quet_da_nhan"] = nguon["ngay_quet"]
+    tt["ngay_quet_da_nhan"] = lan_quet
     co_dinh = {m.upper() for m in co_dinh}
     moi = []
     ngay_quet = _ngay(nguon["ngay_quet"])
