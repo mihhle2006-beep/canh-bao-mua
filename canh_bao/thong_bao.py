@@ -60,6 +60,28 @@ def gui(noi_dung, rieng_tu=False, anh=None):
     return ok
 
 
+def gui_file(path, chu_thich="", rieng_tu=False):
+    """Gửi 1 file (Excel…) qua Telegram sendDocument. rieng_tu: không in tên/chú thích chi tiết ra log Actions."""
+    token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not path or not os.path.exists(path):
+        return False
+    if not (token and chat):
+        print(f"(chưa đặt TELEGRAM_TOKEN / TELEGRAM_CHAT_ID → file {os.path.basename(path)} chỉ lưu tại chỗ)")
+        return False
+    try:
+        with open(path, "rb") as fh:
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendDocument",
+                              data={"chat_id": chat, "caption": chu_thich[:1000]}, files={"document": fh}, timeout=120)
+        if r.status_code != 200:
+            print("Telegram (file) lỗi:", r.text[:200] if not rieng_tu else r.status_code)
+            return False
+    except requests.RequestException as e:
+        print("Telegram (file) lỗi:", type(e).__name__)
+        return False
+    print(f"Đã gửi file {os.path.basename(path)}" + (" (riêng tư)" if rieng_tu else ""))
+    return True
+
+
 def _f(x, le=2):
     return "N/A" if x is None or x != x else f"{x:,.{le}f}"
 

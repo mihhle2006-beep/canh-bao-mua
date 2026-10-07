@@ -86,7 +86,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None):
     vni = _phien_da_dong(vni, bay_gio)
     bts = {b.ma: b for b in danh_sach_bien_the(co_vni=False, vao_phu=False)}
     thanh_phan = {"A0": (bts["A0"], False), "B": (bts["B"], True)}
-    gia, diem_mua, thieu = {}, {k: [] for k in thanh_phan}, []
+    gia, diem_mua, thieu, gia_ngay, atr = {}, {k: [] for k in thanh_phan}, [], {}, {}
     for ma in ds_ma:
         df = (du_lieu_san or {}).get(ma)
         if not _dung_duoc(df, tu):
@@ -99,6 +99,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None):
         d, w = tinh_chi_bao(df), tinh_chi_bao(gop_tuan(df))
         x = chuan_bi(d)
         gia[ma] = d.close
+        gia_ngay[ma], atr[ma] = df, float(d.ATR.iloc[-1])
         for ten, (bt, loc) in thanh_phan.items():
             r = mo_phong(x, tin_hieu_macd(d, w, loc_tuan=loc), bt)
             diem_mua[ten].append({"Mã": ma, **_bang_diem_mua(r["cuoi"], x, 0.5 if bt.nhoi else 1.0)})
@@ -112,7 +113,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None):
     return {"doc": doc, "cl": cl_hien, "ten_cl": TEN_CL, "ty_trong": ty, "ty_trong_cl": TY_TRONG,
             "nguong": (NGUONG_LEN, NGUONG_XUONG), "lich": lich, "diem_mua": dm,
             "phan_bo": phan_bo_muc_tieu(dm, ty, len(gia)), "hanh_dong": _hanh_dong(dm, ty, doc["ngay"]),
-            "so_ma": len(gia), "thieu": thieu,
+            "so_ma": len(gia), "thieu": thieu, "gia_ngay": gia_ngay, "atr": atr, "vni_df": vni,
             "vni": float(vni.close.iloc[-1])}, None
 
 
@@ -126,9 +127,10 @@ def kiem_tra_doi(ra, bay_gio, path=None):
     except (OSError, ValueError):
         cu = {}
     cl_cu = cu.get("cl")
+    cu.update({"cl": int(ra["cl"]), "diem": int(ra["doc"]["diem"]), "ngay_du_lieu": f"{ra['doc']['ngay']:%Y-%m-%d}",
+               "cap_nhat": f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}"})          # giữ các khoá khác (danh sách mua)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump({"cl": int(ra["cl"]), "diem": int(ra["doc"]["diem"]), "ngay_du_lieu": f"{ra['doc']['ngay']:%Y-%m-%d}",
-                   "cap_nhat": f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}"}, f, ensure_ascii=False, indent=1)
+        json.dump(cu, f, ensure_ascii=False, indent=1)
     if cl_cu is None:                    # chưa có trạng thái (lần đầu / mất file): đổi đúng ở phiên cuối tháng vừa đóng?
         lich = ra.get("lich")
         if lich is not None and len(lich):

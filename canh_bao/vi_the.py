@@ -37,9 +37,10 @@ import requests
 from . import cau_hinh as C
 from .chi_bao import supertrend
 
-MUC = ["CAT_LO", "BAN_TUAN", "HET_HAN", "CHOT_LOI", "CAN_NHAC_BAN", "DOI_CAT_LO", "GIU"]
+MUC = ["CAT_LO", "BAN_TUAN", "HET_HAN", "CHOT_LOI", "CAN_NHAC_BAN", "GAN_CAT_LO", "DOI_CAT_LO", "GIU"]
 NHAN = {"CAT_LO": "🔴 CẮT LỖ", "BAN_TUAN": "🔴 BÁN – GÃY XU HƯỚNG TUẦN", "HET_HAN": "🟠 BÁN – LỆNH KHÔNG CHẠY",
-        "CHOT_LOI": "🟢 CHỐT LỜI", "CAN_NHAC_BAN": "🟠 CÂN NHẮC BÁN", "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ"}
+        "CHOT_LOI": "🟢 CHỐT LỜI", "CAN_NHAC_BAN": "🟠 CÂN NHẮC BÁN", "GAN_CAT_LO": "🟠 SÁT CẮT LỖ",
+        "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ"}
 TEN_TANG = {0: "tầng 0 (< 1R)", 1: "tầng 1 (≥ 1R – cắt lỗ động)", 2: "tầng tuần (≥ 3R – MA10 tuần)"}
 FILE_TRANG_THAI_BAN = os.path.join("cache_ptcp", "trang_thai_ban.json")
 FILE_TRANG_THAI_MUA_AN = os.path.join("cache_ptcp", "trang_thai_mua_ma_an.json")
@@ -103,7 +104,9 @@ def phan_tich_csv(noi_dung):
                    "cat_lo": _so(r.get("cat_lo_dat")) or _so(r.get("cat_lo_goc")),
                    "cat_lo_goc": _so(r.get("cat_lo_goc")),
                    "muc_tieu": _so(r.get("muc_tieu_dat")) or _so(r.get("gia_muc_tieu")),
-                   "ngay_mua": str(r.get("ngay_mua", "")).strip()}
+                   "ngay_mua": str(r.get("ngay_mua", "")).strip(),
+                   "ngay_mua_them": str(r.get("ngay_mua_them", "")).strip(),          # tuỳ chọn
+                   "so_lan_mua_them": _so(r.get("so_lan_mua_them")) or 0}
     return out
 
 
@@ -175,6 +178,9 @@ def danh_gia_ban(vt, kq, dn=None, bay_gio=None):
     elif ht["het_han"]:
         muc = "HET_HAN"
         ly_do.append(f"giữ {ht['so_phien']} phiên mà lãi chưa đạt 1R → lệnh không chạy")
+    elif 0 < (gia / lo - 1) * 100 <= getattr(C, "GAN_CAT_LO_PCT", 0):
+        muc = "GAN_CAT_LO"
+        ly_do.append(f"giá {gia:,.2f} chỉ còn cách cắt lỗ {lo:,.2f} {(gia / lo - 1) * 100:.1f}% → chạm là bán")
     elif not lo_dat or cl_he > lo_dat * (1 + C.DOI_CAT_LO_TOI_THIEU_PCT / 100):
         muc = "DOI_CAT_LO"
         ly_do.append(f"{TEN_TANG[ht['tang']]}: nâng cắt lỗ lên {cl_he:,.2f} ({ht['nguon_cat_lo']})"
@@ -186,7 +192,15 @@ def danh_gia_ban(vt, kq, dn=None, bay_gio=None):
                        + ("(dời cắt lỗ lên hoà vốn)" if ht["tang"] == 0 else "(chuyển sang bán theo MA10 tuần)"))
     elif ht["tang"] >= 2 and ht["ma10_tuan"]:
         ghi_chu.append(f"khung tuần: giữ tới khi đóng cửa tuần < MA10 tuần ({ht['ma10_tuan']:,.2f})")
+    nguong = None
+    if ht["tang"] >= 2:
+        try:
+            from ptcp.theo_chien_luoc import nguong_ma10_tuan
+            nguong = nguong_ma10_tuan(_phien_da_dong(dn, bay_gio))[0]
+        except Exception:
+            nguong = None
     return {"muc": muc, "ly_do": ly_do, "ghi_chu": ghi_chu, "gia": gia, "lai_lo_pct": lai, "cat_lo": lo,
+            "ma10_tuan": ht.get("ma10_tuan"), "nguong_ma10": nguong, "so_phien": ht.get("so_phien"),
             "cat_lo_he_thong": cl_he, "cat_lo_dat": lo_dat, "muc_tieu": ht["gia_moc_tiep"], "tang": ht["tang"],
             "lai_R": (gia - gv) / ht["R"], "R": ht["R"], "he_thoat": True,
             "cach_cat_lo_pct": (lo / gia - 1) * 100,
@@ -279,6 +293,7 @@ def tin_ban(vt, kb, kq, bay_gio):
                  "HET_HAN": f"Bán {vt['so_cp']:,.0f} CP – lệnh không chạy, giải phóng vốn cho tín hiệu mới",
                  "CHOT_LOI": f"Chốt lời (toàn bộ hoặc ½ = {vt['so_cp'] / 2:,.0f} CP), phần còn lại dời cắt lỗ lên",
                  "CAN_NHAC_BAN": "Xem xét giảm tỷ trọng / siết cắt lỗ – xu hướng đang yếu đi",
+                 "GAN_CAT_LO": f"Chuẩn bị lệnh bán: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ (hệ thoát)",
                  "DOI_CAT_LO": f"Đặt lệnh cắt lỗ mới {_f(kb.get('cat_lo_he_thong'))} & cập nhật cat_lo_dat trong "
                                f"danh_muc.csv (repo danh-muc)"}.get(kb["muc"], "")
     d = [f"{NHAN[kb['muc']]} – {vt['ma']} @ {_f(g)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",

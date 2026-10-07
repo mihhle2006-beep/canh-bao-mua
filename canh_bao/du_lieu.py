@@ -211,3 +211,51 @@ def hom_nay_co_giao_dich(df_ngay, bay_gio=None):
 
 def ngay_hom_nay():
     return date.today()
+
+
+def tai_lich_su_phut(ma, tu_ngay, khung="15", cua_so=30, nghi=0.3):
+    """
+    Nến phút DÀI (cho backtest 15'): tải lùi từng cửa sổ `cua_so` ngày từ hôm nay về tu_ngay, gộp & cache
+    (cache_gia/<MÃ>_<khung>_lich_su.csv – lần sau chỉ tải phần mới). Nguồn nào giới hạn bao xa thì lấy tới đó
+    (3 cửa sổ rỗng liên tiếp → dừng). Trả DataFrame hoặc None.
+    """
+    path = _cache(f"{ma}_{khung}_lich_su")
+    cu = None
+    if os.path.exists(path):
+        try:
+            cu = pd.read_csv(path, index_col=0, parse_dates=True).astype(float)
+        except (OSError, ValueError):
+            cu = None
+    den = int(time.time()) + 86400
+    moc = pd.Timestamp(tu_ngay)
+    if cu is not None and len(cu):
+        moc = max(moc, cu.index[-1].normalize() - pd.Timedelta(days=2))
+    phan, rong, t_den = [], 0, den
+    while t_den > int(moc.timestamp()) and rong < 3:
+        t_tu = max(t_den - cua_so * 86400, int(moc.timestamp()))
+        df = None
+        for ten, ham in cac_nguon(ma, t_tu, t_den, khung)[:3]:          # VNDirect, DNSE, SSI (có khung phút)
+            try:
+                df = chuan_hoa(ham())
+                if len(df):
+                    break
+            except Exception:
+                df = None
+        if df is not None and len(df):
+            phan.append(df)
+            rong = 0
+        else:
+            rong += 1
+        t_den = t_tu
+        time.sleep(nghi)
+    if cu is not None:
+        phan.append(cu)
+    if not phan:
+        return None
+    out = pd.concat(phan).sort_index()
+    out = out[~out.index.duplicated(keep="first")]
+    try:
+        out.to_csv(path)
+    except OSError:
+        pass
+    return out

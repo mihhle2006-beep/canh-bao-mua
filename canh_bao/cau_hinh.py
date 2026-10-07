@@ -8,7 +8,7 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
   PHÚT  – điểm vào (kích hoạt "MUA NGAY")
 """
 # --- Mã theo dõi ---
-MA_THEO_DOI = ["MWG", "DHC", "GMD","vib","anv","vpb","bid","hdb","msb","nab","msn","kdh","phr","ssi","hpg"]
+MA_THEO_DOI = ["MWG", "DHC", "GMD"]
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
@@ -92,3 +92,28 @@ MA_CHIEN_LUOC = ["ANV", "BID", "BSR", "CEO", "CSV", "DBC", "DGC", "DGW", "DHC", 
 NGAY_BAT_DAU_CL = NGAY_BAT_DAU     # dữ liệu cho bản tin (≥ 1 năm để có MA200 & độ rộng thị trường)
 FILE_TRANG_THAI_CL = "trang_thai_chien_luoc.json"   # CL đang áp dụng (để báo khi ĐỔI) – không chứa dữ liệu riêng
 SO_MA_TRONG_TIN = 12               # số dòng tối đa mỗi mục (mua phiên tới / đang giữ) trong bản tin
+
+# --- TỔNG KẾT GỌN + FILE EXCEL (canh_bao/tong_ket_cl.py, bao_cao_excel.py) ---
+#   Tin 15:20 chỉ còn: thị trường & CL · 🟢/✅/🟡 mua (mã | vùng | mục tiêu 1R→3R | cắt lỗ | đạt điểm mua) ·
+#   ⏳ chờ điều chỉnh · ⛔ không vào · 💼 đang giữ (lãi/lỗ theo danh mục, cắt lỗ, mua thêm). Chi tiết → file Excel.
+SO_MA_MOI_NHOM = 8                 # số mã tối đa mỗi nhóm trong tin (còn lại xem Excel)
+GUI_EXCEL = True                   # gửi file Excel chi tiết kèm tin tổng kết (riêng tư nếu có danh mục)
+FILE_EXCEL = "bao_cao_chien_luoc.xlsx"
+LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị chiến lược (chấm theo hệ thoát)
+
+# --- ĐIỂM VÀO 15 PHÚT – đồng bộ chiến lược (ptcp/diem_vao_15p.py: một bộ tiêu chí cho cảnh báo & backtest) ---
+#   Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, trong đúng phiên hiệu lực; không phủ quyết MACD tuần.
+CACH_VAO_15P = "tu_dong"           # "tu_dong": cách vào tốt nhất của lần backtest gần nhất (FILE_BACKTEST);
+                                   # chưa backtest → "15P+ATC". Hoặc đặt cố định: ATO | 15P | 15P+ATC | 15P+GIO | VWAP | LO …
+GIO_ATC = "14:25"                  # từ giờ này, cách vào "+ATC" chưa có điểm vào → báo đặt ATC nếu giá còn trong vùng
+GAN_CAT_LO_PCT = 1.0               # trong phiên: mã đang giữ cách cắt lỗ ≤ 1% → nhắc chuẩn bị lệnh bán
+FILE_BACKTEST = "ket_qua_backtest.json"   # kết quả backtest (công khai – chỉ thống kê, không có danh mục)
+BACKTEST_TU = "2019-01-01"         # giá ngày cho backtest điểm bán / mua thêm
+BACKTEST_15P_TU = "2024-01-01"     # nến 15' lấy từ ngày này (nguồn giới hạn bao xa thì dùng tới đó)
+
+# --- MUA THÊM mã đang giữ (đúng luật nhồi lệnh đã backtest – kiểu B) ---
+#   Đủ cả: lãi đã ≥ 3R (khung tuần) · đóng cửa lập đỉnh mới từ ngày mua · cách lần mua trước ≥ 10 phiên ·
+#   cắt lỗ hiện tại ≥ giá vốn bình quân MỚI + phí (chạm cắt lỗ cả vị thế vẫn hoà vốn) · tối đa 2 lần.
+MUA_THEM_TY_LE = 0.25              # mỗi lần mua thêm = 25% số CP đang giữ
+MUA_THEM_GIAN_CACH = 10            # phiên
+MUA_THEM_TOI_DA = 2

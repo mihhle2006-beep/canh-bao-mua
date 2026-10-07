@@ -30,9 +30,13 @@ def vn_hoa(chu):
 # ---------------------------------------------------------------- HTML cho Telegram
 _NHAN_DAM = ("Kích hoạt:", "Thị trường:", "Sự kiện:", "Xác suất lịch sử", "3 kịch bản", "Lý do:", "Đang giữ",
              "Cắt lỗ đã đặt", "ptcp", "💼", "🎯", "➜", "Kế hoạch thoát", "Hệ thoát", "Đang áp dụng", "Điểm thị trường",
-             "Điều kiện đổi", "Tỷ trọng", "Chia vốn", "① ", "② ", "③ ")
-_NHOM_DAM = ("🟢 ", "✅ ", "🟡 ", "⏳ ", "🔻 ")          # tiêu đề nhóm hành động: đậm phần trước ' – '
+             "Điều kiện đổi", "Tỷ trọng", "Chia vốn", "① ", "② ", "③ ", "Đạt điểm mua", "Khối lượng", "Mua thêm",
+             "Điểm vào 15'", "⛔ ", "⏳ ")
+_NHOM_DAM = ("🟢 ", "✅ ", "🟡 ", "⏳ ", "🔻 ", "💼 ", "⏰ ", "🚫 ")   # tiêu đề nhóm: đậm phần trước ' – '
 
+
+
+_RE_MA_DONG = re.compile(r"^([A-Z][A-Z0-9]{2})(?= \| | \d)")
 
 
 def dinh_dang_html(noi_dung):
@@ -47,6 +51,9 @@ def dinh_dang_html(noi_dung):
             ra.append(f"<b>{phan[0]}</b>" + (f" – {phan[1]}" if len(phan) > 1 else ""))
         elif d.strip().startswith("(") and d.strip().endswith(")"):
             ra.append(f"<i>{e}</i>")
+        elif _RE_MA_DONG.match(d):                         # "KDH | 13,30–13,95 | …" / "DHC 39,50 | vốn …"
+            m = _RE_MA_DONG.match(e)
+            ra.append(f"<b>{m.group(1)}</b>{e[m.end(1):]}")
         elif d.startswith(_NHOM_DAM) and " – " in e:
             nhan, _, phan_sau = e.partition(" – ")
             ra.append(f"<b>{nhan}</b> – <i>{phan_sau}</i>")
