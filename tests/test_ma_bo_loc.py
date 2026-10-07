@@ -47,3 +47,10 @@ def test_doc_ghi_va_nguon_file(tmp_path, monkeypatch):
     assert bl.lay_nguon()["ma"] == {"FPT": ["rieng"]}
     assert "➕ thêm: FPT" in bl.dong_tin(["FPT"], [], [], {"ma": {"FPT": {}}})
     assert bl.dong_tin([], [], [], {}) == ""
+
+
+def test_cung_ngay_quet_lan_hai_van_nhan():
+    tt = {}
+    bl.nhan_nguon(tt, {"ngay_quet": "2026-10-08", "luc": "2026-10-08 04:08", "ma": {}})
+    assert bl.nhan_nguon(tt, {"ngay_quet": "2026-10-08", "luc": "2026-10-08 04:16", "ma": {"SBT": ["rieng"]}}) == ["SBT"]
+    assert bl.nhan_nguon(tt, {"ngay_quet": "2026-10-08", "luc": "2026-10-08 04:16", "ma": {"AAA": ["rieng"]}}) == []
