@@ -38,6 +38,27 @@ VNDirect → DNSE → SSI iBoard → VCI → Yahoo, tự chuyển nguồn, lỗi
 `du_lieu.tai_lich_su_phut` (tải lùi từng 30 ngày, cache `cache_gia/<MÃ>_15_lich_su.csv`).
 ptcp KHÔNG nằm trong repo này: bước *"Lấy ptcp"* của workflow chép từ repo danh-muc (Variables `PTCP_REPO`, `PTCP_PATH`).
 
+
+## Mã tự thêm từ bộ lọc Bo_Loc (2 tuần)
+
+Bo_Loc quét cuối phiên **thứ 2 & thứ 5** (chiến lược `rieng` + `xu_huong`) và ghi mã đạt **MUA** vào `ma_mua_bo_loc.json`.
+Tổng kết 15:20 ở đây (`canh_bao/ma_bo_loc.py`):
+
+1. đọc file đó (chỉ khi là lần quét mới) → thêm mã vào danh sách quét, hạn **14 ngày** từ ngày quét
+   (mã đã có trong `MA_THEO_DOI` – VN30 + DHC, GMD, MWG – thì bỏ qua; được lọc lại khi đang theo dõi → KHÔNG gia hạn);
+2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua** → **thêm hạn 14 ngày** từ ngày đạt (mỗi lần đạt lại được thêm),
+   đi tiếp cảnh báo 15' như mã khác;
+3. hết hạn → **tự xoá**, trừ mã **đang có trong danh mục** (giữ lại). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
+   Tin tổng kết có thêm dòng 🔎 (thêm / đạt / xoá).
+
+Trạng thái lưu ở `ma_bo_loc.json` (công khai – chỉ mã & ngày; muốn bỏ sớm 1 mã thì xoá dòng của mã đó).
+Cấu hình: `DUNG_BO_LOC`, `BO_LOC_SO_NGAY`, `BO_LOC_REPO` trong `cau_hinh.py`.
+
+**Danh sách cảnh báo** = rổ VN30 (tự lấy online lúc tổng kết – `TU_LAY_VN30`, lỗi thì dùng `MA_VN30` gõ sẵn; log ghi nguồn)
++ `MA_THEM` (DHC, GMD, MWG) + mã từ Bo_Loc. **Độ rộng thị trường** (1 trong 8 chỉ báo) vẫn tính trên 41 mã đã backtest
+(`MA_CHIEN_LUOC`, `DO_RONG_THEO_MA_CHIEN_LUOC`) để điểm thị trường / CL1–CL2 không đổi theo danh sách cảnh báo.
+Bo_Loc là repo riêng tư → tạo token CHỈ ĐỌC (Contents: Read) cho Bo_Loc, lưu secret **`BO_LOC_TOKEN`**.
+
 ## Trình bày tin Telegram
 - Số ghi **kiểu Việt Nam** (78.700 · 5,6%); tiêu đề & nhãn **in đậm**, ghi chú *nghiêng* (HTML Telegram – lỗi định dạng
   thì tự gửi lại dạng chữ thường).
@@ -124,7 +145,7 @@ Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜ
 - **CL đang áp dụng**: chỉ đổi ở **phiên cuối tháng**, có vùng đệm: điểm ≥ 5 → CL2, ≤ 2 → CL1, 3–4 giữ nguyên
   (tránh đổi qua lại). CL1 = A0 50% + B 50% (an toàn) · CL2 = A0 70% + ETF VN-Index 30% (lãi).
   Có dòng *Điều kiện đổi* (cần thêm/mất bao nhiêu điểm).
-- **③ Hành động phiên tới** trên 41 mã đã backtest (`MA_CHIEN_LUOC`), chỉ thành phần đang có tỷ trọng, viết cho
+- **③ Hành động phiên tới** trên mã theo dõi (`MA_THEO_DOI` = VN30 + `MA_THEM` DHC, GMD, MWG) và mã từ Bo_Loc, chỉ thành phần đang có tỷ trọng, viết cho
   người CHƯA mua (dùng chung `ptcp.chien_luoc.hanh_dong`):
 
   | Nhóm | Khi nào | Làm gì |
@@ -139,7 +160,7 @@ Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜ
 - Khi CL đổi so với lần chạy trước → gửi thêm tin **🔔 ĐỔI CHIẾN LƯỢC CLx → CLy** kèm tỷ trọng mới.
 - Đây là **mô phỏng của hệ thống – tin công khai**, không dùng danh mục thật.
 - Chỉ gửi bản tin: `python chay.py --che_do chien_luoc` · tổng kết không kèm bản tin: `--khong_chien_luoc` ·
-  tắt hẳn: `DUNG_CHIEN_LUOC = False`. Đổi danh sách mã: `MA_CHIEN_LUOC`; hiển thị tối đa `SO_MA_TRONG_TIN` dòng/mục.
+  tắt hẳn: `DUNG_CHIEN_LUOC = False`. Đổi danh sách mã: `MA_VN30` / `MA_THEM` (`MA_CHIEN_LUOC` chỉ còn cho backtest); hiển thị tối đa `SO_MA_TRONG_TIN` dòng/mục.
 - CL hiện tại lưu ở `trang_thai_chien_luoc.json` (chỉ có số CL & điểm – công khai được) để biết khi nào ĐỔI; thiếu
   file thì bot vẫn báo đổi nếu đổi đúng ở phiên cuối tháng vừa đóng.
 - Lần tổng kết tải thêm ~41 mã (dùng lại dữ liệu đã tải của mã theo dõi) → chạy lâu hơn khoảng 1–2 phút.
@@ -152,7 +173,7 @@ lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ
 
 ## Trang tổng hợp – `canh_bao/trang_tong_hop.py`
 Một trang web thay cho việc đọc rải rác qua Telegram & Excel: ① sức khoẻ thị trường (8 chỉ báo, CL, đi ngang/xu
-hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ độ chính xác của bot (ĐÚNG/SAI
+hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ mã từ bộ lọc Bo_Loc (hạn, đã đạt chưa) · ④ độ chính xác của bot (ĐÚNG/SAI
 theo loại tín hiệu). Danh mục giả lập có báo cáo riêng ở repo `gia_lap` (repo riêng tư → không lên trang công khai). Tự sáng/tối, xem tốt trên
 điện thoại, không dùng thư viện ngoài.
 - **Bản công khai** `docs/index.html`: dựng lại sau mỗi lần chạy (cả 15' trong phiên) và commit. Bật 1 lần:

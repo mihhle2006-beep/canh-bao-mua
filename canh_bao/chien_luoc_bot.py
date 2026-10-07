@@ -65,9 +65,10 @@ def _hanh_dong(dm, ty, ngay=None):
         return hanh_dong(dm, ty)
 
 
-def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None):
+def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_rong=None):
     """
     tai(ma, tu_ngay, chi_so=False) → giá ngày. du_lieu_san: {mã: giá ngày} đã tải (dùng lại nếu đủ dài).
+    ds_do_rong: mã CHỈ dùng tính độ rộng thị trường (điểm 8 chỉ báo) – không lên danh sách mua.
     Trả (ra, None) hoặc (None, lý do lỗi).
     """
     try:
@@ -86,16 +87,22 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None):
     vni = _phien_da_dong(vni, bay_gio)
     bts = {b.ma: b for b in danh_sach_bien_the(co_vni=False, vao_phu=False)}
     thanh_phan = {"A0": (bts["A0"], False), "B": (bts["B"], True)}
+    chi_do_rong = [m for m in dict.fromkeys(x.strip().upper() for x in (ds_do_rong or []) if x.strip())
+                   if m not in ds_ma]
     gia, diem_mua, thieu, gia_ngay, atr = {}, {k: [] for k in thanh_phan}, [], {}, {}
-    for ma in ds_ma:
+    for ma in ds_ma + chi_do_rong:
         df = (du_lieu_san or {}).get(ma)
         if not _dung_duoc(df, tu):
             df = tai(ma, tu)
         df = _phien_da_dong(df, bay_gio) if df is not None else None
         if df is None or len(df) < 260:
-            thieu.append(ma)
+            if ma in ds_ma:
+                thieu.append(ma)
             continue
         df = df[["open", "high", "low", "close", "volume"]]
+        if ma in chi_do_rong:                              # chỉ cần giá đóng cửa cho độ rộng
+            gia[ma] = df.close
+            continue
         d, w = tinh_chi_bao(df), tinh_chi_bao(gop_tuan(df))
         x = chuan_bi(d)
         gia[ma] = d.close

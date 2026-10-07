@@ -64,6 +64,8 @@ jobs:
           DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN }}      # token CHỈ ĐỌC repo danh-muc (cảnh báo BÁN)
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
+          BO_LOC_TOKEN: ${{ secrets.BO_LOC_TOKEN }}          # token CHỈ ĐỌC repo Bo_Loc (bỏ trống nếu Bo_Loc công khai)
+          BO_LOC_REPO: ${{ vars.BO_LOC_REPO }}               # để trống = cau_hinh.BO_LOC_REPO
         # lịch thứ Bảy → lich_su; chạy tay → chế độ đã chọn; còn lại → tu_dong
         run: python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || inputs.che_do || 'tu_dong' }}
 
@@ -82,7 +84,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # chỉ thêm file đang có – thiếu 1 file không được làm hỏng cả lần commit
           for f in trang_thai_canh_bao.json lich_su_tin_hieu.csv lich_su_danh_gia.csv trang_thai_chien_luoc.json \
-                   docs/index.html; do
+                   docs/index.html ma_bo_loc.json; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0

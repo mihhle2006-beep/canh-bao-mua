@@ -7,10 +7,16 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
   GIỜ   – động lượng trong phiên xác nhận
   PHÚT  – điểm vào (kích hoạt "MUA NGAY")
 """
-# --- Mã theo dõi ---
-MA_THEO_DOI =  ["gmd","dhc","mwg","vhm","vpb","nab","hpg","fpt","vnm","hah","pvs","Bid","dig","Gas","kdh","ceo","msb",
-               "mbb","vcb","ssi","hcm","lpb","tcb","hvn","vjc","gvr","msn","dgw","pnj","csv","hsg","nkg","bsr","plx"
-               ,"pvd","pow","anv","dbc","hag","nvl","dgc","vic","gee","msr","tlg","mch"]
+# --- Mã theo dõi (cảnh báo MUA): toàn bộ VN30 + MA_THEM; mã từ bộ lọc Bo_Loc tự thêm/xoá (FILE_MA_BO_LOC) ---
+MA_VN30 = ["ACB", "BCM", "BID", "BVH", "CTG", "FPT", "GAS", "GVR", "HDB", "HPG", "LPB", "MBB", "MSN", "MWG", "PLX",
+           "SAB", "SHB", "SSB", "SSI", "STB", "TCB", "TPB", "VCB", "VHM", "VIB", "VIC", "VJC", "VNM", "VPB", "VRE"]
+TU_LAY_VN30 = True                 # True: lúc tổng kết tự lấy rổ VN30 online (rổ đổi kỳ tháng 1 & 7); lỗi → MA_VN30 trên
+MA_THEM = ["DHC", "GMD", "MWG"]
+MA_THEO_DOI = list(dict.fromkeys(MA_VN30 + MA_THEM))
+# Độ rộng thị trường (1 trong 8 chỉ báo → CL1/CL2) tính trên MA_CHIEN_LUOC (41 mã đã backtest) + mã đang quét,
+# để điểm thị trường không đổi theo danh sách cảnh báo. Mã chỉ dùng cho độ rộng KHÔNG lên danh sách mua.
+DO_RONG_THEO_MA_CHIEN_LUOC = True
+# Mã tự thêm từ bộ lọc (repo Bo_Loc, quét thứ 2 & thứ 5) nằm ở FILE_MA_BO_LOC – xem mục "MÃ TỪ BỘ LỌC" cuối file.
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
@@ -88,6 +94,7 @@ DOI_CAT_LO_TOI_THIEU_PCT = 0.5     # chỉ nhắc "DỜI CẮT LỖ" khi mức h
 #   Điểm thị trường 8 chỉ báo (cuối tháng): ≥ 5 → CL2 (A0 70% + VN-Index 30%), ≤ 2 → CL1 (A0 50% + B 50%), 3–4 giữ.
 #   A0 = vào MACD ngày KHÔNG lọc tuần; B = vào MACD ngày lọc tuần + nhồi lệnh; cả hai thoát theo hệ thoát mới.
 DUNG_CHIEN_LUOC = True             # gửi bản tin chiến lược sau tin tổng kết 15:20 (tin CÔNG KHAI – không dùng danh mục)
+# 41 mã đã backtest – dùng cho backtest (backtest_bot.py) & độ rộng thị trường; cảnh báo quét MA_THEO_DOI + mã Bo_Loc.
 MA_CHIEN_LUOC = ["ANV", "BID", "BSR", "CEO", "CSV", "DBC", "DGC", "DGW", "DHC", "DIG", "FPT", "GAS", "GMD", "GVR",
                  "HAG", "HAH", "HCM", "HPG", "HSG", "HVN", "KDH", "LPB", "MBB", "MSB", "MSN", "MWG", "NAB", "NKG",
                  "NVL", "PLX", "PNJ", "POW", "PVD", "PVS", "SSI", "TCB", "VCB", "VHM", "VJC", "VNM", "VPB"]
@@ -127,6 +134,18 @@ KL_THEO_BIEN_DONG = False         # TẮT theo yêu cầu – KL = 1% vốn ÷ (
 ATR_MUC_TIEU_PCT = 3.5             # % / ngày; 2,5 = an toàn hơn (sụt giảm ~−15%, lãi ~8,9%/năm)
 RUI_RO_MOI_LENH_PCT = 1.0          # % vốn chấp nhận mất nếu chạm cắt lỗ (trước khi nhân hệ số)
 VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền để tin ghi luôn số CP; None = chỉ ghi công thức
+
+# --- MÃ TỪ BỘ LỌC (canh_bao/ma_bo_loc.py) ---
+#   Bo_Loc chạy cuối phiên thứ 2 & thứ 5 (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã Hành động MUA).
+#   Tổng kết 15:20 đọc file đó, thêm mã vào danh sách quét trong BO_LOC_SO_NGAY ngày. Vào nhóm mua 🟢/✅/🟡 = ĐẠT
+#   → thêm hạn BO_LOC_SO_NGAY ngày từ ngày đạt. Hết hạn → tự xoá, trừ mã đang có trong danh mục (giữ lại).
+#   Muốn bỏ sớm 1 mã: xoá dòng của mã đó trong FILE_MA_BO_LOC.
+DUNG_BO_LOC = True
+BO_LOC_SO_NGAY = 14                # 2 tuần (ngày lịch) – tính từ ngày thêm, đạt thì tính lại từ ngày đạt
+FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – chỉ mã & ngày)
+BO_LOC_REPO = "mihhle2006-beep/Bo_Loc"   # ghi đè bằng biến BO_LOC_REPO; repo riêng tư → secret BO_LOC_TOKEN
+BO_LOC_PATH = "ma_mua_bo_loc.json"
+BO_LOC_FILE = None                 # đường dẫn file trên máy (ưu tiên hơn GitHub) – hoặc biến môi trường BO_LOC_FILE
 
 # --- TRANG TỔNG HỢP (canh_bao/trang_tong_hop.py) – 1 trang HTML: thị trường, tín hiệu hôm nay, độ chính xác.
 #     (Giao dịch giả lập ở repo riêng gia_lap – đọc danh sách mua từ trang_thai_chien_luoc.json.)

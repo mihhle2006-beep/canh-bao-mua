@@ -2,3 +2,4 @@ trang_tong_hop_rieng.html
 danh_muc.csv
 ptcp/
 __pycache__/
+*.pyc
