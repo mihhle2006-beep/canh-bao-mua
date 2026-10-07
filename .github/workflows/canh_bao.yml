@@ -75,13 +75,14 @@ jobs:
           path: danh_gia_tin_hieu.xlsx
           retention-days: 30
 
-      - name: Lưu trạng thái chống báo trùng & nhật ký tín hiệu (công khai)
+      - name: Lưu trạng thái, nhật ký tín hiệu, giao dịch giả lập & trang tổng hợp (công khai)
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # chỉ thêm file đang có – thiếu 1 file không được làm hỏng cả lần commit
-          for f in trang_thai_canh_bao.json lich_su_tin_hieu.csv lich_su_danh_gia.csv; do
+          for f in trang_thai_canh_bao.json lich_su_tin_hieu.csv lich_su_danh_gia.csv trang_thai_chien_luoc.json \
+                   giao_dich_ao.json giao_dich_ao_lenh.csv giao_dich_ao_von.csv docs/index.html; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0

@@ -127,3 +127,19 @@ KL_THEO_BIEN_DONG = False         # TẮT theo yêu cầu – KL = 1% vốn ÷ (
 ATR_MUC_TIEU_PCT = 3.5             # % / ngày; 2,5 = an toàn hơn (sụt giảm ~−15%, lãi ~8,9%/năm)
 RUI_RO_MOI_LENH_PCT = 1.0          # % vốn chấp nhận mất nếu chạm cắt lỗ (trước khi nhân hệ số)
 VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền để tin ghi luôn số CP; None = chỉ ghi công thức
+
+# --- GIAO DỊCH GIẢ LẬP (canh_bao/giao_dich_ao.py) – vốn ảo theo tín hiệu thật, trên giá THẬT của các phiên sau ---
+#   Mua giá mở cửa phiên hiệu lực nếu mở cửa trong vùng mua · cắt lỗ trong phiên · hệ thoát cuối phiên (như danh mục
+#   thật) · bán mở cửa phiên sau khi có tín hiệu bán. File công khai: giao_dich_ao.json / _lenh.csv / _von.csv.
+DUNG_GIAO_DICH_AO = True
+VON_AO_TRIEU = 1000                # vốn ảo ban đầu (triệu đồng) – xoá giao_dich_ao*.json/csv để bắt đầu lại
+TY_TRONG_TOI_DA_AO = 20.0          # % NAV tối đa cho 1 mã
+PHI_MUA_AO_PCT = 0.15              # % phí mua (kèm trượt giá)
+PHI_BAN_AO_PCT = 0.25              # % phí bán + thuế 0,1%
+SO_PHIEN_GIA_LAP_TOI_THIEU = 60    # ~3 tháng – trước mốc này tin luôn nhắc "chưa nên dùng tiền thật"
+
+# --- TRANG TỔNG HỢP (canh_bao/trang_tong_hop.py) – 1 trang HTML: thị trường, tín hiệu hôm nay, độ chính xác,
+#     danh mục giả lập. Bản CÔNG KHAI → docs/index.html (GitHub Pages). Bản RIÊNG có danh mục thật → chỉ gửi Telegram.
+DUNG_TRANG_TONG_HOP = True
+FILE_TRANG = "docs/index.html"
+GUI_TRANG_RIENG = True             # gửi kèm file HTML có mục 💼 danh mục thật qua Telegram (không commit)

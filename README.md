@@ -144,6 +144,43 @@ Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜ
   file thì bot vẫn báo đổi nếu đổi đúng ở phiên cuối tháng vừa đóng.
 - Lần tổng kết tải thêm ~41 mã (dùng lại dữ liệu đã tải của mã theo dõi) → chạy lâu hơn khoảng 1–2 phút.
 
+## Giao dịch giả lập (vốn ảo) – `canh_bao/giao_dich_ao.py`
+Bot **tự mua bán bằng vốn ảo** (`VON_AO_TRIEU`, mặc định 1 tỷ) theo đúng tín hiệu thật, trên **giá thật của các phiên
+sau** ngày phát tín hiệu. Backtest chỉ chạy trên quá khứ; phần này chạy 2–3 tháng về phía trước trước khi bỏ tiền thật.
+
+| Bước (mỗi phiên, chạy lúc tổng kết 15:20) | Luật |
+|---|---|
+| Bán chờ | tín hiệu bán lúc đóng cửa phiên trước (gãy MA10 tuần, lệnh không chạy, đóng cửa ≤ cắt lỗ) → bán **giá mở cửa**; cần T+2, khoá sàn thì chờ |
+| Mua chờ | nhóm 🟢 / ✅ / 🟡 của tin tổng kết hôm trước, **đúng phiên hiệu lực** → mua giá mở cửa nếu mở cửa **trong vùng mua**; ngoài vùng / khoá trần → bỏ |
+| Khối lượng | `RUI_RO_MOI_LENH_PCT` % NAV ÷ (giá mua − cắt lỗ), 🟡 × ½, tối đa `TY_TRONG_TOI_DA_AO` % NAV, không vượt tiền mặt, lô 100 |
+| Cắt lỗ trong phiên | giá thấp nhất ≤ cắt lỗ (từ T+2) → bán ở min(mở cửa, cắt lỗ) – gap xuống thì chịu gap |
+| Cuối phiên | **hệ thoát** (`vi_the.danh_gia_ban` – cùng hàm với danh mục thật) dời cắt lỗ lên / xếp lệnh bán |
+| Phí | mua `PHI_MUA_AO_PCT` 0,15%, bán `PHI_BAN_AO_PCT` 0,25% (gồm thuế 0,1%) |
+
+- Tin tổng kết có thêm mục **🧪 GIAO DỊCH GIẢ LẬP**: NAV, lãi/lỗ so với VN-Index cùng kỳ, sụt giảm lớn nhất, lệnh
+  phiên vừa rồi, tỷ lệ thắng & TB/lệnh **so với backtest** (A0: thắng 34%, TB +3,8%/lệnh). Chưa đủ
+  `SO_PHIEN_GIA_LAP_TOI_THIEU` (60) phiên → luôn nhắc "chưa nên dùng tiền thật".
+- File **công khai** (commit – chỉ là vốn ảo): `giao_dich_ao.json` (tiền, vị thế, lệnh chờ), `giao_dich_ao_lenh.csv`
+  (lệnh đã đóng), `giao_dich_ao_von.csv` (đường vốn + VN-Index). Bỏ lỡ ngày nào → lần sau tự xử lý bù từng phiên;
+  chạy lại cùng ngày không mua/bán trùng.
+- Bắt đầu lại từ đầu: xoá 3 file trên. Tắt: `DUNG_GIAO_DICH_AO = False`.
+- Giới hạn: khớp lệnh theo nến ngày (giá mở cửa) – không mô phỏng điểm vào 15', nên kết quả thật có thể khác một chút.
+
+## Trang tổng hợp – `canh_bao/trang_tong_hop.py`
+Một trang web thay cho việc đọc rải rác qua Telegram & Excel: ① sức khoẻ thị trường (8 chỉ báo, CL, đi ngang/xu
+hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ danh mục giả lập (NAV so với
+VN-Index, vị thế, lệnh gần đây) · ④ độ chính xác của bot (ĐÚNG/SAI theo loại tín hiệu). Tự sáng/tối, xem tốt trên
+điện thoại, không dùng thư viện ngoài.
+- **Bản công khai** `docs/index.html`: dựng lại sau mỗi lần chạy (cả 15' trong phiên) và commit. Bật 1 lần:
+  Settings → **Pages** → Source *Deploy from a branch* → Branch `main`, thư mục `/docs` → trang ở
+  `https://<tên-bạn>.github.io/canh-bao-mua/`. **Không có danh mục thật.**
+- **Bản riêng** có mục 💼 danh mục thật (lãi/lỗ, cắt lỗ, hành động, mua thêm): chỉ **gửi Telegram** dạng file HTML lúc
+  tổng kết (mở bằng trình duyệt), xoá khỏi máy chạy Actions, không commit. Tắt: `GUI_TRANG_RIENG = False`.
+- Trang chỉ đọc file trạng thái → không tải giá, không cần ptcp. Tổng kết lưu thêm điểm thị trường & toàn bộ khuyến
+  nghị vào `trang_thai_chien_luoc.json` (công khai – đã có trong tin). File này giờ **được commit** (trước đây không
+  commit nên danh sách mua cho cảnh báo 15' sáng hôm sau mất theo máy chạy Actions).
+- Tắt hẳn: `DUNG_TRANG_TONG_HOP = False`.
+
 ## Lịch chạy (GitHub Actions)
 - Mỗi **15 phút** trong phiên (9:00–11:30, 13:00–14:45): chỉ gửi tin khi một mã **vừa chuyển** sang MUA NGAY.
 - **15:20**: gửi bảng tổng kết 4 khung của mọi mã.
