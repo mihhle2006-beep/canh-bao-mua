@@ -227,17 +227,18 @@ def _khoi_rieng(giu):
 
 
 CSS = """
-:root{--nen:#f2fbf5;--the:#fff;--chu:#14261a;--mo:#56705f;--vien:#cdeed9;--nhan:#16a34a;--nhan-dam:#22c55e;
---nen-nhan:#e9fbef;--tang:#15803d;--giam:#c8352b;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0c130f;--the:#131c16;--chu:#e4ece6;
---mo:#94a59a;--vien:#24382b;--nhan:#4ade80;--nhan-dam:#16a34a;--nen-nhan:#15291c;--tang:#4ade80;--giam:#ff7b72;
+/* bộ màu chủ đạo XANH LÁ – cùng mã với ptcp/mau.py (1B5E20 · 2E7D32 · 66BB6A · E8F5E9) */
+:root{--nen:#f3f7f4;--the:#fff;--chu:#17211b;--mo:#5c6b62;--vien:#dfe7e1;--nhan:#2E7D32;--nhan-dam:#1B5E20;
+--nen-nhan:#E8F5E9;--tang:#2E7D32;--giam:#C62828;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0d1310;--the:#151d18;--chu:#e4ece6;
+--mo:#93a59a;--vien:#26332b;--nhan:#66BB6A;--nhan-dam:#2E7D32;--nen-nhan:#15291c;--tang:#81C784;--giam:#EF5350;
 --vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
-:root[data-theme="dark"]{--nen:#0c130f;--the:#131c16;--chu:#e4ece6;--mo:#94a59a;--vien:#24342a;--nhan:#4ade80;
---nhan-dam:#16a34a;--nen-nhan:#15291c;--tang:#4ade80;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
+:root[data-theme="dark"]{--nen:#0d1310;--the:#151d18;--chu:#e4ece6;--mo:#93a59a;--vien:#26332b;--nhan:#66BB6A;
+--nhan-dam:#2E7D32;--nen-nhan:#15291c;--tang:#81C784;--giam:#EF5350;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
 *{box-sizing:border-box}body{margin:0;background:var(--nen);color:var(--chu);
 font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 main{max-width:1080px;margin:0 auto;padding:20px 16px 48px}
-header{background:linear-gradient(135deg,#4ade80,var(--nhan-dam));color:#fff;border-radius:14px;padding:18px 20px;
+header{background:linear-gradient(135deg,#43A047,var(--nhan-dam));color:#fff;border-radius:14px;padding:18px 20px;
 text-shadow:0 1px 2px rgba(0,60,20,.35)}
 header h1{font-size:22px;margin:0}header p{margin:4px 0 0;color:#f0fff4}
 nav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}nav a{color:var(--nhan);text-decoration:none;font-weight:500;

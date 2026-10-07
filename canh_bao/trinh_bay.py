@@ -97,7 +97,7 @@ def ve_bieu_do_ma(ma, dn, gia, muc_tieu=None, cat_lo=None, gia_von=None, tieu_de
         a.plot(d.index, dn.close.rolling(20).mean().tail(so_phien), color="#F9A825", lw=1, label="MA20")
         a.plot(d.index, dn.close.rolling(50).mean().tail(so_phien), color="#6D4C41", lw=1, label="MA50")
         muc = [(muc_tieu, "Mục tiêu", XANH, "-"), (cat_lo, "Cắt lỗ", "#C62828", "--"),
-               (gia_von, "Giá vốn", "#1565C0", ":")]
+               (gia_von, "Giá vốn", "#455A64", ":")]
         muc = [(g, t, c, ls) for g, t, c, ls in muc if g is not None and g == g]
         for g, _, c, ls in muc:
             a.axhline(g, color=c, ls=ls, lw=1.2)
@@ -135,7 +135,7 @@ def ve_bieu_do_ma(ma, dn, gia, muc_tieu=None, cat_lo=None, gia_von=None, tieu_de
 
 
 # ---------------------------------------------------------------- ảnh bảng tổng kết
-MAU_TRANG_THAI = [("MUA NGAY", "#C8E6C9"), ("GẦN", "#FFF9C4"), ("THEO DÕI", "#E3F2FD"), ("CHƯA", "#F5F5F5")]
+MAU_TRANG_THAI = [("MUA NGAY", "#A5D6A7"), ("GẦN", "#FFF9C4"), ("THEO DÕI", "#DCEDC8"), ("CHƯA", "#F5F5F5")]
 
 
 def ve_bang_tong_ket(dong, tieu_de):
