@@ -171,6 +171,12 @@ Bot mua bán bằng vốn ảo theo đúng tín hiệu của repo này, trên gi
 lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ thoát) và `canh_bao/thong_bao.py` (Telegram).
 → Đừng đổi tên / cấu trúc khoá `ds_mua` trong file này mà không sửa `gia_lap`.
 
+## Backtest điểm vào 15' – `.github/workflows/backtest.yml`
+Chạy **đêm mùng 2 hằng tháng** (02:17 giờ VN) hoặc bấm tay: Actions → **Backtest** → Run workflow (20–60 phút).
+Thử mọi cách vào lệnh (ATO, 15P, 15P+ATC, VWAP, LO…) trên nến 15' thật của các tín hiệu mua đã qua + backtest điểm bán /
+mua thêm → gửi tin 🧪 kèm Excel, commit `ket_qua_backtest.json`. Cảnh báo trong phiên tự dùng **cách vào tốt nhất**
+(`CACH_VAO_15P = "tu_dong"`; muốn cố định thì đặt tên cách vào).
+
 ## Trang tổng hợp – `canh_bao/trang_tong_hop.py`
 Một trang web thay cho việc đọc rải rác qua Telegram & Excel: ① sức khoẻ thị trường (8 chỉ báo, CL, đi ngang/xu
 hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ mã từ bộ lọc Bo_Loc (hạn, đã đạt chưa) · ④ độ chính xác của bot (ĐÚNG/SAI

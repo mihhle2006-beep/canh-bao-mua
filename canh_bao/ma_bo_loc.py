@@ -139,15 +139,21 @@ def xoa_het_han(tt, bay_gio, dang_giu=()):
     return xoa
 
 
+def _nhan(ma, tt):
+    """'HDB (xu_huong ½)' – mã thăm dò (nhóm MUA THĂM DÒ ½ của Bo_Loc) có chữ ½."""
+    cl = ((tt.get("ma") or {}).get(ma) or {}).get("chien_luoc") or []
+    return f"{ma} ({', '.join(cl)})" if cl else ma
+
+
 def dong_tin(moi, dat, xoa, tt):
-    """1–3 dòng tóm tắt cho tin tổng kết (rỗng nếu không có gì đổi)."""
+    """Tóm tắt cho tin tổng kết (rỗng nếu không có gì đổi). Mã thăm dò ghi '<chiến lược> ½'."""
     if not (moi or dat or xoa):
         return ""
-    dong = [f"🔎 Mã từ bộ lọc ({len(tt.get('ma') or {})} đang theo dõi, hạn {C.BO_LOC_SO_NGAY} ngày):"]
+    dong = [f"🔎 Mã từ bộ lọc ({len(tt.get('ma') or {})} đang theo dõi, hạn {C.BO_LOC_SO_NGAY} ngày · ½ = mua thăm dò):"]
     if moi:
-        dong.append(f"  ➕ thêm: {', '.join(moi)}")
+        dong.append(f"  ➕ thêm: {', '.join(_nhan(m, tt) for m in moi)}")
     if dat:
-        dong.append(f"  ✅ đạt điểm mua (+{C.BO_LOC_SO_NGAY} ngày): {', '.join(dat)}")
+        dong.append(f"  ✅ đạt điểm mua (+{C.BO_LOC_SO_NGAY} ngày): {', '.join(_nhan(m, tt) for m in dat)}")
     if xoa:
         dong.append(f"  🗑 xoá (hết hạn {C.BO_LOC_SO_NGAY} ngày): {', '.join(xoa)}")
     return "\n".join(dong)

@@ -211,7 +211,7 @@ def _khoi_bo_loc(bl, hom_nay=None):
                      else '<span class="mo">chưa</span>'])
     return (_bang(["Mã", "Chiến lược", "Ngày thêm", "Hạn", "Đạt điểm mua"], dong)
             + f'<p class="mo">Hạn {C.BO_LOC_SO_NGAY} ngày từ ngày thêm; đạt điểm mua thì thêm {C.BO_LOC_SO_NGAY} ngày; '
-              f'hết hạn thì tự xoá.</p>')
+              f'hết hạn thì tự xoá. <b>½</b> = mã lấy từ nhóm mua thăm dò (½ vị thế) của Bo_Loc.</p>')
 
 
 def _khoi_rieng(giu):
