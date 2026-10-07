@@ -38,6 +38,23 @@ VNDirect → DNSE → SSI iBoard → VCI → Yahoo, tự chuyển nguồn, lỗi
 `du_lieu.tai_lich_su_phut` (tải lùi từng 30 ngày, cache `cache_gia/<MÃ>_15_lich_su.csv`).
 ptcp KHÔNG nằm trong repo này: bước *"Lấy ptcp"* của workflow chép từ repo danh-muc (Variables `PTCP_REPO`, `PTCP_PATH`).
 
+
+## Mã tự thêm từ bộ lọc Bo_Loc (2 tuần)
+
+Bo_Loc quét cuối phiên **thứ 2 & thứ 5** (chiến lược `rieng` + `xu_huong`) và ghi mã đạt **MUA** vào `ma_mua_bo_loc.json`.
+Tổng kết 15:20 ở đây (`canh_bao/ma_bo_loc.py`):
+
+1. đọc file đó (chỉ khi là lần quét mới) → thêm mã vào danh sách quét, hạn **14 ngày** từ ngày quét
+   (mã đã có trong `MA_CHIEN_LUOC` / `MA_THEO_DOI` thì bỏ qua; được lọc lại khi đang theo dõi → KHÔNG gia hạn);
+2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua** → **thêm hạn 14 ngày** từ ngày đạt (mỗi lần đạt lại được thêm),
+   đi tiếp cảnh báo 15' như mã khác;
+3. hết hạn → **tự xoá**, trừ mã **đang có trong danh mục** (giữ lại). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
+   Tin tổng kết có thêm dòng 🔎 (thêm / đạt / xoá).
+
+Trạng thái lưu ở `ma_bo_loc.json` (công khai – chỉ mã & ngày; muốn bỏ sớm 1 mã thì xoá dòng của mã đó).
+Cấu hình: `DUNG_BO_LOC`, `BO_LOC_SO_NGAY`, `BO_LOC_REPO` trong `cau_hinh.py`.
+Bo_Loc là repo riêng tư → tạo token CHỈ ĐỌC (Contents: Read) cho Bo_Loc, lưu secret **`BO_LOC_TOKEN`**.
+
 ## Trình bày tin Telegram
 - Số ghi **kiểu Việt Nam** (78.700 · 5,6%); tiêu đề & nhãn **in đậm**, ghi chú *nghiêng* (HTML Telegram – lỗi định dạng
   thì tự gửi lại dạng chữ thường).

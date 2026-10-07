@@ -11,6 +11,7 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
 MA_THEO_DOI =  ["gmd","dhc","mwg","vhm","vpb","nab","hpg","fpt","vnm","hah","pvs","Bid","dig","Gas","kdh","ceo","msb",
                "mbb","vcb","ssi","hcm","lpb","tcb","hvn","vjc","gvr","msn","dgw","pnj","csv","hsg","nkg","bsr","plx"
                ,"pvd","pow","anv","dbc","hag","nvl","dgc","vic","gee","msr","tlg","mch"]
+# Mã tự thêm từ bộ lọc (repo Bo_Loc, quét thứ 2 & thứ 5) nằm ở FILE_MA_BO_LOC – xem mục "MÃ TỪ BỘ LỌC" cuối file.
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
@@ -127,3 +128,15 @@ KL_THEO_BIEN_DONG = False         # TẮT theo yêu cầu – KL = 1% vốn ÷ (
 ATR_MUC_TIEU_PCT = 3.5             # % / ngày; 2,5 = an toàn hơn (sụt giảm ~−15%, lãi ~8,9%/năm)
 RUI_RO_MOI_LENH_PCT = 1.0          # % vốn chấp nhận mất nếu chạm cắt lỗ (trước khi nhân hệ số)
 VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền để tin ghi luôn số CP; None = chỉ ghi công thức
+
+# --- MÃ TỪ BỘ LỌC (canh_bao/ma_bo_loc.py) ---
+#   Bo_Loc chạy cuối phiên thứ 2 & thứ 5 (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã Hành động MUA).
+#   Tổng kết 15:20 đọc file đó, thêm mã vào danh sách quét trong BO_LOC_SO_NGAY ngày. Vào nhóm mua 🟢/✅/🟡 = ĐẠT
+#   → thêm hạn BO_LOC_SO_NGAY ngày từ ngày đạt. Hết hạn → tự xoá, trừ mã đang có trong danh mục (giữ lại).
+#   Muốn bỏ sớm 1 mã: xoá dòng của mã đó trong FILE_MA_BO_LOC.
+DUNG_BO_LOC = True
+BO_LOC_SO_NGAY = 14                # 2 tuần (ngày lịch) – tính từ ngày thêm, đạt thì tính lại từ ngày đạt
+FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – chỉ mã & ngày)
+BO_LOC_REPO = "mihhle2006-beep/Bo_Loc"   # ghi đè bằng biến BO_LOC_REPO; repo riêng tư → secret BO_LOC_TOKEN
+BO_LOC_PATH = "ma_mua_bo_loc.json"
+BO_LOC_FILE = None                 # đường dẫn file trên máy (ưu tiên hơn GitHub) – hoặc biến môi trường BO_LOC_FILE
