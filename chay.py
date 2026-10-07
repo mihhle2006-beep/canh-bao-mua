@@ -6,6 +6,7 @@ CẢNH BÁO MUA THEO CHIẾN LƯỢC THỊ TRƯỜNG – chạy:
   python chay.py --che_do trong_phien  (quét 15': chỉ mã trong nhóm mua của tin tổng kết, đúng vùng giá)
   python chay.py --che_do backtest     (backtest điểm vào 15' & điểm bán / mua thêm → ket_qua_backtest.json)
   python chay.py --che_do lich_su      (chấm lại mọi tín hiệu đã ghi, in bảng độ chính xác, xuất Excel)
+  python chay.py --chi_ma FPT          (xem RIÊNG 1 mã / vài mã: FPT,HPG – không ghi trạng thái; + --khong_gui = chỉ in)
   python chay.py --khong_gui           (chỉ in, không gửi Telegram)
   python chay.py --khong_ban           (bỏ phần danh mục / cảnh báo bán)
   python chay.py --gio "2026-10-08 10:30"   (giả lập thời điểm, giờ VN)
@@ -31,6 +32,8 @@ def main(argv=None):
     p.add_argument("--che_do", default="tu_dong",
                    choices=["tu_dong", "trong_phien", "tong_ket", "lich_su", "chien_luoc", "backtest"])
     p.add_argument("--ma", default=None, help="thêm mã theo dõi ngoài danh sách chiến lược (VD MWG,FPT)")
+    p.add_argument("--chi_ma", default=None,
+                   help="CHỈ xem mã này (VD FPT hoặc FPT,HPG) theo chiến lược – không ghi trạng thái / danh sách mua")
     p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-08 10:30'")
     p.add_argument("--khong_gui", action="store_true")
     p.add_argument("--khong_ban", action="store_true", help="bỏ danh mục / cảnh báo bán")
@@ -38,6 +41,8 @@ def main(argv=None):
     a = p.parse_args(argv)
     bay_gio = pd.Timestamp(a.gio) if a.gio else gio_viet_nam()
     che_do = a.che_do
+    if a.chi_ma:
+        return xem_ma(bay_gio, [m.strip().upper() for m in a.chi_ma.split(",") if m.strip()], a.khong_gui)
     if che_do == "tu_dong":
         if trong_phien(bay_gio):
             che_do = "trong_phien"
@@ -156,6 +161,44 @@ def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):
             gui_file(p, f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d/%m/%Y} (mở bằng trình duyệt)", rieng_tu=True)
         if p and os.environ.get("GITHUB_ACTIONS"):
             os.remove(p)                                       # có danh mục thật: không để lại trên máy chạy
+
+
+# ------------------------------------------------------------------ XEM RIÊNG 1 / VÀI MÃ
+def xem_ma(bay_gio, ds, khong_gui=False):
+    """
+    Chạy chiến lược CHỈ cho mã trong ds (độ rộng thị trường vẫn theo MA_CHIEN_LUOC) → in / gửi nhóm hành động,
+    vùng mua, cắt lỗ, mục tiêu. KHÔNG ghi trang_thai_chien_luoc.json, nhật ký, trang tổng hợp, mã Bo_Loc.
+    """
+    if not ds:
+        print("Chưa nhập mã.")
+        return 1
+    ra, loi = chien_luoc_bot.chay_chien_luoc(
+        lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=ds,
+        ds_do_rong=C.MA_CHIEN_LUOC if getattr(C, "DO_RONG_THEO_MA_CHIEN_LUOC", True) else None)
+    if ra is None:
+        print(f"⚠ Chiến lược: {loi}")
+        return 1
+    kn = {k["ma"]: k for k in tong_ket_cl.ds_khuyen_nghi(ra)}
+    trang_thai = {}
+    for tp, bang in (ra.get("diem_mua") or {}).items():
+        for _, r in bang.iterrows():
+            trang_thai.setdefault(r["Mã"], []).append(f"{tp}: {r.get('Trạng thái', '')}")
+    d = ra["doc"]
+    dong = [f"🔍 XEM MÃ {', '.join(ds)} – dữ liệu {pd.Timestamp(d['ngay']):%d/%m/%Y} · thị trường "
+            f"{d.get('diem', '–')}/{d.get('so_chi_bao', 8)} điểm · CL{ra['cl']}"]
+    for ma in ds:
+        k = kn.get(ma)
+        if ma in ra.get("thieu", []):
+            dong.append(f"\n{ma}: thiếu dữ liệu giá (cần ≥ 260 phiên)")
+        elif k is None:
+            dong.append(f"\n{ma}: chưa có tín hiệu mua – " + " · ".join(trang_thai.get(ma, ["CHỜ tín hiệu"])))
+        else:
+            dong.append(f"\n{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}\n{tong_ket_cl.dong_mua(k)}")
+    tin = "\n".join(dong)
+    print(tin)
+    if not khong_gui:
+        gui(tin)
+    return 0
 
 
 def _nhat_ky(ra, bay_gio):

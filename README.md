@@ -171,6 +171,12 @@ Bot mua bán bằng vốn ảo theo đúng tín hiệu của repo này, trên gi
 lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ thoát) và `canh_bao/thong_bao.py` (Telegram).
 → Đừng đổi tên / cấu trúc khoá `ds_mua` trong file này mà không sửa `gia_lap`.
 
+## Xem riêng 1 mã
+- **Trên GitHub:** Actions → **Canh bao mua** → **Run workflow** → ô **ma** nhập `FPT` (hoặc `FPT,HPG`) → Run.
+  Kết quả (nhóm hành động, vùng mua, cắt lỗ, mục tiêu 1R → 3R) gửi Telegram; KHÔNG đổi danh sách mua / trạng thái của bot.
+- **Trên máy:** `python chay.py --chi_ma FPT --khong_gui` (cần thư mục `ptcp/` – xem `lay_ptcp.py`).
+- Lần chạy 15' trong phiên bỏ bước kiểm thử để tin đến nhanh hơn; tổng kết, chạy tay & backtest vẫn kiểm thử.
+
 ## Backtest điểm vào 15' – `.github/workflows/backtest.yml`
 Chạy **đêm mùng 2 hằng tháng** (02:17 giờ VN) hoặc bấm tay: Actions → **Backtest** → Run workflow (20–60 phút).
 Thử mọi cách vào lệnh (ATO, 15P, 15P+ATC, VWAP, LO…) trên nến 15' thật của các tín hiệu mua đã qua + backtest điểm bán /
