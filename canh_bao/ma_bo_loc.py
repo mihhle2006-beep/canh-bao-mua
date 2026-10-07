@@ -13,6 +13,7 @@ MÃ TỪ BỘ LỌC (repo Bo_Loc) – theo dõi có thời hạn.
 """
 import json
 import os
+import urllib.error
 import urllib.request
 
 import pandas as pd
@@ -55,17 +56,28 @@ def lay_nguon():
     duong_dan = os.environ.get("BO_LOC_PATH") or C.BO_LOC_PATH
     if not repo:
         return None
-    req = urllib.request.Request(f"https://api.github.com/repos/{repo}/contents/{duong_dan}",
-                                 headers={"Accept": "application/vnd.github.raw+json", "User-Agent": "canh-bao-mua"})
+    url = f"https://api.github.com/repos/{repo}/contents/{duong_dan}"
     token = os.environ.get("BO_LOC_TOKEN")
-    if token:
-        req.add_header("Authorization", f"Bearer {token}")
-    try:
-        with urllib.request.urlopen(req, timeout=20) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except Exception as e:                                     # chưa có file / repo riêng tư thiếu token
-        print(f"⚠ Không lấy được {duong_dan} từ {repo}: {type(e).__name__}: {str(e)[:120]}")
-        return None
+    loi = []
+    for tk in ([token] if token else []) + [None]:            # token lỗi → thử không token (repo công khai)
+        req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.raw+json",
+                                                   "User-Agent": "canh-bao-mua"})
+        if tk:
+            req.add_header("Authorization", f"Bearer {tk}")
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            try:
+                ly_do = json.loads(e.read().decode("utf-8")).get("message", "")
+            except Exception:
+                ly_do = ""
+            loi.append(f"{'có token' if tk else 'không token'}: HTTP {e.code} {ly_do}".strip())
+        except Exception as e:
+            loi.append(f"{'có token' if tk else 'không token'}: {type(e).__name__}: {str(e)[:100]}")
+    print(f"⚠ Không lấy được {duong_dan} từ {repo} – " + " | ".join(loi)
+          + (" → kiểm tra BO_LOC_TOKEN: chọn repo Bo_Loc, quyền Contents: Read-only" if token else ""))
+    return None
 
 
 def nhan_nguon(tt, nguon, co_dinh=()):
