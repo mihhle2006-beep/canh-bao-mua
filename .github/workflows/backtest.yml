@@ -1,0 +1,67 @@
+# BACKTEST điểm vào 15' & điểm bán / mua thêm – chạy đêm mùng 2 hằng tháng (02:17 giờ VN, ngoài giờ giao dịch)
+# hoặc chạy tay. Kết quả ket_qua_backtest.json được commit → cảnh báo trong phiên tự dùng cách vào tốt nhất
+# (CACH_VAO_15P = "tu_dong"). Workflow riêng để các lần chạy 15' của bot không huỷ backtest giữa chừng.
+name: Backtest
+
+on:
+  schedule:
+    - cron: "17 19 1 * *"          # 19:17 UTC mùng 1 = 02:17 giờ VN mùng 2
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt
+
+      - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
+        env:
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}
+          REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp_phan_tich/ptcp' }}
+        run: python lay_ptcp.py
+
+      - name: Khôi phục cache giá (riêng cho backtest)
+        uses: actions/cache@v5
+        with:
+          path: |
+            cache_gia
+            cache_ptcp
+          key: bt-${{ github.run_id }}
+          restore-keys: |
+            bt-
+            gia-
+
+      - name: Backtest điểm vào 15' & điểm bán
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python chay.py --che_do backtest
+
+      - name: Lưu kết quả backtest (công khai – chỉ thống kê)
+        if: always()
+        run: |
+          [ -f ket_qua_backtest.json ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ket_qua_backtest.json
+          git diff --cached --quiet && echo "Không có thay đổi" && exit 0
+          git commit -m "Kết quả backtest $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
+          echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"

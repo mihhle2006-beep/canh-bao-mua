@@ -54,3 +54,9 @@ def test_cung_ngay_quet_lan_hai_van_nhan():
     bl.nhan_nguon(tt, {"ngay_quet": "2026-10-08", "luc": "2026-10-08 04:08", "ma": {}})
     assert bl.nhan_nguon(tt, {"ngay_quet": "2026-10-08", "luc": "2026-10-08 04:16", "ma": {"SBT": ["rieng"]}}) == ["SBT"]
     assert bl.nhan_nguon(tt, {"ngay_quet": "2026-10-08", "luc": "2026-10-08 04:16", "ma": {"AAA": ["rieng"]}}) == []
+
+
+def test_dong_tin_ghi_ro_ma_tham_do():
+    tt = {"ma": {"HDB": {"chien_luoc": ["xu_huong ½"]}, "TLG": {"chien_luoc": ["rieng", "xu_huong"]}}}
+    t = bl.dong_tin(["HDB", "TLG"], ["TLG"], [], tt)
+    assert "➕ thêm: HDB (xu_huong ½), TLG (rieng, xu_huong)" in t and "✅" in t and "½ = mua thăm dò" in t
