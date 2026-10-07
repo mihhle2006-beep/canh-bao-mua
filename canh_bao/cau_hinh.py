@@ -140,3 +140,10 @@ FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – ch�
 BO_LOC_REPO = "mihhle2006-beep/Bo_Loc"   # ghi đè bằng biến BO_LOC_REPO; repo riêng tư → secret BO_LOC_TOKEN
 BO_LOC_PATH = "ma_mua_bo_loc.json"
 BO_LOC_FILE = None                 # đường dẫn file trên máy (ưu tiên hơn GitHub) – hoặc biến môi trường BO_LOC_FILE
+
+# --- TRANG TỔNG HỢP (canh_bao/trang_tong_hop.py) – 1 trang HTML: thị trường, tín hiệu hôm nay, độ chính xác.
+#     (Giao dịch giả lập ở repo riêng gia_lap – đọc danh sách mua từ trang_thai_chien_luoc.json.)
+#     Bản CÔNG KHAI → docs/index.html (GitHub Pages). Bản RIÊNG có danh mục thật → chỉ gửi Telegram.
+DUNG_TRANG_TONG_HOP = True
+FILE_TRANG = "docs/index.html"
+GUI_TRANG_RIENG = True             # gửi kèm file HTML có mục 💼 danh mục thật qua Telegram (không commit)

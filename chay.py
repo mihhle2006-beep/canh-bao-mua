@@ -20,7 +20,7 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, tong_ket_cl, vi_the
+from canh_bao import chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, tong_ket_cl, trang_tong_hop, vi_the
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
 
@@ -87,6 +87,8 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     doi, cl_cu = chien_luoc_bot.kiem_tra_doi(ra, bay_gio)
     n = tong_ket_cl.luu_ds_mua(ra, bay_gio)
     print(f"Danh sách mua phiên tới: {n} mã (lưu {C.FILE_TRANG_THAI_CL} cho cảnh báo 15')")
+    ds_kn = tong_ket_cl.ds_khuyen_nghi(ra)
+    _an_toan("Lưu thị trường", trang_tong_hop.luu_thi_truong, ra, bay_gio, ds_kn)
     giu = []
     for ma, v in vt.items():                                   # danh mục thật: KHÔNG in chi tiết ra log
         dn = ra["gia_ngay"].get(ma)
@@ -124,7 +126,32 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
                 os.remove(path)                                # file có danh mục: không để lại trên máy chạy
         except Exception as e:
             print(f"⚠ Excel lỗi: {type(e).__name__}: {str(e)[:150]}")
+    _trang(bay_gio, giu, kq_bt, khong_gui)
     return 0
+
+
+def _an_toan(ten, f, *a, **k):
+    """Phần phụ (trang tổng hợp) lỗi không được làm hỏng tin cảnh báo."""
+    try:
+        return f(*a, **k)
+    except Exception as e:
+        print(f"⚠ {ten} lỗi: {type(e).__name__}: {str(e)[:150]}")
+        return None
+
+
+def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):
+    """Trang tổng hợp: bản công khai (docs/) mọi lần chạy; bản riêng có danh mục thật → chỉ gửi Telegram."""
+    if not C.DUNG_TRANG_TONG_HOP:
+        return
+    p = _an_toan("Trang tổng hợp", trang_tong_hop.tao, None, None, bay_gio, kq_bt)
+    if p:
+        print(f"Trang tổng hợp: {p}")
+    if giu and C.GUI_TRANG_RIENG:
+        p = _an_toan("Trang riêng", trang_tong_hop.tao, None, giu, bay_gio, kq_bt)
+        if p and not khong_gui:
+            gui_file(p, f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d/%m/%Y} (mở bằng trình duyệt)", rieng_tu=True)
+        if p and os.environ.get("GITHUB_ACTIONS"):
+            os.remove(p)                                       # có danh mục thật: không để lại trên máy chạy
 
 
 def _nhat_ky(ra, bay_gio):
@@ -166,6 +193,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     ghi_trang_thai(tt)
     print(f"Đã báo {so_bao} tin điểm vào.")
     _canh_bao_ban(bay_gio, vt, khong_gui)
+    _trang(bay_gio)
     _in_nguon()
     return 0
 

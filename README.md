@@ -161,6 +161,27 @@ Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜ
   file thì bot vẫn báo đổi nếu đổi đúng ở phiên cuối tháng vừa đóng.
 - Lần tổng kết tải thêm ~41 mã (dùng lại dữ liệu đã tải của mã theo dõi) → chạy lâu hơn khoảng 1–2 phút.
 
+## Giao dịch giả lập (vốn ảo) → repo riêng `gia_lap`
+Bot mua bán bằng vốn ảo theo đúng tín hiệu của repo này, trên giá thật các phiên sau – chạy ở repo riêng tư
+**`gia_lap`** (16:30 mỗi ngày). `gia_lap` đọc danh sách mua từ `trang_thai_chien_luoc.json` mà tổng kết 15:20 commit
+lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ thoát) và `canh_bao/thong_bao.py` (Telegram).
+→ Đừng đổi tên / cấu trúc khoá `ds_mua` trong file này mà không sửa `gia_lap`.
+
+## Trang tổng hợp – `canh_bao/trang_tong_hop.py`
+Một trang web thay cho việc đọc rải rác qua Telegram & Excel: ① sức khoẻ thị trường (8 chỉ báo, CL, đi ngang/xu
+hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ độ chính xác của bot (ĐÚNG/SAI
+theo loại tín hiệu). Danh mục giả lập có báo cáo riêng ở repo `gia_lap` (repo riêng tư → không lên trang công khai). Tự sáng/tối, xem tốt trên
+điện thoại, không dùng thư viện ngoài.
+- **Bản công khai** `docs/index.html`: dựng lại sau mỗi lần chạy (cả 15' trong phiên) và commit. Bật 1 lần:
+  Settings → **Pages** → Source *Deploy from a branch* → Branch `main`, thư mục `/docs` → trang ở
+  `https://<tên-bạn>.github.io/canh-bao-mua/`. **Không có danh mục thật.**
+- **Bản riêng** có mục 💼 danh mục thật (lãi/lỗ, cắt lỗ, hành động, mua thêm): chỉ **gửi Telegram** dạng file HTML lúc
+  tổng kết (mở bằng trình duyệt), xoá khỏi máy chạy Actions, không commit. Tắt: `GUI_TRANG_RIENG = False`.
+- Trang chỉ đọc file trạng thái → không tải giá, không cần ptcp. Tổng kết lưu thêm điểm thị trường & toàn bộ khuyến
+  nghị vào `trang_thai_chien_luoc.json` (công khai – đã có trong tin). File này giờ **được commit** (trước đây không
+  commit nên danh sách mua cho cảnh báo 15' sáng hôm sau mất theo máy chạy Actions).
+- Tắt hẳn: `DUNG_TRANG_TONG_HOP = False`.
+
 ## Lịch chạy (GitHub Actions)
 - Mỗi **15 phút** trong phiên (9:00–11:30, 13:00–14:45): chỉ gửi tin khi một mã **vừa chuyển** sang MUA NGAY.
 - **15:20**: gửi bảng tổng kết 4 khung của mọi mã.
