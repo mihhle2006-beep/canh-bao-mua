@@ -1,42 +1,42 @@
-# Cảnh báo MUA đa khung (+ cảnh báo BÁN mã đang giữ + bản tin chiến lược CL1/CL2) – MWG, DHC, GMD
+# Cảnh báo theo CHIẾN LƯỢC THỊ TRƯỜNG (điểm vào 15' + cảnh báo BÁN mã đang giữ + tổng kết & Excel)
 
-Quét các mã theo dõi theo **4 khung** (tuần → ngày → giờ → phút), tiêu chí lấy từ bộ lọc cổ phiếu
-(chiến lược `ky_thuat` / `diem_mua`), và **gửi Telegram ngay khi một mã đạt đủ tiêu chí mua**.
+Một nguồn logic duy nhất với Colab / danh-muc (thư mục `ptcp/`, lấy từ repo danh-muc):
+**chiến lược** (`ptcp/chien_luoc.py` – điểm thị trường 8 chỉ báo → CL1/CL2, nhóm hành động A0/B) quyết định
+**có mua không & mua trong vùng nào**; **khung 15 phút** (`ptcp/diem_vao_15p.py`) chỉ quyết định **mua lúc nào**;
+**hệ thoát** (`ptcp/he_thoat.py`) quyết định **bán**.
 
-| Khung | Vai trò | Tiêu chí |
-|---|---|---|
-| **Tuần** | Định hướng – **phủ quyết** | MACD tuần > Signal (tuần đã đóng) |
-| **Ngày** | Xu hướng & sức khoẻ | **Bắt buộc**: GTGD TB20 ≥ 5 tỷ, KLGD TB20 ≥ 100.000, giá trên SuperTrend(10; 3,5), giá > MA50, MA20 > MA50, MACD ngày > Signal, RSI 45–75, chưa thủng hỗ trợ · **Cộng điểm (cần ≥ 3/9)**: MA50 > MA200, MA20 dốc lên, ADX ≥ 20 & +DI > −DI, cấu trúc tăng, MACD vừa cắt lên, vượt đỉnh 20 phiên, KL đột biến, mạnh hơn VN-Index 3T, cách đỉnh 52T ≤ 15% |
-| **Giờ** | Xác nhận động lượng | MACD giờ > Signal VÀ (vừa cắt lên HOẶC vượt đỉnh 10 nến giờ) |
-| **15 phút** | Điểm vào | (MACD 15p cắt lên Signal trong 3 nến HOẶC phá đỉnh 20 nến kèm KL ≥ 1,5×) VÀ giá ≥ VWAP phiên VÀ RSI 15p ≤ 75 |
-| Rủi ro | | Cắt lỗ thống nhất (đáy xác nhận − 0,5 ATR / giá − 2 ATR / −7%, tối thiểu 1,5 ATR); mục tiêu = đỉnh cũ xác nhận / đỉnh 52T / giá + 3 ATR; **R/R ≥ 2** |
+### Lịch
+| Lúc | Việc |
+|---|---|
+| 15:20 (tổng kết) | Tin gọn: thị trường & CL · 🟢 MUA MỚI / ✅ VÀO NHƯ LỆNH MỚI / 🟡 VÀO ½: `mã \| vùng mua \| MT 1R → 3R \| CL \| đạt điểm mua` · ⏳ chờ điều chỉnh · ⛔ không vào · 💼 đang giữ (lãi/lỗ theo giá vốn, cắt lỗ hệ thoát, mốc tiếp, **mua thêm** khi đủ điều kiện) + **file Excel** chi tiết & lịch sử. Lưu danh sách mua vào `trang_thai_chien_luoc.json`. |
+| 9:00–14:45 mỗi 15' | Chỉ quét mã trong danh sách mua của tối qua, đúng phiên hiệu lực & vùng giá → 🟢 MUA NGAY / ⏰ MUA ATC / 🚫 BỎ (mở cửa vượt vùng, thủng vùng). Mã đang giữ: 🔴 cắt lỗ · 🟠 sát cắt lỗ (≤ 1%) · gãy MA10 tuần · hết hạn · 🟡 dời cắt lỗ (tin riêng tư). |
+| Chạy tay `backtest` | Backtest điểm vào 15' (nến 15' thật) & điểm bán / mua thêm → `ket_qua_backtest.json` + Excel. Cách vào tốt nhất tự được dùng (`CACH_VAO_15P = "tu_dong"`). |
+
+### Tiêu chí điểm vào 15' (đồng bộ chiến lược – cùng hàm cho cảnh báo và backtest)
+| Khung | Tiêu chí |
+|---|---|
+| **Ngày (chiến lược)** | nhóm mua của tin tổng kết: MACD ngày cắt lên (A0, không lọc tuần) / hệ thống đang lãi 0–3R & cắt lỗ cách ≤ 7% |
+| **Vùng** | giá trong vùng mua · mở cửa ≤ cận trên (không đuổi) · chưa rơi < cận dưới trước khi mua · chỉ phiên hiệu lực |
+| **15 phút** | MACD 15' cắt lên Signal (≤ 3 nến) HOẶC phá đỉnh 20 nến kèm KL ≥ 1,5× TB20 · giá ≥ VWAP phiên · RSI 15' ≤ 75 |
+| **Giờ** (chỉ cách vào `15P+GIO`) | MACD giờ (giờ đã đóng) > Signal |
+Cách vào: `ATO` · `15P` · `15P+ATC` (mặc định trước khi backtest) · `15P+GIO` · `VWAP` · `LO` (lệnh LO ở ⅓ dưới vùng) –
+`+ATC`: hết phiên chưa có điểm vào mà giá còn trong vùng → mua ATC. **Không còn phủ quyết MACD tuần** (backtest chiến
+lược đã chọn A0 = không lọc tuần). Cắt lỗ sau khi mua: MUA MỚI tính lại theo giá mua thật (2×ATR, ≤ 7%); nhóm vào
+trễ giữ cắt lỗ hệ thống. MT = mục tiêu tạm thời 1R / 3R (mốc dời cắt lỗ, không phải lệnh bán).
+
+### Mua thêm (mã đang giữ) – đúng luật nhồi lệnh đã backtest (kiểu B)
+Đủ cả: lãi ≥ 3R · đóng cửa lập đỉnh mới từ ngày mua · cách lần mua trước ≥ 10 phiên · cắt lỗ hiện tại ≥ giá vốn bình
+quân MỚI + phí (chạm cắt lỗ cả vị thế vẫn hoà vốn) · tối đa 2 lần, mỗi lần 25% số CP. Đã mua thêm → cập nhật
+`so_cp`, `gia_von` (bình quân), `so_lan_mua_them`, `ngay_mua_them` trong danh_muc.csv.
+
+### Backtest điểm bán (41 mã, 2019–2026, tín hiệu A0)
+Chốt ⅓ / ½ ở 3R, siết cắt lỗ 2–2,5×ATR khi VN-Index giảm, hạn 30 phiên/0,5R hoặc 40 phiên/1R đều **kém hơn** hệ thoát
+gốc ở cả 2 giai đoạn → giữ nguyên. Mua thêm kiểu B: lô mua thêm lãi TB +5,3% (thắng 39%), lãi TB/lệnh 2,50% → 2,88%.
 
 ### Nguồn dữ liệu
-- **Giá 4 khung (tuần/ngày/giờ/phút):** VNDirect → DNSE → SSI iBoard → VCI → Yahoo, tự chuyển nguồn khi lỗi
-  (nguồn không hỗ trợ khung nào thì bỏ qua: VCI chỉ ngày & giờ, Yahoo chỉ ngày). Mọi nguồn lỗi → dùng cache.
-  Cuối mỗi lần chạy in dòng *"Nguồn giá đã dùng"* để biết nguồn nào đang sống.
-- **ptcp – MỘT nguồn duy nhất:** bot KHÔNG giữ bản sao ptcp nữa. Mỗi lần chạy, bước *"Lấy ptcp"* của workflow clone
-  repo **danh-muc** (token chỉ đọc `DANH_MUC_TOKEN` đã có) và chép `ptcp_phan_tich/ptcp` vào cạnh `chay.py` → sửa ptcp
-  một lần trong danh-muc là bot, danh mục và Colab cùng dùng bản mới. Đổi repo/thư mục: Variables `PTCP_REPO`,
-  `PTCP_PATH`. Chạy trên máy: `python lay_ptcp.py --tu ../ptcp_phan_tich/ptcp`.
-
-### Phần lấy từ bộ phân tích cổ phiếu (ptcp – thư mục `ptcp/`)
-Mỗi mã được chạy **phân tích ngày đầy đủ của ptcp 1 lần/ngày** (lưu `cache_ptcp/`, lần tổng kết 15:20 chạy lại):
-- **Cắt lỗ thống nhất & mục tiêu đề xuất** của ptcp (đỉnh cũ, kháng cự, AB=CD, Fibo, nền giá, MA, vùng KL, đỉnh 52T;
-  chấm bằng XS chạm trước cắt lỗ) → dùng làm cắt lỗ / mục tiêu / R/R của tin MUA NGAY.
-- **EV sau phí ≥ 1%** (mô phỏng lịch sử theo luật T+2, trần/sàn, walk-forward) – điều kiện bắt buộc.
-- **Sự kiện** KQKD / GDKHQ trong 5 phiên tới (khai báo `SU_KIEN` trong cấu hình) → `CHỜ SAU SỰ KIỆN`.
-- VN-Index xấu / RS ở đáy 1 năm → ghi hệ số khối lượng; khuyến nghị cuối của ptcp hiện trong mọi tin.
-- `YEU_CAU_PTCP_MUA = True` → chỉ báo khi chính ptcp cũng khuyến nghị MUA (chặt nhất).
-- **Vùng mua điều chỉnh** của ptcp (mã chưa mua): vùng hỗ trợ trùng nhau, trạng thái (chờ về vùng / trong vùng /
-  đã xác nhận), cắt lỗ dưới vùng và phễu lịch sử (% lần giá về vùng, % lệnh đạt +1R) – hiện trong tin khi ptcp chưa MUA.
-- **Kết luận backtest** Phần I của ptcp (câu hành động: ÁP DỤNG / KHÔNG giao dịch ngắn hạn / ĐỨNG NGOÀI) – 1 dòng
-  trong tin MUA NGAY và tổng kết.
-
-Chỉ dùng **nến đã đóng** (giờ, phút, tuần) → tín hiệu không nhấp nháy giữa chừng nến.
-
-**Trạng thái:** ĐỨNG NGOÀI (tuần xấu) → THEO DÕI (ngày chưa đạt) → CHỜ XÁC NHẬN GIỜ → CHỜ ĐIỂM VÀO →
-(R/R thấp / CHỜ SAU SỰ KIỆN / EV THẤP) → **MUA NGAY**.
+VNDirect → DNSE → SSI iBoard → VCI → Yahoo, tự chuyển nguồn, lỗi thì dùng cache. Nến 15' dài cho backtest:
+`du_lieu.tai_lich_su_phut` (tải lùi từng 30 ngày, cache `cache_gia/<MÃ>_15_lich_su.csv`).
+ptcp KHÔNG nằm trong repo này: bước *"Lấy ptcp"* của workflow chép từ repo danh-muc (Variables `PTCP_REPO`, `PTCP_PATH`).
 
 ## Trình bày tin Telegram
 - Số ghi **kiểu Việt Nam** (78.700 · 5,6%); tiêu đề & nhãn **in đậm**, ghi chú *nghiêng* (HTML Telegram – lỗi định dạng

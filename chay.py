@@ -1,47 +1,39 @@
 # -*- coding: utf-8 -*-
 """
-CẢNH BÁO MUA ĐA KHUNG – chạy:
-  python chay.py                       (tu_dong: trong phiên → quét & báo MUA NGAY; sau 15h → tổng kết)
-  python chay.py --che_do tong_ket     (gửi bảng tổng kết 4 khung cho mọi mã + bản tin chiến lược CL1/CL2)
-  python chay.py --che_do trong_phien  (quét ngay, chỉ báo mã vừa đạt MUA NGAY)
-  python chay.py --che_do chien_luoc   (chỉ gửi bản tin chiến lược CL1/CL2 + điểm mua A0/B)
-  python chay.py --ma MWG,FPT          (đổi danh sách mã; mặc định trong canh_bao/cau_hinh.py)
-  python chay.py --khong_gui           (chỉ in, không gửi Telegram)
-  python chay.py --khong_ban           (bỏ cảnh báo BÁN cho mã đang giữ)
-  python chay.py --khong_chien_luoc    (tổng kết không kèm bản tin chiến lược)
+CẢNH BÁO MUA THEO CHIẾN LƯỢC THỊ TRƯỜNG – chạy:
+  python chay.py                       (tu_dong: trong phiên → điểm vào 15' & cảnh báo bán; sau 15h → tổng kết)
+  python chay.py --che_do tong_ket     (tin tổng kết gọn theo chiến lược + mã đang giữ + file Excel chi tiết)
+  python chay.py --che_do trong_phien  (quét 15': chỉ mã trong nhóm mua của tin tổng kết, đúng vùng giá)
+  python chay.py --che_do backtest     (backtest điểm vào 15' & điểm bán / mua thêm → ket_qua_backtest.json)
   python chay.py --che_do lich_su      (chấm lại mọi tín hiệu đã ghi, in bảng độ chính xác, xuất Excel)
-CẢNH BÁO BÁN: vị thế đọc từ danh_muc.csv của repo riêng tư danh-muc (DANH_MUC_TOKEN, DANH_MUC_REPO) – xem vi_the.py;
-mức bán theo HỆ THOÁT MỚI (ptcp/he_thoat.py: cắt lỗ động nhiều tầng, khung tuần ở 3R, không chốt lời cố định).
-Phân tích NGÀY bằng bộ ptcp (khuyến nghị, EV, cắt lỗ/mục tiêu, sự kiện) chạy 1 lần/ngày/mã (cache_ptcp/),
-lần tổng kết 15:20 chạy lại để cập nhật cho phiên sau.
-Biến môi trường: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, DANH_MUC_TOKEN, DANH_MUC_REPO.
+  python chay.py --khong_gui           (chỉ in, không gửi Telegram)
+  python chay.py --khong_ban           (bỏ phần danh mục / cảnh báo bán)
+  python chay.py --gio "2026-10-08 10:30"   (giả lập thời điểm, giờ VN)
+Một nguồn logic: chiến lược (ptcp/chien_luoc.py), hệ thoát (ptcp/he_thoat.py), điểm vào 15' (ptcp/diem_vao_15p.py).
+Danh mục: danh_muc.csv của repo riêng tư danh-muc (DANH_MUC_TOKEN, DANH_MUC_REPO) – xem vi_the.py.
+Repo bot CÔNG KHAI: log chỉ có phần công khai; số CP, giá vốn, cắt lỗ chỉ gửi Telegram.
 """
 import argparse
+import os
 import sys
 
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import du_lieu
-from canh_bao.danh_gia import phan_tich_ma
-from canh_bao.ptcp_ngay import phan_tich_ngay
-from canh_bao.du_lieu import gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
-from canh_bao.thong_bao import (can_bao, doc_trang_thai, dong_khung, ghi_lich_su, ghi_trang_thai, gui,
-                                tin_mua_ngay, tin_tong_ket)
-from canh_bao.tieu_chi import thi_truong
-from canh_bao import chien_luoc_bot, nhat_ky, vi_the
-from canh_bao import trinh_bay
+from canh_bao import chien_luoc_bot, diem_vao, du_lieu, nhat_ky, tong_ket_cl, vi_the
+from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
+from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description="Cảnh báo mua đa khung")
+    p = argparse.ArgumentParser(description="Cảnh báo mua theo chiến lược thị trường")
     p.add_argument("--che_do", default="tu_dong",
-                   choices=["tu_dong", "trong_phien", "tong_ket", "lich_su", "chien_luoc"])
-    p.add_argument("--ma", default=",".join(C.MA_THEO_DOI))
-    p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-02 10:30'")
+                   choices=["tu_dong", "trong_phien", "tong_ket", "lich_su", "chien_luoc", "backtest"])
+    p.add_argument("--ma", default=None, help="thêm mã theo dõi ngoài danh sách chiến lược (VD MWG,FPT)")
+    p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-08 10:30'")
     p.add_argument("--khong_gui", action="store_true")
-    p.add_argument("--khong_ban", action="store_true", help="bỏ cảnh báo BÁN cho mã đang giữ")
-    p.add_argument("--khong_chien_luoc", action="store_true", help="tổng kết không kèm bản tin chiến lược")
+    p.add_argument("--khong_ban", action="store_true", help="bỏ danh mục / cảnh báo bán")
+    p.add_argument("--khong_chien_luoc", action="store_true", help="(giữ cho tương thích – không còn tác dụng)")
     a = p.parse_args(argv)
     bay_gio = pd.Timestamp(a.gio) if a.gio else gio_viet_nam()
     che_do = a.che_do
@@ -55,151 +47,145 @@ def main(argv=None):
             return 0
     if che_do == "lich_su":
         return xem_lich_su()
-    if che_do == "chien_luoc":
-        _ban_tin_chien_luoc(bay_gio, {}, None, a.khong_gui)
-        return 0
-    ds_ma = [m.strip().upper() for m in a.ma.split(",") if m.strip()]
+    if che_do == "backtest":
+        from canh_bao.backtest_bot import chay_backtest
+        return chay_backtest(bay_gio, a.khong_gui)
+    them = [m.strip().upper() for m in (a.ma or "").split(",") if m.strip()]
     vt, nguon_vt = ({}, "tắt (--khong_ban)") if a.khong_ban else vi_the.doc_danh_muc()
-    an = [m for m in vt if m not in ds_ma]                  # mã chỉ có trong danh mục: không in chi tiết ra log
-    ds_ma += an
-    print(f"=== {che_do.upper()} | {bay_gio:%Y-%m-%d %H:%M} | {', '.join(m for m in ds_ma if m not in an)}"
-          f"{f' + {len(an)} mã trong danh mục' if an else ''} ===")
+    print(f"=== {che_do.upper()} | {bay_gio:%Y-%m-%d %H:%M} ===")
     print(f"Vị thế đang giữ: {len(vt)} mã (nguồn: {nguon_vt})")
+    if che_do in ("tong_ket", "chien_luoc"):
+        return tong_ket(bay_gio, vt, them, a.khong_gui)
+    return trong_phien_15p(bay_gio, vt, a.khong_gui)
 
-    vni = tai("VNINDEX", "D", C.NGAY_BAT_DAU, chi_so=True)
-    tt = thi_truong(vni, bay_gio)
-    print(tt["nhan"])
-    ds, du_lieu_ngay = [], {}
-    for ma in ds_ma:
-        dn = tai(ma, "D", C.NGAY_BAT_DAU)
+
+# ------------------------------------------------------------------ TỔNG KẾT 15:20
+def tong_ket(bay_gio, vt, them=(), khong_gui=False):
+    ds_ma = list(dict.fromkeys(list(C.MA_CHIEN_LUOC) + list(C.MA_THEO_DOI) + list(them)))
+    ra, loi = chien_luoc_bot.chay_chien_luoc(
+        lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=ds_ma)
+    if ra is None:
+        print(f"⚠ Chiến lược: {loi}")
+        return 1
+    doi, cl_cu = chien_luoc_bot.kiem_tra_doi(ra, bay_gio)
+    n = tong_ket_cl.luu_ds_mua(ra, bay_gio)
+    print(f"Danh sách mua phiên tới: {n} mã (lưu {C.FILE_TRANG_THAI_CL} cho cảnh báo 15')")
+    giu = []
+    for ma, v in vt.items():                                   # danh mục thật: KHÔNG in chi tiết ra log
+        dn = ra["gia_ngay"].get(ma)
         if dn is None:
+            dn = tai(ma, "D", C.NGAY_BAT_DAU)
+        if dn is None or not len(dn):
             continue
-        if che_do == "trong_phien" and not hom_nay_co_giao_dich(dn, bay_gio):
-            print(f"{ma}: chưa có dữ liệu phiên hôm nay (ngày nghỉ?) → bỏ qua")
-            continue
-        dh, dp = tai(ma, "60"), tai(ma, C.KHUNG_PHUT)
-        pt = phan_tich_ngay(ma, bay_gio, lam_moi=(che_do == "tong_ket")) if C.DUNG_PTCP else None
-        kq = phan_tich_ma(ma, dn, dh, dp, vni, tt, bay_gio, pt)
-        du_lieu_ngay[ma] = dn
-        if ma in vt:
-            kq["ban"] = vi_the.danh_gia_ban(vt[ma], kq, dn, bay_gio)
-        ds.append(kq)
-        if ma in an:
-            continue
-        print(f"  {ma:<5} {kq['gia']:>9,.2f}  {kq['trang_thai']:<26} {dong_khung(kq)}")
-        print(f"        {kq['ly_do']}")
-    if not ds:
-        print("Không có mã nào để đánh giá.")
-        return 0
+        dn = chien_luoc_bot._phien_da_dong(dn, bay_gio)
+        kb = vi_the.danh_gia_ban(v, {"ma": ma, "gia": float(dn.close.iloc[-1])}, dn, bay_gio)
+        giu.append((v, kb, tong_ket_cl.mua_them(v, dn, kb, bay_gio)))
+    if C.GHI_NHAT_KY:
+        _nhat_ky(ra, bay_gio)
+    kq_bt = tong_ket_cl.doc_ket_qua_backtest()
+    tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
+    if doi:
+        nd = chien_luoc_bot.tin_doi(ra, cl_cu)
+        gui(nd) if not khong_gui else print(nd)
+    if giu and os.environ.get("GITHUB_ACTIONS"):
+        print(cong_khai)                                       # log công khai: bỏ phần 💼
+    if khong_gui:
+        print(tin)
+    else:
+        gui(tin, rieng_tu=bool(giu))
+    if C.GUI_EXCEL:
+        try:
+            from canh_bao.bao_cao_excel import xuat
+            path = xuat(ra, giu=giu, kq_bt=kq_bt, rieng=bool(giu))
+            if not khong_gui:
+                gui_file(path, f"Chi tiết chiến lược {pd.Timestamp(bay_gio):%d/%m/%Y}", rieng_tu=bool(giu))
+            else:
+                print(f"Đã xuất {path}")
+            if giu and os.environ.get("GITHUB_ACTIONS"):
+                os.remove(path)                                # file có danh mục: không để lại trên máy chạy
+        except Exception as e:
+            print(f"⚠ Excel lỗi: {type(e).__name__}: {str(e)[:150]}")
+    return 0
 
-    if che_do == "tong_ket":
-        cong_khai = [k for k in ds if k["ma"] not in an]
-        noi_dung = tin_tong_ket(cong_khai, tt, bay_gio)
-        giu = [k for k in ds if "ban" in k]
-        if giu:
-            noi_dung += "\n\n💼 VỊ THẾ ĐANG GIỮ (hệ thoát mới)\n" + "\n".join(
-                vi_the.dong_tong_ket(vt[k["ma"]], k["ban"]) for k in giu)
-        if C.GHI_NHAT_KY:
-            noi_dung += _nhat_ky_tong_ket(ds, an, du_lieu_ngay, bay_gio, kem_rieng=bool(giu))
-        anh = trinh_bay.ve_bang_tong_ket([trinh_bay.dong_bang_tong_ket(k) for k in cong_khai],
-                                         f"TỔNG KẾT {pd.Timestamp(bay_gio):%d/%m/%Y} – {tt['nhan']}") \
-            if C.GUI_ANH else None
-        gui(noi_dung, rieng_tu=bool(giu), anh=anh) if not a.khong_gui else print(noi_dung)
-        if C.DUNG_CHIEN_LUOC and not a.khong_chien_luoc:
-            _ban_tin_chien_luoc(bay_gio, {m: d for m, d in du_lieu_ngay.items() if m not in an}, vni, a.khong_gui)
-        return 0
 
-    trang_thai = doc_trang_thai()
-    so_bao = 0
-    tt_an = vi_the.doc_trang_thai_ban(vi_the.FILE_TRANG_THAI_MUA_AN)      # mã chỉ có trong danh mục: lưu riêng
-    for kq in ds:
-        if can_bao(kq["ma"], kq["mua_ngay"], bay_gio, tt_an if kq["ma"] in an else trang_thai):
-            noi_dung = tin_mua_ngay(kq, bay_gio)
-            if kq["ma"] in vt:
-                noi_dung += f"\n💼 Đang giữ {vt[kq['ma']]['so_cp']:,.0f} CP – đây là tín hiệu MUA THÊM"
-            anh = trinh_bay.ve_bieu_do_ma(kq["ma"], du_lieu_ngay[kq["ma"]], kq["gia"], kq.get("muc_tieu"),
-                                          kq.get("cat_lo"), tieu_de=f"{kq['ma']} – MUA NGAY") if C.GUI_ANH else None
-            gui(noi_dung, rieng_tu=kq["ma"] in vt, anh=anh) if not a.khong_gui else print(noi_dung)
-            if kq["ma"] not in an:                       # lịch sử commit lên repo công khai → bỏ mã ẩn
-                ghi_lich_su(kq, bay_gio)
-            if C.GHI_NHAT_KY:
-                nhat_ky.ghi_mua_ngay(kq, bay_gio, rieng_tu=kq["ma"] in an)
+def _nhat_ky(ra, bay_gio):
+    try:
+        n = tong_ket_cl.ghi_nhat_ky(ra, nhat_ky.FILE_CONG_KHAI)
+        xong = nhat_ky.cap_nhat(lambda ma: tai(ma, "D", C.NGAY_BAT_DAU), ra.get("gia_ngay"))
+        print(f"Nhật ký: ghi {n} khuyến nghị mới, {xong} tín hiệu vừa có kết luận ĐÚNG/SAI.")
+    except Exception as e:                                     # nhật ký lỗi không được làm hỏng tin tổng kết
+        print(f"⚠ Nhật ký lỗi: {type(e).__name__}: {str(e)[:150]}")
+
+
+# ------------------------------------------------------------------ TRONG PHIÊN (mỗi 15 phút)
+def trong_phien_15p(bay_gio, vt, khong_gui=False):
+    ds = diem_vao.doc_ds_mua(bay_gio)
+    bien_the, nguon = tong_ket_cl.cach_vao(tong_ket_cl.doc_ket_qua_backtest())
+    print(f"Điểm vào 15': {len(ds)} mã trong danh sách mua phiên {bay_gio:%d/%m} · cách vào {bien_the} ({nguon})")
+    tt = doc_trang_thai()
+    luu = tt.setdefault("_15p", {})
+    bang, so_bao = [], 0
+    for z in ds:
+        dp = bo_nen_chua_dong(tai(z["ma"], C.KHUNG_PHUT), C.KHUNG_PHUT, bay_gio)
+        kq = diem_vao.danh_gia(z, dp, bay_gio, bien_the)
+        print(diem_vao.dong_bang(kq))
+        bang.append({"Mã": kq["ma"], "Nhóm": diem_vao.TEN_NHOM.get(kq["nhom"], kq["nhom"]),
+                     "Vùng": f"{kq['tu']:,.2f}–{kq['den']:,.2f}", "Giá": kq["gia_nay"], "Trạng thái": kq["trang_thai"],
+                     "Lý do": kq["ly_do"], "Giờ": f"{pd.Timestamp(kq['thoi_diem']):%H:%M}" if kq["thoi_diem"] is not None
+                     else "", "Giá mua": kq["gia_mua"]})
+        if diem_vao.can_bao(kq["ma"], kq["trang_thai"], bay_gio, luu, kq["ly_do"]):
+            nd = diem_vao.tin_mua(kq, bay_gio, bien_the, kq["ma"] in vt) if kq["trang_thai"] == "MUA" else \
+                diem_vao.tin_bo(kq, bay_gio)
+            gui(nd, rieng_tu=kq["ma"] in vt) if not khong_gui else print(nd)
+            if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
+                gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
+                nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
             so_bao += 1
-    ghi_trang_thai(trang_thai)
-    if an:
-        vi_the.ghi_trang_thai_ban(tt_an, vi_the.FILE_TRANG_THAI_MUA_AN)
-    print(f"Đã báo {so_bao} tín hiệu MUA NGAY.")
+    tt["_15p_hom_nay"] = {"ngay": f"{bay_gio:%Y-%m-%d}", "cach_vao": bien_the,
+                          "ds": [{k: (None if isinstance(v, float) and v != v else v) for k, v in r.items()}
+                                 for r in bang]}
+    ghi_trang_thai(tt)
+    print(f"Đã báo {so_bao} tin điểm vào.")
+    _canh_bao_ban(bay_gio, vt, khong_gui)
+    _in_nguon()
+    return 0
 
+
+def _canh_bao_ban(bay_gio, vt, khong_gui):
+    """Mã đang giữ: chạm cắt lỗ / sát cắt lỗ / gãy MA10 tuần / hết hạn / dời cắt lỗ – theo hệ thoát (tin riêng tư)."""
+    if not vt:
+        return
     tt_ban, so_ban = vi_the.doc_trang_thai_ban(), 0
-    for kq in ds:
-        kb = kq.get("ban")
-        if kb and vi_the.can_bao_ban(kq["ma"], kb["muc"], bay_gio, tt_ban):
-            noi_dung = vi_the.tin_ban(vt[kq["ma"]], kb, kq, bay_gio)
-            v = vt[kq["ma"]]
-            anh = trinh_bay.ve_bieu_do_ma(kq["ma"], du_lieu_ngay[kq["ma"]], kq["gia"], v.get("muc_tieu"), kb.get("cat_lo"),
-                                          v.get("gia_von"), tieu_de=f"{kq['ma']} – {vi_the.NHAN[kb['muc']]}") \
-                if C.GUI_ANH else None
-            gui(noi_dung, rieng_tu=True, anh=anh) if not a.khong_gui else print(noi_dung)
+    for ma, v in vt.items():
+        dn = tai(ma, "D", C.NGAY_BAT_DAU)
+        if dn is None or not hom_nay_co_giao_dich(dn, bay_gio):
+            continue
+        dp = bo_nen_chua_dong(tai(ma, C.KHUNG_PHUT), C.KHUNG_PHUT, bay_gio)
+        gia = float(dp.close.iloc[-1]) if dp is not None and len(dp) else float(dn.close.iloc[-1])
+        kq = {"ma": ma, "gia": gia}
+        kb = vi_the.danh_gia_ban(v, kq, dn, bay_gio)
+        if vi_the.can_bao_ban(ma, kb["muc"], bay_gio, tt_ban):
+            nd = vi_the.tin_ban(v, kb, kq, bay_gio)
+            gui(nd, rieng_tu=True) if not khong_gui else print(nd)
             if C.GHI_NHAT_KY:
                 nhat_ky.ghi_ban(kq, kb, bay_gio)
             so_ban += 1
-    if vt:
-        vi_the.ghi_trang_thai_ban(tt_ban)
-        print(f"Đã gửi {so_ban} cảnh báo cho vị thế đang giữ.")
+    vi_the.ghi_trang_thai_ban(tt_ban)
+    print(f"Đã gửi {so_ban} cảnh báo cho vị thế đang giữ.")
+
+
+def _in_nguon():
     if du_lieu.NGUON_DA_DUNG:
         dem = {}
         for n in du_lieu.NGUON_DA_DUNG.values():
             dem[n] = dem.get(n, 0) + 1
         print("Nguồn giá đã dùng: " + ", ".join(f"{n} ({k} lần)" for n, k in dem.items()))
-    return 0
-
-
-def _tai_ngay(ma):
-    return tai(ma, "D", C.NGAY_BAT_DAU)
-
-
-def _ban_tin_chien_luoc(bay_gio, du_lieu_san, vni, khong_gui=False):
-    """Bản tin CL1/CL2 + điểm mua A0/B (tin công khai – không dùng danh mục thật). Lỗi không làm hỏng tổng kết."""
-    try:
-        ra, loi = chien_luoc_bot.chay_chien_luoc(
-            lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, du_lieu_san=du_lieu_san, vni=vni)
-        if ra is None:
-            print(f"⚠ Bản tin chiến lược: {loi}")
-            return False
-        doi, cl_cu = chien_luoc_bot.kiem_tra_doi(ra, bay_gio)
-        if doi:
-            nd = chien_luoc_bot.tin_doi(ra, cl_cu)
-            gui(nd) if not khong_gui else print(nd)
-        nd = chien_luoc_bot.ban_tin(ra, bay_gio)
-        gui(nd) if not khong_gui else print(nd)
-        return True
-    except Exception as e:
-        print(f"⚠ Bản tin chiến lược lỗi: {type(e).__name__}: {str(e)[:150]}")
-        return False
-
-
-def _nhat_ky_tong_ket(ds, an, du_lieu_ngay, bay_gio, kem_rieng=False):
-    """Ghi khuyến nghị ptcp hôm nay, chấm lại tín hiệu cũ, trả các dòng độ chính xác để gắn vào tin tổng kết."""
-    try:
-        nhat_ky.nhap_lich_su_cu()
-        for kq in ds:
-            nhat_ky.ghi_ptcp(kq, bay_gio, rieng_tu=kq["ma"] in an)
-        xong = nhat_ky.cap_nhat(_tai_ngay, du_lieu_ngay)
-        print(f"Nhật ký tín hiệu: {xong} tín hiệu vừa có kết luận ĐÚNG/SAI.")
-        d = nhat_ky.dong_tong_ket()
-        if kem_rieng:                                  # tin này là tin riêng tư → được kèm thống kê lệnh bán
-            d += nhat_ky.dong_tong_ket(nhat_ky.FILE_RIENG, "📊 ĐỘ CHÍNH XÁC (riêng: cảnh báo bán, mã trong danh mục)")
-        return ("\n\n" + "\n".join(d)) if d else ""
-    except Exception as e:                             # nhật ký lỗi không được làm hỏng tin tổng kết
-        print(f"⚠ Nhật ký tín hiệu lỗi: {str(e)[:150]}")
-        return ""
 
 
 def xem_lich_su():
     """Chấm lại & in bảng độ chính xác. Trên Actions (repo công khai) chỉ in phần công khai."""
-    import os
     rieng = not os.environ.get("GITHUB_ACTIONS")
-    xong = nhat_ky.cap_nhat(_tai_ngay)
+    xong = nhat_ky.cap_nhat(lambda ma: tai(ma, "D", C.NGAY_BAT_DAU))
     print(f"Vừa có kết luận: {xong} tín hiệu")
     with pd.option_context("display.width", 200, "display.max_columns", 20):
         for ten, path in [("CÔNG KHAI", nhat_ky.FILE_CONG_KHAI)] + ([("RIÊNG", nhat_ky.FILE_RIENG)] if rieng else []):
