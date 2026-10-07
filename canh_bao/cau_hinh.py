@@ -7,10 +7,12 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
   GIỜ   – động lượng trong phiên xác nhận
   PHÚT  – điểm vào (kích hoạt "MUA NGAY")
 """
-# --- Mã theo dõi ---
-MA_THEO_DOI =  ["gmd","dhc","mwg","vhm","vpb","nab","hpg","fpt","vnm","hah","pvs","Bid","dig","Gas","kdh","ceo","msb",
-               "mbb","vcb","ssi","hcm","lpb","tcb","hvn","vjc","gvr","msn","dgw","pnj","csv","hsg","nkg","bsr","plx"
-               ,"pvd","pow","anv","dbc","hag","nvl","dgc","vic","gee","msr","tlg","mch"]
+# --- Mã theo dõi (cảnh báo MUA): toàn bộ VN30 + MA_THEM; mã từ bộ lọc Bo_Loc tự thêm/xoá (FILE_MA_BO_LOC) ---
+MA_VN30 = ["ACB", "BCM", "BID", "BVH", "CTG", "FPT", "GAS", "GVR", "HDB", "HPG", "LPB", "MBB", "MSN", "MWG", "PLX",
+           "SAB", "SHB", "SSB", "SSI", "STB", "TCB", "TPB", "VCB", "VHM", "VIB", "VIC", "VJC", "VNM", "VPB", "VRE"]
+#   (rổ VN30 đổi kỳ tháng 1 & 7 – cập nhật danh sách trên khi HOSE công bố)
+MA_THEM = ["DHC", "GMD", "MWG"]
+MA_THEO_DOI = list(dict.fromkeys(MA_VN30 + MA_THEM))
 # Mã tự thêm từ bộ lọc (repo Bo_Loc, quét thứ 2 & thứ 5) nằm ở FILE_MA_BO_LOC – xem mục "MÃ TỪ BỘ LỌC" cuối file.
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
@@ -89,6 +91,7 @@ DOI_CAT_LO_TOI_THIEU_PCT = 0.5     # chỉ nhắc "DỜI CẮT LỖ" khi mức h
 #   Điểm thị trường 8 chỉ báo (cuối tháng): ≥ 5 → CL2 (A0 70% + VN-Index 30%), ≤ 2 → CL1 (A0 50% + B 50%), 3–4 giữ.
 #   A0 = vào MACD ngày KHÔNG lọc tuần; B = vào MACD ngày lọc tuần + nhồi lệnh; cả hai thoát theo hệ thoát mới.
 DUNG_CHIEN_LUOC = True             # gửi bản tin chiến lược sau tin tổng kết 15:20 (tin CÔNG KHAI – không dùng danh mục)
+# 41 mã đã backtest – chỉ dùng cho backtest (backtest_bot.py); cảnh báo hằng ngày quét MA_THEO_DOI + mã Bo_Loc.
 MA_CHIEN_LUOC = ["ANV", "BID", "BSR", "CEO", "CSV", "DBC", "DGC", "DGW", "DHC", "DIG", "FPT", "GAS", "GMD", "GVR",
                  "HAG", "HAH", "HCM", "HPG", "HSG", "HVN", "KDH", "LPB", "MBB", "MSB", "MSN", "MWG", "NAB", "NKG",
                  "NVL", "PLX", "PNJ", "POW", "PVD", "PVS", "SSI", "TCB", "VCB", "VHM", "VJC", "VNM", "VPB"]

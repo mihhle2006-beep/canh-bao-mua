@@ -44,7 +44,8 @@ def _tai(ma, khung="D", tu=None, chi_so=False, **k):
 def moi_truong(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(C, "MA_CHIEN_LUOC", DS)
-    monkeypatch.setattr(C, "MA_THEO_DOI", [])
+    monkeypatch.setattr(C, "MA_THEO_DOI", DS)
+    monkeypatch.setattr(C, "DUNG_BO_LOC", False)          # test không gọi mạng lấy mã Bo_Loc
     monkeypatch.setattr(C, "NGAY_BAT_DAU_CL", "2021-01-01")
     monkeypatch.delenv("DANH_MUC_TOKEN", raising=False)
     monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)

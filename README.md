@@ -45,7 +45,7 @@ Bo_Loc quét cuối phiên **thứ 2 & thứ 5** (chiến lược `rieng` + `xu_
 Tổng kết 15:20 ở đây (`canh_bao/ma_bo_loc.py`):
 
 1. đọc file đó (chỉ khi là lần quét mới) → thêm mã vào danh sách quét, hạn **14 ngày** từ ngày quét
-   (mã đã có trong `MA_CHIEN_LUOC` / `MA_THEO_DOI` thì bỏ qua; được lọc lại khi đang theo dõi → KHÔNG gia hạn);
+   (mã đã có trong `MA_THEO_DOI` – VN30 + DHC, GMD, MWG – thì bỏ qua; được lọc lại khi đang theo dõi → KHÔNG gia hạn);
 2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua** → **thêm hạn 14 ngày** từ ngày đạt (mỗi lần đạt lại được thêm),
    đi tiếp cảnh báo 15' như mã khác;
 3. hết hạn → **tự xoá**, trừ mã **đang có trong danh mục** (giữ lại). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
@@ -141,7 +141,7 @@ Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜ
 - **CL đang áp dụng**: chỉ đổi ở **phiên cuối tháng**, có vùng đệm: điểm ≥ 5 → CL2, ≤ 2 → CL1, 3–4 giữ nguyên
   (tránh đổi qua lại). CL1 = A0 50% + B 50% (an toàn) · CL2 = A0 70% + ETF VN-Index 30% (lãi).
   Có dòng *Điều kiện đổi* (cần thêm/mất bao nhiêu điểm).
-- **③ Hành động phiên tới** trên 41 mã đã backtest (`MA_CHIEN_LUOC`), chỉ thành phần đang có tỷ trọng, viết cho
+- **③ Hành động phiên tới** trên mã theo dõi (`MA_THEO_DOI` = VN30 + `MA_THEM` DHC, GMD, MWG) và mã từ Bo_Loc, chỉ thành phần đang có tỷ trọng, viết cho
   người CHƯA mua (dùng chung `ptcp.chien_luoc.hanh_dong`):
 
   | Nhóm | Khi nào | Làm gì |
@@ -156,7 +156,7 @@ Sau tổng kết 15:20 bot gửi thêm **📈 CHIẾN LƯỢC THEO THỊ TRƯỜ
 - Khi CL đổi so với lần chạy trước → gửi thêm tin **🔔 ĐỔI CHIẾN LƯỢC CLx → CLy** kèm tỷ trọng mới.
 - Đây là **mô phỏng của hệ thống – tin công khai**, không dùng danh mục thật.
 - Chỉ gửi bản tin: `python chay.py --che_do chien_luoc` · tổng kết không kèm bản tin: `--khong_chien_luoc` ·
-  tắt hẳn: `DUNG_CHIEN_LUOC = False`. Đổi danh sách mã: `MA_CHIEN_LUOC`; hiển thị tối đa `SO_MA_TRONG_TIN` dòng/mục.
+  tắt hẳn: `DUNG_CHIEN_LUOC = False`. Đổi danh sách mã: `MA_VN30` / `MA_THEM` (`MA_CHIEN_LUOC` chỉ còn cho backtest); hiển thị tối đa `SO_MA_TRONG_TIN` dòng/mục.
 - CL hiện tại lưu ở `trang_thai_chien_luoc.json` (chỉ có số CL & điểm – công khai được) để biết khi nào ĐỔI; thiếu
   file thì bot vẫn báo đổi nếu đổi đúng ở phiên cuối tháng vừa đóng.
 - Lần tổng kết tải thêm ~41 mã (dùng lại dữ liệu đã tải của mã theo dõi) → chạy lâu hơn khoảng 1–2 phút.
