@@ -57,7 +57,6 @@ Cấu hình: `DUNG_BO_LOC`, `BO_LOC_SO_NGAY`, `BO_LOC_REPO` trong `cau_hinh.py`.
 **Danh sách cảnh báo** = rổ VN30 (tự lấy online lúc tổng kết – `TU_LAY_VN30`, lỗi thì dùng `MA_VN30` gõ sẵn; log ghi nguồn)
 + `MA_THEM` (DHC, GMD, MWG) + mã từ Bo_Loc. **Độ rộng thị trường** (1 trong 8 chỉ báo) vẫn tính trên 41 mã đã backtest
 (`MA_CHIEN_LUOC`, `DO_RONG_THEO_MA_CHIEN_LUOC`) để điểm thị trường / CL1–CL2 không đổi theo danh sách cảnh báo.
-Workflow lỗi → tin ❌ qua Telegram kèm link lần chạy.
 Bo_Loc là repo riêng tư → tạo token CHỈ ĐỌC (Contents: Read) cho Bo_Loc, lưu secret **`BO_LOC_TOKEN`**.
 
 ## Trình bày tin Telegram

@@ -91,15 +91,3 @@ jobs:
           git commit -m "Trạng thái cảnh báo $(date -u +%F' '%H:%M) UTC"
           git pull --rebase || true
           git push || echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"
-
-      - name: Báo lỗi qua Telegram
-        if: failure()
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          LINK: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          [ -z "$TELEGRAM_TOKEN" ] && exit 0
-          curl -s -o /dev/null "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=❌ Bot cảnh báo mua chạy LỖI ($(TZ=Asia/Ho_Chi_Minh date +'%H:%M %d/%m')) – xem: ${LINK}" || true
