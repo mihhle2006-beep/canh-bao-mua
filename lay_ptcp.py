@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-LẤY GÓI ptcp TỪ MỘT NGUỒN DUY NHẤT (repo danh-muc) – bot không giữ bản sao riêng nữa.
+LẤY GÓI ptcp.
+  1) Repo này đã có thư mục ptcp/ (cạnh chay.py) → dùng luôn (cách đơn giản, 1 repo).
+  2) Không có → clone từ repo khác (danh-muc) bằng token CHỈ ĐỌC, tự tìm thư mục ptcp trong repo đó.
 
 GitHub Actions (bước "Lấy ptcp"): clone nông repo bằng token CHỈ ĐỌC rồi chép thư mục ptcp vào cạnh chay.py.
   Biến môi trường: TOKEN (secret DANH_MUC_TOKEN), REPO (vars.PTCP_REPO hoặc vars.DANH_MUC_REPO),
@@ -54,6 +56,8 @@ def main():
     a = p.parse_args()
     if a.tu:
         chep(a.tu)
+    elif _la_goi_ptcp(DICH):                           # ptcp đã nằm sẵn trong repo này → dùng luôn, không clone
+        print("ptcp có sẵn trong repo → dùng trực tiếp")
     else:
         token, repo = os.environ.get("TOKEN", "").strip(), os.environ.get("REPO", "").strip()
         duong_dan = os.environ.get("DUONG_DAN", "").strip() or "ptcp_phan_tich/ptcp"
