@@ -169,7 +169,7 @@ lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ
 
 ## Trang tổng hợp – `canh_bao/trang_tong_hop.py`
 Một trang web thay cho việc đọc rải rác qua Telegram & Excel: ① sức khoẻ thị trường (8 chỉ báo, CL, đi ngang/xu
-hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ độ chính xác của bot (ĐÚNG/SAI
+hướng) · ② tín hiệu hôm nay (danh sách mua phiên tới + trạng thái điểm vào 15') · ③ mã từ bộ lọc Bo_Loc (hạn, đã đạt chưa) · ④ độ chính xác của bot (ĐÚNG/SAI
 theo loại tín hiệu). Danh mục giả lập có báo cáo riêng ở repo `gia_lap` (repo riêng tư → không lên trang công khai). Tự sáng/tối, xem tốt trên
 điện thoại, không dùng thư viện ngoài.
 - **Bản công khai** `docs/index.html`: dựng lại sau mỗi lần chạy (cả 15' trong phiên) và commit. Bật 1 lần:
