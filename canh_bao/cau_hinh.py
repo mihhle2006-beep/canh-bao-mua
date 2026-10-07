@@ -10,7 +10,7 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
 # --- Mã theo dõi ---
 MA_THEO_DOI =  ["gmd","dhc","mwg","vhm","vpb","nab","hpg","fpt","vnm","hah","pvs","Bid","dig","Gas","kdh","ceo","msb",
                "mbb","vcb","ssi","hcm","lpb","tcb","hvn","vjc","gvr","msn","dgw","pnj","csv","hsg","nkg","bsr","plx"
-               ,"pvd","pow","anv","dbc","hag","nvl","dgc","vic","gee","msr"]
+               ,"pvd","pow","anv","dbc","hag","nvl","dgc","vic","gee","msr","tlg","mch"]
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
