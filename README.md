@@ -15,7 +15,7 @@ Một nguồn logic duy nhất với Colab / danh-muc (thư mục `ptcp/`, lấy
 ### Tiêu chí điểm vào 15' (đồng bộ chiến lược – cùng hàm cho cảnh báo và backtest)
 | Khung | Tiêu chí |
 |---|---|
-| **Ngày (chiến lược)** | nhóm mua của tin tổng kết: MACD ngày cắt lên (A0, không lọc tuần) / hệ thống đang lãi 0–3R & cắt lỗ cách ≤ 7% |
+| **Ngày (chiến lược)** | nhóm mua của tin tổng kết: MACD ngày cắt lên (A0, không lọc tuần) / hệ thống đang lãi 0–3R & cắt lỗ cách ≤ 7%. **VN-Index đi ngang** (biên dao động 60 phiên < 12%) → A0 chỉ lấy tín hiệu khi MACD tuần > Signal (backtest 41 mã: CAGR 10,8% → 13,0%, Sharpe 0,83 → 1,05, tốt hơn cả 2019–22 và 2023–26) |
 | **Vùng** | giá trong vùng mua · mở cửa ≤ cận trên (không đuổi) · chưa rơi < cận dưới trước khi mua · chỉ phiên hiệu lực |
 | **15 phút** | MACD 15' cắt lên Signal (≤ 3 nến) HOẶC phá đỉnh 20 nến kèm KL ≥ 1,5× TB20 · giá ≥ VWAP phiên · RSI 15' ≤ 75 |
 | **Giờ** (chỉ cách vào `15P+GIO`) | MACD giờ (giờ đã đóng) > Signal |
