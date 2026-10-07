@@ -8,7 +8,7 @@ Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "die
   PHÚT  – điểm vào (kích hoạt "MUA NGAY")
 """
 # --- Mã theo dõi ---
-MA_THEO_DOI = ["MWG", "DHC", "GMD"]
+MA_THEO_DOI = ["MWG", "DHC", "GMD","VIB","NAB","VPB","VHM"]
 NGAY_BAT_DAU = "2021-01-01"        # dữ liệu ngày (≥ 4 năm cho khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
