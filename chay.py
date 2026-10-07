@@ -20,7 +20,7 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import chien_luoc_bot, diem_vao, du_lieu, nhat_ky, tong_ket_cl, vi_the
+from canh_bao import chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, tong_ket_cl, vi_the
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
 
@@ -61,12 +61,29 @@ def main(argv=None):
 
 # ------------------------------------------------------------------ TỔNG KẾT 15:20
 def tong_ket(bay_gio, vt, them=(), khong_gui=False):
-    ds_ma = list(dict.fromkeys(list(C.MA_CHIEN_LUOC) + list(C.MA_THEO_DOI) + list(them)))
+    co_dinh = [m.upper() for m in list(C.MA_CHIEN_LUOC) + list(C.MA_THEO_DOI)]
+    tt_bl, moi_bl = {}, []
+    if getattr(C, "DUNG_BO_LOC", False):
+        tt_bl = ma_bo_loc.doc()
+        moi_bl = ma_bo_loc.nhan_nguon(tt_bl, ma_bo_loc.lay_nguon(), co_dinh)
+        print(f"Mã từ bộ lọc: {len(ma_bo_loc.danh_sach(tt_bl))} đang theo dõi (mới: {', '.join(moi_bl) or '–'})")
+    ds_ma = list(dict.fromkeys(co_dinh + ma_bo_loc.danh_sach(tt_bl) + list(them)))
     ra, loi = chien_luoc_bot.chay_chien_luoc(
         lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=ds_ma)
     if ra is None:
         print(f"⚠ Chiến lược: {loi}")
+        if tt_bl:
+            ma_bo_loc.ghi(tt_bl)                               # giữ mã mới nhận; hạn xét ở lần tổng kết sau
         return 1
+    tin_bl = ""
+    if getattr(C, "DUNG_BO_LOC", False):
+        mua = [k["ma"] for k in tong_ket_cl.ds_khuyen_nghi(ra) if k["nhom"] in tong_ket_cl.NHOM_MUA]
+        dat_bl = ma_bo_loc.danh_dau_dat(tt_bl, mua, bay_gio)
+        xoa_bl = ma_bo_loc.xoa_het_han(tt_bl, bay_gio)
+        ma_bo_loc.ghi(tt_bl)
+        tin_bl = ma_bo_loc.dong_tin(moi_bl, dat_bl, xoa_bl, tt_bl)
+        if tin_bl:
+            print(tin_bl)
     doi, cl_cu = chien_luoc_bot.kiem_tra_doi(ra, bay_gio)
     n = tong_ket_cl.luu_ds_mua(ra, bay_gio)
     print(f"Danh sách mua phiên tới: {n} mã (lưu {C.FILE_TRANG_THAI_CL} cho cảnh báo 15')")
@@ -84,6 +101,8 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         _nhat_ky(ra, bay_gio)
     kq_bt = tong_ket_cl.doc_ket_qua_backtest()
     tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
+    if tin_bl:
+        tin, cong_khai = f"{tin}\n\n{tin_bl}", f"{cong_khai}\n\n{tin_bl}"
     if doi:
         nd = chien_luoc_bot.tin_doi(ra, cl_cu)
         gui(nd) if not khong_gui else print(nd)
