@@ -206,12 +206,12 @@ def _khoi_rieng(giu):
 
 
 CSS = """
-:root{--nen:#f3f7f4;--the:#fff;--chu:#17211b;--mo:#5c6b62;--vien:#dfe7e1;--nhan:#15803d;--tang:#0f8a4b;
---giam:#c8352b;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
+:root{--nen:#f3f7f4;--the:#fff;--chu:#17211b;--mo:#5c6b62;--vien:#dfe7e1;--nhan:#2E7D32;--tang:#2E7D32;
+--giam:#C62828;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0d1310;--the:#151d18;--chu:#e4ece6;
---mo:#93a59a;--vien:#26332b;--nhan:#4ade80;--tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
-:root[data-theme="dark"]{--nen:#0d1310;--the:#151d18;--chu:#e4ece6;--mo:#93a59a;--vien:#26332b;--nhan:#4ade80;
---tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
+--mo:#93a59a;--vien:#26332b;--nhan:#66BB6A;--tang:#81C784;--giam:#EF5350;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
+:root[data-theme="dark"]{--nen:#0d1310;--the:#151d18;--chu:#e4ece6;--mo:#93a59a;--vien:#26332b;--nhan:#66BB6A;
+--tang:#81C784;--giam:#EF5350;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
 *{box-sizing:border-box}body{margin:0;background:var(--nen);color:var(--chu);
 font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 main{max-width:1080px;margin:0 auto;padding:20px 16px 48px}
