@@ -20,7 +20,8 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, tong_ket_cl, trang_tong_hop, vi_the
+from canh_bao import (chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, tong_ket_cl, trang_tong_hop,
+                      vi_the)
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
 
@@ -61,7 +62,9 @@ def main(argv=None):
 
 # ------------------------------------------------------------------ TỔNG KẾT 15:20
 def tong_ket(bay_gio, vt, them=(), khong_gui=False):
-    co_dinh = [m.upper() for m in C.MA_THEO_DOI]                # VN30 + MA_THEM (cau_hinh.py)
+    vn30, nguon_vn30 = ro_vn30.lay_vn30()
+    print(f"Rổ VN30: {len(vn30)} mã (nguồn: {nguon_vn30})")
+    co_dinh = list(dict.fromkeys(m.upper() for m in vn30 + list(C.MA_THEM)))   # VN30 + MA_THEM (cau_hinh.py)
     tt_bl, moi_bl = {}, []
     if getattr(C, "DUNG_BO_LOC", False):
         tt_bl = ma_bo_loc.doc()
@@ -69,7 +72,8 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         print(f"Mã từ bộ lọc: {len(ma_bo_loc.danh_sach(tt_bl))} đang theo dõi (mới: {', '.join(moi_bl) or '–'})")
     ds_ma = list(dict.fromkeys(co_dinh + ma_bo_loc.danh_sach(tt_bl) + list(them)))
     ra, loi = chien_luoc_bot.chay_chien_luoc(
-        lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=ds_ma)
+        lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=ds_ma,
+        ds_do_rong=C.MA_CHIEN_LUOC if getattr(C, "DO_RONG_THEO_MA_CHIEN_LUOC", True) else None)
     if ra is None:
         print(f"⚠ Chiến lược: {loi}")
         if tt_bl:
