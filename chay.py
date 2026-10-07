@@ -79,7 +79,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     if getattr(C, "DUNG_BO_LOC", False):
         mua = [k["ma"] for k in tong_ket_cl.ds_khuyen_nghi(ra) if k["nhom"] in tong_ket_cl.NHOM_MUA]
         dat_bl = ma_bo_loc.danh_dau_dat(tt_bl, mua, bay_gio)
-        xoa_bl = ma_bo_loc.xoa_het_han(tt_bl, bay_gio)
+        xoa_bl = ma_bo_loc.xoa_het_han(tt_bl, bay_gio, dang_giu=vt)
         ma_bo_loc.ghi(tt_bl)
         tin_bl = ma_bo_loc.dong_tin(moi_bl, dat_bl, xoa_bl, tt_bl)
         if tin_bl:

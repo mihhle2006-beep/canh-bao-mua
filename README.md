@@ -46,8 +46,9 @@ Tổng kết 15:20 ở đây (`canh_bao/ma_bo_loc.py`):
 
 1. đọc file đó (chỉ khi là lần quét mới) → thêm mã vào danh sách quét, hạn **14 ngày** từ ngày quét
    (mã đã có trong `MA_CHIEN_LUOC` / `MA_THEO_DOI` thì bỏ qua; được lọc lại khi đang theo dõi → KHÔNG gia hạn);
-2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua**: báo trong tin và đi tiếp cảnh báo 15' như mã khác;
-3. hết 14 ngày → **tự xoá**, đạt hay chưa đều xoá (Bo_Loc lọc ra lại sau đó → thêm lại, hạn mới).
+2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua** → **thêm hạn 14 ngày** từ ngày đạt (mỗi lần đạt lại được thêm),
+   đi tiếp cảnh báo 15' như mã khác;
+3. hết hạn → **tự xoá**, trừ mã **đang có trong danh mục** (giữ lại). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
    Tin tổng kết có thêm dòng 🔎 (thêm / đạt / xoá).
 
 Trạng thái lưu ở `ma_bo_loc.json` (công khai – chỉ mã & ngày; muốn bỏ sớm 1 mã thì xoá dòng của mã đó).

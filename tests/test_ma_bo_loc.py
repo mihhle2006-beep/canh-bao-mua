@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Mã từ bộ lọc Bo_Loc: theo dõi 2 tuần rồi xoá, đạt hay chưa đều xoá (không mạng)."""
+"""Mã từ bộ lọc Bo_Loc: hạn 2 tuần, đạt thì thêm 2 tuần, đang trong danh mục thì giữ (không mạng)."""
 import json
 import os
 import sys
@@ -18,9 +18,12 @@ def test_vong_doi_ma():
     assert moi == ["FPT", "HPG"] and tt["ma"]["FPT"]["het_han"] == "2026-10-19"   # VNM đã cố định → bỏ qua
     assert bl.nhan_nguon(tt, _nguon("2026-10-05", AAA=["rieng"])) == []            # cùng lần quét → không nhận lại
     assert bl.danh_dau_dat(tt, ["HPG", "MWG"], "2026-10-08 15:20") == ["HPG"]
+    assert tt["ma"]["HPG"]["het_han"] == "2026-10-22"                              # đạt → thêm 2 tuần từ ngày đạt
+    assert bl.danh_dau_dat(tt, ["HPG"], "2026-10-12") == [] and tt["ma"]["HPG"]["het_han"] == "2026-10-26"
     assert bl.xoa_het_han(tt, "2026-10-19 15:20") == []                            # còn trong hạn (ngày cuối)
-    assert bl.xoa_het_han(tt, "2026-10-20 15:20") == ["FPT", "HPG"]                # hết 2 tuần → xoá, kể cả mã đã đạt
-    assert bl.danh_sach(tt) == []
+    assert bl.xoa_het_han(tt, "2026-10-20 15:20") == ["FPT"]                       # hết 2 tuần chưa đạt → xoá
+    assert bl.xoa_het_han(tt, "2026-10-27", dang_giu={"HPG": {}}) == []            # hết hạn nhưng đang giữ → giữ lại
+    assert bl.xoa_het_han(tt, "2026-10-27") == ["HPG"]
     assert bl.nhan_nguon(tt, _nguon("2026-10-22", FPT=["rieng"])) == ["FPT"]       # lọc ra lại sau khi xoá → hạn mới
     assert tt["ma"]["FPT"]["het_han"] == "2026-11-05"
 

@@ -6,8 +6,9 @@ MÃ TỪ BỘ LỌC (repo Bo_Loc) – theo dõi có thời hạn.
   Tổng kết 15:20 ở đây:
     1) đọc file đó (lần quét MỚI mới xử lý) → thêm mã vào danh sách theo dõi, hạn BO_LOC_SO_NGAY ngày
        tính từ ngày thêm (lọc lại khi đang theo dõi KHÔNG gia hạn);
-    2) quét chiến lược cùng các mã cố định → mã vào nhóm mua 🟢 / ✅ / 🟡 = ĐẠT yêu cầu mua (ghi nhận & báo);
-    3) hết hạn → tự xoá (kể cả mã đã đạt). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
+    2) quét chiến lược cùng các mã cố định → mã vào nhóm mua 🟢 / ✅ / 🟡 = ĐẠT yêu cầu mua
+       → hạn mới = ngày đạt + BO_LOC_SO_NGAY ngày (mỗi lần đạt lại được thêm hạn);
+    3) hết hạn → tự xoá, TRỪ mã đang có trong danh mục (giữ lại). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
   Trạng thái lưu ở FILE_MA_BO_LOC (công khai – chỉ có mã & ngày).
 """
 import json
@@ -98,20 +99,28 @@ def danh_sach(tt):
 
 
 def danh_dau_dat(tt, ma_mua, bay_gio):
-    """Mã nằm trong nhóm mua của tin tổng kết → ĐẠT (ghi nhận, vẫn xoá khi hết hạn). → mã vừa đạt."""
+    """Mã nằm trong nhóm mua của tin tổng kết → ĐẠT, thêm hạn BO_LOC_SO_NGAY ngày từ hôm nay. → mã lần đầu đạt."""
     vua = []
+    hom_nay = _ngay(bay_gio)
+    het_han = f"{hom_nay + pd.Timedelta(days=C.BO_LOC_SO_NGAY):%Y-%m-%d}"
     for ma in ma_mua:
         v = (tt.get("ma") or {}).get(str(ma).upper())
-        if v is not None and not v.get("dat_mua"):
-            v["dat_mua"] = f"{pd.Timestamp(bay_gio):%Y-%m-%d}"
+        if v is None:
+            continue
+        if not v.get("dat_mua"):
+            v["dat_mua"] = f"{hom_nay:%Y-%m-%d}"
             vua.append(str(ma).upper())
+        v["dat_gan_nhat"] = f"{hom_nay:%Y-%m-%d}"
+        v["het_han"] = max(v.get("het_han") or "", het_han)
     return vua
 
 
-def xoa_het_han(tt, bay_gio):
-    """Quá BO_LOC_SO_NGAY ngày kể từ ngày thêm → xoá (đạt hay chưa đều xoá). → mã đã xoá."""
+def xoa_het_han(tt, bay_gio, dang_giu=()):
+    """Hết hạn → xoá; mã đang có trong danh mục (dang_giu) được giữ lại. → mã đã xoá."""
     hom_nay = _ngay(bay_gio)
-    xoa = [ma for ma, v in (tt.get("ma") or {}).items() if v.get("het_han") and hom_nay > _ngay(v["het_han"])]
+    giu = {str(m).upper() for m in dang_giu}
+    xoa = [ma for ma, v in (tt.get("ma") or {}).items()
+           if ma not in giu and v.get("het_han") and hom_nay > _ngay(v["het_han"])]
     for ma in xoa:
         del tt["ma"][ma]
     return xoa
@@ -125,7 +134,7 @@ def dong_tin(moi, dat, xoa, tt):
     if moi:
         dong.append(f"  ➕ thêm: {', '.join(moi)}")
     if dat:
-        dong.append(f"  ✅ đạt điểm mua: {', '.join(dat)}")
+        dong.append(f"  ✅ đạt điểm mua (+{C.BO_LOC_SO_NGAY} ngày): {', '.join(dat)}")
     if xoa:
-        dong.append(f"  🗑 xoá (hết {C.BO_LOC_SO_NGAY} ngày): {', '.join(xoa)}")
+        dong.append(f"  🗑 xoá (hết hạn {C.BO_LOC_SO_NGAY} ngày): {', '.join(xoa)}")
     return "\n".join(dong)
