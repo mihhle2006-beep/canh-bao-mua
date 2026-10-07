@@ -206,11 +206,11 @@ def _khoi_rieng(giu):
 
 
 CSS = """
-:root{--nen:#f6f7f9;--the:#fff;--chu:#1b1f24;--mo:#5f6b7a;--vien:#e3e6ea;--nhan:#2457c5;--tang:#0f8a4b;
+:root{--nen:#f3f7f4;--the:#fff;--chu:#17211b;--mo:#5c6b62;--vien:#dfe7e1;--nhan:#15803d;--tang:#0f8a4b;
 --giam:#c8352b;--vang:#9a6700;--vni:#8a94a3;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0f1216;--the:#181c22;--chu:#e6e9ee;
---mo:#97a1ae;--vien:#2a3038;--nhan:#7aa7ff;--tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
-:root[data-theme="dark"]{--nen:#0f1216;--the:#181c22;--chu:#e6e9ee;--mo:#97a1ae;--vien:#2a3038;--nhan:#7aa7ff;
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--nen:#0d1310;--the:#151d18;--chu:#e4ece6;
+--mo:#93a59a;--vien:#26332b;--nhan:#4ade80;--tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}}
+:root[data-theme="dark"]{--nen:#0d1310;--the:#151d18;--chu:#e4ece6;--mo:#93a59a;--vien:#26332b;--nhan:#4ade80;
 --tang:#3ccf86;--giam:#ff7b72;--vang:#e3b341;--vni:#6e7781;color-scheme:dark}
 *{box-sizing:border-box}body{margin:0;background:var(--nen);color:var(--chu);
 font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
