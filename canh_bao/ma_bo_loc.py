@@ -8,7 +8,9 @@ MÃ TỪ BỘ LỌC (repo Bo_Loc) – theo dõi có thời hạn.
        tính từ ngày thêm (lọc lại khi đang theo dõi KHÔNG gia hạn);
     2) quét chiến lược cùng các mã cố định → mã vào nhóm mua 🟢 / ✅ / 🟡 = ĐẠT yêu cầu mua
        → hạn mới = ngày đạt + BO_LOC_SO_NGAY ngày (mỗi lần đạt lại được thêm hạn);
-    3) hết hạn → tự xoá, TRỪ mã đang có trong danh mục (giữ lại). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
+    3) hết hạn → tự xoá – kể cả mã đang giữ: file này CÔNG KHAI nên không được để lộ danh mục; mã đang giữ vẫn được
+       chăm sóc đủ ở phần danh mục RIÊNG TƯ (cảnh báo bán, dời cắt lỗ, mua thêm – vi_the.py, mục 💼).
+       Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
   Trạng thái lưu ở FILE_MA_BO_LOC (công khai – chỉ có mã & ngày).
 """
 import json
@@ -128,12 +130,10 @@ def danh_dau_dat(tt, ma_mua, bay_gio):
     return vua
 
 
-def xoa_het_han(tt, bay_gio, dang_giu=()):
-    """Hết hạn → xoá; mã đang có trong danh mục (dang_giu) được giữ lại. → mã đã xoá."""
+def xoa_het_han(tt, bay_gio):
+    """Hết hạn → xoá (không ngoại lệ cho mã đang giữ – file công khai không được để lộ danh mục). → mã đã xoá."""
     hom_nay = _ngay(bay_gio)
-    giu = {str(m).upper() for m in dang_giu}
-    xoa = [ma for ma, v in (tt.get("ma") or {}).items()
-           if ma not in giu and v.get("het_han") and hom_nay > _ngay(v["het_han"])]
+    xoa = [ma for ma, v in (tt.get("ma") or {}).items() if v.get("het_han") and hom_nay > _ngay(v["het_han"])]
     for ma in xoa:
         del tt["ma"][ma]
     return xoa

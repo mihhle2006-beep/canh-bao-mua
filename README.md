@@ -48,7 +48,8 @@ Tổng kết 15:20 ở đây (`canh_bao/ma_bo_loc.py`):
    (mã đã có trong `MA_THEO_DOI` – VN30 + DHC, GMD, MWG – thì bỏ qua; được lọc lại khi đang theo dõi → KHÔNG gia hạn);
 2. mã vào nhóm mua 🟢 / ✅ / 🟡 → **đạt yêu cầu mua** → **thêm hạn 14 ngày** từ ngày đạt (mỗi lần đạt lại được thêm),
    đi tiếp cảnh báo 15' như mã khác;
-3. hết hạn → **tự xoá**, trừ mã **đang có trong danh mục** (giữ lại). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
+3. hết hạn → **tự xoá**, kể cả mã đang giữ – file này công khai nên không để lộ danh mục. Mã đang giữ vẫn được chăm sóc
+   đủ ở phần danh mục **riêng tư** (cảnh báo bán, dời cắt lỗ, 💼 mua thêm). Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
    Tin tổng kết có thêm dòng 🔎 (thêm / đạt / xoá).
 
 Trạng thái lưu ở `ma_bo_loc.json` (công khai – chỉ mã & ngày; muốn bỏ sớm 1 mã thì xoá dòng của mã đó).
