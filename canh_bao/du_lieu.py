@@ -133,19 +133,40 @@ def _cache(khoa):
     return os.path.join(THU_MUC_CACHE, re.sub(r"[^\w\-]", "_", khoa) + ".csv")
 
 
+BIEN_DO_NEN_NGO = 0.16      # > biên độ tối đa mọi sàn (HOSE 7%, HNX 10%, UPCoM 15%)
+
+
+def nen_cuoi_ngo(df):
+    """
+    Nến NGÀY cuối "không giao dịch" (mở = cao = thấp = đóng) mà lệch > 16% so với phiên trước → nguồn trả giá
+    tham chiếu ĐÃ ĐIỀU CHỈNH thay vì giá khớp (VD VNDirect 08/10/2026: HDB 21,538 = 28,0 ÷ 1,3 trước đợt chia cổ
+    phiếu, trong khi nến 15' cùng ngày vẫn 27,9–28,0). Ngày GDKHQ thật vẫn có biên độ (cao ≠ thấp) nên không bị bắt.
+    """
+    if df is None or len(df) < 2:
+        return False
+    r, truoc = df.iloc[-1], float(df.close.iloc[-2])
+    return bool(truoc > 0 and r.high == r.low and abs(r.close / truoc - 1) > BIEN_DO_NEN_NGO)
+
+
 def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
-    """Tải nến; mọi nguồn lỗi → dùng cache (in cảnh báo). Trả DataFrame hoặc None."""
+    """
+    Tải nến; mọi nguồn lỗi → dùng cache (in cảnh báo). Trả DataFrame hoặc None.
+    Nến ngày cuối nghi sai (nen_cuoi_ngo) → thử nguồn sau; nguồn nào cũng vậy → bỏ nến cuối của nguồn đầu.
+    """
     den = int(time.time()) + 86400
     if SO_NGAY_LAY.get(khung):
         tu = int(time.time()) - SO_NGAY_LAY[khung] * 86400
     else:
         tu = int(pd.Timestamp(tu_ngay).timestamp())
-    loi = []
+    loi, du_phong = [], None
     for ten, ham in cac_nguon(ma, tu, den, khung, chi_so):
         try:
             df = chuan_hoa(ham(), chi_so)
             if df.empty:
                 raise ValueError("rỗng")
+            if not chi_so and khung == "D" and nen_cuoi_ngo(df):
+                du_phong = du_phong if du_phong is not None else (ten, df.iloc[:-1])
+                raise ValueError(f"nến {df.index[-1]:%d/%m} nghi sai ({df.close.iloc[-1]:g}, không biên độ)")
             NGUON_DA_DUNG[(ma, khung)] = ten
             try:
                 df.to_csv(_cache(f"{ma}_{khung}"))
@@ -154,6 +175,11 @@ def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
             return df
         except Exception as e:
             loi.append(f"{ten}: {str(e)[:40]}")
+    if du_phong is not None:
+        ten, df = du_phong
+        NGUON_DA_DUNG[(ma, khung)] = ten
+        print(f"  ⚠ {ma} {khung}: nến cuối mọi nguồn nghi sai ({'; '.join(loi)}) → dùng {ten} đến {df.index[-1]:%d/%m}")
+        return df
     if os.path.exists(_cache(f"{ma}_{khung}")):
         df = pd.read_csv(_cache(f"{ma}_{khung}"), index_col=0, parse_dates=True).astype(float)
         print(f"  ⚠ {ma} {khung}: mọi nguồn lỗi ({'; '.join(loi)}) → dùng cache đến {df.index[-1]}")
