@@ -23,7 +23,7 @@ import pandas as pd
 from canh_bao import cau_hinh as C
 from canh_bao import (chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, tong_ket_cl, trang_tong_hop,
                       vi_the)
-from canh_bao.nganh import ma_cung_nganh, nganh_cua
+from canh_bao.nganh import ma_cung_nganh
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
 
@@ -173,8 +173,7 @@ def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):
 
 
 # ------------------------------------------------------------------ XEM RIÊNG 1 / VÀI MÃ
-NHOM_NGAN = {"MUA_MOI": "🟢 mua mới", "VAO_NHU_MOI": "✅ như lệnh mới", "VAO_NUA": "🟡 ½", "CHO": "⏳ chờ",
-             "DUOI_VON": "⛔ HT lỗ", "BAN": "⛔ HT bán"}
+NHOM_NGAN = {"MUA_MOI": "🟢", "VAO_NHU_MOI": "✅", "VAO_NUA": "🟡", "CHO": "⏳", "DUOI_VON": "⛔", "BAN": "⛔"}
 def xem_ma(bay_gio, ds, khong_gui=False):
     """
     Chạy chiến lược CHỈ cho mã trong ds (độ rộng thị trường vẫn theo MA_CHIEN_LUOC) → in / gửi nhóm hành động,
@@ -208,7 +207,7 @@ def xem_ma(bay_gio, ds, khong_gui=False):
         else:
             dong.append(f"\n{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}\n{tong_ket_cl.dong_mua(k)}")
         if cung.get(ma):
-            dong.append(f"  Cùng ngành ({nganh_cua(ma)}): " + " · ".join(
+            dong.append("  Cùng ngành: " + " · ".join(
                 f"{m} {NHOM_NGAN.get(kn[m]['nhom'], kn[m]['nhom']) if m in kn else '–'}" for m in cung[ma]))
     tin = "\n".join(dong)
     print(tin)

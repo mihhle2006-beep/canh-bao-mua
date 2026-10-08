@@ -175,6 +175,7 @@ lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ
 ## Xem riêng 1 mã
 - **Trên GitHub:** Actions → **Canh bao mua** → **Run workflow** → ô **ma** nhập `FPT` (hoặc `FPT,HPG`) → Run.
   Kết quả (nhóm hành động, vùng mua, cắt lỗ, mục tiêu 1R → 3R) gửi Telegram; KHÔNG đổi danh sách mua / trạng thái của bot.
+  Kèm dòng `Cùng ngành: VCB ⏳ · BID ⛔ · TCB 🟡` – trạng thái tối đa 4 mã cùng ngành (bản đồ `ptcp/nganh.py`).
 - **Trên máy:** `python chay.py --chi_ma FPT --khong_gui` (cần thư mục `ptcp/` – xem `lay_ptcp.py`).
 - Lần chạy 15' trong phiên bỏ bước kiểm thử để tin đến nhanh hơn; tổng kết, chạy tay & backtest vẫn kiểm thử.
 

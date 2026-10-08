@@ -58,10 +58,9 @@ def test_xem_ma_kem_ma_cung_nganh(tmp_path, monkeypatch, capsys):
         return ra, None
     with mock.patch.object(chien_luoc_bot, "chay_chien_luoc", chay_cl), \
             mock.patch.object(tong_ket_cl, "ds_khuyen_nghi", lambda r: kn), \
-            mock.patch.object(chay, "ma_cung_nganh", lambda ma, n=4: ["VCB", "BID"]), \
-            mock.patch.object(chay, "nganh_cua", lambda ma: "Ngân hàng"):
+            mock.patch.object(chay, "ma_cung_nganh", lambda ma, n=4: ["VCB", "BID"]):
         assert chay.main(["--chi_ma", "MBB", "--khong_gui"]) == 0
     out = capsys.readouterr().out
     assert goi["ds"] == ["MBB", "VCB", "BID"]                      # quét thêm mã cùng ngành
-    assert "MBB | 20.00–21.00" in out and "· Ngân hàng" in out
-    assert "Cùng ngành (Ngân hàng): VCB ⏳ chờ · BID –" in out
+    assert "MBB | 20.00–21.00" in out and "· Ngân hàng" not in out   # dòng mua không ghi ngành
+    assert "Cùng ngành: VCB ⏳ · BID –" in out and "Ngân hàng" not in out
