@@ -31,3 +31,14 @@ def test_chi_ma_khong_ghi_file(tmp_path, monkeypatch, capsys):
     assert goi["ds"] == ["FPT", "HPG", "XYZ"]
     assert "FPT | 100.00–103.00" in out and "HPG: chưa có tín hiệu" in out and "XYZ: thiếu dữ liệu" in out
     assert os.listdir(tmp_path) == []                       # không ghi trạng thái / nhật ký / trang
+
+
+def test_khong_in_tin_rieng_tu_ra_log_cong_khai(monkeypatch, capsys):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    chay._in("💼 ĐANG GIỮ HPG 1.000 CP", rieng_tu=True)
+    chay._in("📊 tin công khai", rieng_tu=False)
+    out = capsys.readouterr().out
+    assert "HPG" not in out and "tin riêng tư" in out and "tin công khai" in out
+    monkeypatch.delenv("GITHUB_ACTIONS")
+    chay._in("💼 ĐANG GIỮ HPG", rieng_tu=True)                 # chạy trên máy: in bình thường
+    assert "HPG" in capsys.readouterr().out

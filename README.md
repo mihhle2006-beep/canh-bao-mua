@@ -178,6 +178,10 @@ lên đây, dùng lại `canh_bao/du_lieu.py` (giá), `canh_bao/vi_the.py` (hệ
 - **Trên máy:** `python chay.py --chi_ma FPT --khong_gui` (cần thư mục `ptcp/` – xem `lay_ptcp.py`).
 - Lần chạy 15' trong phiên bỏ bước kiểm thử để tin đến nhanh hơn; tổng kết, chạy tay & backtest vẫn kiểm thử.
 
+**Chạy thử không làm phiền:** Run workflow → tích **chi_thu** → bot chạy đủ nhưng KHÔNG gửi Telegram, KHÔNG commit
+trạng thái (danh sách mua, nhật ký, trang tổng hợp) và khôi phục trạng thái riêng (`cache_ptcp`) sau khi chạy. Kết quả xem
+trong log – tin có danh mục thật KHÔNG bao giờ in ra log (repo công khai), chỉ ghi "(tin riêng tư … ký tự)".
+
 ## Backtest điểm vào 15' – `.github/workflows/backtest.yml`
 Chạy **đêm mùng 2 hằng tháng** (02:17 giờ VN) hoặc bấm tay: Actions → **Backtest** → Run workflow (20–60 phút).
 Thử mọi cách vào lệnh (ATO, 15P, 15P+ATC, VWAP, LO…) trên nến 15' thật của các tín hiệu mua đã qua + backtest điểm bán /
