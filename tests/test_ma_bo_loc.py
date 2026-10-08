@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Mã từ bộ lọc Bo_Loc: hạn 2 tuần, đạt thì thêm 2 tuần, đang trong danh mục thì giữ (không mạng)."""
+"""Mã từ bộ lọc Bo_Loc: hạn 2 tuần, đạt thì thêm 2 tuần, hết hạn thì xoá – kể cả mã đang giữ (không mạng)."""
 import json
 import os
 import sys
@@ -22,7 +22,6 @@ def test_vong_doi_ma():
     assert bl.danh_dau_dat(tt, ["HPG"], "2026-10-12") == [] and tt["ma"]["HPG"]["het_han"] == "2026-10-26"
     assert bl.xoa_het_han(tt, "2026-10-19 15:20") == []                            # còn trong hạn (ngày cuối)
     assert bl.xoa_het_han(tt, "2026-10-20 15:20") == ["FPT"]                       # hết 2 tuần chưa đạt → xoá
-    assert bl.xoa_het_han(tt, "2026-10-27", dang_giu={"HPG": {}}) == []            # hết hạn nhưng đang giữ → giữ lại
     assert bl.xoa_het_han(tt, "2026-10-27") == ["HPG"]
     assert bl.nhan_nguon(tt, _nguon("2026-10-22", FPT=["rieng"])) == ["FPT"]       # lọc ra lại sau khi xoá → hạn mới
     assert tt["ma"]["FPT"]["het_han"] == "2026-11-05"
