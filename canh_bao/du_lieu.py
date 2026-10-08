@@ -138,20 +138,22 @@ BIEN_DO_NEN_NGO = 0.16      # > biên độ tối đa mọi sàn (HOSE 7%, HNX 1
 
 def nen_cuoi_ngo(df):
     """
-    Nến NGÀY cuối "không giao dịch" (mở = cao = thấp = đóng) mà lệch > 16% so với phiên trước → nguồn trả giá
-    tham chiếu ĐÃ ĐIỀU CHỈNH thay vì giá khớp (VD VNDirect 08/10/2026: HDB 21,538 = 28,0 ÷ 1,3 trước đợt chia cổ
-    phiếu, trong khi nến 15' cùng ngày vẫn 27,9–28,0). Ngày GDKHQ thật vẫn có biên độ (cao ≠ thấp) nên không bị bắt.
+    Nến NGÀY cuối lệch > 16% so với phiên trước CỦA CHÍNH NGUỒN ĐÓ (hơn biên độ mọi sàn: HOSE 7%, HNX 10%, UPCoM 15%)
+    → nguồn điều chỉnh DỞ DANG (VD VNDirect 08/10/2026: HDB 28,10 → 21,54 = 28,0 ÷ 1,3 – mới chia phiên cuối cho đợt
+    chia cổ phiếu, các phiên trước chưa chia; nguồn khác 28,00). Ngày GDKHQ thật mọi nguồn chưa điều chỉnh đều lệch
+    như nhau → tai() vẫn dùng (xem tai).
     """
     if df is None or len(df) < 2:
         return False
-    r, truoc = df.iloc[-1], float(df.close.iloc[-2])
-    return bool(truoc > 0 and r.high == r.low and abs(r.close / truoc - 1) > BIEN_DO_NEN_NGO)
+    truoc = float(df.close.iloc[-2])
+    return bool(truoc > 0 and abs(float(df.close.iloc[-1]) / truoc - 1) > BIEN_DO_NEN_NGO)
 
 
 def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
     """
     Tải nến; mọi nguồn lỗi → dùng cache (in cảnh báo). Trả DataFrame hoặc None.
-    Nến ngày cuối nghi sai (nen_cuoi_ngo) → thử nguồn sau; nguồn nào cũng vậy → bỏ nến cuối của nguồn đầu.
+    Nến ngày cuối lệch bất thường (nen_cuoi_ngo) → thử nguồn sau (ưu tiên nguồn liền mạch); nguồn nào cũng lệch như
+    nhau → đó là biến động thật (GDKHQ chưa điều chỉnh) → dùng nguồn đầu, đủ nến.
     """
     den = int(time.time()) + 86400
     if SO_NGAY_LAY.get(khung):
@@ -165,8 +167,9 @@ def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
             if df.empty:
                 raise ValueError("rỗng")
             if not chi_so and khung == "D" and nen_cuoi_ngo(df):
-                du_phong = du_phong if du_phong is not None else (ten, df.iloc[:-1])
-                raise ValueError(f"nến {df.index[-1]:%d/%m} nghi sai ({df.close.iloc[-1]:g}, không biên độ)")
+                du_phong = du_phong if du_phong is not None else (ten, df)
+                raise ValueError(f"nến {df.index[-1]:%d/%m} lệch bất thường ({df.close.iloc[-2]:g} → "
+                                 f"{df.close.iloc[-1]:g}) – điều chỉnh dở dang?")
             NGUON_DA_DUNG[(ma, khung)] = ten
             try:
                 df.to_csv(_cache(f"{ma}_{khung}"))
@@ -178,7 +181,7 @@ def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
     if du_phong is not None:
         ten, df = du_phong
         NGUON_DA_DUNG[(ma, khung)] = ten
-        print(f"  ⚠ {ma} {khung}: nến cuối mọi nguồn nghi sai ({'; '.join(loi)}) → dùng {ten} đến {df.index[-1]:%d/%m}")
+        print(f"  ⚠ {ma} {khung}: mọi nguồn đều lệch mạnh phiên cuối ({'; '.join(loi)}) → biến động thật, dùng {ten}")
         return df
     if os.path.exists(_cache(f"{ma}_{khung}")):
         df = pd.read_csv(_cache(f"{ma}_{khung}"), index_col=0, parse_dates=True).astype(float)
