@@ -64,6 +64,18 @@ def chay_backtest(bay_gio, khong_gui=False, ds_ma=None):
         print(kb["bang"].round(2).to_string(index=False))
     print(kb["ket_luan"])
 
+    print("\n①b Bộ lọc mua theo thị trường (giá ngày)…")
+    try:                                                    # ptcp cũ chưa có module → bỏ qua, không làm hỏng backtest
+        from ptcp.backtest_loc_mua import backtest_loc_mua
+        kl_ = backtest_loc_mua(gia, vni, start=C.BACKTEST_TU)
+        ra["loc_mua"] = {"bang": _ban_ghi(kl_["bang"]), "ket_luan": kl_["ket_luan"], "tot": kl_["tot"],
+                         "mo_ta": f"{len(gia)} mã, {C.BACKTEST_TU[:4]}–nay, tín hiệu A0, hệ thoát gốc"}
+        with pd.option_context("display.width", 250, "display.max_columns", 30):
+            print(kl_["bang"].round(2).to_string(index=False))
+        print(kl_["ket_luan"])
+    except ImportError:
+        print("ptcp chưa có backtest_loc_mua – bỏ qua")
+
     print(f"\n② Điểm vào 15 phút – tải nến 15' từ {C.BACKTEST_15P_TU}…")
     n15 = {}
     for ma in gia:
@@ -95,7 +107,8 @@ def chay_backtest(bay_gio, khong_gui=False, ds_ma=None):
     tin = "\n".join([f"🧪 BACKTEST CHIẾN LƯỢC – {pd.Timestamp(bay_gio):%d/%m/%Y}",
                      f"Điểm vào 15': {ra['15p']['ket_luan']}",
                      f"Điểm bán & mua thêm: {ra['diem_ban']['ket_luan']}",
-                     "(Chi tiết: file Excel – các sheet BT 15 phut, BT diem ban)"])
+                     *([f"Bộ lọc mua: {ra['loc_mua']['ket_luan']}"] if ra.get("loc_mua") else []),
+                     "(Chi tiết: file Excel – các sheet BT 15 phut, BT diem ban, BT loc mua)"])
     if khong_gui:
         print(tin)
         return 0
@@ -103,6 +116,8 @@ def chay_backtest(bay_gio, khong_gui=False, ds_ma=None):
     path = "backtest_chien_luoc.xlsx"
     with pd.ExcelWriter(path, engine="openpyxl") as w:
         pd.DataFrame(ra["diem_ban"]["bang"]).to_excel(w, sheet_name="BT diem ban", index=False)
+        if ra.get("loc_mua"):
+            pd.DataFrame(ra["loc_mua"]["bang"]).to_excel(w, sheet_name="BT loc mua", index=False)
         if ra["15p"].get("bang"):
             pd.DataFrame(ra["15p"]["bang"]).to_excel(w, sheet_name="BT 15 phut", index=False)
             pd.DataFrame(ra["15p"]["theo_nhom"]).to_excel(w, sheet_name="BT 15 phut theo nhom", index=False)
