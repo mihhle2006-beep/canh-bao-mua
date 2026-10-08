@@ -21,8 +21,8 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import (chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, tong_ket_cl, trang_tong_hop,
-                      vi_the)
+from canh_bao import (chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, theo_doi_kn, tong_ket_cl,
+                      trang_tong_hop, vi_the)
 from canh_bao.nganh import ma_cung_nganh
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
@@ -113,6 +113,10 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         _nhat_ky(ra, bay_gio)
     kq_bt = tong_ket_cl.doc_ket_qua_backtest()
     tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
+    td = _an_toan("Theo dõi khuyến nghị", theo_doi_kn.tom_tat, bay_gio, ra.get("gia_ngay"),
+                  lambda ma: tai(ma, "D", C.NGAY_BAT_DAU)) if C.GHI_NHAT_KY else None
+    if td:                                                     # chỉ khuyến nghị công khai → có trong cả 2 bản tin
+        tin, cong_khai = tin + "\n" + "\n".join(td), cong_khai + "\n" + "\n".join(td)
     if tin_bl:
         tin, cong_khai = f"{tin}\n\n{tin_bl}", f"{cong_khai}\n\n{tin_bl}"
     if doi:

@@ -116,6 +116,14 @@ bán lưu trong cache Actions (`cache_ptcp/`), không commit. `danh_muc.csv` n�
 Cắt lỗ / mục tiêu đã đặt do repo `danh-muc` cập nhật mỗi ngày 15:45 → bot tự dùng mức mới, không phải nhập 2 nơi.
 Chạy trên máy: đặt `danh_muc.csv` cạnh `chay.py`; bỏ cảnh báo bán: `python chay.py --khong_ban`.
 
+## Theo dõi khuyến nghị đã gửi – `canh_bao/theo_doi_kn.py`
+Cuối tin tổng kết có mục **📌 THEO DÕI KHUYẾN NGHỊ ĐÃ GỬI** – "nếu đã mua theo khuyến nghị thì giờ làm gì", không cần nhập
+danh mục. Mỗi khuyến nghị MUA của chiến lược (nhật ký `lich_su_danh_gia.csv`) là 1 lệnh giả định: vào giá mở cửa phiên sau
+nếu trong vùng mua; chấm lại mỗi ngày bằng đúng hệ thoát của danh mục thật:
+🔴 BÁN đầu phiên tới (chạm cắt lỗ / tuần < MA10 khi ≥ 3R / 63 phiên chưa đạt 1R) · ⬆ DỜI cắt lỗ (mỗi mức báo 1 lần) ·
+⚠ sát cắt lỗ · 🟢 GIỮ kèm cắt lỗ. Lệnh vừa đóng báo 1 lần (✅ lãi / ❌ lỗ). Mỗi mã 1 dòng; trạng thái lưu `theo_doi_kn.json`
+(chỉ khuyến nghị công khai). Mã bạn thật sự mua thì vẫn nên ghi `danh_muc.csv` (giá vốn thật, cảnh báo riêng tư).
+
 ## Nhật ký & chấm điểm tín hiệu (ĐÚNG / SAI)
 Module `canh_bao/nhat_ky.py` ghi lại mọi tín hiệu bot đã phát rồi **tự chấm bằng giá thực tế** ở mỗi lần tổng kết 15:20.
 Bộ chấm là **`ptcp/nhat_ky.py`** – cùng một cách chấm với Phần K của ptcp trên Colab và repo danh-muc.
