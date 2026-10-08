@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from . import cau_hinh as C
+from .nganh import nganh_cua
 
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
 TIEU_DE = {"MUA_MOI": "🟢 MUA MỚI", "VAO_NHU_MOI": "✅ VÀO NHƯ LỆNH MỚI", "VAO_NUA": "🟡 VÀO ½ KHỐI LƯỢNG",
@@ -83,7 +84,7 @@ def ds_khuyen_nghi(ra):
                     "ly_do": dat_diem_mua(r, ngay, bool((ra.get("di_ngang") or {}).get("dang"))),
                     "khoi_luong": r.get("Khối lượng", ""),
                     "hieu_luc": _ngay(r.get("Hiệu lực")), "vo_hieu": r.get("Vô hiệu khi", ""),
-                    "atr": _so((ra.get("atr") or {}).get(r["Mã"]))})
+                    "atr": _so((ra.get("atr") or {}).get(r["Mã"])), "nganh": nganh_cua(r["Mã"])})
         k_ = out[-1]
         k_["he_so_kl"], k_["atr_pct"] = he_so_kl(k_["gia"], k_["atr"], k_["nhom"] == "VAO_NUA")
     return out
@@ -94,7 +95,8 @@ def dong_mua(k, dang_giu=()):
     kl = f" | KL ×{hs:.2f}" if (getattr(C, "KL_THEO_BIEN_DONG", False) and hs is not None and hs == hs
                                 and hs < 0.999) else ""
     return (f"{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl} "
-            f"| {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
+            f"| {k['ly_do']}" + (f" · {k['nganh']}" if k.get("nganh") else "")
+            + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
 
 
 # ------------------------------------------------------------------ danh sách mua cho cảnh báo 15 phút

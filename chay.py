@@ -23,6 +23,7 @@ import pandas as pd
 from canh_bao import cau_hinh as C
 from canh_bao import (chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, tong_ket_cl, trang_tong_hop,
                       vi_the)
+from canh_bao.nganh import ma_cung_nganh, nganh_cua
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
 
@@ -172,6 +173,8 @@ def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):
 
 
 # ------------------------------------------------------------------ XEM RIÊNG 1 / VÀI MÃ
+NHOM_NGAN = {"MUA_MOI": "🟢 mua mới", "VAO_NHU_MOI": "✅ như lệnh mới", "VAO_NUA": "🟡 ½", "CHO": "⏳ chờ",
+             "DUOI_VON": "⛔ HT lỗ", "BAN": "⛔ HT bán"}
 def xem_ma(bay_gio, ds, khong_gui=False):
     """
     Chạy chiến lược CHỈ cho mã trong ds (độ rộng thị trường vẫn theo MA_CHIEN_LUOC) → in / gửi nhóm hành động,
@@ -180,8 +183,10 @@ def xem_ma(bay_gio, ds, khong_gui=False):
     if not ds:
         print("Chưa nhập mã.")
         return 1
+    cung = {ma: ma_cung_nganh(ma, getattr(C, "SO_MA_CUNG_NGANH", 4)) for ma in ds}   # tự chọn mã cùng ngành
+    quet = list(dict.fromkeys(ds + [m for v in cung.values() for m in v]))
     ra, loi = chien_luoc_bot.chay_chien_luoc(
-        lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=ds,
+        lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=quet,
         ds_do_rong=C.MA_CHIEN_LUOC if getattr(C, "DO_RONG_THEO_MA_CHIEN_LUOC", True) else None)
     if ra is None:
         print(f"⚠ Chiến lược: {loi}")
@@ -202,6 +207,9 @@ def xem_ma(bay_gio, ds, khong_gui=False):
             dong.append(f"\n{ma}: chưa có tín hiệu mua – " + " · ".join(trang_thai.get(ma, ["CHỜ tín hiệu"])))
         else:
             dong.append(f"\n{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}\n{tong_ket_cl.dong_mua(k)}")
+        if cung.get(ma):
+            dong.append(f"  Cùng ngành ({nganh_cua(ma)}): " + " · ".join(
+                f"{m} {NHOM_NGAN.get(kn[m]['nhom'], kn[m]['nhom']) if m in kn else '–'}" for m in cung[ma]))
     tin = "\n".join(dong)
     print(tin)
     if not khong_gui:
