@@ -37,10 +37,32 @@ def doc_ds_mua(bay_gio, path=None):
     return ds.get("ma") or []
 
 
+NGUONG_THANG_GIA = 0.03                         # đóng cửa phiên trước lệch giá của tin > 3% → nguồn đã điều chỉnh quyền
+_MUC_GIA = ("gia", "tu", "den", "cl", "R", "mt1", "mt3", "atr")
+
+
+def quy_thang_gia(z, dp, bay_gio):
+    """
+    Nguồn giá điều chỉnh quyền (chia / tách cổ phiếu) SAU tin tổng kết → vùng / cắt lỗ tính trên giá cũ lệch thang
+    nến 15'. Đóng cửa phiên trước trong dp lệch 'gia' (đóng cửa lúc tổng kết) > 3% → nhân mọi mức giá cùng hệ số.
+    VD HDB 08/10/2026: tin ghi giá 28,00 vùng 27,45–28,70; tối đó VNDirect chia cả chuỗi 1,3 → 21,54.
+    """
+    g = z.get("gia")
+    truoc = dp[dp.index.normalize() < pd.Timestamp(bay_gio).normalize()] if dp is not None else None
+    if not g or truoc is None or not len(truoc):
+        return z
+    f = float(truoc.close.iloc[-1]) / float(g)
+    if abs(f - 1) <= NGUONG_THANG_GIA or not 0.2 < f < 5:
+        return z
+    moi = {k: z[k] * f for k in _MUC_GIA if isinstance(z.get(k), (int, float)) and z[k] == z[k]}
+    return {**z, **moi, "he_so_quyen": f}
+
+
 def danh_gia(z, dp, bay_gio, bien_the):
     """z: 1 dòng ds_mua; dp: nến 15' (nhiều phiên, đã bỏ nến chưa đóng). → dict kết quả phiên hôm nay."""
     from ptcp.diem_vao_15p import chi_bao_15p, danh_gia_phien, macd_gio, tieu_chi_nen
     t = pd.Timestamp(bay_gio)
+    z = quy_thang_gia(z, dp, t)
     kq = {**z, "ly_do_ngay": z.get("ly_do", ""), "trang_thai": "CHỜ", "ly_do": "chưa có dữ liệu 15' hôm nay", "gia_nay": np.nan, "tieu_chi": [],
           "gia_mua": np.nan, "thoi_diem": None}
     if dp is None or not len(dp):
@@ -111,6 +133,9 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
          f"Đạt điểm mua: [Ngày] {kq.get('ly_do_ngay', '')} ✔ · [Vùng] trong vùng ✔",
          (f"  [15'{nen}] {_gon(kq['tieu_chi'])}" if kq["tieu_chi"] and not kq.get("atc") else f"  {kq['ly_do']}"),
          _khoi_luong(kq, gia, cl)]
+    if kq.get("he_so_quyen"):
+        d.append(f"(Giá đã điều chỉnh quyền – vùng / CL của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
+                 "kiểm tra lại giá trên bảng điện)")
     if dang_giu:
         d.append("💼 Mã đang có trong danh mục – xem điều kiện MUA THÊM trong tin tổng kết, không mua trùng.")
     d.append(f"(Cách vào {bien_the} · đã mua → ghi gia_von, cat_lo_goc = CL, ngay_mua vào danh mục)")

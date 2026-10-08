@@ -413,3 +413,16 @@ def test_tai_bo_nguon_dieu_chinh_do_dang(monkeypatch, tmp_path):
     monkeypatch.setattr(du_lieu, "cac_nguon", lambda *a: [("SSI", lambda: _nen(22.4)), ("VCI", lambda: _nen(22.4))])
     df = du_lieu.tai("HDB", "D")                              # mọi nguồn cùng lệch = GDKHQ thật → giữ nguyên
     assert len(df) == 6 and df.close.iloc[-1] == 22.4 and du_lieu.NGUON_DA_DUNG[("HDB", "D")] == "SSI"
+
+
+def test_quy_thang_gia_khi_nguon_dieu_chinh_quyen():
+    from canh_bao import diem_vao
+    z = {"ma": "HDB", "gia": 28.0, "tu": 27.45, "den": 28.70, "cl": 26.6, "nhom": "MUA_MOI"}
+    idx = pd.to_datetime(["2026-10-08 14:30", "2026-10-08 14:45", "2026-10-09 09:15"])
+    dc = pd.DataFrame({"close": [21.5, 21.5384, 21.6]}, index=idx)          # nguồn đã chia 1,3 cả chuỗi
+    q = diem_vao.quy_thang_gia(z, dc, "2026-10-09 10:00")
+    assert q["tu"] == pytest.approx(27.45 / 1.3, rel=1e-3) and q["cl"] == pytest.approx(26.6 / 1.3, rel=1e-3)
+    assert q["he_so_quyen"] == pytest.approx(1 / 1.3, rel=1e-3)
+    tho = dc.assign(close=[27.9, 28.0, 28.1])                              # cùng thang → giữ nguyên
+    assert diem_vao.quy_thang_gia(z, tho, "2026-10-09 10:00") is z
+    assert diem_vao.quy_thang_gia({**z, "gia": None}, dc, "2026-10-09 10:00")["tu"] == 27.45
