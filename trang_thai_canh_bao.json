@@ -31,8 +31,10 @@
   },
   "MSN": {
    "ngay": "2026-10-08",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "BSR": {
    "ngay": "2026-10-08",
@@ -55,7 +57,7 @@
     "Mã": "SBT",
     "Nhóm": "MUA MỚI",
     "Vùng": "22.35–23.45",
-    "Giá": 22.65,
+    "Giá": 22.75,
     "Trạng thái": "MUA",
     "Lý do": "khớp LO 22.72",
     "Giờ": "09:15",
@@ -75,7 +77,7 @@
     "Mã": "TLG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "53.10–55.00",
-    "Giá": 54.8,
+    "Giá": 55.0,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -85,7 +87,7 @@
     "Mã": "HDB",
     "Nhóm": "VÀO ½ KL",
     "Vùng": "27.45–28.70",
-    "Giá": 28.0,
+    "Giá": 27.9,
     "Trạng thái": "MUA",
     "Lý do": "khớp LO 27.87",
     "Giờ": "09:15",
@@ -95,7 +97,7 @@
     "Mã": "GMD",
     "Nhóm": "VÀO ½ KL",
     "Vùng": "52.80–55.00",
-    "Giá": 54.4,
+    "Giá": 54.3,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -105,17 +107,17 @@
     "Mã": "MSN",
     "Nhóm": "VÀO ½ KL",
     "Vùng": "73.10–76.20",
-    "Giá": 74.6,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 74.3,
+    "Trạng thái": "MUA",
+    "Lý do": "khớp LO 74.13",
+    "Giờ": "14:15",
+    "Giá mua": 74.13333333333333
    },
    {
     "Mã": "BSR",
     "Nhóm": "VÀO ½ KL",
     "Vùng": "30.75–31.95",
-    "Giá": 32.05,
+    "Giá": 32.0,
     "Trạng thái": "BỎ",
     "Lý do": "mở cửa 32.00 > 31.95 – không đuổi",
     "Giờ": "",
