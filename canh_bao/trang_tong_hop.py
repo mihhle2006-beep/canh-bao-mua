@@ -18,7 +18,6 @@ import numpy as np
 import pandas as pd
 
 from . import cau_hinh as C
-from .nganh import nganh_cua
 
 FILE_RIENG = "trang_tong_hop_rieng.html"
 
@@ -162,9 +161,8 @@ def _khoi_tin_hieu(cl, cb):
     mua = [k for k in kn if k.get("nhom") in NHOM_MUA]
     khac = [k for k in kn if k.get("nhom") not in NHOM_MUA]
     out = [f"<h3>Danh sách mua phiên {pd.Timestamp(hl):%d/%m}</h3>" if hl else "<h3>Danh sách mua phiên tới</h3>",
-           _bang(["Mã", "Ngành", "Nhóm", "Giá", "Vùng mua", "Cắt lỗ", "MT 1R → 3R", "Lý do"],
-                 [[f"<b>{_e(k['ma'])}</b>", f'<span class="mo">{_e(k.get("nganh") or nganh_cua(k["ma"]))}</span>',
-                   TEN_NHOM.get(k.get("nhom"), _e(k.get("nhom"))), _f(k.get("gia")),
+           _bang(["Mã", "Nhóm", "Giá", "Vùng mua", "Cắt lỗ", "MT 1R → 3R", "Lý do"],
+                 [[f"<b>{_e(k['ma'])}</b>", TEN_NHOM.get(k.get("nhom"), _e(k.get("nhom"))), _f(k.get("gia")),
                    f"{_f(k.get('tu'))}–{_f(k.get('den'))}", _f(k.get("cl")),
                    f"{_f(k.get('mt1'))} → {_f(k.get('mt3'))}", f'<span class="mo">{_e(k.get("ly_do"))}</span>']
                   for k in mua])]
