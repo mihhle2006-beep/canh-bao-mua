@@ -120,7 +120,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     if giu and os.environ.get("GITHUB_ACTIONS"):
         print(cong_khai)                                       # log công khai: bỏ phần 💼
     if khong_gui:
-        print(tin)
+        _in(tin, rieng_tu=bool(giu))
     else:
         gui(tin, rieng_tu=bool(giu))
     if C.GUI_EXCEL:
@@ -137,6 +137,14 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
             print(f"⚠ Excel lỗi: {type(e).__name__}: {str(e)[:150]}")
     _trang(bay_gio, giu, kq_bt, khong_gui)
     return 0
+
+
+def _in(nd, rieng_tu=False):
+    """In tin thay vì gửi (--khong_gui). Trên GitHub Actions (log CÔNG KHAI) KHÔNG in tin có danh mục thật."""
+    if rieng_tu and os.environ.get("GITHUB_ACTIONS"):
+        print(f"(tin riêng tư {len(nd)} ký tự – không in log công khai)")
+    else:
+        print(nd)
 
 
 def _an_toan(ten, f, *a, **k):
@@ -229,7 +237,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
         if diem_vao.can_bao(kq["ma"], kq["trang_thai"], bay_gio, luu, kq["ly_do"]):
             nd = diem_vao.tin_mua(kq, bay_gio, bien_the, kq["ma"] in vt) if kq["trang_thai"] == "MUA" else \
                 diem_vao.tin_bo(kq, bay_gio)
-            gui(nd, rieng_tu=kq["ma"] in vt) if not khong_gui else print(nd)
+            gui(nd, rieng_tu=kq["ma"] in vt) if not khong_gui else _in(nd, rieng_tu=kq["ma"] in vt)
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
@@ -260,7 +268,7 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
         kb = vi_the.danh_gia_ban(v, kq, dn, bay_gio)
         if vi_the.can_bao_ban(ma, kb["muc"], bay_gio, tt_ban):
             nd = vi_the.tin_ban(v, kb, kq, bay_gio)
-            gui(nd, rieng_tu=True) if not khong_gui else print(nd)
+            gui(nd, rieng_tu=True) if not khong_gui else _in(nd, rieng_tu=True)
             if C.GHI_NHAT_KY:
                 nhat_ky.ghi_ban(kq, kb, bay_gio)
             so_ban += 1

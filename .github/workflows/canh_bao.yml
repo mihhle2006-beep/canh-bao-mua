@@ -19,6 +19,10 @@ on:
         description: "Chỉ xem mã này (VD FPT hoặc FPT,HPG) – bỏ trống = chạy bình thường; xem mã không ghi trạng thái"
         default: ""
         type: string
+      chi_thu:
+        description: "Chỉ thử – KHÔNG gửi Telegram, KHÔNG lưu trạng thái (kết quả xem trong log)"
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -73,11 +77,20 @@ jobs:
           BO_LOC_TOKEN: ${{ secrets.BO_LOC_TOKEN }}          # token CHỈ ĐỌC repo Bo_Loc (bỏ trống nếu Bo_Loc công khai)
           BO_LOC_REPO: ${{ vars.BO_LOC_REPO }}               # để trống = cau_hinh.BO_LOC_REPO
           MA: ${{ inputs.ma }}
+          CHI_THU: ${{ inputs.chi_thu }}
         # lịch thứ Bảy → lich_su; chạy tay → chế độ đã chọn; còn lại → tu_dong
-        # có nhập mã → chỉ xem mã đó
+        # có nhập mã → chỉ xem mã đó · chỉ thử → không gửi Telegram, khôi phục trạng thái riêng (cache_ptcp) sau khi chạy
         run: |
-          if [ -n "$MA" ]; then python chay.py --chi_ma "$MA"; exit $?; fi
-          python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || inputs.che_do || 'tu_dong' }}
+          THEM=""
+          if [ "$CHI_THU" = "true" ]; then THEM="--khong_gui"; rm -rf /tmp/ptcp_goc; cp -a cache_ptcp /tmp/ptcp_goc 2>/dev/null || true; fi
+          ma_thoat=0
+          if [ -n "$MA" ]; then
+            python chay.py --chi_ma "$MA" $THEM || ma_thoat=$?
+          else
+            python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || inputs.che_do || 'tu_dong' }} $THEM || ma_thoat=$?
+          fi
+          if [ "$CHI_THU" = "true" ] && [ -d /tmp/ptcp_goc ]; then rm -rf cache_ptcp; cp -a /tmp/ptcp_goc cache_ptcp; fi
+          exit $ma_thoat
 
       - name: Tải file Excel độ chính xác (chế độ lịch sử)
         if: always() && hashFiles('danh_gia_tin_hieu.xlsx') != ''
@@ -88,7 +101,7 @@ jobs:
           retention-days: 30
 
       - name: Lưu trạng thái, nhật ký tín hiệu & trang tổng hợp (công khai)
-        if: always()
+        if: always() && inputs.chi_thu != true        # chỉ thử → không commit gì
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
