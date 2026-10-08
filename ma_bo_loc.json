@@ -18,7 +18,43 @@
    ],
    "dat_mua": "2026-10-08",
    "dat_gan_nhat": "2026-10-08"
+  },
+  "DBC": {
+   "ngay_them": "2026-10-08",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "rieng"
+   ],
+   "dat_mua": "2026-10-08",
+   "dat_gan_nhat": "2026-10-08"
+  },
+  "DPR": {
+   "ngay_them": "2026-10-08",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "rieng"
+   ],
+   "dat_mua": "2026-10-08",
+   "dat_gan_nhat": "2026-10-08"
+  },
+  "MSB": {
+   "ngay_them": "2026-10-08",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "rieng ½"
+   ],
+   "dat_mua": "2026-10-08",
+   "dat_gan_nhat": "2026-10-08"
+  },
+  "TDP": {
+   "ngay_them": "2026-10-08",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "rieng"
+   ],
+   "dat_mua": "2026-10-08",
+   "dat_gan_nhat": "2026-10-08"
   }
  },
- "ngay_quet_da_nhan": "2026-10-08 04:16"
+ "ngay_quet_da_nhan": "2026-10-08 15:20"
 }
