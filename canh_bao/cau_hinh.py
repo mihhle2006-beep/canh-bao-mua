@@ -16,6 +16,7 @@ MA_THEO_DOI = list(dict.fromkeys(MA_VN30 + MA_THEM))
 # Độ rộng thị trường (1 trong 8 chỉ báo → CL1/CL2) tính trên MA_CHIEN_LUOC (41 mã đã backtest) + mã đang quét,
 # để điểm thị trường không đổi theo danh sách cảnh báo. Mã chỉ dùng cho độ rộng KHÔNG lên danh sách mua.
 DO_RONG_THEO_MA_CHIEN_LUOC = True
+SO_MA_CUNG_NGANH = 4               # xem riêng 1 mã (--chi_ma): kèm trạng thái tối đa N mã cùng ngành (bản đồ ptcp/nganh.py)
 # Mã tự thêm từ bộ lọc (repo Bo_Loc, quét thứ 2 & thứ 5) nằm ở FILE_MA_BO_LOC – xem mục "MÃ TỪ BỘ LỌC" cuối file.
 NGAY_BAT_DAU = "2019-01-01"        # dữ liệu ngày TỐI THIỂU từ 2019 (= giai đoạn backtest; khung tuần, MA200, đỉnh/đáy)
 

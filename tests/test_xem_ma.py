@@ -25,7 +25,8 @@ def test_chi_ma_khong_ghi_file(tmp_path, monkeypatch, capsys):
         goi["ds"] = ds_ma
         return ra, None
     with mock.patch.object(chien_luoc_bot, "chay_chien_luoc", chay_cl), \
-            mock.patch.object(tong_ket_cl, "ds_khuyen_nghi", lambda r: [k]):
+            mock.patch.object(tong_ket_cl, "ds_khuyen_nghi", lambda r: [k]), \
+            mock.patch.object(chay, "ma_cung_nganh", lambda ma, n=4: []):
         assert chay.main(["--chi_ma", "fpt, hpg,XYZ", "--khong_gui"]) == 0
     out = capsys.readouterr().out
     assert goi["ds"] == ["FPT", "HPG", "XYZ"]
@@ -42,3 +43,25 @@ def test_khong_in_tin_rieng_tu_ra_log_cong_khai(monkeypatch, capsys):
     monkeypatch.delenv("GITHUB_ACTIONS")
     chay._in("💼 ĐANG GIỮ HPG", rieng_tu=True)                 # chạy trên máy: in bình thường
     assert "HPG" in capsys.readouterr().out
+
+
+def test_xem_ma_kem_ma_cung_nganh(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    ra = {"doc": {"ngay": "2026-10-07", "diem": 4, "so_chi_bao": 8}, "cl": 2, "thieu": [], "diem_mua": {}}
+    kn = [{"ma": "MBB", "nhom": "VAO_NUA", "tu": 20, "den": 21, "cl": 19, "mt1": 22, "mt3": 24, "ly_do": "MACD",
+           "he_so_kl": 1, "nganh": "Ngân hàng"},
+          {"ma": "VCB", "nhom": "CHO", "tu": 60, "den": 61, "cl": 57, "mt1": 64, "mt3": 70, "ly_do": "", "he_so_kl": 1}]
+    goi = {}
+
+    def chay_cl(tai, bay_gio, ds_ma=None, ds_do_rong=None):
+        goi["ds"] = ds_ma
+        return ra, None
+    with mock.patch.object(chien_luoc_bot, "chay_chien_luoc", chay_cl), \
+            mock.patch.object(tong_ket_cl, "ds_khuyen_nghi", lambda r: kn), \
+            mock.patch.object(chay, "ma_cung_nganh", lambda ma, n=4: ["VCB", "BID"]), \
+            mock.patch.object(chay, "nganh_cua", lambda ma: "Ngân hàng"):
+        assert chay.main(["--chi_ma", "MBB", "--khong_gui"]) == 0
+    out = capsys.readouterr().out
+    assert goi["ds"] == ["MBB", "VCB", "BID"]                      # quét thêm mã cùng ngành
+    assert "MBB | 20.00–21.00" in out and "· Ngân hàng" in out
+    assert "Cùng ngành (Ngân hàng): VCB ⏳ chờ · BID –" in out
