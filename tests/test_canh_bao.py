@@ -387,3 +387,30 @@ def test_ptcp_rut_gon_co_vung_mua_va_backtest(tmp_path, monkeypatch):
     assert any(x.startswith("Backtest:") for x in dong)
     if pt["vung_mua"]:
         assert any(x.startswith("Vùng mua") for x in dong)
+
+
+# ---------------------------------------------------------------- nến ngày cuối sai (giá tham chiếu đã điều chỉnh)
+def _nen(gia_cuoi, cao_thap=None):
+    t = pd.bdate_range("2026-10-01", periods=6)
+    c = [28.0, 28.1, 27.9, 28.05, 28.1, gia_cuoi]
+    h = [x * 1.01 for x in c[:-1]] + [cao_thap[0] if cao_thap else gia_cuoi]
+    l_ = [x * 0.99 for x in c[:-1]] + [cao_thap[1] if cao_thap else gia_cuoi]
+    return pd.DataFrame({"time": t, "open": c, "high": h, "low": l_, "close": c, "volume": 1e6})
+
+
+def test_nen_cuoi_ngo_bat_gia_tham_chieu_dieu_chinh():
+    """VNDirect 08/10/2026: HDB 21,538 (= 28 ÷ 1,3), mở = cao = thấp = đóng – sai; ngày GDKHQ thật có biên độ – đúng."""
+    assert du_lieu.nen_cuoi_ngo(du_lieu.chuan_hoa(_nen(21.538)))
+    assert not du_lieu.nen_cuoi_ngo(du_lieu.chuan_hoa(_nen(21.6, (22.2, 21.4))))    # GDKHQ thật: có biên độ
+    assert not du_lieu.nen_cuoi_ngo(du_lieu.chuan_hoa(_nen(30.05)))                   # trần 7% không biên độ: đúng
+
+
+def test_tai_bo_nguon_nen_cuoi_sai(monkeypatch, tmp_path):
+    monkeypatch.setattr(du_lieu, "THU_MUC_CACHE", str(tmp_path))
+    monkeypatch.setattr(du_lieu, "cac_nguon", lambda *a: [("VNDirect", lambda: _nen(21.538)),
+                                                          ("DNSE", lambda: _nen(27.9, (28.2, 27.8)))])
+    df = du_lieu.tai("HDB", "D")
+    assert df.close.iloc[-1] == 27.9 and du_lieu.NGUON_DA_DUNG[("HDB", "D")] == "DNSE"
+    monkeypatch.setattr(du_lieu, "cac_nguon", lambda *a: [("VNDirect", lambda: _nen(21.538))])
+    df = du_lieu.tai("HDB", "D")                                          # mọi nguồn sai → bỏ nến cuối
+    assert len(df) == 5 and df.close.iloc[-1] == 28.1
