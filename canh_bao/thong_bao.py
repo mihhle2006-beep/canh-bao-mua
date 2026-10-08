@@ -60,8 +60,9 @@ def gui(noi_dung, rieng_tu=False, anh=None):
     return ok
 
 
-def gui_file(path, chu_thich="", rieng_tu=False):
-    """Gửi 1 file (Excel…) qua Telegram sendDocument. rieng_tu: không in tên/chú thích chi tiết ra log Actions."""
+def gui_file(path, chu_thich="", rieng_tu=False, ten=None):
+    """Gửi 1 file (Excel…) qua Telegram sendDocument. rieng_tu: không in tên/chú thích chi tiết ra log Actions.
+    ten: tên file hiện trên Telegram (VD 'Cảnh báo mua 08-10-2026.xlsx'); bỏ trống = tên gốc."""
     token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not path or not os.path.exists(path):
         return False
@@ -71,7 +72,7 @@ def gui_file(path, chu_thich="", rieng_tu=False):
     try:
         with open(path, "rb") as fh:
             r = requests.post(f"https://api.telegram.org/bot{token}/sendDocument",
-                              data={"chat_id": chat, "caption": chu_thich[:1000]}, files={"document": fh}, timeout=120)
+                              data={"chat_id": chat, "caption": chu_thich[:1000]}, files={"document": (ten or os.path.basename(path), fh)}, timeout=120)
         if r.status_code != 200:
             print("Telegram (file) lỗi:", r.text[:200] if not rieng_tu else r.status_code)
             return False

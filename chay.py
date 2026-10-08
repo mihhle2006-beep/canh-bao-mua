@@ -129,7 +129,8 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
             from canh_bao.bao_cao_excel import xuat
             path = xuat(ra, giu=giu, kq_bt=kq_bt, rieng=bool(giu))
             if not khong_gui:
-                gui_file(path, f"Chi tiết chiến lược {pd.Timestamp(bay_gio):%d/%m/%Y}", rieng_tu=bool(giu))
+                gui_file(path, f"Chi tiết chiến lược {pd.Timestamp(bay_gio):%d/%m/%Y}", rieng_tu=bool(giu),
+                         ten=f"Cảnh báo mua {pd.Timestamp(bay_gio):%d-%m-%Y}{os.path.splitext(path)[1]}")
             else:
                 print(f"Đã xuất {path}")
             if giu and os.environ.get("GITHUB_ACTIONS"):
@@ -167,7 +168,8 @@ def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):
     if giu and C.GUI_TRANG_RIENG:
         p = _an_toan("Trang riêng", trang_tong_hop.tao, None, giu, bay_gio, kq_bt)
         if p and not khong_gui:
-            gui_file(p, f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d/%m/%Y} (mở bằng trình duyệt)", rieng_tu=True)
+            gui_file(p, f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d/%m/%Y} (mở bằng trình duyệt)", rieng_tu=True,
+                     ten=f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d-%m-%Y}{os.path.splitext(p)[1]}")
         if p and os.environ.get("GITHUB_ACTIONS"):
             os.remove(p)                                       # có danh mục thật: không để lại trên máy chạy
 
