@@ -66,8 +66,10 @@
   },
   "DPR": {
    "ngay": "2026-10-09",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "VIB": {
    "ngay": "2026-10-09",
@@ -88,7 +90,7 @@
     "Mã": "DBC",
     "Nhóm": "MUA MỚI",
     "Vùng": "15.25–16.00",
-    "Giá": 15.45,
+    "Giá": 15.55,
     "Trạng thái": "MUA",
     "Lý do": "khớp LO 15.50",
     "Giờ": "09:15",
@@ -109,16 +111,16 @@
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "37.20–38.90",
     "Giá": 37.85,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
-    "Giờ": "",
-    "Giá mua": null
+    "Trạng thái": "MUA",
+    "Lý do": "khớp LO 37.77",
+    "Giờ": "10:15",
+    "Giá mua": 37.766666666666666
    },
    {
     "Mã": "SBT",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "22.45–23.45",
-    "Giá": 22.55,
+    "Giá": 22.6,
     "Trạng thái": "MUA",
     "Lý do": "mở cửa ≤ giá LO",
     "Giờ": "09:15",
@@ -128,7 +130,7 @@
     "Mã": "MCH",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "141.00–147.80",
-    "Giá": 142.9,
+    "Giá": 143.0,
     "Trạng thái": "MUA",
     "Lý do": "khớp LO 143.27",
     "Giờ": "09:15",
@@ -148,7 +150,7 @@
     "Mã": "VIB",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "13.40–13.85",
-    "Giá": 13.65,
+    "Giá": 13.7,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -168,7 +170,7 @@
     "Mã": "MSN",
     "Nhóm": "VÀO ½ KL",
     "Vùng": "72.60–76.20",
-    "Giá": 73.9,
+    "Giá": 74.2,
     "Trạng thái": "MUA",
     "Lý do": "khớp LO 73.80",
     "Giờ": "09:15",
@@ -198,7 +200,7 @@
     "Mã": "MSB",
     "Nhóm": "VÀO ½ KL",
     "Vùng": "14.35–14.90",
-    "Giá": 14.65,
+    "Giá": 14.6,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
