@@ -64,7 +64,9 @@ def lenh_gia_dinh(nk, bay_gio):
     mo = {}
     for _, r in x[~x["ket_qua"].isin(DONG + ("BỎ QUA",))].iterrows():
         if r["ma"] in mo:
-            mo[r["ma"]]["them"].append(str(r["ngay"]))
+            dau = mo[r["ma"]]
+            if _ngay(r["ngay"]) > _ngay(dau["ngay_vao"]) and str(r["ngay"]) not in dau["them"]:
+                dau["them"].append(str(r["ngay"]))             # chỉ khuyến nghị MỚI sau ngày vào (bỏ ghi lặp)
         else:
             mo[r["ma"]] = {**r.to_dict(), "them": []}
     return mo, [r.to_dict() for _, r in x[x["ket_qua"].isin(DONG)].iterrows()]
