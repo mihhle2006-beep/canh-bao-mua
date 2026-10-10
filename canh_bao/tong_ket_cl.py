@@ -204,6 +204,31 @@ def dong_giu(vt, kb, mt):
 
 
 # ------------------------------------------------------------------ tin tổng kết
+def dong_su_kien(gia_ma, bay_gio):
+    """
+    gia_ma {mã: giá đóng cửa} → dòng báo trước GDKHQ trong SO_NGAY_BAO_QUYEN ngày tới (lịch VNDirect).
+    Vùng / CL trong tin là giá TRƯỚC GDKHQ – bot 15' tự quy đổi theo tỷ lệ khi tới ngày.
+    """
+    if not getattr(C, "BAO_SU_KIEN_QUYEN", False) or not gia_ma:
+        return []
+    try:
+        from ptcp.su_kien_quyen import he_so_gia, sap_toi
+    except ImportError:
+        return []
+    out = []
+    for ma in sorted(gia_ma):
+        try:
+            sk = sap_toi(ma, getattr(C, "SO_NGAY_BAO_QUYEN", 10), bay_gio)
+        except Exception:                                        # noqa: BLE001 – lịch lỗi không chặn tin
+            continue
+        for d, x in sk.items():
+            f = he_so_gia(x, gia_ma[ma])
+            out.append(f"• {ma} GDKHQ {d:%d/%m}: {x['mo_ta']} → giá × {f:.3f}"
+                       + (f" (≈ {_f(gia_ma[ma] * f)})" if gia_ma[ma] == gia_ma[ma] and gia_ma[ma] else "")
+                       + (f", số CP × {x['he_so_cp']:.2f}" if x["he_so_cp"] != 1 else ""))
+    return (["", "📅 SẮP GDKHQ – vùng / CL tự quy đổi theo tỷ lệ khi tới ngày"] + out) if out else []
+
+
 def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
     """
     ra: chien_luoc_bot.chay_chien_luoc · giu: [(vt, kb, mt)] (None/[] → tin công khai) · kq_bt: ket_qua_backtest.json.
@@ -215,6 +240,9 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
         day_du += ["", f"💼 ĐANG GIỮ ({len(giu)})"]
         for vt, kb, mt in giu:
             day_du += dong_giu(vt, kb, mt)
+        sk = dong_su_kien({vt["ma"]: (kb or {}).get("gia", np.nan) for vt, kb, _ in giu}, bay_gio)
+        day_du += [x.replace("vùng / CL tự quy đổi theo tỷ lệ khi tới ngày", "mã đang giữ: cắt lỗ / giá vốn đổi theo "
+                             "tỷ lệ – danh_muc tự quy đổi") for x in sk]
     if C.GUI_EXCEL:
         day_du.append("📎 Chi tiết, lịch sử & backtest: file Excel đính kèm")
     return "\n".join(day_du).rstrip(), "\n".join(_tin(ra, bay_gio, kq_bt, set())).rstrip()
@@ -258,6 +286,7 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
         dong.append(f"⛔ KHÔNG VÀO ({len(ko)}): " + ", ".join(k["ma"] for k in ko))
     if not any(k["nhom"] in NHOM_MUA for k in ks):
         dong += ["", "Không có mã nào để mua phiên tới."]
+    dong += dong_su_kien({k["ma"]: k["gia"] for k in ks if k["nhom"] in NHOM_MUA + ("CHO",)}, bay_gio)
     dong += ["", "Mua trong vùng; mở cửa > vùng thì bỏ (không đuổi), rơi < vùng trước khi mua thì bỏ. "
                  + (f"KL = {getattr(C, 'RUI_RO_MOI_LENH_PCT', 1.0):g}% vốn ÷ (giá − CL) × hệ số (ATR mục tiêu "
                     f"{C.ATR_MUC_TIEU_PCT:g}%/ngày, 🟡 thêm ×½). " if getattr(C, "KL_THEO_BIEN_DONG", False) else

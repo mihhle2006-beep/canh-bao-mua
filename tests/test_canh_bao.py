@@ -426,3 +426,47 @@ def test_quy_thang_gia_khi_nguon_dieu_chinh_quyen():
     tho = dc.assign(close=[27.9, 28.0, 28.1])                              # cùng thang → giữ nguyên
     assert diem_vao.quy_thang_gia(z, tho, "2026-10-09 10:00") is z
     assert diem_vao.quy_thang_gia({**z, "gia": None}, dc, "2026-10-09 10:00")["tu"] == 27.45
+
+
+def test_tai_nguon_co_dinh_va_canh_bao_lech_thang(monkeypatch, tmp_path):
+    monkeypatch.setattr(du_lieu, "THU_MUC_CACHE", str(tmp_path))
+    idx = pd.bdate_range("2026-09-01", periods=10)
+    tho = pd.DataFrame({"time": idx, "open": 28.0, "high": 28.2, "low": 27.8, "close": 28.0, "volume": 1e6})
+    adj = tho.assign(open=21.5, high=21.7, low=21.3, close=21.5)
+    goi, loi = [], set()
+
+    def ds(ma, tu, den, khung, chi_so):
+        def f(ten, df):
+            def g():
+                goi.append(ten)
+                if ten in loi:
+                    raise ValueError("lỗi")
+                return df.copy()
+            return ten, g
+        return [f("B", adj), f("A", tho)] if goi else [f("A", tho), f("B", adj)]
+    monkeypatch.setattr(du_lieu, "cac_nguon", ds)
+    du_lieu.tai("HDB", "D")
+    assert du_lieu.doc_nguon_uu_tien()["HDB_D"] == "A"
+    goi.clear()
+    goi.append("_")                                                        # lần 2: danh sách nguồn đảo thứ tự
+    du_lieu.tai("HDB", "D")
+    assert goi[1] == "A"                                                   # nguồn cố định thử trước
+    loi.add("A")
+    du_lieu.CANH_BAO_NGUON.clear()
+    du_lieu.tai("HDB", "D")
+    assert du_lieu.CANH_BAO_NGUON and "×0.768" in du_lieu.CANH_BAO_NGUON[0]
+
+
+def test_quy_thang_gia_theo_lich_khi_chuoi_tho(monkeypatch):
+    """Chuỗi 15' thô (đóng cửa hôm qua = giá của tin) nhưng hôm nay GDKHQ theo lịch → vẫn quy đổi vùng."""
+    from canh_bao import diem_vao
+    S = pytest.importorskip("ptcp.su_kien_quyen")  # ptcp mới (danh-muc)
+    monkeypatch.setattr(diem_vao.C, "BAO_SU_KIEN_QUYEN", True)
+    monkeypatch.setattr(S, "lay_su_kien", lambda ma: [{"ma": ma, "loai": "STOCKDIV", "ten_loai": "cổ tức bằng CP",
+                                                        "ngay": pd.Timestamp("2026-10-09"), "ty_le_pct": 30.0,
+                                                        "tien": 0.0, "mo_ta": ""}])
+    z = {"ma": "HDB", "gia": 28.0, "tu": 27.45, "den": 28.70, "cl": 26.6}
+    dp = pd.DataFrame({"close": [27.9, 28.0]}, index=pd.to_datetime(["2026-10-08 14:30", "2026-10-08 14:45"]))
+    q = diem_vao.quy_thang_gia(z, dp, "2026-10-09 09:30")
+    assert q["tu"] == pytest.approx(27.45 / 1.3) and q["he_so_quyen"] == pytest.approx(1 / 1.3)
+    assert diem_vao.quy_thang_gia(z, dp, "2026-10-12 09:30") is z               # không phải ngày GDKHQ

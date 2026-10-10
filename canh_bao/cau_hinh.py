@@ -108,6 +108,8 @@ SO_MA_TRONG_TIN = 12               # số dòng tối đa mỗi mục (mua phiê
 #   Tin 15:20 chỉ còn: thị trường & CL · 🟢/✅/🟡 mua (mã | vùng | mục tiêu 1R→3R | cắt lỗ | đạt điểm mua) ·
 #   ⏳ chờ điều chỉnh · ⛔ không vào · 💼 đang giữ (lãi/lỗ theo danh mục, cắt lỗ, mua thêm). Chi tiết → file Excel.
 SO_MA_MOI_NHOM = 8                 # số mã tối đa mỗi nhóm trong tin (còn lại xem Excel)
+BAO_SU_KIEN_QUYEN = True           # tin tổng kết: báo trước GDKHQ (chia / thưởng CP, cổ tức) – lịch VNDirect
+SO_NGAY_BAO_QUYEN = 10             # báo sự kiện có GDKHQ trong 10 ngày tới
 GUI_EXCEL = True                   # gửi file Excel chi tiết kèm tin tổng kết (riêng tư nếu có danh mục)
 FILE_EXCEL = "bao_cao_chien_luoc.xlsx"
 LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị chiến lược (chấm theo hệ thoát)
