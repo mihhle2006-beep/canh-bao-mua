@@ -5,6 +5,7 @@ thử lại khi lỗi, cache cục bộ khi mọi nguồn lỗi. Không dùng vn
   • Khung: ngày "D", giờ "60", phút "5"/"15"/"30". Giá cổ phiếu theo NGHÌN ĐỒNG (tự quy đổi nếu nguồn trả đồng).
   • bo_nen_chua_dong: bỏ nến đang chạy (chưa kết thúc) → tín hiệu không "nhấp nháy" trong lúc nến chưa đóng.
 """
+import json
 import os
 import re
 import time
@@ -149,6 +150,56 @@ def nen_cuoi_ngo(df):
     return bool(truoc > 0 and abs(float(df.close.iloc[-1]) / truoc - 1) > BIEN_DO_NEN_NGO)
 
 
+NGUONG_LECH_THANG = 0.03    # đổi nguồn mà giá cùng phiên lệch > 3% → thang giá khác (điều chỉnh quyền khác nhau)
+CANH_BAO_NGUON = []         # cảnh báo đổi nguồn lệch thang trong lần chạy (tin sức khoẻ / log)
+
+
+def _file_nguon():
+    return os.path.join(THU_MUC_CACHE, "nguon_uu_tien.json")
+
+
+def doc_nguon_uu_tien():
+    try:
+        with open(_file_nguon(), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def _ghi_nguon_uu_tien(khoa, ten):
+    d = doc_nguon_uu_tien()
+    if d.get(khoa) == ten:
+        return
+    d[khoa] = ten
+    try:
+        os.makedirs(THU_MUC_CACHE, exist_ok=True)
+        with open(_file_nguon(), "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=0, sort_keys=True)
+    except OSError:
+        pass
+
+
+def lech_thang(df, cu, so_phien=20):
+    """Trung vị giá đóng cửa df / cu trên các nến chung gần nhất; lệch > 3% → tỷ lệ, ngược lại None."""
+    if df is None or cu is None or not len(df) or not len(cu):
+        return None
+    chung = df.index.intersection(cu.index)[-so_phien:]
+    if len(chung) < 3:
+        return None
+    r = float((df.close.loc[chung] / cu.close.loc[chung]).median())
+    return r if abs(r - 1) > NGUONG_LECH_THANG else None
+
+
+def _doc_cache(khoa):
+    f = _cache(khoa)
+    if not os.path.exists(f):
+        return None
+    try:
+        return pd.read_csv(f, index_col=0, parse_dates=True).astype(float)
+    except (OSError, ValueError):
+        return None
+
+
 def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
     """
     Tải nến; mọi nguồn lỗi → dùng cache (in cảnh báo). Trả DataFrame hoặc None.
@@ -161,7 +212,12 @@ def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
     else:
         tu = int(pd.Timestamp(tu_ngay).timestamp())
     loi, du_phong = [], None
-    for ten, ham in cac_nguon(ma, tu, den, khung, chi_so):
+    khoa = f"{ma}_{khung}"
+    uu_tien = doc_nguon_uu_tien().get(khoa)                 # nguồn cố định của mã: lần trước dùng được → thử trước
+    nguon = cac_nguon(ma, tu, den, khung, chi_so)
+    if uu_tien:
+        nguon = sorted(nguon, key=lambda x: x[0] != uu_tien)
+    for ten, ham in nguon:
         try:
             df = chuan_hoa(ham(), chi_so)
             if df.empty:
@@ -171,8 +227,17 @@ def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):
                 raise ValueError(f"nến {df.index[-1]:%d/%m} lệch bất thường ({df.close.iloc[-2]:g} → "
                                  f"{df.close.iloc[-1]:g}) – điều chỉnh dở dang?")
             NGUON_DA_DUNG[(ma, khung)] = ten
+            if uu_tien and ten != uu_tien and not chi_so:     # nguồn cố định lỗi → so thang giá với lần trước
+                r = lech_thang(df, _doc_cache(khoa))
+                if r:
+                    msg = (f"{ma} {khung}: nguồn cố định {uu_tien} lỗi, dùng {ten} – thang giá lệch ×{r:.3f} so với "
+                           f"lần trước (điều chỉnh chia / thưởng cổ phiếu khác nhau?)")
+                    print(f"  ⚠ {msg}")
+                    CANH_BAO_NGUON.append(msg)
+            elif not uu_tien:
+                _ghi_nguon_uu_tien(khoa, ten)
             try:
-                df.to_csv(_cache(f"{ma}_{khung}"))
+                df.to_csv(_cache(khoa))
             except OSError:
                 pass
             return df
