@@ -29,6 +29,7 @@ def test_theo_doi(tmp_path):
     p = _nk(tmp_path, [
         _r("AAA", "2026-09-01", "2026-09-02", 55.0, 52.0),
         _r("AAA", "2026-09-20", "2026-09-21", 57.0, 54.0),                       # MUA lại cùng mã → ghi kèm
+        _r("AAA", "2026-09-02", "2026-09-03", 55.5, 52.0),                       # ghi lặp trước/đúng ngày vào → bỏ
         _r("BBB", "2026-09-01", "2026-09-02", 60.0, 58.0),                       # giá rơi dưới cắt lỗ → BÁN
         _r("CCC", "2026-08-01", "2026-08-04", 50.0, 47.0, ket_qua="ĐÚNG", ngay_ket_thuc="2026-10-01",
            gia_ket_thuc=55.0, ket_qua_pct=9.5),
@@ -40,7 +41,7 @@ def test_theo_doi(tmp_path):
     txt = "\n".join(out)
     assert "📌 THEO DÕI KHUYẾN NGHỊ ĐÃ GỬI" in txt and "(2 lệnh đang mở)" in txt
     assert txt.index("🔴 BBB") < txt.index("AAA") and "BÁN đầu phiên tới" in txt
-    assert "báo MUA lại 20/09" in txt and "DDD" not in txt
+    assert "(báo MUA lại 02/09, 20/09)" not in txt and "báo MUA lại 20/09)" in txt and "DDD" not in txt
     assert "CCC" not in txt                                                    # lần đầu: không báo lệnh đóng cũ
     p2 = _nk(tmp_path, [_r("AAA", "2026-09-01", "2026-09-02", 55.0, 52.0),
                         _r("EEE", "2026-08-01", "2026-08-04", 50.0, 47.0, ket_qua="SAI", ngay_ket_thuc="2026-10-07",
