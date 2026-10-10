@@ -216,7 +216,7 @@ def test_khoi_luong_theo_bien_dong(monkeypatch):
 def test_dong_su_kien_bao_truoc_gdkhq(monkeypatch):
     import pandas as pd
     from canh_bao import tong_ket_cl as T
-    from ptcp import su_kien_quyen as S
+    S = pytest.importorskip("ptcp.su_kien_quyen")  # ptcp mới (danh-muc)
     monkeypatch.setattr(T.C, "BAO_SU_KIEN_QUYEN", True)
     x = {pd.Timestamp("2026-10-09"): {"he_so_cp": 1.3, "tien": 0.0, "mo_ta": "cổ tức bằng CP 25% + CP thưởng 5%"}}
     monkeypatch.setattr(S, "sap_toi", lambda ma, n, h: x if ma == "HDB" else {})
