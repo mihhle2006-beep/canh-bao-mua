@@ -116,6 +116,13 @@ bán lưu trong cache Actions (`cache_ptcp/`), không commit. `danh_muc.csv` n�
 Cắt lỗ / mục tiêu đã đặt do repo `danh-muc` cập nhật mỗi ngày 15:45 → bot tự dùng mức mới, không phải nhập 2 nơi.
 Chạy trên máy: đặt `danh_muc.csv` cạnh `chay.py`; bỏ cảnh báo bán: `python chay.py --khong_ban`.
 
+## Biểu đồ mốc giá kèm tín hiệu – `canh_bao/bieu_do_moc.py`
+Mỗi tin **MUA NGAY**, các mã nhóm MUA của tin tổng kết (mua mới / vào như lệnh mới / vào ½, tối đa `ANH_MUA_TOI_DA` ảnh) và
+cảnh báo **BÁN / dời cắt lỗ** mã đang giữ (riêng tư, xoá ảnh sau khi gửi) có kèm biểu đồ 120 phiên với các mốc:
+cắt lỗ toàn bộ · ½ đường xuống cắt lỗ (**vẫn GIỮ lại**) · điểm mua – mua toàn bộ / mua 1 phần (½) + vùng mua ·
+1R mua thêm ½ (khi có tín hiệu mới) & dời cắt lỗ hoà vốn · 2R chốt lời hết nếu đã qua 3R rồi rơi về ·
+3R **GIỮ lại** (không chốt 1 phần – backtest chốt ⅓/½ ở 3R kém hơn), chuyển bán theo MA10 tuần. Tắt: `GUI_ANH = False`.
+
 ## Theo dõi khuyến nghị đã gửi – `canh_bao/theo_doi_kn.py`
 Cuối tin tổng kết có mục **📌 THEO DÕI KHUYẾN NGHỊ ĐÃ GỬI** – "nếu đã mua theo khuyến nghị thì giờ làm gì", không cần nhập
 danh mục. Mỗi khuyến nghị MUA của chiến lược (nhật ký `lich_su_danh_gia.csv`) là 1 lệnh giả định: vào giá mở cửa phiên sau

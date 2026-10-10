@@ -60,6 +60,26 @@ def gui(noi_dung, rieng_tu=False, anh=None):
     return ok
 
 
+def gui_anh(path, chu_thich="", rieng_tu=False):
+    """Gửi 1 ảnh (PNG) kèm chú thích ngắn. rieng_tu: không in chú thích ra log."""
+    if not (path and os.path.exists(path) and C.GUI_ANH):
+        return False
+    print("(ảnh riêng tư)" if rieng_tu and os.environ.get("GITHUB_ACTIONS") else f"[ảnh] {chu_thich}")
+    token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not (token and chat):
+        return False
+    try:
+        with open(path, "rb") as fh:
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendPhoto",
+                              data={"chat_id": chat, "caption": chu_thich[:1000]}, files={"photo": fh}, timeout=60)
+        if r.status_code != 200:
+            print("Telegram (ảnh) lỗi:", r.text[:200])
+        return r.status_code == 200
+    except requests.RequestException as e:
+        print("Telegram (ảnh) lỗi:", str(e)[:100])
+        return False
+
+
 def gui_file(path, chu_thich="", rieng_tu=False):
     """Gửi 1 file (Excel…) qua Telegram sendDocument. rieng_tu: không in tên/chú thích chi tiết ra log Actions."""
     token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
