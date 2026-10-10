@@ -17,7 +17,7 @@ MA_THEO_DOI = list(dict.fromkeys(MA_VN30 + MA_THEM))
 # để điểm thị trường không đổi theo danh sách cảnh báo. Mã chỉ dùng cho độ rộng KHÔNG lên danh sách mua.
 DO_RONG_THEO_MA_CHIEN_LUOC = True
 SO_MA_CUNG_NGANH = 4               # xem riêng 1 mã (--chi_ma): kèm trạng thái tối đa N mã cùng ngành (bản đồ ptcp/nganh.py)
-# Mã tự thêm từ bộ lọc (repo Bo_Loc, quét thứ 2 & thứ 5) nằm ở FILE_MA_BO_LOC – xem mục "MÃ TỪ BỘ LỌC" cuối file.
+# Mã tự thêm từ bộ lọc (repo Bo_Loc, quét mỗi phiên) nằm ở FILE_MA_BO_LOC – xem mục "MÃ TỪ BỘ LỌC" cuối file.
 NGAY_BAT_DAU = "2019-01-01"        # dữ liệu ngày TỐI THIỂU từ 2019 (= giai đoạn backtest; khung tuần, MA200, đỉnh/đáy)
 
 # --- Chỉ báo ---
@@ -142,11 +142,11 @@ VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền 
 
 # --- MÃ TỪ BỘ LỌC (canh_bao/ma_bo_loc.py) ---
 #   Bo_Loc chạy cuối phiên thứ 2 & thứ 5 (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã Hành động MUA).
-#   Tổng kết 15:20 đọc file đó, thêm mã vào danh sách quét trong BO_LOC_SO_NGAY ngày. Vào nhóm mua 🟢/✅/🟡 = ĐẠT
-#   → thêm hạn BO_LOC_SO_NGAY ngày từ ngày đạt. Hết hạn → tự xoá (kể cả mã đang giữ – mã đó vẫn có cảnh báo bán / mua thêm ở phần danh mục riêng tư).
+#   Tổng kết 15:20 đọc file đó, thêm mã vào danh sách quét trong BO_LOC_SO_PHIEN phiên kế tiếp. Bo_Loc lọc lại vẫn
+#   đạt, hoặc vào nhóm mua 🟢/✅/🟡 = ĐẠT → hạn = BO_LOC_SO_PHIEN phiên tính từ ngày đó. Hết hạn → tự xoá (kể cả mã đang giữ – mã đó vẫn có cảnh báo bán / mua thêm ở phần danh mục riêng tư).
 #   Muốn bỏ sớm 1 mã: xoá dòng của mã đó trong FILE_MA_BO_LOC.
 DUNG_BO_LOC = True
-BO_LOC_SO_NGAY = 14                # 2 tuần (ngày lịch) – tính từ ngày thêm, đạt thì tính lại từ ngày đạt
+BO_LOC_SO_PHIEN = 4                # theo dõi 4 phiên kế tiếp (ngày làm việc T2–T6) – lọc lại / đạt thì tính lại từ ngày đó
 FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – chỉ mã & ngày)
 BO_LOC_REPO = "mihhle2006-beep/Bo_Loc"   # ghi đè bằng biến BO_LOC_REPO; repo riêng tư → secret BO_LOC_TOKEN
 BO_LOC_PATH = "ma_mua_bo_loc.json"

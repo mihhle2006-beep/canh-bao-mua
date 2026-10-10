@@ -3,7 +3,7 @@
 TRANG TỔNG HỢP – 1 file HTML tự chứa (không thư viện ngoài) gom những thứ đang rải rác qua Telegram & Excel:
   ① Sức khoẻ thị trường: điểm 8 chỉ báo, CL đang áp dụng, VN-Index đi ngang hay có xu hướng
   ② Tín hiệu hôm nay: danh sách mua phiên tới (tin tổng kết) + trạng thái điểm vào 15' trong phiên
-  ③ Mã từ bộ lọc Bo_Loc: ngày thêm, hạn 2 tuần, đã đạt điểm mua chưa (ma_bo_loc.json)
+  ③ Mã từ bộ lọc Bo_Loc: ngày thêm, hạn 4 phiên, đã đạt điểm mua chưa (ma_bo_loc.json)
   ④ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv)
   (chỉ bản RIÊNG) danh mục thật: lãi/lỗ, cắt lỗ, hành động – KHÔNG bao giờ ghi vào docs/
 
@@ -210,7 +210,7 @@ def _khoi_bo_loc(bl, hom_nay=None):
                      f'<span class="nhan-tt tang">✔ {pd.Timestamp(v["dat_mua"]):%d/%m}</span>' if v.get("dat_mua")
                      else '<span class="mo">chưa</span>'])
     return (_bang(["Mã", "Chiến lược", "Ngày thêm", "Hạn", "Đạt điểm mua"], dong)
-            + f'<p class="mo">Hạn {C.BO_LOC_SO_NGAY} ngày từ ngày thêm; đạt điểm mua thì thêm {C.BO_LOC_SO_NGAY} ngày; '
+            + f'<p class="mo">Hạn {C.BO_LOC_SO_PHIEN} phiên từ ngày thêm; lọc lại / đạt điểm mua thì tính lại {C.BO_LOC_SO_PHIEN} phiên; '
               f'hết hạn thì tự xoá. <b>½</b> = mã lấy từ nhóm mua thăm dò (½ vị thế) của Bo_Loc.</p>')
 
 

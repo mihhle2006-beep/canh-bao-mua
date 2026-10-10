@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Mã từ bộ lọc Bo_Loc: hạn 2 tuần, đạt thì thêm 2 tuần, hết hạn thì xoá – kể cả mã đang giữ (không mạng)."""
+"""Mã từ bộ lọc Bo_Loc: hạn 4 phiên, lọc lại / đạt thì tính lại 4 phiên, hết hạn thì xoá – kể cả mã đang giữ."""
 import json
 import os
 import sys
@@ -15,24 +15,29 @@ def _nguon(ngay, **ma):
 def test_vong_doi_ma():
     tt = {}
     moi = bl.nhan_nguon(tt, _nguon("2026-10-05", fpt=["rieng"], HPG=["xu_huong"], VNM=["rieng"]), co_dinh=["vnm"])
-    assert moi == ["FPT", "HPG"] and tt["ma"]["FPT"]["het_han"] == "2026-10-19"   # VNM đã cố định → bỏ qua
+    assert moi == ["FPT", "HPG"] and tt["ma"]["FPT"]["het_han"] == "2026-10-09"   # T2 + 4 phiên = T6; VNM cố định
     assert bl.nhan_nguon(tt, _nguon("2026-10-05", AAA=["rieng"])) == []            # cùng lần quét → không nhận lại
     assert bl.danh_dau_dat(tt, ["HPG", "MWG"], "2026-10-08 15:20") == ["HPG"]
-    assert tt["ma"]["HPG"]["het_han"] == "2026-10-22"                              # đạt → thêm 2 tuần từ ngày đạt
-    assert bl.danh_dau_dat(tt, ["HPG"], "2026-10-12") == [] and tt["ma"]["HPG"]["het_han"] == "2026-10-26"
-    assert bl.xoa_het_han(tt, "2026-10-19 15:20") == []                            # còn trong hạn (ngày cuối)
-    assert bl.xoa_het_han(tt, "2026-10-20 15:20") == ["FPT"]                       # hết 2 tuần chưa đạt → xoá
-    assert bl.xoa_het_han(tt, "2026-10-27") == ["HPG"]
+    assert tt["ma"]["HPG"]["het_han"] == "2026-10-14"                              # đạt T5 → +4 phiên = T4 tuần sau
+    assert bl.danh_dau_dat(tt, ["HPG"], "2026-10-12") == [] and tt["ma"]["HPG"]["het_han"] == "2026-10-16"
+    assert bl.xoa_het_han(tt, "2026-10-09 15:20") == []                            # còn trong hạn (phiên cuối)
+    assert bl.xoa_het_han(tt, "2026-10-12 15:20") == ["FPT"]                       # hết 4 phiên chưa đạt → xoá
+    assert bl.xoa_het_han(tt, "2026-10-19") == ["HPG"]
     assert bl.nhan_nguon(tt, _nguon("2026-10-22", FPT=["rieng"])) == ["FPT"]       # lọc ra lại sau khi xoá → hạn mới
-    assert tt["ma"]["FPT"]["het_han"] == "2026-11-05"
+    assert tt["ma"]["FPT"]["het_han"] == "2026-10-28"
 
 
-def test_loc_lai_khong_gia_han():
+def test_loc_lai_gia_han():
     tt = {}
     bl.nhan_nguon(tt, _nguon("2026-10-05", FPT=["rieng"]))
-    assert bl.nhan_nguon(tt, _nguon("2026-10-08", FPT=["xu_huong"])) == []
-    assert tt["ma"]["FPT"]["het_han"] == "2026-10-19" and tt["ma"]["FPT"]["chien_luoc"] == ["rieng", "xu_huong"]
-    assert bl.xoa_het_han(tt, "2026-10-20") == ["FPT"]
+    assert bl.nhan_nguon(tt, _nguon("2026-10-08", FPT=["xu_huong"])) == []        # vẫn đạt bộ lọc → hạn tính lại
+    assert tt["ma"]["FPT"]["het_han"] == "2026-10-14" and tt["ma"]["FPT"]["chien_luoc"] == ["rieng", "xu_huong"]
+    assert bl.xoa_het_han(tt, "2026-10-14") == [] and bl.xoa_het_han(tt, "2026-10-15") == ["FPT"]
+
+
+def test_rut_han_cu_14_ngay():
+    tt = {"ma": {"SBT": {"ngay_them": "2026-10-08", "het_han": "2026-10-22", "dat_gan_nhat": "2026-10-08"}}}
+    assert bl.xoa_het_han(tt, "2026-10-10") == [] and tt["ma"]["SBT"]["het_han"] == "2026-10-14"
 
 
 def test_doc_ghi_va_nguon_file(tmp_path, monkeypatch):

@@ -2,12 +2,12 @@
 """
 MÃ TỪ BỘ LỌC (repo Bo_Loc) – theo dõi có thời hạn.
 
-  Bo_Loc chạy cuối phiên thứ 2 & thứ 5 (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã có Hành động MUA).
+  Bo_Loc chạy cuối MỖI PHIÊN (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã có Hành động MUA).
   Tổng kết 15:20 ở đây:
-    1) đọc file đó (lần quét MỚI mới xử lý) → thêm mã vào danh sách theo dõi, hạn BO_LOC_SO_NGAY ngày
-       tính từ ngày thêm (lọc lại khi đang theo dõi KHÔNG gia hạn);
+    1) đọc file đó (lần quét MỚI mới xử lý) → thêm mã vào danh sách theo dõi, hạn BO_LOC_SO_PHIEN phiên
+       kế tiếp (lọc lại vẫn đạt → hạn tính lại từ lần quét đó);
     2) quét chiến lược cùng các mã cố định → mã vào nhóm mua 🟢 / ✅ / 🟡 = ĐẠT yêu cầu mua
-       → hạn mới = ngày đạt + BO_LOC_SO_NGAY ngày (mỗi lần đạt lại được thêm hạn);
+       → hạn mới = ngày đạt + BO_LOC_SO_PHIEN phiên (mỗi lần đạt lại được thêm hạn);
     3) hết hạn → tự xoá – kể cả mã đang giữ: file này CÔNG KHAI nên không được để lộ danh mục; mã đang giữ vẫn được
        chăm sóc đủ ở phần danh mục RIÊNG TƯ (cảnh báo bán, dời cắt lỗ, mua thêm – vi_the.py, mục 💼).
        Bo_Loc lọc ra lại sau khi xoá → thêm lại, hạn mới.
@@ -94,7 +94,7 @@ def nhan_nguon(tt, nguon, co_dinh=()):
     co_dinh = {m.upper() for m in co_dinh}
     moi = []
     ngay_quet = _ngay(nguon["ngay_quet"])
-    het_han = f"{ngay_quet + pd.Timedelta(days=C.BO_LOC_SO_NGAY):%Y-%m-%d}"
+    het_han = han_tu(ngay_quet)
     for ma, cl in (nguon.get("ma") or {}).items():
         ma = ma.upper()
         if ma in co_dinh:                                       # đã có trong danh sách cố định → không cần hạn
@@ -104,8 +104,10 @@ def nhan_nguon(tt, nguon, co_dinh=()):
             ma_tt[ma] = {"ngay_them": f"{ngay_quet:%Y-%m-%d}", "het_han": het_han, "chien_luoc": list(cl),
                          "dat_mua": None}
             moi.append(ma)
-        else:                                                   # lọc lại khi đang theo dõi → giữ hạn cũ
+        else:                                                   # lọc lại vẫn đạt → hạn tính lại từ lần quét này
             cu["chien_luoc"] = sorted(set(cu.get("chien_luoc") or []) | set(cl))
+            cu["loc_gan_nhat"] = f"{ngay_quet:%Y-%m-%d}"
+            cu["het_han"] = max(cu.get("het_han") or "", het_han)
     return moi
 
 
@@ -114,10 +116,10 @@ def danh_sach(tt):
 
 
 def danh_dau_dat(tt, ma_mua, bay_gio):
-    """Mã nằm trong nhóm mua của tin tổng kết → ĐẠT, thêm hạn BO_LOC_SO_NGAY ngày từ hôm nay. → mã lần đầu đạt."""
+    """Mã nằm trong nhóm mua của tin tổng kết → ĐẠT, hạn = BO_LOC_SO_PHIEN phiên từ hôm nay. → mã lần đầu đạt."""
     vua = []
     hom_nay = _ngay(bay_gio)
-    het_han = f"{hom_nay + pd.Timedelta(days=C.BO_LOC_SO_NGAY):%Y-%m-%d}"
+    het_han = han_tu(hom_nay)
     for ma in ma_mua:
         v = (tt.get("ma") or {}).get(str(ma).upper())
         if v is None:
@@ -130,9 +132,20 @@ def danh_dau_dat(tt, ma_mua, bay_gio):
     return vua
 
 
+def han_tu(ngay):
+    """Hạn = ngày làm việc thứ BO_LOC_SO_PHIEN sau `ngay` (theo dõi các phiên ngay+1 … ngay+N; chưa trừ ngày lễ)."""
+    return f"{_ngay(ngay) + pd.offsets.BDay(C.BO_LOC_SO_PHIEN):%Y-%m-%d}"
+
+
 def xoa_het_han(tt, bay_gio):
-    """Hết hạn → xoá (không ngoại lệ cho mã đang giữ – file công khai không được để lộ danh mục). → mã đã xoá."""
+    """Hết hạn → xoá (không ngoại lệ cho mã đang giữ – file công khai không được để lộ danh mục). → mã đã xoá.
+    Mã thêm theo hạn cũ (14 ngày) được rút về hạn theo phiên: lần gần nhất thêm / lọc lại / đạt + BO_LOC_SO_PHIEN."""
     hom_nay = _ngay(bay_gio)
+    for v in (tt.get("ma") or {}).values():
+        moc = max(x for x in (v.get("ngay_them"), v.get("loc_gan_nhat"), v.get("dat_gan_nhat")) if x) \
+            if any(v.get(k) for k in ("ngay_them", "loc_gan_nhat", "dat_gan_nhat")) else None
+        if moc and v.get("het_han"):
+            v["het_han"] = min(v["het_han"], han_tu(moc))
     xoa = [ma for ma, v in (tt.get("ma") or {}).items() if v.get("het_han") and hom_nay > _ngay(v["het_han"])]
     for ma in xoa:
         del tt["ma"][ma]
@@ -149,11 +162,11 @@ def dong_tin(moi, dat, xoa, tt):
     """Tóm tắt cho tin tổng kết (rỗng nếu không có gì đổi). Mã thăm dò ghi '<chiến lược> ½'."""
     if not (moi or dat or xoa):
         return ""
-    dong = [f"🔎 Mã từ bộ lọc ({len(tt.get('ma') or {})} đang theo dõi, hạn {C.BO_LOC_SO_NGAY} ngày · ½ = mua thăm dò):"]
+    dong = [f"🔎 Mã từ bộ lọc ({len(tt.get('ma') or {})} đang theo dõi, hạn {C.BO_LOC_SO_PHIEN} phiên · ½ = mua thăm dò):"]
     if moi:
         dong.append(f"  ➕ thêm: {', '.join(_nhan(m, tt) for m in moi)}")
     if dat:
-        dong.append(f"  ✅ đạt điểm mua (+{C.BO_LOC_SO_NGAY} ngày): {', '.join(_nhan(m, tt) for m in dat)}")
+        dong.append(f"  ✅ đạt điểm mua (+{C.BO_LOC_SO_PHIEN} phiên): {', '.join(_nhan(m, tt) for m in dat)}")
     if xoa:
-        dong.append(f"  🗑 xoá (hết hạn {C.BO_LOC_SO_NGAY} ngày): {', '.join(xoa)}")
+        dong.append(f"  🗑 xoá (hết hạn {C.BO_LOC_SO_PHIEN} phiên): {', '.join(xoa)}")
     return "\n".join(dong)
