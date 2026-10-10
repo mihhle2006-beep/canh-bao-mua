@@ -64,3 +64,12 @@ def test_dong_tin_ghi_ro_ma_tham_do():
     tt = {"ma": {"HDB": {"chien_luoc": ["xu_huong ½"]}, "TLG": {"chien_luoc": ["rieng", "xu_huong"]}}}
     t = bl.dong_tin(["HDB", "TLG"], ["TLG"], [], tt)
     assert "➕ thêm: HDB (xu_huong ½), TLG (rieng, xu_huong)" in t and "✅" in t and "½ = mua thăm dò" in t
+
+
+def test_han_bo_qua_ngay_le():
+    assert bl.han_tu("2026-08-27") == "2026-09-07"        # nghỉ Quốc khánh 31/08–02/09 không tính phiên
+    assert bl.han_tu("2026-02-12") == "2026-02-25"        # nghỉ Tết 16–20/02
+    assert bl.han_tu("2026-04-23") == "2026-05-04"        # nghỉ 27/04 và 30/04–01/05
+    tt = {}
+    bl.nhan_nguon(tt, {"ngay_quet": "2026-08-27", "ma": {"FPT": ["rieng"]}})
+    assert bl.xoa_het_han(tt, "2026-09-04 15:20") == [] and bl.xoa_het_han(tt, "2026-09-08") == ["FPT"]

@@ -132,9 +132,24 @@ def danh_dau_dat(tt, ma_mua, bay_gio):
     return vua
 
 
+_DA_CANH_BAO = set()
+
+
+def _lich_phien():
+    """T2–T6 trừ ngày HOSE nghỉ (C.NGAY_NGHI_GIAO_DICH)."""
+    return pd.offsets.CustomBusinessDay(holidays=list(getattr(C, "NGAY_NGHI_GIAO_DICH", [])))
+
+
 def han_tu(ngay):
-    """Hạn = ngày làm việc thứ BO_LOC_SO_PHIEN sau `ngay` (theo dõi các phiên ngay+1 … ngay+N; chưa trừ ngày lễ)."""
-    return f"{_ngay(ngay) + pd.offsets.BDay(C.BO_LOC_SO_PHIEN):%Y-%m-%d}"
+    """Hạn = phiên giao dịch thứ BO_LOC_SO_PHIEN sau `ngay` (theo dõi các phiên ngay+1 … ngay+N, bỏ qua ngày lễ)."""
+    d = _ngay(ngay)
+    nam = {str(x)[:4] for x in getattr(C, "NGAY_NGHI_GIAO_DICH", [])}
+    thieu = d.year if str(d.year) not in nam else (d.year + 1 if d.month == 12 and str(d.year + 1) not in nam else None)
+    if thieu and thieu not in _DA_CANH_BAO:
+        _DA_CANH_BAO.add(thieu)
+        print(f"⚠ Chưa có lịch nghỉ lễ HOSE năm {thieu} "
+              "trong cau_hinh.NGAY_NGHI_GIAO_DICH – hạn tạm tính như ngày thường")
+    return f"{d + _lich_phien() * C.BO_LOC_SO_PHIEN:%Y-%m-%d}"
 
 
 def xoa_het_han(tt, bay_gio):
