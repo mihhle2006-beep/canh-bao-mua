@@ -16,7 +16,8 @@ def test_cac_moc():
     assert "Mua toàn bộ (đủ KL)" in B.cac_moc(100.0, 95.0)[3][1]
     assert B.cac_moc(100.0, 101.0) == [] and B.cac_moc(100.0, float("nan")) == []
     v = B.moc_vi_the(100.0, 5.0, 104.0)
-    assert ("Cắt lỗ hiện tại" in v[-1][1] or v[-1][0] == 97.5) and any("Giá vốn" in x[1] for x in v)
+    assert [x[0] for x in v] == [115.0, 110.0, 105.0, 104.0, 100.0]          # cắt lỗ 104 > vốn: bỏ mốc dưới cắt lỗ
+    assert "Cắt lỗ hiện tại" in v[3][1] and "Giá vốn" in v[4][1]
 
 
 def test_ve(tmp_path):
