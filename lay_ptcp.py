@@ -6,8 +6,8 @@ LẤY GÓI ptcp.
 
 GitHub Actions (bước "Lấy ptcp"): clone nông repo bằng token CHỈ ĐỌC rồi chép thư mục ptcp vào cạnh chay.py.
   Biến môi trường: TOKEN (secret DANH_MUC_TOKEN), REPO (vars.PTCP_REPO hoặc vars.DANH_MUC_REPO),
-                   DUONG_DAN (vars.PTCP_PATH, mặc định ptcp_phan_tich/ptcp).
-Chạy trên máy: python lay_ptcp.py --tu ../ptcp_phan_tich/ptcp   (chép từ thư mục có sẵn)
+                   DUONG_DAN (vars.PTCP_PATH, mặc định ptcp – thư mục ptcp ở gốc repo danh-muc).
+Chạy trên máy: python lay_ptcp.py --tu ../danh-muc/ptcp   (chép từ thư mục có sẵn)
 """
 import argparse
 import os

@@ -50,7 +50,7 @@ jobs:
         env:
           TOKEN: ${{ secrets.DANH_MUC_TOKEN }}                       # token CHỈ ĐỌC – dùng chung với cảnh báo BÁN
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}          # mặc định: chính repo danh-muc
-          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp_phan_tich/ptcp' }}  # thư mục ptcp trong repo đó
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}  # thư mục ptcp trong repo đó
         run: python lay_ptcp.py
 
       - name: Khôi phục cache giá, phân tích ngày & nhật ký riêng
