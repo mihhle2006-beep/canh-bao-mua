@@ -211,3 +211,17 @@ def test_khoi_luong_theo_bien_dong(monkeypatch):
     assert tong_ket_cl.he_so_kl(20.0, 1.4)[0] == 1.0
     assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4) == "Khối lượng: 1% vốn ÷ (giá mua − cắt lỗ)"
     assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, nua=True).startswith("Khối lượng: ½ – 0.5% vốn")
+
+
+def test_dong_su_kien_bao_truoc_gdkhq(monkeypatch):
+    import pandas as pd
+    from canh_bao import tong_ket_cl as T
+    from ptcp import su_kien_quyen as S
+    monkeypatch.setattr(T.C, "BAO_SU_KIEN_QUYEN", True)
+    x = {pd.Timestamp("2026-10-09"): {"he_so_cp": 1.3, "tien": 0.0, "mo_ta": "cổ tức bằng CP 25% + CP thưởng 5%"}}
+    monkeypatch.setattr(S, "sap_toi", lambda ma, n, h: x if ma == "HDB" else {})
+    d = T.dong_su_kien({"HDB": 28.0, "SBT": 22.7}, "2026-10-07 15:20")
+    assert d[1].startswith("📅 SẮP GDKHQ") and len(d) == 3
+    assert "HDB GDKHQ 09/10" in d[2] and "× 0.769" in d[2] and "≈ 21.54" in d[2] and "số CP × 1.30" in d[2]
+    monkeypatch.setattr(T.C, "BAO_SU_KIEN_QUYEN", False)
+    assert T.dong_su_kien({"HDB": 28.0}, "2026-10-07") == []

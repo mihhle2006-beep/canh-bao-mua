@@ -41,6 +41,21 @@ NGUONG_THANG_GIA = 0.03                         # đóng cửa phiên trước l
 _MUC_GIA = ("gia", "tu", "den", "cl", "R", "mt1", "mt3", "atr")
 
 
+def _he_so_lich(ma, gia, bay_gio):
+    """Lịch quyền (ptcp.su_kien_quyen): GDKHQ đúng phiên hôm nay → hệ số giá tham chiếu, ngược lại None."""
+    if not ma or not getattr(C, "BAO_SU_KIEN_QUYEN", False):
+        return None
+    try:
+        from ptcp.su_kien_quyen import gop_theo_ngay, he_so_gia, lay_su_kien
+        x = gop_theo_ngay(lay_su_kien(ma)).get(pd.Timestamp(bay_gio).normalize())
+    except Exception:                                            # noqa: BLE001 – không có lịch → giữ nguyên vùng
+        return None
+    if not x:
+        return None
+    f = he_so_gia(x, float(gia))
+    return f if abs(f - 1) > 1e-6 else None
+
+
 def quy_thang_gia(z, dp, bay_gio):
     """
     Nguồn giá điều chỉnh quyền (chia / tách cổ phiếu) SAU tin tổng kết → vùng / cắt lỗ tính trên giá cũ lệch thang
@@ -53,7 +68,9 @@ def quy_thang_gia(z, dp, bay_gio):
         return z
     f = float(truoc.close.iloc[-1]) / float(g)
     if abs(f - 1) <= NGUONG_THANG_GIA or not 0.2 < f < 5:
-        return z
+        f = _he_so_lich(z.get("ma"), g, bay_gio)               # chuỗi giá thô: GDKHQ hôm nay theo lịch quyền
+        if f is None:
+            return z
     moi = {k: z[k] * f for k in _MUC_GIA if isinstance(z.get(k), (int, float)) and z[k] == z[k]}
     return {**z, **moi, "he_so_quyen": f}
 

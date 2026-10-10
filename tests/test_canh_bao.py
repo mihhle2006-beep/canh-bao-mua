@@ -455,3 +455,18 @@ def test_tai_nguon_co_dinh_va_canh_bao_lech_thang(monkeypatch, tmp_path):
     du_lieu.CANH_BAO_NGUON.clear()
     du_lieu.tai("HDB", "D")
     assert du_lieu.CANH_BAO_NGUON and "×0.768" in du_lieu.CANH_BAO_NGUON[0]
+
+
+def test_quy_thang_gia_theo_lich_khi_chuoi_tho(monkeypatch):
+    """Chuỗi 15' thô (đóng cửa hôm qua = giá của tin) nhưng hôm nay GDKHQ theo lịch → vẫn quy đổi vùng."""
+    from canh_bao import diem_vao
+    from ptcp import su_kien_quyen as S
+    monkeypatch.setattr(diem_vao.C, "BAO_SU_KIEN_QUYEN", True)
+    monkeypatch.setattr(S, "lay_su_kien", lambda ma: [{"ma": ma, "loai": "STOCKDIV", "ten_loai": "cổ tức bằng CP",
+                                                        "ngay": pd.Timestamp("2026-10-09"), "ty_le_pct": 30.0,
+                                                        "tien": 0.0, "mo_ta": ""}])
+    z = {"ma": "HDB", "gia": 28.0, "tu": 27.45, "den": 28.70, "cl": 26.6}
+    dp = pd.DataFrame({"close": [27.9, 28.0]}, index=pd.to_datetime(["2026-10-08 14:30", "2026-10-08 14:45"]))
+    q = diem_vao.quy_thang_gia(z, dp, "2026-10-09 09:30")
+    assert q["tu"] == pytest.approx(27.45 / 1.3) and q["he_so_quyen"] == pytest.approx(1 / 1.3)
+    assert diem_vao.quy_thang_gia(z, dp, "2026-10-12 09:30") is z               # không phải ngày GDKHQ
