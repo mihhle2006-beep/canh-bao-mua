@@ -5,3 +5,4 @@ scipy
 matplotlib
 openpyxl
 pytest
+holidays>=0.60

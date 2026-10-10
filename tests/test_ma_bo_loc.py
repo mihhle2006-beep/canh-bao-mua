@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Mã từ bộ lọc Bo_Loc: hạn 4 phiên, lọc lại / đạt thì tính lại 4 phiên, hết hạn thì xoá – kể cả mã đang giữ."""
+import pandas as pd
 import json
 import os
 import sys
@@ -73,3 +74,16 @@ def test_han_bo_qua_ngay_le():
     tt = {}
     bl.nhan_nguon(tt, {"ngay_quet": "2026-08-27", "ma": {"FPT": ["rieng"]}})
     assert bl.xoa_het_han(tt, "2026-09-04 15:20") == [] and bl.xoa_het_han(tt, "2026-09-08") == ["FPT"]
+
+
+def test_lich_le_tu_dong_nam_moi():
+    assert "2027-02-08" in bl.ngay_nghi(2027)                # Tết 2027 – tự tính, không cần nhập
+    assert bl.han_tu("2027-02-03") == "2027-02-16"          # nghỉ Tết 04–10/02/2027
+
+
+def test_dem_phien_that_khi_nghi_dot_xuat():
+    phien = pd.bdate_range("2026-10-01", "2026-10-14").drop(pd.Timestamp("2026-10-07"))   # 07/10 nghỉ đột xuất
+    assert bl.han_tu("2026-10-05", phien, "2026-10-14") == "2026-10-12"
+    assert bl.han_tu("2026-10-05", phien[phien <= "2026-10-08"], "2026-10-08") == "2026-10-12"   # 2 phiên thật + 2 dự kiến
+    tt = {"ma": {"FPT": {"ngay_them": "2026-10-05", "het_han": "2026-10-09"}}}
+    assert bl.xoa_het_han(tt, "2026-10-09 15:20", phien) == [] and tt["ma"]["FPT"]["het_han"] == "2026-10-12"

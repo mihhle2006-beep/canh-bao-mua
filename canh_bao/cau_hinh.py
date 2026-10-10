@@ -147,16 +147,9 @@ VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền 
 #   Muốn bỏ sớm 1 mã: xoá dòng của mã đó trong FILE_MA_BO_LOC.
 DUNG_BO_LOC = True
 BO_LOC_SO_PHIEN = 4                # theo dõi 4 PHIÊN GIAO DỊCH kế tiếp (T2–T6, trừ ngày nghỉ lễ bên dưới) – lọc lại / đạt thì tính lại
-# Ngày HOSE nghỉ giao dịch (rơi vào T2–T6) – hạn theo phiên không bị hết sớm dịp lễ. Cập nhật khi HOSE ra lịch năm mới
-# (thường tháng 12); năm chưa có lịch → log cảnh báo, hạn tạm tính như ngày thường.
-NGAY_NGHI_GIAO_DICH = [
-    # 2025
-    "2025-01-01", "2025-01-27", "2025-01-28", "2025-01-29", "2025-01-30", "2025-01-31", "2025-04-07",
-    "2025-04-30", "2025-05-01", "2025-05-02", "2025-09-01", "2025-09-02",
-    # 2026 – TB 2294/TB-SGDHCM (09/12/2025) + cập nhật Tết Dương lịch
-    "2026-01-01", "2026-01-02", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20",
-    "2026-04-27", "2026-04-30", "2026-05-01", "2026-08-31", "2026-09-01", "2026-09-02",
-]
+# Lịch lễ VN tự lấy từ thư viện `holidays` (mọi năm, Tết âm lịch, nghỉ bù) + phiên thật từ VNINDEX → không cần nhập.
+# Chỉ thêm ở đây ngày HOSE nghỉ THÊM mà thư viện không có (để dự kiến hạn đúng ngay từ đầu).
+NGAY_NGHI_GIAO_DICH = ["2025-05-02", "2026-01-02"]
 FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – chỉ mã & ngày)
 BO_LOC_REPO = "mihhle2006-beep/Bo_Loc"   # ghi đè bằng biến BO_LOC_REPO; repo riêng tư → secret BO_LOC_TOKEN
 BO_LOC_PATH = "ma_mua_bo_loc.json"

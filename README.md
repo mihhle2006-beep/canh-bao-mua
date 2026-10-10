@@ -53,7 +53,7 @@ Tổng kết 15:20 ở đây (`canh_bao/ma_bo_loc.py`):
    Tin tổng kết có thêm dòng 🔎 (thêm / đạt / xoá).
 
 Trạng thái lưu ở `ma_bo_loc.json` (công khai – chỉ mã & ngày; muốn bỏ sớm 1 mã thì xoá dòng của mã đó).
-Cấu hình: `DUNG_BO_LOC`, `BO_LOC_SO_PHIEN` (phiên giao dịch, đã trừ ngày lễ trong `NGAY_NGHI_GIAO_DICH` – cập nhật khi HOSE ra lịch năm mới), `BO_LOC_REPO` trong `cau_hinh.py`.
+Cấu hình: `DUNG_BO_LOC`, `BO_LOC_SO_PHIEN` (phiên giao dịch: lịch lễ VN tự tính bằng thư viện `holidays` + đếm phiên thật theo VNINDEX – không cần nhập; `NGAY_NGHI_GIAO_DICH` chỉ để thêm ngày HOSE nghỉ ngoài lịch), `BO_LOC_REPO` trong `cau_hinh.py`.
 
 **Danh sách cảnh báo** = rổ VN30 (tự lấy online lúc tổng kết – `TU_LAY_VN30`, lỗi thì dùng `MA_VN30` gõ sẵn; log ghi nguồn)
 + `MA_THEM` (DHC, GMD, MWG) + mã từ Bo_Loc. **Độ rộng thị trường** (1 trong 8 chỉ báo) vẫn tính trên 41 mã đã backtest

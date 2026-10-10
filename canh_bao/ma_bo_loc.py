@@ -132,35 +132,51 @@ def danh_dau_dat(tt, ma_mua, bay_gio):
     return vua
 
 
-_DA_CANH_BAO = set()
+_LICH = {}
 
 
-def _lich_phien():
-    """T2–T6 trừ ngày HOSE nghỉ (C.NGAY_NGHI_GIAO_DICH)."""
-    return pd.offsets.CustomBusinessDay(holidays=list(getattr(C, "NGAY_NGHI_GIAO_DICH", [])))
+def ngay_nghi(nam):
+    """Ngày nghỉ lễ VN (thư viện `holidays` – tự tính Tết âm lịch, nghỉ bù… mọi năm) ∪ C.NGAY_NGHI_GIAO_DICH
+    (ngày HOSE nghỉ thêm mà thư viện không có, vd 02/01/2026)."""
+    if nam not in _LICH:
+        ds = {str(x) for x in getattr(C, "NGAY_NGHI_GIAO_DICH", [])}
+        try:
+            import holidays
+            ds |= {f"{d:%Y-%m-%d}" for d in holidays.country_holidays("VN", years=nam)}
+        except Exception as e:                                  # thiếu thư viện → chỉ dùng danh sách cấu hình
+            print(f"⚠ Không đọc được lịch lễ VN ({type(e).__name__}) – dùng NGAY_NGHI_GIAO_DICH")
+        _LICH[nam] = sorted(d for d in ds if d.startswith(str(nam)))
+    return _LICH[nam]
 
 
-def han_tu(ngay):
-    """Hạn = phiên giao dịch thứ BO_LOC_SO_PHIEN sau `ngay` (theo dõi các phiên ngay+1 … ngay+N, bỏ qua ngày lễ)."""
-    d = _ngay(ngay)
-    nam = {str(x)[:4] for x in getattr(C, "NGAY_NGHI_GIAO_DICH", [])}
-    thieu = d.year if str(d.year) not in nam else (d.year + 1 if d.month == 12 and str(d.year + 1) not in nam else None)
-    if thieu and thieu not in _DA_CANH_BAO:
-        _DA_CANH_BAO.add(thieu)
-        print(f"⚠ Chưa có lịch nghỉ lễ HOSE năm {thieu} "
-              "trong cau_hinh.NGAY_NGHI_GIAO_DICH – hạn tạm tính như ngày thường")
-    return f"{d + _lich_phien() * C.BO_LOC_SO_PHIEN:%Y-%m-%d}"
+def _lich_phien(tu):
+    nam = range(tu.year, tu.year + 2)
+    return pd.offsets.CustomBusinessDay(holidays=[d for n in nam for d in ngay_nghi(n)])
 
 
-def xoa_het_han(tt, bay_gio):
+def han_tu(ngay, phien_thuc=None, den=None):
+    """Hạn = phiên giao dịch thứ BO_LOC_SO_PHIEN sau `ngay` (theo dõi phiên ngay+1 … ngay+N).
+    phien_thuc: ngày có phiên THẬT (nến ngày VNINDEX) tới `den` → phiên đã qua đếm theo dữ liệu thật (lễ đột xuất,
+    nghỉ bù khác dự kiến vẫn đúng); phần chưa tới dự kiến bằng lịch lễ (T2–T6 trừ ngày nghỉ)."""
+    d, n = _ngay(ngay), C.BO_LOC_SO_PHIEN
+    if phien_thuc is not None and den is not None:
+        den = _ngay(den)
+        that = sorted({_ngay(x) for x in phien_thuc if d < _ngay(x) <= den})[:n]
+        if len(that) == n:
+            return f"{that[-1]:%Y-%m-%d}"
+        d, n = max(d, den), n - len(that)
+    return f"{d + _lich_phien(d) * n:%Y-%m-%d}"
+
+
+def xoa_het_han(tt, bay_gio, phien_thuc=None):
     """Hết hạn → xoá (không ngoại lệ cho mã đang giữ – file công khai không được để lộ danh mục). → mã đã xoá.
-    Mã thêm theo hạn cũ (14 ngày) được rút về hạn theo phiên: lần gần nhất thêm / lọc lại / đạt + BO_LOC_SO_PHIEN."""
+    Hạn tính lại mỗi lần từ mốc gần nhất (thêm / lọc lại / đạt) + BO_LOC_SO_PHIEN phiên – theo phiên thật nếu có
+    phien_thuc; mã thêm theo hạn cũ (14 ngày) cũng được rút về hạn theo phiên."""
     hom_nay = _ngay(bay_gio)
     for v in (tt.get("ma") or {}).values():
-        moc = max(x for x in (v.get("ngay_them"), v.get("loc_gan_nhat"), v.get("dat_gan_nhat")) if x) \
-            if any(v.get(k) for k in ("ngay_them", "loc_gan_nhat", "dat_gan_nhat")) else None
-        if moc and v.get("het_han"):
-            v["het_han"] = min(v["het_han"], han_tu(moc))
+        moc = [x for x in (v.get("ngay_them"), v.get("loc_gan_nhat"), v.get("dat_gan_nhat")) if x]
+        if moc:
+            v["het_han"] = han_tu(max(moc), phien_thuc, hom_nay)
     xoa = [ma for ma, v in (tt.get("ma") or {}).items() if v.get("het_han") and hom_nay > _ngay(v["het_han"])]
     for ma in xoa:
         del tt["ma"][ma]
