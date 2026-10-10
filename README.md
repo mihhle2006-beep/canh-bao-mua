@@ -67,6 +67,12 @@ Bo_Loc là repo riêng tư → tạo token CHỈ ĐỌC (Contents: Read) cho Bo_
 - **Tổng kết 15:20 gửi kèm ảnh bảng**: mỗi mã 1 dòng (giá, trạng thái, 4 khung ✔/✘, mục tiêu, cắt lỗ, R/R, ptcp),
   tô màu theo trạng thái. Tắt ảnh: `GUI_ANH = False` trong `canh_bao/cau_hinh.py`.
 
+## Danh mục cũ trong phiên – `danh_muc_cu.csv` (repo danh-muc)
+Mỗi lượt 15' bot đọc thêm `danh_muc_cu.csv` (cùng token `DANH_MUC_TOKEN`; đường dẫn khác: biến `DANH_MUC_CU_PATH`), gộp dòng
+trùng mã, so giá nến 15' với **cắt lỗ đề xuất** bot danh-muc ghi cuối ngày: chạm → **🔴 CẮT LỖ – MÃ (danh mục cũ)**,
+cách ≤ `GAN_CAT_LO_PCT` % → **🟠 SÁT CẮT LỖ** (tin riêng tư + biểu đồ giá vốn / cắt lỗ; mỗi mức 1 lần/ngày).
+Tắt: `QUET_DANH_MUC_CU = False`.
+
 ## Cảnh báo BÁN cho mã đang giữ
 Bot đọc **`danh_muc.csv` của repo riêng tư `danh-muc`** (mã có `so_cp` > 0 = đang giữ) và quét cùng lúc với cảnh báo mua:
 

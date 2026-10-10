@@ -60,12 +60,12 @@ def _so(x):
 
 
 # ------------------------------------------------------------------ đọc danh mục
-def _tai_tu_github():
+def _tai_tu_github(duong_dan=None):
     token = os.environ.get("DANH_MUC_TOKEN", "").strip()
     repo = os.environ.get("DANH_MUC_REPO", "").strip()
     if not (token and repo):
         return None, "chưa đặt DANH_MUC_TOKEN / DANH_MUC_REPO"
-    duong_dan = os.environ.get("DANH_MUC_PATH", "").strip() or "danh_muc.csv"
+    duong_dan = duong_dan or os.environ.get("DANH_MUC_PATH", "").strip() or "danh_muc.csv"
     p = {"ref": os.environ["DANH_MUC_NHANH"]} if os.environ.get("DANH_MUC_NHANH") else None
     try:
         r = requests.get(f"https://api.github.com/repos/{repo}/contents/{duong_dan}", params=p, timeout=20,
@@ -89,6 +89,70 @@ def doc_danh_muc(path_cuc_bo="danh_muc.csv"):
     if noi_dung is None:
         return {}, nguon
     return phan_tich_csv(noi_dung), nguon
+
+
+# ------------------------------------------------------------------ danh mục CŨ (mã mua trước khi có bot)
+def doc_danh_muc_cu(path_cuc_bo="danh_muc_cu.csv"):
+    """danh_muc_cu.csv của repo danh-muc → ({MÃ: vị thế gộp}, nguồn). Cắt lỗ = cat_lo_de_xuat bot danh-muc ghi
+    (cao nhất nếu mã có nhiều dòng); giá vốn bình quân gia quyền. Không có file → ({}, lý do)."""
+    duong = os.environ.get("DANH_MUC_CU_PATH", "").strip() or "danh_muc_cu.csv"
+    noi_dung, nguon = _tai_tu_github(duong)
+    if noi_dung is None and os.path.exists(path_cuc_bo):
+        with open(path_cuc_bo, encoding="utf-8-sig") as f:
+            noi_dung, nguon = f.read(), f"file {path_cuc_bo}"
+    if noi_dung is None:
+        return {}, nguon
+    return phan_tich_csv_cu(noi_dung), nguon
+
+
+def phan_tich_csv_cu(noi_dung):
+    df = pd.read_csv(io.StringIO(noi_dung), dtype=str).fillna("")
+    df.columns = [c.strip().lower() for c in df.columns]
+    out = {}
+    for _, r in df.iterrows():
+        ma = str(r.get("ma", "")).strip().upper()
+        so_cp, gv, cl = _so(r.get("so_cp")), _so(r.get("gia_von")), _so(r.get("cat_lo_de_xuat"))
+        if not ma or not so_cp or so_cp <= 0:
+            continue
+        v = out.setdefault(ma, {"ma": ma, "so_cp": 0.0, "_von": 0.0, "_cp_von": 0.0, "cat_lo": None,
+                                "hanh_dong": str(r.get("hanh_dong", "")).strip(), "cu": True})
+        v["so_cp"] += so_cp
+        if gv:
+            v["_von"] += so_cp * gv
+            v["_cp_von"] += so_cp
+        if cl:
+            v["cat_lo"] = max(cl, v["cat_lo"] or 0)
+    for v in out.values():
+        v["gia_von"] = v.pop("_von") / v["_cp_von"] if v["_cp_von"] else None
+        v.pop("_cp_von")
+    return out
+
+
+def danh_gia_ban_cu(v, gia):
+    """Mã danh mục cũ trong phiên: chỉ so với cắt lỗ đề xuất (bot danh-muc tính cuối ngày, chỉ dời lên)."""
+    cl, gv = v.get("cat_lo"), v.get("gia_von")
+    lai = (gia / gv - 1) * 100 if gv and gia == gia else np.nan
+    muc = "GIU"
+    if cl and gia == gia:
+        if gia <= cl:
+            muc = "CAT_LO"
+        elif (gia / cl - 1) * 100 <= getattr(C, "GAN_CAT_LO_PCT", 0):
+            muc = "GAN_CAT_LO"
+    return {"muc": muc, "gia": gia, "cat_lo": cl, "lai_lo_pct": lai,
+            "cach_cat_lo_pct": (cl / gia - 1) * 100 if cl and gia == gia else np.nan}
+
+
+def tin_ban_cu(v, kb, bay_gio):
+    hd = {"CAT_LO": f"Bán toàn bộ {v['so_cp']:,.0f} CP theo kỷ luật cắt lỗ",
+          "GAN_CAT_LO": f"Chuẩn bị lệnh bán: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ"}.get(kb["muc"], "")
+    d = [f"{NHAN[kb['muc']]} – {v['ma']} (danh mục cũ) @ {_f(kb['gia'])} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
+         f"Đang giữ {v['so_cp']:,.0f} CP | giá vốn {_f(v.get('gia_von'))} | lãi/lỗ {_f(kb['lai_lo_pct'], 1)}%",
+         f"Cắt lỗ đề xuất {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}% so với giá) – bot danh-muc tính cuối ngày, "
+         "chỉ dời lên"]
+    if hd:
+        d.append(f"➜ {hd}")
+    d.append("(Bán xong: xoá dòng / sửa so_cp trong danh_muc_cu.csv · giá nến 15' – tự kiểm tra trước khi đặt lệnh)")
+    return "\n".join(d)
 
 
 def phan_tich_csv(noi_dung):

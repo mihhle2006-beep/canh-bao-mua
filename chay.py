@@ -293,9 +293,8 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
 
 
 def _canh_bao_ban(bay_gio, vt, khong_gui):
-    """Mã đang giữ: chạm cắt lỗ / sát cắt lỗ / gãy MA10 tuần / hết hạn / dời cắt lỗ – theo hệ thoát (tin riêng tư)."""
-    if not vt:
-        return
+    """Mã đang giữ: chạm cắt lỗ / sát cắt lỗ / gãy MA10 tuần / hết hạn / dời cắt lỗ – theo hệ thoát (tin riêng tư).
+    + danh mục CŨ (danh_muc_cu.csv): chạm / sát cắt lỗ đề xuất của bot danh-muc."""
     tt_ban, so_ban = vi_the.doc_trang_thai_ban(), 0
     for ma, v in vt.items():
         dn = tai(ma, "D", C.NGAY_BAT_DAU)
@@ -317,8 +316,32 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
             if C.GHI_NHAT_KY:
                 nhat_ky.ghi_ban(kq, kb, bay_gio)
             so_ban += 1
+    so_cu = 0
+    if getattr(C, "QUET_DANH_MUC_CU", True):
+        vt_cu, _ = vi_the.doc_danh_muc_cu()
+        for ma, v in vt_cu.items():
+            if not v.get("cat_lo"):
+                continue
+            dn = tai(ma, "D", C.NGAY_BAT_DAU)
+            if dn is None or not hom_nay_co_giao_dich(dn, bay_gio):
+                continue
+            dp = bo_nen_chua_dong(tai(ma, C.KHUNG_PHUT), C.KHUNG_PHUT, bay_gio)
+            gia = float(dp.close.iloc[-1]) if dp is not None and len(dp) else float(dn.close.iloc[-1])
+            kb = vi_the.danh_gia_ban_cu(v, gia)
+            if vi_the.can_bao_ban(f"CU:{ma}", kb["muc"], bay_gio, tt_ban):
+                nd = vi_the.tin_ban_cu(v, kb, bay_gio)
+                moc = [(m, n, k, d) for m, n, k, d in
+                       [(v.get("gia_von"), f"Giá vốn – {bieu_do_moc._f(v.get('gia_von'))}", "mua", False),
+                        (kb["cat_lo"], f"Cắt lỗ đề xuất – {bieu_do_moc._f(kb['cat_lo'])}", "cl", False)] if m]
+                anh = bieu_do_moc.ve_an_toan(ma, dn, sorted(moc, key=lambda x: -x[0]),
+                                             f"{ma} (danh mục cũ) – {vi_the.NHAN[kb['muc']]} @ {bieu_do_moc._f(gia)}",
+                                             gia_nay=gia)
+                gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
+                if anh and os.path.exists(anh):
+                    os.remove(anh)
+                so_cu += 1
     vi_the.ghi_trang_thai_ban(tt_ban)
-    print(f"Đã gửi {so_ban} cảnh báo cho vị thế đang giữ.")
+    print(f"Đã gửi {so_ban} cảnh báo vị thế đang giữ, {so_cu} cảnh báo danh mục cũ.")
 
 
 def _in_nguon():

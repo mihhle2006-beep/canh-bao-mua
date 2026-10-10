@@ -119,6 +119,7 @@ LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị
 CACH_VAO_15P = "tu_dong"           # "tu_dong": cách vào tốt nhất của lần backtest gần nhất (FILE_BACKTEST);
                                    # chưa backtest → "15P+ATC". Hoặc đặt cố định: ATO | 15P | 15P+ATC | 15P+GIO | VWAP | LO …
 GIO_ATC = "14:25"                  # từ giờ này, cách vào "+ATC" chưa có điểm vào → báo đặt ATC nếu giá còn trong vùng
+QUET_DANH_MUC_CU = True            # trong phiên: quét cả danh_muc_cu.csv (repo danh-muc) – chạm / sát cắt lỗ đề xuất
 GAN_CAT_LO_PCT = 1.0               # trong phiên: mã đang giữ cách cắt lỗ ≤ 1% → nhắc chuẩn bị lệnh bán
 FILE_BACKTEST = "ket_qua_backtest.json"   # kết quả backtest (công khai – chỉ thống kê, không có danh mục)
 BACKTEST_TU = "2019-01-01"         # giá ngày cho backtest điểm bán / mua thêm
