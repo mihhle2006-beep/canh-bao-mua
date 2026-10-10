@@ -21,11 +21,11 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import (chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, tong_ket_cl, trang_tong_hop,
-                      vi_the)
+from canh_bao import (bieu_do_moc, chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, theo_doi_kn, tong_ket_cl,
+                      trang_tong_hop, vi_the)
 from canh_bao.nganh import ma_cung_nganh
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
-from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_file
+from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_anh, gui_file
 
 
 def main(argv=None):
@@ -113,6 +113,10 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         _nhat_ky(ra, bay_gio)
     kq_bt = tong_ket_cl.doc_ket_qua_backtest()
     tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
+    td = _an_toan("Theo dõi khuyến nghị", theo_doi_kn.tom_tat, bay_gio, ra.get("gia_ngay"),
+                  lambda ma: tai(ma, "D", C.NGAY_BAT_DAU)) if C.GHI_NHAT_KY else None
+    if td:                                                     # chỉ khuyến nghị công khai → có trong cả 2 bản tin
+        tin, cong_khai = tin + "\n" + "\n".join(td), cong_khai + "\n" + "\n".join(td)
     if tin_bl:
         tin, cong_khai = f"{tin}\n\n{tin_bl}", f"{cong_khai}\n\n{tin_bl}"
     if doi:
@@ -124,6 +128,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         _in(tin, rieng_tu=bool(giu))
     else:
         gui(tin, rieng_tu=bool(giu))
+    _an_toan("Biểu đồ mốc", _anh_tong_ket, ra, bay_gio, khong_gui)
     if C.GUI_EXCEL:
         try:
             from canh_bao.bao_cao_excel import xuat
@@ -218,6 +223,30 @@ def xem_ma(bay_gio, ds, khong_gui=False):
     return 0
 
 
+def _anh_tong_ket(ra, bay_gio, khong_gui=False):
+    """Biểu đồ mốc giá cho các mã nhóm MUA của tin tổng kết (tối đa C.ANH_MUA_TOI_DA, xếp như tin)."""
+    ks = [k for k in tong_ket_cl.ds_khuyen_nghi(ra) if k["nhom"] in tong_ket_cl.NHOM_MUA]
+    thu_tu = {n: i for i, n in enumerate(tong_ket_cl.NHOM_MUA)}
+    ks = sorted(ks, key=lambda k: (thu_tu[k["nhom"]], k["rui_ro"] if k["rui_ro"] == k["rui_ro"] else 99))
+    for k in ks[:getattr(C, "ANH_MUA_TOI_DA", 8)]:
+        dn = ra["gia_ngay"].get(k["ma"])
+        ten = tong_ket_cl.TIEU_DE.get(k["nhom"], k["nhom"])
+        hl = f" · đặt lệnh phiên {k['hieu_luc']:%d/%m}" if k.get("hieu_luc") is not None else ""
+        tieu = f"{k['ma']} – {ten} {bieu_do_moc._f(k['gia'])}{hl}"
+        anh = bieu_do_moc.ve_an_toan(k["ma"], dn, bieu_do_moc.cac_moc(k["gia"], k["cl"], k["nhom"]), tieu,
+                                     vung=(k["tu"], k["den"]))
+        if anh:
+            print(f"Đã vẽ {anh}") if khong_gui else gui_anh(anh, tieu)
+
+
+def _anh_mua_ngay(kq, bay_gio):
+    gia, cl, _, _ = diem_vao.muc_sau_mua(kq)
+    dn = tai(kq["ma"], "D", C.NGAY_BAT_DAU)
+    return bieu_do_moc.ve_an_toan(kq["ma"], dn, bieu_do_moc.cac_moc(gia, cl, kq.get("nhom", "MUA_MOI")),
+                                  f"{kq['ma']} – MUA NGAY {bieu_do_moc._f(gia)} · {pd.Timestamp(bay_gio):%H:%M %d/%m}",
+                                  vung=(kq.get("tu"), kq.get("den")), gia_nay=gia)
+
+
 def _nhat_ky(ra, bay_gio):
     try:
         n = tong_ket_cl.ghi_nhat_ky(ra, nhat_ky.FILE_CONG_KHAI)
@@ -246,7 +275,8 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
         if diem_vao.can_bao(kq["ma"], kq["trang_thai"], bay_gio, luu, kq["ly_do"]):
             nd = diem_vao.tin_mua(kq, bay_gio, bien_the, kq["ma"] in vt) if kq["trang_thai"] == "MUA" else \
                 diem_vao.tin_bo(kq, bay_gio)
-            gui(nd, rieng_tu=kq["ma"] in vt) if not khong_gui else _in(nd, rieng_tu=kq["ma"] in vt)
+            anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
+            gui(nd, rieng_tu=kq["ma"] in vt, anh=anh) if not khong_gui else _in(nd, rieng_tu=kq["ma"] in vt)
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
@@ -277,7 +307,13 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
         kb = vi_the.danh_gia_ban(v, kq, dn, bay_gio)
         if vi_the.can_bao_ban(ma, kb["muc"], bay_gio, tt_ban):
             nd = vi_the.tin_ban(v, kb, kq, bay_gio)
-            gui(nd, rieng_tu=True) if not khong_gui else _in(nd, rieng_tu=True)
+            anh = bieu_do_moc.ve_an_toan(
+                ma, dn, bieu_do_moc.moc_vi_the(v.get("gia_von"), kb.get("R"), kb.get("cat_lo")),
+                f"{ma} – {vi_the.NHAN.get(kb['muc'], kb['muc'])} @ {bieu_do_moc._f(gia)}", gia_nay=gia,
+                ngay_mua=v.get("ngay_mua") or None) if kb.get("he_thoat") else None
+            gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
+            if anh and os.path.exists(anh):
+                os.remove(anh)                                 # ảnh có giá vốn thật: không để lại trên máy chạy
             if C.GHI_NHAT_KY:
                 nhat_ky.ghi_ban(kq, kb, bay_gio)
             so_ban += 1

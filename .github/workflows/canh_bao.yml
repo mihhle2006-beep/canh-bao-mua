@@ -107,7 +107,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # chỉ thêm file đang có – thiếu 1 file không được làm hỏng cả lần commit
           for f in trang_thai_canh_bao.json lich_su_tin_hieu.csv lich_su_danh_gia.csv trang_thai_chien_luoc.json \
-                   docs/index.html ma_bo_loc.json; do
+                   docs/index.html ma_bo_loc.json theo_doi_kn.json; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0
