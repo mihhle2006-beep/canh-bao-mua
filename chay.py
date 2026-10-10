@@ -66,6 +66,16 @@ def main(argv=None):
     return trong_phien_15p(bay_gio, vt, a.khong_gui)
 
 
+def _phien_thuc(bay_gio):
+    """Ngày có phiên thật (nến ngày VNINDEX ~2 tháng) – đếm hạn mã Bo_Loc; lỗi → None (dùng lịch lễ)."""
+    try:
+        df = tai("VNINDEX", "D", pd.Timestamp(bay_gio) - pd.Timedelta(days=60), chi_so=True)
+        return list(df.index) if df is not None and len(df) else None
+    except Exception as e:
+        print(f"⚠ Không tải được VNINDEX để đếm phiên: {type(e).__name__}")
+        return None
+
+
 # ------------------------------------------------------------------ TỔNG KẾT 15:20
 def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     vn30, nguon_vn30 = ro_vn30.lay_vn30()
@@ -89,7 +99,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     if getattr(C, "DUNG_BO_LOC", False):
         mua = [k["ma"] for k in tong_ket_cl.ds_khuyen_nghi(ra) if k["nhom"] in tong_ket_cl.NHOM_MUA]
         dat_bl = ma_bo_loc.danh_dau_dat(tt_bl, mua, bay_gio)
-        xoa_bl = ma_bo_loc.xoa_het_han(tt_bl, bay_gio)            # mã đang giữ: chăm sóc ở phần danh mục riêng tư
+        xoa_bl = ma_bo_loc.xoa_het_han(tt_bl, bay_gio, _phien_thuc(bay_gio))   # mã đang giữ: chăm sóc ở danh mục riêng tư
         ma_bo_loc.ghi(tt_bl)
         tin_bl = ma_bo_loc.dong_tin(moi_bl, dat_bl, xoa_bl, tt_bl)
         if tin_bl:
