@@ -34,7 +34,7 @@ jobs:
         env:
           TOKEN: ${{ secrets.DANH_MUC_TOKEN }}
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}
-          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp_phan_tich/ptcp' }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
 
       - name: Khôi phục cache giá (riêng cho backtest)

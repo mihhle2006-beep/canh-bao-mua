@@ -38,8 +38,10 @@ def _bang_diem_mua(cuoi, x, kl_mac_dinh):
     r = {"Giá đóng cửa": float(c[-1])}
     vt = cuoi["vi_the"]
     if vt is not None:
-        ban = bool(vt.get("Bán phiên tới (MA10 tuần)"))
-        r.update({"Trạng thái": "ĐANG GIỮ" + (" → BÁN phiên tới (đóng cửa tuần < MA10 tuần)" if ban else ""),
+        # chờ bán = đóng cửa tuần < MA10 tuần HOẶC đã thủng cắt lỗ / hết hạn chưa bán được – khớp ptcp & backtest
+        ly = ("đóng cửa tuần < MA10 tuần" if vt.get("Bán phiên tới (MA10 tuần)") else
+              (vt.get("Lý do chờ bán") or "chạm cắt lỗ") if vt.get("Đang chờ bán") else "")
+        r.update({"Trạng thái": "ĐANG GIỮ" + (f" → BÁN phiên tới ({ly})" if ly else ""),
                   "Cắt lỗ phiên tới": float(vt["Cắt lỗ phiên tới"]), "Tầng": int(vt["Tầng"]),
                   "Ngày mua": vt["Ngày mua"], "Giá mua": float(vt["Giá mua"]),
                   "Lãi hiện tại %": float(vt["Lãi hiện tại %"]), "Lãi (R)": float(vt.get("Lãi (R)", np.nan)), "KL (phần vốn)": float(vt.get("KL (phần vốn)", 1.0)),
