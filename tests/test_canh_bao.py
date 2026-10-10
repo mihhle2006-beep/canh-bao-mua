@@ -426,3 +426,32 @@ def test_quy_thang_gia_khi_nguon_dieu_chinh_quyen():
     tho = dc.assign(close=[27.9, 28.0, 28.1])                              # cùng thang → giữ nguyên
     assert diem_vao.quy_thang_gia(z, tho, "2026-10-09 10:00") is z
     assert diem_vao.quy_thang_gia({**z, "gia": None}, dc, "2026-10-09 10:00")["tu"] == 27.45
+
+
+def test_tai_nguon_co_dinh_va_canh_bao_lech_thang(monkeypatch, tmp_path):
+    monkeypatch.setattr(du_lieu, "THU_MUC_CACHE", str(tmp_path))
+    idx = pd.bdate_range("2026-09-01", periods=10)
+    tho = pd.DataFrame({"time": idx, "open": 28.0, "high": 28.2, "low": 27.8, "close": 28.0, "volume": 1e6})
+    adj = tho.assign(open=21.5, high=21.7, low=21.3, close=21.5)
+    goi, loi = [], set()
+
+    def ds(ma, tu, den, khung, chi_so):
+        def f(ten, df):
+            def g():
+                goi.append(ten)
+                if ten in loi:
+                    raise ValueError("lỗi")
+                return df.copy()
+            return ten, g
+        return [f("B", adj), f("A", tho)] if goi else [f("A", tho), f("B", adj)]
+    monkeypatch.setattr(du_lieu, "cac_nguon", ds)
+    du_lieu.tai("HDB", "D")
+    assert du_lieu.doc_nguon_uu_tien()["HDB_D"] == "A"
+    goi.clear()
+    goi.append("_")                                                        # lần 2: danh sách nguồn đảo thứ tự
+    du_lieu.tai("HDB", "D")
+    assert goi[1] == "A"                                                   # nguồn cố định thử trước
+    loi.add("A")
+    du_lieu.CANH_BAO_NGUON.clear()
+    du_lieu.tai("HDB", "D")
+    assert du_lieu.CANH_BAO_NGUON and "×0.768" in du_lieu.CANH_BAO_NGUON[0]
