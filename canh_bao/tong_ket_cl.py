@@ -253,7 +253,8 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     ks = ds_khuyen_nghi(ra)
     n = d["so_chi_bao"]
     w = ra["ty_trong"]
-    chia = " + ".join(f"{k if k != 'VNI' else 'VN-Index'} {w[k] * 100:.0f}%" for k in ("A0", "B", "VNI")
+    chia = " + ".join(f"{ {'VNI': 'VN-Index', 'TIEN': 'tiền nhàn rỗi'}.get(k, k)} {w[k] * 100:.0f}%"
+                      for k in ("A0", "B", "TIEN", "VNI")
                       if w.get(k, 0) > 0)
     hl = next((k["hieu_luc"] for k in ks if k["hieu_luc"] is not None), None)
     dong = [f"📊 TỔNG KẾT {pd.Timestamp(bay_gio):%d/%m} · VN-Index {_f(ra['vni'])} · {d['diem']}/{n} điểm · "
