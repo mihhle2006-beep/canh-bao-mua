@@ -116,7 +116,8 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
             except TypeError:
                 sig = tin_hieu_macd(d, w, loc_tuan=loc)
             r = mo_phong(x, sig, bt)
-            diem_mua[ten].append({"Mã": ma, **_bang_diem_mua(r["cuoi"], x, 0.5 if bt.nhoi else 1.0)})
+            diem_mua[ten].append({"Mã": ma, **_bang_diem_mua(r["cuoi"], x, 0.5 if bt.nhoi else 1.0),
+                                  "GTGD TB20 (tỷ)": float((df.close * df.volume / 1e6).tail(20).mean())})
     if len(gia) < 5:
         return None, f"quá ít mã có dữ liệu ({len(gia)}/{len(ds_ma)})"
     F, diem, muc = bang_chi_bao(vni, pd.DataFrame(gia))
