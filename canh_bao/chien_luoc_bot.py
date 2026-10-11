@@ -75,6 +75,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
     """
     try:
         from ptcp.chi_bao import tinh_chi_bao
+        import ptcp.chien_luoc as _cl
         from ptcp.chien_luoc import (NGUONG_LEN, NGUONG_XUONG, TEN_CL, TY_TRONG, bang_chi_bao, doc_thi_truong,
                                      lich_chien_luoc, phan_bo_muc_tieu)
         from ptcp.du_lieu import gop_tuan
@@ -134,7 +135,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
         pass
     ty = TY_TRONG[cl_hien]
     return {"doc": doc, "cl": cl_hien, "ten_cl": TEN_CL, "ty_trong": ty, "ty_trong_cl": TY_TRONG,
-            "nguong": (NGUONG_LEN, NGUONG_XUONG), "lich": lich, "diem_mua": dm,
+            "nguong": (NGUONG_LEN, NGUONG_XUONG, getattr(_cl, "NGUONG_CL3", 99)), "lich": lich, "diem_mua": dm,
             "phan_bo": phan_bo_muc_tieu(dm, ty, len(gia)), "hanh_dong": _hanh_dong(dm, ty, doc["ngay"]),
             "so_ma": len(gia), "thieu": thieu, "gia_ngay": gia_ngay, "di_ngang": ngang, "atr": atr, "vni_df": vni,
             "vni": float(vni.close.iloc[-1])}, None
@@ -178,11 +179,13 @@ def tin_doi(ra, cl_cu):
     return "\n".join([
         f"🔔 ĐỔI CHIẾN LƯỢC: CL{cl_cu} → CL{ra['cl']} (dữ liệu {d['ngay']:%d/%m/%Y})",
         f"Điểm thị trường hiện tại: {d['diem']}/{d['so_chi_bao']} "
-        f"(≥ {ra['nguong'][0]} → CL2, ≤ {ra['nguong'][1]} → CL1)",
+        + (f"(≥ {ra['nguong'][2]} → CL3, " if len(ra["nguong"]) > 2 else "(")
+        + f"≥ {ra['nguong'][0]} → CL2, ≤ {ra['nguong'][1]} → CL1)",
         f"Đang áp dụng: {ten[ra['cl']]}",
         f"Tỷ trọng mới: {_ty_trong(ra['ty_trong'])}" + (f" (trước: {_ty_trong(w_cu)})" if w_cu else ""),
         "➜ Tái cân bằng đầu phiên tới: " + (
             "giảm A0, thêm B, giữ tiền nhàn rỗi theo tỷ trọng mới (an toàn)" if ra["cl"] == 1 else
+            "dồn toàn bộ vốn cho A0 (bán B, dùng hết tiền nhàn rỗi) – thị trường đẹp toàn diện" if ra["cl"] == 3 else
             "giảm / ngừng B, tăng A0 (lãi), phần còn lại để tiền nhàn rỗi"),
         "(Tham khảo – tự kiểm tra trước khi đặt lệnh)"])
 
