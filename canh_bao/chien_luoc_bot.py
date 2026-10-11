@@ -169,7 +169,7 @@ def _f(x, le=2):
 
 
 def _ty_trong(w):
-    return f"A0 {w['A0'] * 100:.0f}% · B {w['B'] * 100:.0f}% · VN-Index {w['VNI'] * 100:.0f}%"
+    return f"A0 {w['A0'] * 100:.0f}% · B {w['B'] * 100:.0f}% · tiền nhàn rỗi {w.get('TIEN', 0) * 100:.0f}%"
 
 
 def tin_doi(ra, cl_cu):
@@ -182,8 +182,8 @@ def tin_doi(ra, cl_cu):
         f"Đang áp dụng: {ten[ra['cl']]}",
         f"Tỷ trọng mới: {_ty_trong(ra['ty_trong'])}" + (f" (trước: {_ty_trong(w_cu)})" if w_cu else ""),
         "➜ Tái cân bằng đầu phiên tới: " + (
-            "bán phần ETF VN-Index, dồn vốn cho A0 & B (an toàn)" if ra["cl"] == 1 else
-            "giảm B, mua ETF VN-Index 30%, tăng A0 (lãi)"),
+            "giảm A0, thêm B, giữ tiền nhàn rỗi theo tỷ trọng mới (an toàn)" if ra["cl"] == 1 else
+            "giảm / ngừng B, tăng A0 (lãi), phần còn lại để tiền nhàn rỗi"),
         "(Tham khảo – tự kiểm tra trước khi đặt lệnh)"])
 
 
@@ -214,7 +214,7 @@ def ban_tin(ra, bay_gio):
     """Tin chữ bản tin chiến lược (công khai): thị trường → CL đang áp dụng → hành động phiên tới theo nhóm."""
     d, w, n_max = ra["doc"], ra["ty_trong"], C.SO_MA_TRONG_TIN
     n = d["so_chi_bao"]
-    phan = " · ".join(f"{ten} {w[k] * 100:.0f}%" for k, ten in (("A0", "A0"), ("B", "B"), ("VNI", "VN-Index (ETF)"))
+    phan = " · ".join(f"{ten} {w[k] * 100:.0f}%" for k, ten in (("A0", "A0"), ("B", "B"), ("TIEN", "tiền nhàn rỗi"), ("VNI", "VN-Index"))
                       if w.get(k, 0) > 0)
     dong = [f"📈 CHIẾN LƯỢC THEO THỊ TRƯỜNG – {pd.Timestamp(bay_gio):%d/%m/%Y}",
             f"Dữ liệu phiên {d['ngay']:%d/%m} · VN-Index {_f(ra['vni'])}", "",

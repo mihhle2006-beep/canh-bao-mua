@@ -181,7 +181,8 @@ def test_tin_doi():
     ra = {"cl": 2, "doc": {"diem": 6, "so_chi_bao": 8, "ngay": pd.Timestamp("2026-09-30")}, "ten_cl": TEN_CL,
           "ty_trong": TY_TRONG[2], "ty_trong_cl": TY_TRONG, "nguong": (5, 2)}
     t = chien_luoc_bot.tin_doi(ra, 1)
-    assert "ĐỔI CHIẾN LƯỢC: CL1 → CL2" in t and "VN-Index 30%" in t and "trước: A0 50%" in t
+    assert "ĐỔI CHIẾN LƯỢC: CL1 → CL2" in t and "tiền nhàn rỗi 30%" in t and "trước: A0 30%" in t
+    assert "ETF" not in t                                          # VN-Index chỉ để so sánh, không khuyên mua
 
 
 def test_nhom_hanh_dong_cho_nguoi_chua_mua():

@@ -130,7 +130,8 @@ def _khoi_thi_truong(tt):
     if not tt:
         return '<p class="mo">Chưa có dữ liệu – chờ lần tổng kết 15:20 đầu tiên.</p>'
     w = tt.get("ty_trong") or {}
-    chia = " · ".join(f"{'VN-Index' if k == 'VNI' else k} {float(w[k]) * 100:.0f}%" for k in ("A0", "B", "VNI")
+    TEN_TP = {"VNI": "VN-Index", "TIEN": "tiền nhàn rỗi"}
+    chia = " · ".join(f"{TEN_TP.get(k, k)} {float(w[k]) * 100:.0f}%" for k in ("A0", "B", "TIEN", "VNI")
                       if float(w.get(k) or 0) > 0)
     n, d = tt["so_chi_bao"], tt["diem"]
     vach = "".join(f'<span class="{"bat" if i < d else ""}"></span>' for i in range(n))
