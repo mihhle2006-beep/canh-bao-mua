@@ -94,7 +94,7 @@ jobs:
 
       - name: Tải file Excel độ chính xác (chế độ lịch sử)
         if: always() && hashFiles('danh_gia_tin_hieu.xlsx') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: danh-gia-tin-hieu-${{ github.run_id }}
           path: danh_gia_tin_hieu.xlsx
