@@ -138,6 +138,7 @@ MUA_THEM_TOI_DA = 2
 KL_THEO_BIEN_DONG = False         # TẮT theo yêu cầu – KL = 1% vốn ÷ (giá mua − cắt lỗ), nhóm 🟡 ½
 ATR_MUC_TIEU_PCT = 3.5             # % / ngày; 2,5 = an toàn hơn (sụt giảm ~−15%, lãi ~8,9%/năm)
 RUI_RO_MOI_LENH_PCT = 0.5          # % vốn chấp nhận mất nếu chạm cắt lỗ – QUỸ B 10/2026 (trước: 1%)
+SO_MA_MOI_TUAN = 2                 # ★ đánh dấu bấy nhiêu mã ưu tiên trong tin (= QUY_MOI_TUAN_TOI_DA của ptcp)
 LUAT_QUY = ("QUỸ B: tối đa 7 mã · ≤ 10% vốn/mã · tổng rủi ro mở ≤ 2,5% · tối đa 2 mã MỚI/tuần · "
             "thị trường biến động mạnh thì mua nhỏ lại")
 VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền để tin ghi luôn số CP; None = chỉ ghi công thức

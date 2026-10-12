@@ -116,7 +116,8 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
                 sig = tin_hieu_macd(d, w, loc_tuan=loc)
             r = mo_phong(x, sig, bt)
             diem_mua[ten].append({"Mã": ma, **_bang_diem_mua(r["cuoi"], x, 0.5 if bt.nhoi else 1.0),
-                                  "GTGD TB20 (tỷ)": float((df.close * df.volume / 1e6).tail(20).mean())})
+                                  "GTGD TB20 (tỷ)": float((df.close * df.volume / 1e6).tail(20).mean()),
+                                  "RS 3T %": _rs_3t(df.close, vni)})
     if len(gia) < 5:
         return None, f"quá ít mã có dữ liệu ({len(gia)}/{len(ds_ma)})"
     F, diem, muc = bang_chi_bao(vni, pd.DataFrame(gia))
@@ -167,6 +168,15 @@ def kiem_tra_doi(ra, bay_gio, path=None):
 
 def _f(x, le=2):
     return "–" if x is None or x != x else f"{x:,.{le}f}"
+
+
+def _rs_3t(c, vni):
+    """Sức mạnh giá 3 tháng so VN-Index (điểm %) – 1 trong 3 yếu tố điểm ưu tiên (RS quá nóng → ưu tiên sau)."""
+    try:
+        v = vni.close.reindex(c.index).ffill()
+        return float((c.iloc[-1] / c.iloc[-64] - v.iloc[-1] / v.iloc[-64]) * 100) if len(c) > 64 else np.nan
+    except Exception:                                           # noqa: BLE001
+        return np.nan
 
 
 def _ty_trong(w):
