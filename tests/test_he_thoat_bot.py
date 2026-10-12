@@ -132,7 +132,7 @@ def test_chay_chien_luoc_va_ban_tin(tmp_path, monkeypatch):
     if len(pb):
         assert pb["Tỷ trọng mục tiêu % vốn"].sum() == pytest.approx(100)
     tin = chien_luoc_bot.ban_tin(ra, BAY_GIO)
-    for chu in ("CHIẾN LƯỢC THEO THỊ TRƯỜNG", "① Thị trường:", "② Đang áp dụng: CL", "Chia vốn:", "Điều kiện đổi:",
+    for chu in ("CHIẾN LƯỢC THEO THỊ TRƯỜNG", "① Thị trường:", "② Đang áp dụng: QUỸ B", "Chia vốn:", "Điều kiện đổi:",
                 "③ Hành động phiên", "không phải danh mục thật"):
         assert chu in tin
     so_bo = tin.count("✘ bỏ nếu")
@@ -177,7 +177,7 @@ def test_kiem_tra_doi(tmp_path, monkeypatch):
 
 
 def test_tin_doi():
-    from ptcp.chien_luoc import TEN_CL, TY_TRONG
+    from ptcp.chien_luoc import TEN_CL, TY_TRONG_CL as TY_TRONG
     ra = {"cl": 2, "doc": {"diem": 6, "so_chi_bao": 8, "ngay": pd.Timestamp("2026-09-30")}, "ten_cl": TEN_CL,
           "ty_trong": TY_TRONG[2], "ty_trong_cl": TY_TRONG, "nguong": (5, 2)}
     t = chien_luoc_bot.tin_doi(ra, 1)

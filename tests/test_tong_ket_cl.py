@@ -199,6 +199,7 @@ def test_sat_cat_lo_trong_phien(monkeypatch):
 
 def test_khoi_luong_theo_bien_dong(monkeypatch):
     monkeypatch.setattr(C, "KL_THEO_BIEN_DONG", True)
+    monkeypatch.setattr(C, "RUI_RO_MOI_LENH_PCT", 1.0)
     monkeypatch.setattr(C, "ATR_MUC_TIEU_PCT", 3.5)
     hs, atr_pct = tong_ket_cl.he_so_kl(20.0, 1.4)                  # ATR 7%/ngày → × 0,5
     assert atr_pct == pytest.approx(7.0) and hs == pytest.approx(0.5)

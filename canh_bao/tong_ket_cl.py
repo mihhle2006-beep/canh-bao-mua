@@ -292,6 +292,7 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                  + (f"KL = {getattr(C, 'RUI_RO_MOI_LENH_PCT', 1.0):g}% vốn ÷ (giá − CL) × hệ số (ATR mục tiêu "
                     f"{C.ATR_MUC_TIEU_PCT:g}%/ngày, 🟡 thêm ×½). " if getattr(C, "KL_THEO_BIEN_DONG", False) else
                     "🟡 mua ½ KL. ")
+                 + (f"{C.LUAT_QUY}. " if getattr(C, "LUAT_QUY", "") else "")
                  + "MT = mục tiêu tạm thời 1R → 3R (mốc dời cắt lỗ, không phải lệnh bán).",
              _dong_cach_vao(kq_bt)]
     return dong
