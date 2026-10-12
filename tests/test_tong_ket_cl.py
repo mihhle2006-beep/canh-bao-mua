@@ -226,3 +226,11 @@ def test_dong_su_kien_bao_truoc_gdkhq(monkeypatch):
     assert "HDB GDKHQ 09/10" in d[2] and "× 0.769" in d[2] and "≈ 21.54" in d[2] and "số CP × 1.30" in d[2]
     monkeypatch.setattr(T.C, "BAO_SU_KIEN_QUYEN", False)
     assert T.dong_su_kien({"HDB": 28.0}, "2026-10-07") == []
+
+
+def test_dong_nhiet_va_khoi_luong_theo_nhiet():
+    nh = {"diem": 5, "so_chi_bao": 6, "he_so": 0.5, "chi_bao": [{"ten": "RSI14 VN-Index > 50", "dat": True}]}
+    s = tong_ket_cl.dong_nhiet(nh, rr=0.75)
+    assert "5/6 (NÓNG)" in s and "= 0.38% vốn" in s and "RSI14" in s
+    assert tong_ket_cl.dong_nhiet(None) is None
+    assert "0.375% vốn" in tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, he_so_nhiet=0.5)

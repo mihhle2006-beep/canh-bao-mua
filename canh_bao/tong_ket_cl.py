@@ -87,7 +87,23 @@ def ds_khuyen_nghi(ra):
                     "uu_tien": _so(r.get("Ưu tiên")), "diem_ut": _so(r.get("Điểm ưu tiên"))})
         k_ = out[-1]
         k_["he_so_kl"], k_["atr_pct"] = he_so_kl(k_["gia"], k_["atr"], k_["nhom"] == "VAO_NUA")
+        nh = ra.get("nhiet") or {}
+        k_["nhiet"], k_["he_so_nhiet"] = nh.get("diem"), float(nh.get("he_so", 1.0))
     return out
+
+
+def dong_nhiet(nh, rr=None):
+    """Dòng 🌡 nhiệt thị trường (công khai – chỉ dữ liệu thị trường) + rủi ro/lệnh mới sau hệ số nhiệt."""
+    if not nh:
+        return None
+    rr = getattr(C, "RUI_RO_MOI_LENH_PCT", 0.75) if rr is None else rr
+    bat = [c["ten"] for c in nh.get("chi_bao", []) if c.get("dat")]
+    hs = float(nh.get("he_so", 1.0))
+    muc = "NÓNG" if nh["diem"] >= 5 else "ấm" if nh["diem"] >= 3 else "nguội"
+    return (f"🌡 Nhiệt thị trường {nh['diem']}/{nh.get('so_chi_bao', 6)} ({muc}) → rủi ro/lệnh mới {rr:g}% × {hs:g} = "
+            f"{rr * hs:.2f}% vốn" + (" · nóng: mua nhỏ lại (backtest: tín hiệu lúc thị trường nóng lãi kém hơn)" if hs < 1
+                                     else "") + (f"\n   đang bật: {', '.join(bat)}" if bat else "")
+            + "\n   Danh mục của bạn đang sụt so với đỉnh → giảm thêm: 3–6% ×¾ · 6–10% ×½ · > 10% ×⅓")
 
 
 def dong_mua(k, dang_giu=()):
@@ -270,6 +286,9 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                     f"chỉ lấy khi MACD tuần > Signal" if ng["dang"] else
                     f"↗ VN-Index có xu hướng (biên {ng['phien']} phiên {ng['bien']:.1f}% ≥ {ng['nguong']:g}%): "
                     f"lấy mọi tín hiệu MACD ngày")
+    dn = dong_nhiet(ra.get("nhiet"))
+    if dn:
+        dong.append(dn)
     n_max = C.SO_MA_MOI_NHOM
     for nhom in NHOM_MUA:
         x = [k for k in ks if k["nhom"] == nhom]
@@ -364,10 +383,13 @@ def he_so_kl(gia, atr, nua=False):
     return hs * (0.5 if nua else 1.0), atr_pct
 
 
-def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None):
-    """Dòng 'Khối lượng: …' cho tin mua (công thức + hệ số; có VON_TRIEU → số CP làm tròn lô 100)."""
+def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None, he_so_nhiet=None):
+    """Dòng 'Khối lượng: …' cho tin mua (công thức + hệ số; có VON_TRIEU → số CP làm tròn lô 100).
+    he_so_nhiet: hệ số nhiệt thị trường của tin tổng kết (< 1 → rủi ro/lệnh nhân theo)."""
     hs, atr_pct = he_so_kl(gia, atr, nua)
     rr = getattr(C, "RUI_RO_MOI_LENH_PCT", 1.0)
+    if he_so_nhiet is not None and he_so_nhiet == he_so_nhiet and he_so_nhiet < 1:
+        rr = round(rr * he_so_nhiet, 4)
     ly = []
     if getattr(C, "KL_THEO_BIEN_DONG", False) and atr_pct == atr_pct:
         ly.append(f"ATR {atr_pct:.1f}%/ngày" + (f" > {C.ATR_MUC_TIEU_PCT:g}% → giảm" if atr_pct > C.ATR_MUC_TIEU_PCT
