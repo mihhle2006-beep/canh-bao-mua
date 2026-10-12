@@ -83,17 +83,20 @@ def ds_khuyen_nghi(ra):
                     "ly_do": dat_diem_mua(r, ngay, bool((ra.get("di_ngang") or {}).get("dang"))),
                     "khoi_luong": r.get("Khối lượng", ""),
                     "hieu_luc": _ngay(r.get("Hiệu lực")), "vo_hieu": r.get("Vô hiệu khi", ""),
-                    "atr": _so((ra.get("atr") or {}).get(r["Mã"]))})
+                    "atr": _so((ra.get("atr") or {}).get(r["Mã"])),
+                    "uu_tien": _so(r.get("Ưu tiên")), "diem_ut": _so(r.get("Điểm ưu tiên"))})
         k_ = out[-1]
         k_["he_so_kl"], k_["atr_pct"] = he_so_kl(k_["gia"], k_["atr"], k_["nhom"] == "VAO_NUA")
     return out
 
 
 def dong_mua(k, dang_giu=()):
+    ut = k.get("uu_tien")
+    sao = "★ " if ut == ut and ut is not None and ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else ""
     hs = k.get("he_so_kl")
     kl = f" | KL ×{hs:.2f}" if (getattr(C, "KL_THEO_BIEN_DONG", False) and hs is not None and hs == hs
                                 and hs < 0.999) else ""
-    return (f"{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl} "
+    return (f"{sao}{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl} "
             f"| {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
 
 
@@ -274,7 +277,8 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
             continue
         dong += ["", f"{TIEU_DE[nhom]} ({len(x)}) – đặt lệnh phiên {hl:%d/%m}" if hl is not None else
                  f"{TIEU_DE[nhom]} ({len(x)})"]
-        x = sorted(x, key=lambda k: (k["rui_ro"] if k["rui_ro"] == k["rui_ro"] else 99))
+        x = sorted(x, key=lambda k: (k["uu_tien"] if k.get("uu_tien") == k.get("uu_tien") and k.get("uu_tien")
+                                     is not None else 999, k["rui_ro"] if k["rui_ro"] == k["rui_ro"] else 99))
         dong += [dong_mua(k, dang_giu) for k in x[:n_max]]
         if len(x) > n_max:
             dong.append(f"… +{len(x) - n_max} mã (xem Excel)")
@@ -285,6 +289,9 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     ko = [k for k in ks if k["nhom"] in ("DUOI_VON", "BAN")]
     if ko:
         dong.append(f"⛔ KHÔNG VÀO ({len(ko)}): " + ", ".join(k["ma"] for k in ko))
+    if sum(k["nhom"] in NHOM_MUA for k in ks) > getattr(C, "SO_MA_MOI_TUAN", 2):
+        dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: thanh khoản cao · cắt lỗ sát · "
+                     f"RS 3 tháng không quá nóng) – quỹ B chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
     if not any(k["nhom"] in NHOM_MUA for k in ks):
         dong += ["", "Không có mã nào để mua phiên tới."]
     dong += dong_su_kien({k["ma"]: k["gia"] for k in ks if k["nhom"] in NHOM_MUA + ("CHO",)}, bay_gio)
@@ -292,6 +299,7 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                  + (f"KL = {getattr(C, 'RUI_RO_MOI_LENH_PCT', 1.0):g}% vốn ÷ (giá − CL) × hệ số (ATR mục tiêu "
                     f"{C.ATR_MUC_TIEU_PCT:g}%/ngày, 🟡 thêm ×½). " if getattr(C, "KL_THEO_BIEN_DONG", False) else
                     "🟡 mua ½ KL. ")
+                 + (f"{C.LUAT_QUY}. " if getattr(C, "LUAT_QUY", "") else "")
                  + "MT = mục tiêu tạm thời 1R → 3R (mốc dời cắt lỗ, không phải lệnh bán).",
              _dong_cach_vao(kq_bt)]
     return dong

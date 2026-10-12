@@ -23,6 +23,10 @@ on:
         description: "Chỉ thử – KHÔNG gửi Telegram, KHÔNG lưu trạng thái (kết quả xem trong log)"
         default: false
         type: boolean
+      nhanh_ptcp:
+        description: "Nhánh danh-muc lấy ptcp (chạy thử code chưa gộp) – bỏ trống = main"
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -51,6 +55,7 @@ jobs:
           TOKEN: ${{ secrets.DANH_MUC_TOKEN }}                       # token CHỈ ĐỌC – dùng chung với cảnh báo BÁN
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}          # mặc định: chính repo danh-muc
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}  # thư mục ptcp trong repo đó
+          NHANH: ${{ inputs.nhanh_ptcp }}
         run: python lay_ptcp.py
 
       - name: Khôi phục cache giá, phân tích ngày & nhật ký riêng
