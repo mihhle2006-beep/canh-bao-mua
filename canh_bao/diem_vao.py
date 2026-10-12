@@ -162,7 +162,8 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
 def _khoi_luong(kq, gia, cl):
     from .tong_ket_cl import dong_khoi_luong
     atr = kq.get("atr")
-    return dong_khoi_luong(gia, cl, atr if atr is not None else np.nan, kq.get("nhom") == "VAO_NUA")
+    return dong_khoi_luong(gia, cl, atr if atr is not None else np.nan, kq.get("nhom") == "VAO_NUA",
+                           he_so_nhiet=kq.get("he_so_nhiet"))
 
 
 def tin_bo(kq, bay_gio):

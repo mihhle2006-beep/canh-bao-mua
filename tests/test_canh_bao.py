@@ -470,3 +470,20 @@ def test_quy_thang_gia_theo_lich_khi_chuoi_tho(monkeypatch):
     q = diem_vao.quy_thang_gia(z, dp, "2026-10-09 09:30")
     assert q["tu"] == pytest.approx(27.45 / 1.3) and q["he_so_quyen"] == pytest.approx(1 / 1.3)
     assert diem_vao.quy_thang_gia(z, dp, "2026-10-12 09:30") is z               # không phải ngày GDKHQ
+
+
+def test_doc_danh_muc_gop_danh_muc_phu(monkeypatch):
+    chinh = "ma,so_cp,gia_von,cat_lo_dat\nBSR,200,30.65,28.5\nDHC,0,,\n"
+    phu = CSV_DANH_MUC
+
+    class R:
+        def __init__(self, nd):
+            self.status_code, self.content = 200, nd.encode("utf-8")
+    monkeypatch.setenv("DANH_MUC_TOKEN", "t")
+    monkeypatch.setenv("DANH_MUC_REPO", "ban/danh-muc")
+    monkeypatch.setattr(vi_the.requests, "get",
+                        lambda url, **k: R(phu if url.endswith("danh_muc_ptdttc.csv") else chinh))
+    vt, nguon = vi_the.doc_danh_muc(path_cuc_bo="khong_co.csv")
+    assert set(vt) == {"BSR", "DHC", "MWG"} and "danh_muc_ptdttc.csv" in nguon
+    monkeypatch.setenv("DANH_MUC_PHU_PATH", "-")
+    assert set(vi_the.doc_danh_muc(path_cuc_bo="khong_co.csv")[0]) == {"BSR"}

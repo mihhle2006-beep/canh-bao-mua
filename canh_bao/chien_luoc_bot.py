@@ -121,6 +121,12 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
     if len(gia) < 5:
         return None, f"quá ít mã có dữ liệu ({len(gia)}/{len(ds_ma)})"
     F, diem, muc = bang_chi_bao(vni, pd.DataFrame(gia))
+    nhiet = None
+    try:                                                   # QUỸ B: nhiệt thị trường → hệ số khối lượng lệnh mới
+        from ptcp.chien_luoc import doc_nhiet
+        nhiet = doc_nhiet(vni, pd.DataFrame(gia))
+    except Exception:                                      # noqa: BLE001 – ptcp cũ / thiếu dữ liệu → hệ số 1
+        pass
     lich, _, cl_hien = lich_chien_luoc(diem)
     doc = doc_thi_truong(F, diem, muc, cl_hien)
     dm = {k: pd.DataFrame(v) for k, v in diem_mua.items()}
@@ -138,7 +144,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
     return {"doc": doc, "cl": cl_hien, "ten_cl": TEN_CL, "ty_trong": ty, "ty_trong_cl": TY_TRONG,
             "nguong": (NGUONG_LEN, NGUONG_XUONG), "lich": lich, "diem_mua": dm,
             "phan_bo": phan_bo_muc_tieu(dm, ty, len(gia)), "hanh_dong": _hanh_dong(dm, ty, doc["ngay"]),
-            "so_ma": len(gia), "thieu": thieu, "gia_ngay": gia_ngay, "di_ngang": ngang, "atr": atr, "vni_df": vni,
+            "so_ma": len(gia), "thieu": thieu, "gia_ngay": gia_ngay, "di_ngang": ngang, "atr": atr, "vni_df": vni, "nhiet": nhiet,
             "vni": float(vni.close.iloc[-1])}, None
 
 

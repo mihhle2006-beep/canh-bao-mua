@@ -74,6 +74,7 @@ def luu_thi_truong(ra, bay_gio, ds=None, path=None):
         "vni": _sach(ra.get("vni")), "cl": int(ra["cl"]), "ten_cl": str(ra["ten_cl"][ra["cl"]]),
         "ty_trong": {k: _sach(v) for k, v in ra["ty_trong"].items()}, "dieu_kien_doi": d.get("dieu_kien_doi", ""),
         "di_ngang": {k: _sach(v) for k, v in (ra.get("di_ngang") or {}).items()} or None,
+        "nhiet": ra.get("nhiet"),
         "chi_bao": [{"ten": str(r["Chỉ báo"]), "dat": bool(r["Đạt"]), "chi_tiet": str(r.get("Chi tiết") or "")}
                     for _, r in bang.iterrows()] if bang is not None else [],
         "cap_nhat": f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}"}
@@ -140,7 +141,9 @@ def _khoi_thi_truong(tt):
     the = (_the("VN-Index", _f(tt.get("vni")), f"phiên {pd.Timestamp(tt['ngay']):%d/%m/%Y}")
            + _the("Điểm thị trường", f"{d}/{n}", f'<span class="vach">{vach}</span>')
            + _the("Chiến lược", f"CL{tt['cl']}", _e(chia))
-           + _the("Trạng thái VN-Index", _e(xu.split(" (")[0]), _e(xu[len(xu.split(" (")[0]):].strip(" ()"))))
+           + _the("Trạng thái VN-Index", _e(xu.split(" (")[0]), _e(xu[len(xu.split(" (")[0]):].strip(" ()")))
+           + (_the("Nhiệt thị trường", f"{tt['nhiet']['diem']}/{tt['nhiet'].get('so_chi_bao', 6)}",
+                   f"rủi ro/lệnh mới × {tt['nhiet'].get('he_so', 1):g}") if tt.get("nhiet") else ""))
     ds = "".join(f'<li class="{"dat" if c["dat"] else "truot"}"><b>{"✔" if c["dat"] else "✘"}</b> {_e(c["ten"])}'
                  + (f' <span class="mo">– {_e(c["chi_tiet"])}</span>' if c.get("chi_tiet") else "") + "</li>"
                  for c in tt.get("chi_bao", []))

@@ -80,15 +80,31 @@ def _tai_tu_github(duong_dan=None):
     return r.content.decode("utf-8-sig"), "repo danh-muc"
 
 
-def doc_danh_muc(path_cuc_bo="danh_muc.csv"):
-    """→ ({MÃ: vị thế}, mô tả nguồn). Chỉ giữ mã có so_cp > 0."""
+def doc_danh_muc(path_cuc_bo="danh_muc.csv", path_phu="danh_muc_ptdttc.csv"):
+    """→ ({MÃ: vị thế}, mô tả nguồn). Chỉ giữ mã có so_cp > 0. Gộp thêm danh mục PHỤ (danh_muc_ptdttc.csv – quản lý
+    riêng, không áp trần quỹ B; DANH_MUC_PHU_PATH, để "-" = bỏ) để cảnh báo bán / đánh dấu đang giữ đủ mọi mã."""
     noi_dung, nguon = _tai_tu_github()
     if noi_dung is None and os.path.exists(path_cuc_bo):
         with open(path_cuc_bo, encoding="utf-8-sig") as f:
             noi_dung, nguon = f.read(), f"file {path_cuc_bo}"
     if noi_dung is None:
         return {}, nguon
-    return phan_tich_csv(noi_dung), nguon
+    vt = phan_tich_csv(noi_dung)
+    phu = os.environ.get("DANH_MUC_PHU_PATH", "").strip() or path_phu
+    if phu != "-":
+        nd2, _ = _tai_tu_github(phu)
+        if nd2 is None and os.path.exists(phu):
+            with open(phu, encoding="utf-8-sig") as f:
+                nd2 = f.read()
+        if nd2:
+            try:
+                them = {m: v for m, v in phan_tich_csv(nd2).items() if m not in vt}
+            except Exception:                                   # noqa: BLE001 – file phụ lỗi không chặn danh mục chính
+                them = {}
+            if them:
+                vt.update(them)
+                nguon += f" + {phu}"
+    return vt, nguon
 
 
 # ------------------------------------------------------------------ danh mục CŨ (mã mua trước khi có bot)
