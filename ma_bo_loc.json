@@ -67,7 +67,8 @@
     "rieng"
    ],
    "dat_mua": "2026-10-12",
-   "dat_gan_nhat": "2026-10-12"
+   "dat_gan_nhat": "2026-10-12",
+   "loc_gan_nhat": "2026-10-12"
   },
   "PHR": {
    "ngay_them": "2026-10-12",
@@ -76,7 +77,43 @@
     "rieng"
    ],
    "dat_mua": null
+  },
+  "CSV": {
+   "ngay_them": "2026-10-12",
+   "het_han": "2026-10-16",
+   "chien_luoc": [
+    "rieng"
+   ],
+   "dat_mua": "2026-10-12",
+   "dat_gan_nhat": "2026-10-12"
+  },
+  "DIG": {
+   "ngay_them": "2026-10-12",
+   "het_han": "2026-10-16",
+   "chien_luoc": [
+    "rieng"
+   ],
+   "dat_mua": "2026-10-12",
+   "dat_gan_nhat": "2026-10-12"
+  },
+  "TRC": {
+   "ngay_them": "2026-10-12",
+   "het_han": "2026-10-16",
+   "chien_luoc": [
+    "rieng ½"
+   ],
+   "dat_mua": "2026-10-12",
+   "dat_gan_nhat": "2026-10-12"
+  },
+  "VGC": {
+   "ngay_them": "2026-10-12",
+   "het_han": "2026-10-16",
+   "chien_luoc": [
+    "rieng"
+   ],
+   "dat_mua": "2026-10-12",
+   "dat_gan_nhat": "2026-10-12"
   }
  },
- "ngay_quet_da_nhan": "2026-10-12 01:43"
+ "ngay_quet_da_nhan": "2026-10-12 15:29"
 }
