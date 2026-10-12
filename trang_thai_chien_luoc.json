@@ -2,12 +2,12 @@
  "cl": 2,
  "diem": 2,
  "ngay_du_lieu": "2026-10-09",
- "cap_nhat": "2026-10-12 12:46",
+ "cap_nhat": "2026-10-12 13:01",
  "ds_mua": {
   "hieu_luc": "2026-10-12",
   "ngay_du_lieu": "2026-10-09",
   "cl": 2,
-  "tao_luc": "2026-10-12 12:46",
+  "tao_luc": "2026-10-12 13:01",
   "ma": [
    {
     "ma": "PDR",
@@ -27,8 +27,8 @@
     "hieu_luc": "2026-10-12",
     "vo_hieu": "mở cửa > 11.60 (không đuổi) · giá < 11.10 trước khi mua · qua phiên 12/10",
     "atr": 0.36336072830185917,
-    "uu_tien": null,
-    "diem_ut": null,
+    "uu_tien": 5.0,
+    "diem_ut": 56.0,
     "he_so_kl": 1.0,
     "atr_pct": 3.2155816663881343
    },
@@ -50,10 +50,33 @@
     "hieu_luc": "2026-10-12",
     "vo_hieu": "mở cửa > 78.10 (không đuổi) · giá < 75.00 trước khi mua · qua phiên 12/10",
     "atr": 1.6800095210524508,
-    "uu_tien": null,
-    "diem_ut": null,
+    "uu_tien": 1.0,
+    "diem_ut": 83.0,
     "he_so_kl": 1.0,
     "atr_pct": 2.213451279383993
+   },
+   {
+    "ma": "HDB",
+    "nhom": "VAO_NHU_MOI",
+    "tp": "B",
+    "gia": 22.4,
+    "tu": 21.75,
+    "den": 22.6,
+    "cl": 21.03570167282937,
+    "R": 1.36429832717063,
+    "mt1": 23.76429832717063,
+    "mt3": 26.49289498151189,
+    "rui_ro": 6.090617532011741,
+    "lai_ht": 0.947739929199726,
+    "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 24/09 · đang +0.9R",
+    "khoi_luong": "đủ",
+    "hieu_luc": "2026-10-12",
+    "vo_hieu": "mở cửa > 22.60 (không đuổi) · giá < 21.75 trước khi mua · qua phiên 12/10",
+    "atr": 0.5365379670614312,
+    "uu_tien": 3.0,
+    "diem_ut": 61.0,
+    "he_so_kl": 1.0,
+    "atr_pct": 2.3952587815242463
    },
    {
     "ma": "SBT",
@@ -73,8 +96,8 @@
     "hieu_luc": "2026-10-12",
     "vo_hieu": "mở cửa > 23.50 (không đuổi) · giá < 22.45 trước khi mua · qua phiên 12/10",
     "atr": 0.3841856950569975,
-    "uu_tien": null,
-    "diem_ut": null,
+    "uu_tien": 4.0,
+    "diem_ut": 56.0,
     "he_so_kl": 1.0,
     "atr_pct": 1.6813378339474727
    },
@@ -96,33 +119,10 @@
     "hieu_luc": "2026-10-12",
     "vo_hieu": "mở cửa > 55.00 (không đuổi) · giá < 52.70 trước khi mua · qua phiên 12/10",
     "atr": 1.350833623826961,
-    "uu_tien": null,
-    "diem_ut": null,
+    "uu_tien": 6.0,
+    "diem_ut": 28.0,
     "he_so_kl": 1.0,
     "atr_pct": 2.5015437478277054
-   },
-   {
-    "ma": "HDB",
-    "nhom": "VAO_NHU_MOI",
-    "tp": "B",
-    "gia": 22.4,
-    "tu": 21.75,
-    "den": 22.6,
-    "cl": 21.03570167282937,
-    "R": 1.36429832717063,
-    "mt1": 23.76429832717063,
-    "mt3": 26.49289498151189,
-    "rui_ro": 6.090617532011741,
-    "lai_ht": 0.947739929199726,
-    "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 24/09 · đang +0.9R",
-    "khoi_luong": "đủ",
-    "hieu_luc": "2026-10-12",
-    "vo_hieu": "mở cửa > 22.60 (không đuổi) · giá < 21.75 trước khi mua · qua phiên 12/10",
-    "atr": 0.5365379670614312,
-    "uu_tien": null,
-    "diem_ut": null,
-    "he_so_kl": 1.0,
-    "atr_pct": 2.3952587815242463
    },
    {
     "ma": "MSN",
@@ -142,8 +142,8 @@
     "hieu_luc": "2026-10-12",
     "vo_hieu": "mở cửa > 76.20 (không đuổi) · giá < 72.60 trước khi mua · qua phiên 12/10",
     "atr": 1.809292186570362,
-    "uu_tien": null,
-    "diem_ut": null,
+    "uu_tien": 2.0,
+    "diem_ut": 67.0,
     "he_so_kl": 0.5,
     "atr_pct": 2.43839917327542
    }
@@ -155,7 +155,7 @@
   "so_chi_bao": 8,
   "vni": 1735.09,
   "cl": 2,
-  "ten_cl": "QUỸ B – tối đa 7 mã · 0.5% rủi ro/lệnh · ≤ 10%/mã",
+  "ten_cl": "QUỸ B – tối đa 8 mã · 0.75% rủi ro/lệnh · ≤ 15%/mã",
   "ty_trong": {
    "A0": 0.0,
    "B": 1.0,
@@ -211,7 +211,7 @@
     "chi_tiet": "11.8% vs 17.8%"
    }
   ],
-  "cap_nhat": "2026-10-12 12:46"
+  "cap_nhat": "2026-10-12 13:01"
  },
  "khuyen_nghi": [
   {
@@ -245,6 +245,21 @@
    "hieu_luc": "2026-10-12"
   },
   {
+   "ma": "HDB",
+   "nhom": "VAO_NHU_MOI",
+   "tp": "B",
+   "gia": 22.4,
+   "tu": 21.75,
+   "den": 22.6,
+   "cl": 21.03570167282937,
+   "mt1": 23.76429832717063,
+   "mt3": 26.49289498151189,
+   "rui_ro": 6.090617532011741,
+   "lai_ht": 0.947739929199726,
+   "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 24/09 · đang +0.9R",
+   "hieu_luc": "2026-10-12"
+  },
+  {
    "ma": "SBT",
    "nhom": "VAO_NHU_MOI",
    "tp": "B",
@@ -272,21 +287,6 @@
    "rui_ro": 5.152554367877879,
    "lai_ht": 0.33497289925510687,
    "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 18/09 · đang +0.3R",
-   "hieu_luc": "2026-10-12"
-  },
-  {
-   "ma": "HDB",
-   "nhom": "VAO_NHU_MOI",
-   "tp": "B",
-   "gia": 22.4,
-   "tu": 21.75,
-   "den": 22.6,
-   "cl": 21.03570167282937,
-   "mt1": 23.76429832717063,
-   "mt3": 26.49289498151189,
-   "rui_ro": 6.090617532011741,
-   "lai_ht": 0.947739929199726,
-   "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 24/09 · đang +0.9R",
    "hieu_luc": "2026-10-12"
   },
   {
