@@ -6,7 +6,8 @@ LẤY GÓI ptcp.
 
 GitHub Actions (bước "Lấy ptcp"): clone nông repo bằng token CHỈ ĐỌC rồi chép thư mục ptcp vào cạnh chay.py.
   Biến môi trường: TOKEN (secret DANH_MUC_TOKEN), REPO (vars.PTCP_REPO hoặc vars.DANH_MUC_REPO),
-                   DUONG_DAN (vars.PTCP_PATH, mặc định ptcp – thư mục ptcp ở gốc repo danh-muc).
+                   DUONG_DAN (vars.PTCP_PATH, mặc định ptcp – thư mục ptcp ở gốc repo danh-muc),
+                   NHANH (tuỳ chọn – nhánh của repo danh-muc, để chạy thử ptcp chưa gộp; trống = nhánh mặc định).
 Chạy trên máy: python lay_ptcp.py --tu ../danh-muc/ptcp   (chép từ thư mục có sẵn)
 """
 import argparse
@@ -64,7 +65,8 @@ def main():
         if not (token and repo):
             sys.exit("✘ Thiếu secret DANH_MUC_TOKEN hoặc variable DANH_MUC_REPO / PTCP_REPO – xem README (Cài đặt).")
         with tempfile.TemporaryDirectory() as tmp:
-            r = subprocess.run(["git", "clone", "--depth", "1", "--quiet",
+            nhanh = os.environ.get("NHANH", "").strip()
+            r = subprocess.run(["git", "clone", "--depth", "1", "--quiet", *(["--branch", nhanh] if nhanh else []),
                                 f"https://x-access-token:{token}@github.com/{repo}.git", tmp],
                                capture_output=True, text=True)
             if r.returncode != 0:                      # không in thông báo lỗi gốc (có thể chứa URL kèm token)
