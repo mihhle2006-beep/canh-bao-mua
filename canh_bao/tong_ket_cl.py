@@ -96,6 +96,10 @@ def ds_khuyen_nghi(ra):
             k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
             if lq["bo"]:
                 k_["nhom"] = "NGOAI_TOP"
+    # xếp hạng ưu tiên lại CHỈ trong các mã còn mua (mã ngoài top GTGD bị loại không giữ chỗ ★)
+    mua = sorted((k for k in out if k["nhom"] in NHOM_MUA and k["uu_tien"] == k["uu_tien"]), key=lambda k: k["uu_tien"])
+    for i, k in enumerate(mua, 1):
+        k["uu_tien"] = float(i)
     return out
 
 
