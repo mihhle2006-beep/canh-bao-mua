@@ -20,9 +20,11 @@ from . import cau_hinh as C
 
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
 TIEU_DE = {"MUA_MOI": "🟢 MUA MỚI", "VAO_NHU_MOI": "✅ VÀO NHƯ LỆNH MỚI", "VAO_NUA": "🟡 VÀO ½ KHỐI LƯỢNG",
-           "CHO": "⏳ CHỜ ĐIỀU CHỈNH", "DUOI_VON": "⛔ KHÔNG VÀO – hệ thống đang lỗ", "BAN": "⛔ KHÔNG VÀO – hệ thống sắp bán"}
+           "CHO": "⏳ CHỜ ĐIỀU CHỈNH", "DUOI_VON": "⛔ KHÔNG VÀO – hệ thống đang lỗ", "BAN": "⛔ KHÔNG VÀO – hệ thống sắp bán",
+           "NGOAI_TOP": "⛔ KHÔNG VÀO – ngoài top GTGD"}
 KHUYEN_NGHI = {"MUA_MOI": "MUA – TÍN HIỆU MỚI", "VAO_NHU_MOI": "MUA – VÀO NHƯ LỆNH MỚI", "VAO_NUA": "MUA TỪNG PHẦN",
-               "CHO": "CHỜ ĐIỀU CHỈNH", "DUOI_VON": "CHỜ – HỆ THỐNG ĐANG LỖ", "BAN": "KHÔNG MUA – HỆ THỐNG ĐANG BÁN"}
+               "CHO": "CHỜ ĐIỀU CHỈNH", "DUOI_VON": "CHỜ – HỆ THỐNG ĐANG LỖ", "BAN": "KHÔNG MUA – HỆ THỐNG ĐANG BÁN",
+               "NGOAI_TOP": "KHÔNG MUA – NGOÀI TOP GTGD"}
 
 
 def _f(x, le=2):
@@ -89,7 +91,21 @@ def ds_khuyen_nghi(ra):
         k_["he_so_kl"], k_["atr_pct"] = he_so_kl(k_["gia"], k_["atr"], k_["nhom"] == "VAO_NUA")
         nh = ra.get("nhiet") or {}
         k_["nhiet"], k_["he_so_nhiet"] = nh.get("diem"), float(nh.get("he_so", 1.0))
+        lq = _loc_quy(k_["ma"], ra.get("vni_df")) if k_["nhom"] in NHOM_MUA else None
+        if lq:                                      # Quỹ B 10/2026: top 100 GTGD · ĐẮT ½ KL · VN-Index Tăng ½
+            k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
+            if lq["bo"]:
+                k_["nhom"] = "NGOAI_TOP"
     return out
+
+
+def _loc_quy(ma, vni):
+    """ptcp.loc_quy_b.he_so (ptcp cũ / lỗi → None: không lọc)."""
+    try:
+        from ptcp.loc_quy_b import he_so
+        return he_so(ma, vni)
+    except Exception:                               # noqa: BLE001
+        return None
 
 
 def dong_nhiet(nh, rr=None):
@@ -112,6 +128,9 @@ def dong_mua(k, dang_giu=()):
     hs = k.get("he_so_kl")
     kl = f" | KL ×{hs:.2f}" if (getattr(C, "KL_THEO_BIEN_DONG", False) and hs is not None and hs == hs
                                 and hs < 0.999) else ""
+    hq = k.get("he_so_quy")
+    if hq is not None and hq < 0.999:
+        kl += f" | KL ×{hq:g} ({k.get('loc_quy', '')})"
     return (f"{sao}{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl} "
             f"| {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
 
@@ -308,6 +327,10 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     ko = [k for k in ks if k["nhom"] in ("DUOI_VON", "BAN")]
     if ko:
         dong.append(f"⛔ KHÔNG VÀO ({len(ko)}): " + ", ".join(k["ma"] for k in ko))
+    ngoai = [k for k in ks if k["nhom"] == "NGOAI_TOP"]
+    if ngoai:
+        dong.append(f"⛔ CÓ TÍN HIỆU NHƯNG NGOÀI TOP GTGD – không mua mới ({len(ngoai)}): "
+                    + ", ".join(k["ma"] for k in ngoai))
     if sum(k["nhom"] in NHOM_MUA for k in ks) > getattr(C, "SO_MA_MOI_TUAN", 2):
         dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: thanh khoản cao · cắt lỗ sát · "
                      f"RS 3 tháng không quá nóng) – quỹ B chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
