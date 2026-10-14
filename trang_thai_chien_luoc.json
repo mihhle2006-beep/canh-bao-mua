@@ -2,12 +2,12 @@
  "cl": 2,
  "diem": 2,
  "ngay_du_lieu": "2026-10-14",
- "cap_nhat": "2026-10-14 15:56",
+ "cap_nhat": "2026-10-15 01:27",
  "ds_mua": {
   "hieu_luc": "2026-10-15",
   "ngay_du_lieu": "2026-10-14",
   "cl": 2,
-  "tao_luc": "2026-10-14 15:56",
+  "tao_luc": "2026-10-15 01:27",
   "ma": [
    {
     "ma": "TCB",
@@ -28,11 +28,13 @@
     "vo_hieu": "mở cửa > 33.60 (không đuổi) · giá < 32.15 trước khi mua · qua phiên 15/10",
     "atr": 0.7441786386362867,
     "uu_tien": 1.0,
-    "diem_ut": 81.0,
+    "diem_ut": 83.0,
     "he_so_kl": 1.0,
     "atr_pct": 2.2550867837463238,
     "nhiet": 0,
-    "he_so_nhiet": 1.0
+    "he_so_nhiet": 1.0,
+    "he_so_quy": 1.0,
+    "loc_quy": ""
    },
    {
     "ma": "VGC",
@@ -53,11 +55,13 @@
     "vo_hieu": "mở cửa > 45.05 (không đuổi) · giá < 43.05 trước khi mua · qua phiên 15/10",
     "atr": 1.338634521399733,
     "uu_tien": 2.0,
-    "diem_ut": 76.0,
+    "diem_ut": 72.0,
     "he_so_kl": 1.0,
     "atr_pct": 3.059736048913676,
     "nhiet": 0,
-    "he_so_nhiet": 1.0
+    "he_so_nhiet": 1.0,
+    "he_so_quy": 1.0,
+    "loc_quy": ""
    },
    {
     "ma": "VPB",
@@ -78,11 +82,13 @@
     "vo_hieu": "mở cửa > 25.00 (không đuổi) · giá < 23.85 trước khi mua · qua phiên 15/10",
     "atr": 0.5876546569953333,
     "uu_tien": 3.0,
-    "diem_ut": 71.0,
+    "diem_ut": 67.0,
     "he_so_kl": 1.0,
     "atr_pct": 2.413366147824777,
     "nhiet": 0,
-    "he_so_nhiet": 1.0
+    "he_so_nhiet": 1.0,
+    "he_so_quy": 1.0,
+    "loc_quy": ""
    },
    {
     "ma": "DGW",
@@ -103,11 +109,13 @@
     "vo_hieu": "mở cửa > 46.75 (không đuổi) · giá < 44.50 trước khi mua · qua phiên 15/10",
     "atr": 1.6597946570373119,
     "uu_tien": 5.0,
-    "diem_ut": 52.0,
+    "diem_ut": 44.0,
     "he_so_kl": 1.0,
     "atr_pct": 3.647900345136949,
     "nhiet": 0,
-    "he_so_nhiet": 1.0
+    "he_so_nhiet": 1.0,
+    "he_so_quy": 1.0,
+    "loc_quy": ""
    },
    {
     "ma": "TLG",
@@ -128,11 +136,13 @@
     "vo_hieu": "mở cửa > 55.80 (không đuổi) · giá < 53.80 trước khi mua · qua phiên 15/10",
     "atr": 1.3140603030422133,
     "uu_tien": 6.0,
-    "diem_ut": 33.0,
+    "diem_ut": 28.0,
     "he_so_kl": 1.0,
     "atr_pct": 2.3676762216976814,
     "nhiet": 0,
-    "he_so_nhiet": 1.0
+    "he_so_nhiet": 1.0,
+    "he_so_quy": 0.5,
+    "loc_quy": "ĐẮT (định giá -26%) ×0.5"
    },
    {
     "ma": "HDB",
@@ -153,36 +163,13 @@
     "vo_hieu": "mở cửa > 23.45 (không đuổi) · giá < 22.55 trước khi mua · qua phiên 15/10",
     "atr": 0.5389299976800161,
     "uu_tien": 4.0,
-    "diem_ut": 57.0,
+    "diem_ut": 56.0,
     "he_so_kl": 0.5,
     "atr_pct": 2.3229741279311042,
     "nhiet": 0,
-    "he_so_nhiet": 1.0
-   },
-   {
-    "ma": "TRC",
-    "nhom": "VAO_NUA",
-    "tp": "B",
-    "gia": 24.25,
-    "tu": 23.65,
-    "den": 24.7,
-    "cl": 23.013107948665606,
-    "R": 1.2368920513343937,
-    "mt1": 25.486892051334394,
-    "mt3": 27.96067615400318,
-    "rui_ro": 5.10058577869853,
-    "lai_ht": 1.2456640502123844,
-    "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 25/09 · đang +1.2R",
-    "khoi_luong": "½",
-    "hieu_luc": "2026-10-15",
-    "vo_hieu": "mở cửa > 24.70 (không đuổi) · giá < 23.65 trước khi mua · qua phiên 15/10",
-    "atr": 0.8289074523636754,
-    "uu_tien": 7.0,
-    "diem_ut": 29.0,
-    "he_so_kl": 0.5,
-    "atr_pct": 3.418175061293507,
-    "nhiet": 0,
-    "he_so_nhiet": 1.0
+    "he_so_nhiet": 1.0,
+    "he_so_quy": 1.0,
+    "loc_quy": ""
    }
   ]
  },
@@ -280,7 +267,7 @@
     "chi_tiet": "10.9% vs 17.8%"
    }
   ],
-  "cap_nhat": "2026-10-14 15:56"
+  "cap_nhat": "2026-10-15 01:27"
  },
  "khuyen_nghi": [
   {
@@ -374,21 +361,6 @@
    "hieu_luc": "2026-10-15"
   },
   {
-   "ma": "TRC",
-   "nhom": "VAO_NUA",
-   "tp": "B",
-   "gia": 24.25,
-   "tu": 23.65,
-   "den": 24.7,
-   "cl": 23.013107948665606,
-   "mt1": 25.486892051334394,
-   "mt3": 27.96067615400318,
-   "rui_ro": 5.10058577869853,
-   "lai_ht": 1.2456640502123844,
-   "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 25/09 · đang +1.2R",
-   "hieu_luc": "2026-10-15"
-  },
-  {
    "ma": "DIG",
    "nhom": "CHO",
    "tp": "B",
@@ -431,6 +403,21 @@
    "rui_ro": 11.797004991680538,
    "lai_ht": 0.7769423558897243,
    "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 09/10 · đang +0.8R",
+   "hieu_luc": "2026-10-15"
+  },
+  {
+   "ma": "TRC",
+   "nhom": "CHO",
+   "tp": "B",
+   "gia": 24.25,
+   "tu": 20.4,
+   "den": 20.85,
+   "cl": 19.83640156394447,
+   "mt1": 28.66359843605553,
+   "mt3": 37.49079530816659,
+   "rui_ro": 18.200405921878474,
+   "lai_ht": 6.276889267448278,
+   "ly_do": "tín hiệu MACD + MACD tuần > Signal, HT vào 05/08 · đang +6.3R",
    "hieu_luc": "2026-10-15"
   },
   {
