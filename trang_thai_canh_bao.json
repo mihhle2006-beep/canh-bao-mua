@@ -15,16 +15,14 @@
    ]
   },
   "TLG": {
-   "ngay": "2026-10-13",
+   "ngay": "2026-10-14",
    "trang_thai": "CHỜ",
    "da_bao": []
   },
   "HDB": {
-   "ngay": "2026-10-13",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "GMD": {
    "ngay": "2026-10-12",
@@ -32,11 +30,9 @@
    "da_bao": []
   },
   "MSN": {
-   "ngay": "2026-10-13",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "BSR": {
    "ngay": "2026-10-12",
@@ -46,11 +42,9 @@
    ]
   },
   "MWG": {
-   "ngay": "2026-10-13",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "DBC": {
    "ngay": "2026-10-09",
@@ -113,138 +107,137 @@
    ]
   },
   "VGC": {
-   "ngay": "2026-10-13",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "VPB": {
-   "ngay": "2026-10-13",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "TRC": {
-   "ngay": "2026-10-13",
-   "trang_thai": "BỎ",
-   "da_bao": [
-    "BỎ"
-   ]
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
+  },
+  "TCB": {
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
+  },
+  "DGW": {
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
+  },
+  "FRT": {
+   "ngay": "2026-10-14",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   }
  },
  "_15p_hom_nay": {
-  "ngay": "2026-10-13",
+  "ngay": "2026-10-14",
   "cach_vao": "LO",
   "ds": [
    {
-    "Mã": "DIG",
-    "Nhóm": "MUA MỚI",
-    "Vùng": "9.28–9.74",
-    "Giá": 9.49,
+    "Mã": "MSN",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "71.10–73.20",
+    "Giá": null,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
     "Giờ": "",
     "Giá mua": null
-   },
-   {
-    "Mã": "CSV",
-    "Nhóm": "MUA MỚI",
-    "Vùng": "22.10–23.20",
-    "Giá": 22.0,
-    "Trạng thái": "MUA",
-    "Lý do": "mở cửa ≤ giá LO",
-    "Giờ": "09:15",
-    "Giá mua": 22.45
    },
    {
     "Mã": "MWG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "74.90–77.80",
-    "Giá": 74.7,
-    "Trạng thái": "MUA",
-    "Lý do": "mở cửa ≤ giá LO",
-    "Giờ": "09:15",
-    "Giá mua": 75.3
-   },
-   {
-    "Mã": "MSN",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "72.10–75.20",
-    "Giá": 71.6,
-    "Trạng thái": "MUA",
-    "Lý do": "mở cửa ≤ giá LO",
-    "Giờ": "09:15",
-    "Giá mua": 72.9
-   },
-   {
-    "Mã": "PDR",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "10.90–11.30",
-    "Giá": 11.15,
+    "Vùng": "74.50–77.00",
+    "Giá": null,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
     "Giờ": "",
     "Giá mua": null
    },
    {
-    "Mã": "SBT",
+    "Mã": "TCB",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "22.50–23.55",
-    "Giá": 22.65,
-    "Trạng thái": "MUA",
-    "Lý do": "khớp LO 22.85",
-    "Giờ": "09:15",
-    "Giá mua": 22.85
+    "Vùng": "32.15–33.60",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "VGC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "42.80–44.55",
-    "Giá": 43.5,
-    "Trạng thái": "MUA",
-    "Lý do": "khớp LO 43.38",
-    "Giờ": "14:15",
-    "Giá mua": 43.38333333333333
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "DGW",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "44.75–46.75",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "FRT",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "139.70–145.70",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "TLG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "53.00–55.00",
-    "Giá": 55.5,
+    "Vùng": "53.50–55.50",
+    "Giá": null,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "VPB",
+    "Nhóm": "VÀO ½ KL",
+    "Vùng": "23.85–25.00",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
     "Giờ": "",
     "Giá mua": null
    },
    {
     "Mã": "HDB",
     "Nhóm": "VÀO ½ KL",
-    "Vùng": "22.15–23.25",
-    "Giá": 23.05,
-    "Trạng thái": "MUA",
-    "Lý do": "khớp LO 22.52",
-    "Giờ": "09:15",
-    "Giá mua": 22.516666666666666
-   },
-   {
-    "Mã": "VPB",
-    "Nhóm": "VÀO ½ KL",
-    "Vùng": "23.85–25.00",
-    "Giá": 24.35,
-    "Trạng thái": "MUA",
-    "Lý do": "khớp LO 24.23",
-    "Giờ": "13:45",
-    "Giá mua": 24.233333333333334
+    "Vùng": "22.45–23.35",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "TRC",
     "Nhóm": "VÀO ½ KL",
-    "Vùng": "23.85–24.70",
-    "Giá": 24.6,
-    "Trạng thái": "BỎ",
-    "Lý do": "mở cửa 25.10 > 24.70 – không đuổi",
+    "Vùng": "23.70–24.70",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
     "Giờ": "",
     "Giá mua": null
    }
