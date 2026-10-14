@@ -94,6 +94,7 @@ def ds_khuyen_nghi(ra):
         lq = _loc_quy(k_["ma"], ra.get("vni_df")) if k_["nhom"] in NHOM_MUA else None
         if lq:                                      # Quỹ B 10/2026: top 100 GTGD · ĐẮT ½ KL · VN-Index Tăng ½
             k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
+            k_["he_so_vni"] = lq.get("he_so_vni", 1.0)        # gia_lap: × trần tổng rủi ro mở
             if lq["bo"]:
                 k_["nhom"] = "NGOAI_TOP"
     # xếp hạng ưu tiên lại CHỈ trong các mã còn mua (mã ngoài top GTGD bị loại không giữ chỗ ★)

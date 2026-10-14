@@ -242,10 +242,11 @@ def test_loc_quy_b_ngoai_top_va_he_so(monkeypatch):
                         "Vùng mua từ": 9.9, "Vùng mua đến": 10.2, "Hiệu lực": "2026-10-15", "Ưu tiên": ut}
                        for m, ut in (("AAA", 2), ("BBB", 1))])
     ra = {"hanh_dong": hd, "doc": {"ngay": "2026-10-14"}, "vni_df": None}
-    loc = {"AAA": {"bo": False, "he_so": 0.5, "ly_do": ["ĐẮT (định giá −30%) ×0.5"]},
+    loc = {"AAA": {"bo": False, "he_so": 0.5, "he_so_vni": 0.5, "ly_do": ["VN-Index Tăng ×0.5"]},
            "BBB": {"bo": True, "he_so": 1.0, "ly_do": ["ngoài top 100 GTGD (hạng 180)"]}}
     monkeypatch.setattr(tong_ket_cl, "_loc_quy", lambda ma, vni: loc[ma])
     a, b = tong_ket_cl.ds_khuyen_nghi(ra)
-    assert a["nhom"] == "VAO_NHU_MOI" and a["he_so_quy"] == 0.5 and "ĐẮT" in tong_ket_cl.dong_mua(a)
+    assert a["nhom"] == "VAO_NHU_MOI" and a["he_so_quy"] == 0.5 and a["he_so_vni"] == 0.5
+    assert "VN-Index Tăng" in tong_ket_cl.dong_mua(a)
     assert a["uu_tien"] == 1 and tong_ket_cl.dong_mua(a).startswith("★ ")   # BBB (hạng 1) bị loại → AAA lên ★
     assert b["nhom"] == "NGOAI_TOP" and b["nhom"] not in tong_ket_cl.NHOM_MUA
