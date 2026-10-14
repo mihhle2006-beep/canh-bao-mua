@@ -234,3 +234,15 @@ def test_dong_nhiet_va_khoi_luong_theo_nhiet():
     assert "5/6 (NÓNG)" in s and "= 0.38% vốn" in s and "RSI14" in s
     assert tong_ket_cl.dong_nhiet(None) is None
     assert "0.375% vốn" in tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, he_so_nhiet=0.5)
+
+
+def test_loc_quy_b_ngoai_top_va_he_so(monkeypatch):
+    hd = pd.DataFrame([{"Mã": m, "Nhóm": "VAO_NHU_MOI", "Thành phần": "B", "Giá đóng cửa": 10.0, "Cắt lỗ": 9.5,
+                        "Vùng mua từ": 9.9, "Vùng mua đến": 10.2, "Hiệu lực": "2026-10-15"} for m in ("AAA", "BBB")])
+    ra = {"hanh_dong": hd, "doc": {"ngay": "2026-10-14"}, "vni_df": None}
+    loc = {"AAA": {"bo": False, "he_so": 0.5, "ly_do": ["ĐẮT (định giá −30%) ×0.5"]},
+           "BBB": {"bo": True, "he_so": 1.0, "ly_do": ["ngoài top 100 GTGD (hạng 180)"]}}
+    monkeypatch.setattr(tong_ket_cl, "_loc_quy", lambda ma, vni: loc[ma])
+    a, b = tong_ket_cl.ds_khuyen_nghi(ra)
+    assert a["nhom"] == "VAO_NHU_MOI" and a["he_so_quy"] == 0.5 and "ĐẮT" in tong_ket_cl.dong_mua(a)
+    assert b["nhom"] == "NGOAI_TOP" and b["nhom"] not in tong_ket_cl.NHOM_MUA

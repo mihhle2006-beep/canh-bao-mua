@@ -191,7 +191,7 @@ def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):
 
 
 # ------------------------------------------------------------------ XEM RIÊNG 1 / VÀI MÃ
-NHOM_NGAN = {"MUA_MOI": "🟢", "VAO_NHU_MOI": "✅", "VAO_NUA": "🟡", "CHO": "⏳", "DUOI_VON": "⛔", "BAN": "⛔"}
+NHOM_NGAN = {"MUA_MOI": "🟢", "VAO_NHU_MOI": "✅", "VAO_NUA": "🟡", "CHO": "⏳", "DUOI_VON": "⛔", "BAN": "⛔", "NGOAI_TOP": "⛔"}
 def xem_ma(bay_gio, ds, khong_gui=False):
     """
     Chạy chiến lược CHỈ cho mã trong ds (độ rộng thị trường vẫn theo MA_CHIEN_LUOC) → in / gửi nhóm hành động,

@@ -154,7 +154,8 @@ def _khoi_thi_truong(tt):
 
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
 TEN_NHOM = {"MUA_MOI": "🟢 Mua mới", "VAO_NHU_MOI": "✅ Vào như lệnh mới", "VAO_NUA": "🟡 Vào ½",
-            "CHO": "⏳ Chờ điều chỉnh", "DUOI_VON": "⛔ HT đang lỗ", "BAN": "⛔ HT sắp bán"}
+            "CHO": "⏳ Chờ điều chỉnh", "DUOI_VON": "⛔ HT đang lỗ", "BAN": "⛔ HT sắp bán",
+            "NGOAI_TOP": "⛔ ngoài top GTGD"}
 
 
 def _khoi_tin_hieu(cl, cb):
