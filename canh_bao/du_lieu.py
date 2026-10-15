@@ -307,6 +307,26 @@ def ngay_hom_nay():
     return date.today()
 
 
+def quy_thang_cu(cu, moi, nguong=0.03):
+    """Nến cũ đã lưu vs nến mới tải (chồng 2 ngày): nguồn đã điều chỉnh quyền (chia / thưởng cổ phiếu) → giá đóng cửa
+    chỗ chồng lệch > nguong → nhân cả chuỗi cũ cùng tỷ lệ (KL chia ngược) để không ghép 2 thang giá."""
+    if moi is None or not len(moi) or cu is None or not len(cu):
+        return cu
+    chung = cu.index.intersection(moi.index)
+    if not len(chung):
+        return cu
+    f = float((moi.close.loc[chung] / cu.close.loc[chung]).median())
+    if not f == f or abs(f - 1) <= nguong:
+        return cu
+    cu = cu.copy()
+    for c in ("open", "high", "low", "close"):
+        if c in cu:
+            cu[c] = cu[c] * f
+    if "volume" in cu:
+        cu["volume"] = cu["volume"] / f
+    return cu
+
+
 def tai_lich_su_phut(ma, tu_ngay, khung="15", cua_so=30, nghi=0.3):
     """
     Nến phút DÀI (cho backtest 15'): tải lùi từng cửa sổ `cua_so` ngày từ hôm nay về tu_ngay, gộp & cache
@@ -343,7 +363,7 @@ def tai_lich_su_phut(ma, tu_ngay, khung="15", cua_so=30, nghi=0.3):
         t_den = t_tu
         time.sleep(nghi)
     if cu is not None:
-        phan.append(cu)
+        phan.append(quy_thang_cu(cu, pd.concat(phan) if phan else None))
     if not phan:
         return None
     out = pd.concat(phan).sort_index()
