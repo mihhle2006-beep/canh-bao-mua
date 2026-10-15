@@ -54,8 +54,14 @@ def _tai_song_song(ham, ds_ma, luong=8):
             return ma, ham(ma)
         except Exception:                                           # noqa: BLE001 – thiếu 1 mã không dừng backtest
             return ma, None
+    out = {}
     with ThreadPoolExecutor(max_workers=luong) as ex:
-        return {m: d for m, d in ex.map(mot, ds_ma) if d is not None and len(d)}
+        for i, (m, d) in enumerate(ex.map(mot, ds_ma), 1):
+            if d is not None and len(d):
+                out[m] = d
+            if i % 25 == 0 or i == len(ds_ma):
+                print(f"  đã tải {i}/{len(ds_ma)} mã ({len(out)} có dữ liệu)", flush=True)
+    return out
 
 
 def _bang_top(ct, top):
