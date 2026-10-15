@@ -1,0 +1,58 @@
+# TIN TỔNG KẾT TUẦN – 09:20 sáng thứ Bảy giờ VN (chuyển từ gia_lap 10/2026): danh mục thật & giả lập so VN-Index,
+# tín hiệu tuần, GDKHQ tuần tới. Code ở repo gia_lap (checkout vào gia_lap/), repo này vào gia_lap/canh-bao-mua.
+# CHẠY KÍN (repo công khai): đầu ra chương trình chỉ ghi file trong máy chạy / gửi Telegram, log chỉ in mã thoát.
+name: Tong ket tuan
+
+on:
+  schedule:
+    - cron: "20 2 * * 6"            # 09:20 thứ Bảy giờ VN (UTC+7)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tong_ket:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: gia_lap
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: gia_lap
+
+      - name: Lấy canh-bao-mua (Telegram, nhật ký tín hiệu, danh sách mua)
+        uses: actions/checkout@v5
+        with:
+          path: gia_lap/canh-bao-mua
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: gia_lap/requirements.txt
+
+      - name: Cài thư viện
+        run: pip install -q -r requirements.txt -r canh-bao-mua/requirements.txt > /dev/null
+
+      - name: Lấy ptcp (repo danh-muc)
+        working-directory: gia_lap/canh-bao-mua
+        env:
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}
+          REPO: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
+        run: python lay_ptcp.py
+
+      - name: Gửi tin tổng kết tuần (kín)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
+          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN }}
+          DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+        run: |
+          ma=0; python tong_ket_tuan.py > /tmp/tong_ket.txt 2>&1 || ma=$?
+          echo "Tổng kết tuần: mã thoát $ma"; exit $ma

@@ -1,0 +1,89 @@
+# GIAO DỊCH GIẢ LẬP – chuyển từ repo riêng tư gia_lap (hết phút Actions) sang đây 10/2026. Code & trạng thái vẫn ở
+# gia_lap: checkout vào gia_lap/ bằng secret DANH_MUC_TOKEN_GHI (token phải gồm cả repo gia_lap, Contents: Read and
+# write), repo này checkout vào gia_lap/canh-bao-mua (đủ lịch sử – danh sách mua bản cuối từng phiên) như trước.
+# CHẠY KÍN (repo công khai): đầu ra chương trình chỉ ghi file trong máy chạy / gửi Telegram, log chỉ in mã thoát.
+name: Gia lap
+
+on:
+  schedule:
+    - cron: "30 9 * * 1-5"          # 16:30 giờ VN (UTC+7), thứ Hai – thứ Sáu: xử lý phiên + đặt lệnh chờ
+    - cron: "30 10 * * 1-5"         # 17:30 & 19:00: kiểm lại – tổng kết lại (bộ lọc quét trễ) thì đồng bộ lệnh chờ
+    - cron: "0 12 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gia-lap
+  cancel-in-progress: false
+
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: gia_lap
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: gia_lap
+
+      - name: Lấy canh-bao-mua (tải giá, hệ thoát, Telegram, danh sách mua)
+        uses: actions/checkout@v5
+        with:
+          path: gia_lap/canh-bao-mua
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: gia_lap/requirements.txt
+
+      - name: Cài thư viện
+        run: pip install -q -r requirements.txt -r canh-bao-mua/requirements.txt > /dev/null
+
+      - name: Lấy ptcp (repo danh-muc)
+        working-directory: gia_lap/canh-bao-mua
+        env:
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}
+          REPO: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
+        run: python lay_ptcp.py
+
+      - name: Khôi phục cache giá
+        uses: actions/cache@v5
+        with:
+          path: |
+            gia_lap/cache_gia
+            gia_lap/cache_du_lieu
+          key: gia-lap-cache-${{ github.run_id }}
+          restore-keys: gia-lap-cache-
+
+      - name: Giao dịch giả lập (kín)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          ma=0; python chay.py > /tmp/gia_lap.txt 2>&1 || ma=$?
+          echo "Giả lập: mã thoát $ma"; exit $ma
+
+      - name: Lưu trạng thái về gia_lap
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for f in giao_dich_ao.json giao_dich_ao_lenh.csv giao_dich_ao_von.csv bao_cao.html; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
+          if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
+          git commit -q -m "Giả lập $(date -u +%F) UTC" > /dev/null
+          for i in 1 2 3; do
+            if git pull -q --rebase --autostash > /dev/null 2>&1 && git push -q > /dev/null 2>&1; then echo "Đã lưu"; exit 0; fi
+            sleep $((i * 5))
+          done
+          echo "::error::Không đẩy được về gia_lap – kiểm tra secret DANH_MUC_TOKEN_GHI (gồm repo gia_lap)"; exit 1

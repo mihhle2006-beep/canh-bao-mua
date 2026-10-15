@@ -56,8 +56,8 @@ jobs:
         continue-on-error: true
         timeout-minutes: 30
         env:                               # tin chất lượng BCTC mới (mã top 100 GTGD / danh mục)
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: python -m ptcp.kho_bctc --moi 80
 
       - name: Xếp hạng GTGD + định giá
