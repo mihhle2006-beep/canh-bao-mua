@@ -52,7 +52,7 @@ jobs:
 
       - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
         env:
-          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}                       # token CHỈ ĐỌC – dùng chung với cảnh báo BÁN
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN || secrets.DANH_MUC_TOKEN_GHI }}                       # token CHỈ ĐỌC – dùng chung với cảnh báo BÁN
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}          # mặc định: chính repo danh-muc
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}  # thư mục ptcp trong repo đó
           NHANH: ${{ inputs.nhanh_ptcp }}
@@ -71,7 +71,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN }}      # token CHỈ ĐỌC repo danh-muc (cảnh báo BÁN)
+          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN || secrets.DANH_MUC_TOKEN_GHI }}      # token CHỈ ĐỌC repo danh-muc (cảnh báo BÁN)
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
           MA: ${{ inputs.ma }}
