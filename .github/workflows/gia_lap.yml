@@ -7,8 +7,8 @@ name: Gia lap
 on:
   schedule:
     - cron: "30 9 * * 1-5"          # 16:30 giờ VN (UTC+7), thứ Hai – thứ Sáu: xử lý phiên + đặt lệnh chờ
-    - cron: "30 10 * * 1-5"         # 17:30 & 19:00: kiểm lại – tổng kết lại (bộ lọc quét trễ) thì đồng bộ lệnh chờ
-    - cron: "0 12 * * 1-5"
+    - cron: "30 10 * * 1-5"         # 17:30 & 18:53: kiểm lại – tổng kết lại (bộ lọc quét trễ) thì đồng bộ lệnh chờ
+    - cron: "53 11 * * 1-5"        # 18:53 (tránh đầu giờ – GitHub hay trễ lịch chạy đúng :00)
   workflow_dispatch:
 
 permissions:

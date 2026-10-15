@@ -18,7 +18,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: "0 20 * * 6"           # 03:00 Chủ nhật giờ VN
+    - cron: "13 20 * * 6"          # 03:13 Chủ nhật giờ VN – sau Kho BCTC (đọc BCTC từ kho)
 
 permissions:
   contents: read

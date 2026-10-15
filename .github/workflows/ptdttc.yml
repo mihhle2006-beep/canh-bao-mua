@@ -6,7 +6,7 @@ name: Quet PTDTTC
 
 on:
   schedule:
-    - cron: "5 8 * * 1-5"          # 15:05 giờ VN mỗi phiên T2–T6
+    - cron: "11 8 * * 1-5"         # 15:11 giờ VN mỗi phiên T2–T6 (lệch Quet dinh ky 15:05 – không tải giá cùng lúc)
   workflow_dispatch:
     inputs:
       gui_telegram:
