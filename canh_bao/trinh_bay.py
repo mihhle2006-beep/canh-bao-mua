@@ -125,7 +125,7 @@ def ve_bieu_do_ma(ma, dn, gia, muc_tieu=None, cat_lo=None, gia_von=None, tieu_de
         a.legend(loc="best", fontsize=7, framealpha=0.9)
         a.set_title(_bo_emoji(tieu_de) or ma, loc="left")
         os.makedirs(THU_MUC_ANH, exist_ok=True)
-        f = os.path.join(THU_MUC_ANH, f"{ma}_{pd.Timestamp.now():%H%M%S%f}.png")
+        f = os.path.join(THU_MUC_ANH, f"{ma} {pd.Timestamp.now():%H%M%S%f}.png")
         fig.savefig(f, bbox_inches="tight", pad_inches=0.2)
         plt.close(fig)
         return f
@@ -168,7 +168,7 @@ def ve_bang_tong_ket(dong, tieu_de):
         t.auto_set_column_width(list(range(len(df.columns))))
         a.set_title(_bo_emoji(vn_hoa(tieu_de)), loc="left", fontsize=11)
         os.makedirs(THU_MUC_ANH, exist_ok=True)
-        f = os.path.join(THU_MUC_ANH, f"tong_ket_{pd.Timestamp.now():%H%M%S%f}.png")
+        f = os.path.join(THU_MUC_ANH, f"tong ket {pd.Timestamp.now():%H%M%S%f}.png")
         fig.savefig(f, bbox_inches="tight", pad_inches=0.15)
         plt.close(fig)
         return f

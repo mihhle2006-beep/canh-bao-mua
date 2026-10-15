@@ -102,7 +102,7 @@ def ve(ma, dn, moc, tieu_de, file_png=None, vung=None, gia_nay=None, ngay_mua=No
         a.spines[s].set_visible(False)
     tieu_de = re.sub(r"[^\u0000-\u24FF]", "", tieu_de).strip(" –")          # bỏ emoji (font không có)
     a.set_title(tieu_de, fontsize=11, loc="left", fontweight="bold", color="#1b5e20")
-    file_png = file_png or os.path.join(tempfile.gettempdir(), f"moc_{ma}_{abs(hash(tieu_de)) % 10**8}.png")
+    file_png = file_png or os.path.join(tempfile.gettempdir(), f"moc {ma} {abs(hash(tieu_de)) % 10**8}.png")
     fig.savefig(file_png)
     plt.close(fig)
     return file_png
