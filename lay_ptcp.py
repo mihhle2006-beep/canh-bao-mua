@@ -5,7 +5,7 @@ LẤY GÓI ptcp.
   2) Không có → clone từ repo khác (danh-muc) bằng token CHỈ ĐỌC, tự tìm thư mục ptcp trong repo đó.
 
 GitHub Actions (bước "Lấy ptcp"): clone nông repo bằng token CHỈ ĐỌC rồi chép thư mục ptcp vào cạnh chay.py.
-  Biến môi trường: TOKEN (secret DANH_MUC_TOKEN), REPO (vars.PTCP_REPO hoặc vars.DANH_MUC_REPO),
+  Biến môi trường: TOKEN (secret DANH_MUC_TOKEN_GHI), REPO (vars.PTCP_REPO hoặc vars.DANH_MUC_REPO),
                    DUONG_DAN (vars.PTCP_PATH, mặc định ptcp – thư mục ptcp ở gốc repo danh-muc),
                    NHANH (tuỳ chọn – nhánh của repo danh-muc, để chạy thử ptcp chưa gộp; trống = nhánh mặc định).
 Chạy trên máy: python lay_ptcp.py --tu ../danh-muc/ptcp   (chép từ thư mục có sẵn)
@@ -63,7 +63,7 @@ def main():
         token, repo = os.environ.get("TOKEN", "").strip(), os.environ.get("REPO", "").strip()
         duong_dan = os.environ.get("DUONG_DAN", "").strip() or "ptcp_phan_tich/ptcp"
         if not (token and repo):
-            sys.exit("✘ Thiếu secret DANH_MUC_TOKEN hoặc variable DANH_MUC_REPO / PTCP_REPO – xem README (Cài đặt).")
+            sys.exit("✘ Thiếu secret DANH_MUC_TOKEN_GHI hoặc variable DANH_MUC_REPO / PTCP_REPO – xem README (Cài đặt).")
         with tempfile.TemporaryDirectory() as tmp:
             nhanh = os.environ.get("NHANH", "").strip()
             r = subprocess.run(["git", "clone", "--depth", "1", "--quiet", *(["--branch", nhanh] if nhanh else []),

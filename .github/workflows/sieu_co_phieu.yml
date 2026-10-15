@@ -1,5 +1,5 @@
 # CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
-# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN (token CHỈ ĐỌC repo danh-muc). CONG_KHAI=1: không đọc / in danh mục
+# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # SIÊU CỔ PHIẾU – đặc điểm các mã tăng ≥ 100% / 12 tháng TRƯỚC khi tăng (phan_tich_sieu_cp.py). Kết quả: log + Artifacts.
 name: Sieu co phieu
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
-          token: ${{ secrets.DANH_MUC_TOKEN || secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
       - uses: actions/setup-python@v6
         with:

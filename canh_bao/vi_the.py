@@ -3,7 +3,7 @@
 VỊ THẾ ĐANG GIỮ & CẢNH BÁO BÁN – theo HỆ THOÁT (ptcp/he_thoat.py, Quỹ B: T2-2R-ma10).
 
 Nguồn vị thế: đọc danh_muc.csv từ repo RIÊNG TƯ `danh-muc` qua GitHub API bằng token CHỈ ĐỌC.
-  Biến môi trường (GitHub Actions): DANH_MUC_TOKEN (secret), DANH_MUC_REPO (variable, VD "ten-ban/danh-muc"),
+  Biến môi trường (GitHub Actions): DANH_MUC_TOKEN (= secret DANH_MUC_TOKEN_GHI), DANH_MUC_REPO (variable, VD "ten-ban/danh-muc"),
   DANH_MUC_PATH (tuỳ chọn, mặc định "danh_muc.csv"), DANH_MUC_NHANH (tuỳ chọn, mặc định nhánh mặc định của repo).
   Chạy trên máy: đặt file danh_muc.csv cạnh chay.py (đã có trong .gitignore – KHÔNG đẩy lên repo công khai).
 
