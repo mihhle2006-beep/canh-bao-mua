@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-VỊ THẾ ĐANG GIỮ & CẢNH BÁO BÁN – theo HỆ THOÁT MỚI (ptcp/he_thoat.py, gốc T2-3R-ma10).
+VỊ THẾ ĐANG GIỮ & CẢNH BÁO BÁN – theo HỆ THOÁT (ptcp/he_thoat.py, Quỹ B: T2-2R-ma10).
 
 Nguồn vị thế: đọc danh_muc.csv từ repo RIÊNG TƯ `danh-muc` qua GitHub API bằng token CHỈ ĐỌC.
   Biến môi trường (GitHub Actions): DANH_MUC_TOKEN (secret), DANH_MUC_REPO (variable, VD "ten-ban/danh-muc"),
@@ -13,7 +13,7 @@ trạng thái chống báo trùng của lệnh bán lưu trong actions/cache (ca
 HỆ THOÁT (tính lại mỗi lần chạy từ ngày mua – chỉ dùng phiên ĐÃ ĐÓNG CỬA; cắt lỗ chỉ dời LÊN):
   lãi < 1R  cắt lỗ ban đầu (cat_lo_goc; thiếu thì cắt lỗ chuẩn theo ATR)          1R = giá vốn − cắt lỗ ban đầu
   lãi ≥ 1R  cắt lỗ động = đóng cửa cao nhất − 3×ATR, không dưới hoà vốn (+ phí)
-  lãi ≥ 3R  KHUNG TUẦN: bán khi đóng cửa tuần < MA10 tuần; sàn khoá lãi 2R
+  lãi ≥ 2R  KHUNG TUẦN: bán khi đóng cửa tuần < MA10 tuần; sàn khoá lãi 1R (C.NGUONG_KHUNG_TUAN_R)
   63 phiên mà lãi < 1R → lệnh không chạy. KHÔNG chốt lời ở mục tiêu cố định.
   Cắt lỗ hiệu lực = mức CAO HƠN giữa hệ thống và cat_lo_dat đã đặt trong danh mục.
 
@@ -41,7 +41,8 @@ MUC = ["CAT_LO", "BAN_TUAN", "HET_HAN", "CHOT_LOI", "CAN_NHAC_BAN", "GAN_CAT_LO"
 NHAN = {"CAT_LO": "🔴 CẮT LỖ", "BAN_TUAN": "🔴 BÁN – GÃY XU HƯỚNG TUẦN", "HET_HAN": "🟠 BÁN – LỆNH KHÔNG CHẠY",
         "CHOT_LOI": "🟢 CHỐT LỜI", "CAN_NHAC_BAN": "🟠 CÂN NHẮC BÁN", "GAN_CAT_LO": "🟠 SÁT CẮT LỖ",
         "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ"}
-TEN_TANG = {0: "tầng 0 (< 1R)", 1: "tầng 1 (≥ 1R – cắt lỗ động)", 2: "tầng tuần (≥ 3R – MA10 tuần)"}
+TEN_TANG = {0: "tầng 0 (< 1R)", 1: "tầng 1 (≥ 1R – cắt lỗ động)",
+            2: f"tầng tuần (≥ {C.NGUONG_KHUNG_TUAN_R:g}R – MA10 tuần)"}
 FILE_TRANG_THAI_BAN = os.path.join("cache_ptcp", "trang_thai_ban.json")
 FILE_TRANG_THAI_MUA_AN = os.path.join("cache_ptcp", "trang_thai_mua_ma_an.json")
 

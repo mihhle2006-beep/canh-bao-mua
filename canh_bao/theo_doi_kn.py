@@ -5,7 +5,7 @@ THEO DÕI KHUYẾN NGHỊ ĐÃ GỬI – "nếu đã mua theo khuyến nghị ng
 Nguồn: nhật ký công khai lich_su_danh_gia.csv (nhat_ky.py) – mỗi khuyến nghị MUA của chiến lược (loai CHIEN_LUOC,
 nhóm MUA) đã được chấm như 1 lệnh giả định: vào giá MỞ CỬA phiên sau nếu trong vùng mua (ngay_vao, gia_vao).
 Với mỗi lệnh giả định CÒN MỞ, bot chấm lại bằng ĐÚNG hệ thoát của danh mục thật (vi_the.danh_gia_ban):
-  🔴 BÁN       chạm cắt lỗ / đóng cửa tuần < MA10 tuần khi đã ≥ 3R / 63 phiên chưa đạt 1R
+  🔴 BÁN       chạm cắt lỗ / đóng cửa tuần < MA10 tuần khi đã ≥ 2R (khung tuần) / 63 phiên chưa đạt 1R
   ⬆ DỜI CẮT LỖ hệ thống nâng cắt lỗ cao hơn mức đã báo (≥ DOI_CAT_LO_TOI_THIEU_PCT %) – mỗi mức báo 1 lần
   ⚠ SÁT CẮT LỖ giá cách cắt lỗ ≤ GAN_CAT_LO_PCT %
   🟢 GIỮ       còn lại (kèm cắt lỗ hiện tại)

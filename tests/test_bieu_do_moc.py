@@ -28,3 +28,12 @@ def test_ve(tmp_path):
              ngay_mua="2026-09-01")
     assert p and os.path.getsize(p) > 10_000
     assert B.ve_an_toan("ABC", None, [], "x") is None
+
+
+def test_nguong_khung_tuan_dong_bo_ptcp():
+    """Ngưỡng chuyển khung tuần của bot (vị thế đang giữ, mua thêm, biểu đồ) phải = luật Quỹ B của ptcp."""
+    import pytest
+    P = pytest.importorskip("ptcp.cau_hinh")
+    from canh_bao import cau_hinh as C
+    assert C.NGUONG_KHUNG_TUAN_R == P.QUY_NGUONG_TUAN
+    assert C.RUI_RO_MOI_LENH_PCT == P.QUY_RUI_RO_LENH_PCT and C.SO_MA_MOI_TUAN == P.QUY_MOI_TUAN_TOI_DA

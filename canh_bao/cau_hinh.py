@@ -84,13 +84,13 @@ KY_HAN_MUA = 63                    # phiên – hạn chấm lệnh mua khi ptcp
 KY_HAN_BAN = 20                    # phiên – sau cảnh báo bán bao lâu thì so giá để chấm
 # T+2, phí + trượt giá, ngưỡng trần/sàn, "ít mẫu": lấy từ ptcp/cau_hinh.py (một bộ máy chấm chung – ptcp/nhat_ky.py)
 
-# --- HỆ THOÁT MỚI cho mã đang giữ (ptcp/he_thoat.py – gốc T2-3R-ma10 đã backtest trên 41 mã 2019–2026) ---
+# --- HỆ THOÁT cho mã đang giữ (ptcp/he_thoat.py – Quỹ B 10/2026: T2-2R-ma10, = ptcp QUY_NGUONG_TUAN) ---
 #   lãi < 1R : cắt lỗ ban đầu (cat_lo_goc; thiếu thì max(giá vốn − 2×ATR, −7%), tối thiểu 1,5×ATR)
 #   lãi ≥ 1R : cắt lỗ động = đóng cửa cao nhất − 3×ATR, không dưới hoà vốn (+ phí)
-#   lãi ≥ 3R : chuyển KHUNG TUẦN – bán khi đóng cửa tuần < MA10 tuần; sàn khoá lãi 2R; KHÔNG chốt lời cố định
+#   lãi ≥ 2R : chuyển KHUNG TUẦN – bán khi đóng cửa tuần < MA10 tuần; sàn khoá lãi 1R; KHÔNG chốt lời cố định
 #   63 phiên mà lãi < 1R : lệnh không chạy → bán.  Cắt lỗ chỉ dời LÊN; dùng mức cao hơn giữa hệ thống & cat_lo_dat.
 DUNG_HE_THOAT = True               # False: quay về cách cũ (cắt lỗ / mục tiêu đặt tay + MACD tuần / SuperTrend / ptcp)
-NGUONG_KHUNG_TUAN_R = 3.0          # lãi (theo R) để chuyển sang bán theo khung tuần
+NGUONG_KHUNG_TUAN_R = 2.0          # lãi (theo R) chuyển khung tuần – PHẢI = ptcp QUY_NGUONG_TUAN (test kiểm tra; trước 10/2026: 3)
 DOI_CAT_LO_TOI_THIEU_PCT = 0.5     # chỉ nhắc "DỜI CẮT LỖ" khi mức hệ thống cao hơn mức đã đặt ≥ 0,5%
 
 # --- BẢN TIN CHIẾN LƯỢC CL1 / CL2 (canh_bao/chien_luoc_bot.py – dùng ptcp/chien_luoc.py & he_thoat.py) ---
@@ -128,7 +128,7 @@ BACKTEST_TU = "2019-01-01"         # giá ngày cho backtest điểm bán / mua 
 BACKTEST_15P_TU = "2024-01-01"     # nến 15' lấy từ ngày này (nguồn giới hạn bao xa thì dùng tới đó)
 
 # --- MUA THÊM mã đang giữ (đúng luật nhồi lệnh đã backtest – kiểu B) ---
-#   Đủ cả: lãi đã ≥ 3R (khung tuần) · đóng cửa lập đỉnh mới từ ngày mua · cách lần mua trước ≥ 10 phiên ·
+#   Đủ cả: lãi đã ≥ NGUONG_KHUNG_TUAN_R (khung tuần) · đóng cửa lập đỉnh mới từ ngày mua · cách lần mua trước ≥ 10 phiên ·
 #   cắt lỗ hiện tại ≥ giá vốn bình quân MỚI + phí (chạm cắt lỗ cả vị thế vẫn hoà vốn) · tối đa 2 lần.
 MUA_THEM_TY_LE = 0.25              # mỗi lần mua thêm = 25% số CP đang giữ
 MUA_THEM_GIAN_CACH = 10            # phiên

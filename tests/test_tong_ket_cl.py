@@ -166,7 +166,9 @@ def test_trong_phien_bo_khi_mo_cua_vuot_vung_va_het_hieu_luc(moi_truong):
     assert diem_vao.doc_ds_mua("2026-10-09 10:00") == []
 
 
-def test_mua_them_theo_luat_nhoi_kieu_b():
+def test_mua_them_theo_luat_nhoi_kieu_b(monkeypatch):
+    from canh_bao import cau_hinh as C
+    monkeypatch.setattr(C, "NGUONG_KHUNG_TUAN_R", 3.0)          # số liệu dựng cho khung tuần từ 3R (sàn 2R)
     r = np.r_[np.full(200, 0.0005), np.full(60, 0.006)]
     dn = _gia(r, g0=20.0, end="2026-10-02")
     i = 200
