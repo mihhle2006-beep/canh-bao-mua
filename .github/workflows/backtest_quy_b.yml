@@ -66,7 +66,7 @@ jobs:
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           ref: ${{ inputs.nhanh_danh_muc || '' }}
-          token: ${{ secrets.DANH_MUC_TOKEN }}
+          token: ${{ secrets.DANH_MUC_TOKEN || secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
       - uses: actions/setup-python@v6
         if: steps.chon.outputs.chay

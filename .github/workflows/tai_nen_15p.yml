@@ -31,7 +31,7 @@ jobs:
 
       - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
         env:
-          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN || secrets.DANH_MUC_TOKEN_GHI }}
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py

@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
-          token: ${{ secrets.DANH_MUC_TOKEN }}
+          token: ${{ secrets.DANH_MUC_TOKEN || secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
 
       - uses: actions/setup-python@v6
