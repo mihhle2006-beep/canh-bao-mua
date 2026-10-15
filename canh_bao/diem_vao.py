@@ -182,7 +182,7 @@ def can_bao(ma, trang_thai_moi, bay_gio, luu, ly_do=""):
     cu = luu.get(ma, {})
     da = cu.get("da_bao", []) if cu.get("ngay") == ngay else []
     luu[ma] = {"ngay": ngay, "trang_thai": trang_thai_moi, "da_bao": da}
-    if trang_thai_moi == "BỎ" and not any(x in ly_do for x in ("không đuổi", "trước khi mua", "thủng vùng")):
+    if trang_thai_moi == "BỎ" and not any(x in ly_do for x in ("không đuổi", "trước khi mua", "thủng vùng", "bỏ ATC")):
         return False
     if trang_thai_moi in ("MUA", "BỎ") and trang_thai_moi not in da and "MUA" not in da:
         luu[ma]["da_bao"] = da + [trang_thai_moi]

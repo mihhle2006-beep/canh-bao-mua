@@ -392,7 +392,9 @@ def _dong_cach_vao(kq_bt):
         s += f" (backtest {hang['TB/lệnh khớp %']:+.2f}%/lệnh, khớp {hang['Khớp %']:.0f}%)"
     if bt.startswith("LO"):
         s += (". Đặt LO trước giờ mở cửa ở giá 'đặt LO' từng mã (⅓ dưới vùng); không chạm → "
-              + ("ATC nếu đóng cửa còn trong vùng" if bt.endswith("+ATC") else "không mua"))
+              + ({"": "ATC nếu đóng cửa còn trong vùng", "_VWAP": "ATC chỉ khi giá ≥ VWAP phiên",
+                  "_XANH": "ATC chỉ khi giá ≥ giá mở cửa", "_TREN": "ATC chỉ khi giá ở nửa trên biên độ phiên"}
+                 .get(bt.partition("+ATC")[2], "ATC") if "+ATC" in bt else "không mua"))
     return s
 
 
