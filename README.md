@@ -40,7 +40,7 @@ luôn tính giống nhau:
 
 | | Luật |
 |---|---|
-| **Chọn mã** | Mã có tín hiệu MUA trong tin tổng kết (🟢 mua mới · ✅ vào trễ), thuộc top 100 GTGD và **không quá nóng** (hạng RS 3 tháng so VN-Index trong toàn rổ < 90). Mỗi tuần đánh dấu **★ 4 mã** ưu tiên cao nhất. |
+| **Chọn mã** | Mã có tín hiệu MUA trong tin tổng kết (🟢 mua mới · ✅ vào trễ), thuộc top 100 GTGD TB20 (**chốt thứ Sáu tuần trước**, cố định cả tuần) và **không quá nóng** (hạng RS 3 tháng so VN-Index trong toàn rổ < 90). Mỗi tuần đánh dấu **★ 4 mã** ưu tiên cao nhất. |
 | **Số lệnh** | Giữ tối đa **8 mã** · tối đa **4 mã MỚI/tuần** (thứ 2 – thứ 6, tính cả lệnh vào trễ) · mỗi mã mua thêm tối đa 2 lần. |
 | **Vào trễ** | Mã đã bỏ vì **hết suất tuần** được mua sau khi giá **≤ giá vào của hệ thống + ½R** (cắt lỗ hệ thống cách ≤ 7%), đủ khối lượng – như đặt lệnh chờ quanh giá tín hiệu. Lãi > ½R → chờ giá hồi. |
 | **Khối lượng** | **0,75% vốn** ÷ (giá mua − cắt lỗ). VN-Index đang *Tăng* → ½ mức rủi ro · mã **ĐẮT** → ½ khối lượng. |
