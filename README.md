@@ -228,7 +228,7 @@ và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào th
 | **Kho BCTC** (00:47) → **Boi so nganh** (03:13) | Chủ nhật | ✔ |
 | **Kiem dinh dinh gia** · **Sieu co phieu** · **Chan doan** · **Tra cuu ma** · **Bao cao ma** | chạy tay (Tra cuu: thứ Bảy) | – |
 | **Danh muc hang ngay** – danh mục thật + PTĐTTC + danh mục cũ, **chạy kín** | 15:45 T2–T6 | ✔ (cắt lỗ, lịch sử, tiền mặt) |
-| **Gia lap** (16:30, 17:30, 18:53) · **Suc khoe he thong** (19:55) · **Tong ket tuan** (09:37 thứ Bảy) – **chạy kín** | T2–T6 / thứ Bảy | ✔ gia_lap |
+| **Gia lap** (16:30, 17:30, 18:53) · **Suc khoe he thong** (19:55) · **Tong ket tuan** (20:17 tối thứ Sáu: mã mua trong tuần, lãi/lỗ tuần thật · PTĐTTC · giả lập so VN-Index) – **chạy kín** | T2–T6 / thứ Bảy | ✔ gia_lap |
 | **Quet PTDTTC** – mã PTĐTTC (code ở repo Bo_Loc), **chạy kín**, không cache | 15:11 T2–T6 | – |
 
 - **Log và artifact ở đây ai cũng xem được.** Các workflow đặt `CONG_KHAI=1` → ptcp **không đọc** `danh_muc.csv` /
