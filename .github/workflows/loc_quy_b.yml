@@ -3,7 +3,7 @@
 # GHI Contents repo danh-muc – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # LỌC QUỸ B – hạng GTGD TB20 toàn rổ (~420 mã) + định giá J8 cuối quý gần nhất → ptcp/loc_quy_b.json (trong gói ptcp,
-# nên canh-bao-mua / gia_lap nhận qua lay_ptcp.py). Chạy 07:30 giờ VN mỗi ngày giao dịch, trước tin tổng kết 15:20.
+# nên canh-bao-mua / gia_lap nhận qua lay_ptcp.py). Chạy 06:07 giờ VN mỗi ngày giao dịch (xong trước phiên 09:00 & tin tổng kết 15:20).
 # Trước khi định giá: tải BCTC quý / năm vừa công bố (mã thiếu đúng kỳ mới nhất đã tới hạn – kho_bctc --moi) và lấy lại
 # số CP của mã có sự kiện quyền mới (cổ tức, chia / thưởng, phát hành – cache_du_lieu/so_cp.json).
 name: Loc quy B
@@ -11,7 +11,8 @@ name: Loc quy B
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 0 * * 1-5"         # 07:30 giờ VN, thứ Hai–Sáu
+    - cron: "7 23 * * 0-4"         # 06:07 giờ VN thứ Hai–Sáu (23:07 UTC CN–Năm): chạy ~30' + GitHub hay trễ lịch
+                                   # → xong trước phiên 09:00 dù trễ ~1 giờ
 
 permissions:
   contents: read
@@ -28,6 +29,7 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
+      TZ: Asia/Ho_Chi_Minh             # lịch chạy 23:07 UTC = sáng hôm sau giờ VN → ngày / quý / thứ Sáu chốt theo giờ VN
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v5

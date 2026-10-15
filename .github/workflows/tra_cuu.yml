@@ -18,7 +18,7 @@ on:
         type: boolean
         default: true
   schedule:
-    - cron: "0 1 * * 6"            # 08:00 thứ Bảy giờ VN – tự kiểm nguồn
+    - cron: "53 0 * * 6"           # 07:53 thứ Bảy giờ VN – tự kiểm nguồn (trước lịch sử 09:07 & tổng kết tuần)
 
 permissions:
   contents: read

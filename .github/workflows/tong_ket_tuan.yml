@@ -1,11 +1,11 @@
-# TIN TỔNG KẾT TUẦN – 09:20 sáng thứ Bảy giờ VN (chuyển từ gia_lap 10/2026): danh mục thật & giả lập so VN-Index,
+# TIN TỔNG KẾT TUẦN – 09:37 sáng thứ Bảy giờ VN (chuyển từ gia_lap 10/2026): danh mục thật & giả lập so VN-Index,
 # tín hiệu tuần, GDKHQ tuần tới. Code ở repo gia_lap (checkout vào gia_lap/), repo này vào gia_lap/canh-bao-mua.
 # CHẠY KÍN (repo công khai): đầu ra chương trình chỉ ghi file trong máy chạy / gửi Telegram, log chỉ in mã thoát.
 name: Tong ket tuan
 
 on:
   schedule:
-    - cron: "20 2 * * 6"            # 09:20 thứ Bảy giờ VN (UTC+7)
+    - cron: "37 2 * * 6"            # 09:37 thứ Bảy giờ VN (UTC+7) – sau khi chạy lịch sử 09:07 (≤ 20') xong
   workflow_dispatch:
 
 permissions:

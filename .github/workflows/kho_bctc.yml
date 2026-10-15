@@ -14,7 +14,7 @@ on:
         description: "Mã, phân cách dấu phẩy (để trống = danh mục + toàn bộ bản đồ ngành)"
         default: ""
   schedule:
-    - cron: "0 18 * * 6"           # 01:00 Chủ nhật giờ VN
+    - cron: "47 17 * * 6"          # 00:47 Chủ nhật giờ VN (≤ 2 giờ → xong trước Boi so nganh 03:13)
 
 permissions:
   contents: read
