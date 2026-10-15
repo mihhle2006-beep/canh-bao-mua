@@ -96,7 +96,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     ds_ma = list(dict.fromkeys(co_dinh + ma_bo_loc.danh_sach(tt_bl) + list(them)))
     ra, loi = chien_luoc_bot.chay_chien_luoc(
         lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=ds_ma,
-        ds_do_rong=C.MA_CHIEN_LUOC if getattr(C, "DO_RONG_THEO_MA_CHIEN_LUOC", True) else None)
+        ds_do_rong=chien_luoc_bot.ro_do_rong() if getattr(C, "DO_RONG_THEO_MA_CHIEN_LUOC", True) else None)
     if ra is None:
         print(f"⚠ Chiến lược: {loi}")
         if tt_bl:
@@ -211,7 +211,7 @@ def xem_ma(bay_gio, ds, khong_gui=False):
     quet = list(dict.fromkeys(ds + [m for v in cung.values() for m in v]))
     ra, loi = chien_luoc_bot.chay_chien_luoc(
         lambda ma, tu, chi_so=False: tai(ma, "D", tu, chi_so=chi_so), bay_gio, ds_ma=quet,
-        ds_do_rong=C.MA_CHIEN_LUOC if getattr(C, "DO_RONG_THEO_MA_CHIEN_LUOC", True) else None)
+        ds_do_rong=chien_luoc_bot.ro_do_rong() if getattr(C, "DO_RONG_THEO_MA_CHIEN_LUOC", True) else None)
     if ra is None:
         print(f"⚠ Chiến lược: {loi}")
         return 1

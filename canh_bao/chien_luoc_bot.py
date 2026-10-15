@@ -21,6 +21,18 @@ import pandas as pd
 from . import cau_hinh as C
 
 
+
+def ro_do_rong():
+    """Rổ tính độ rộng / điểm thị trường: top 100 GTGD chốt thứ Sáu tuần liền trước (ptcp.loc_quy_b.ro_thi_truong);
+    ptcp cũ / thiếu dữ liệu → MA_CHIEN_LUOC (41 mã)."""
+    try:
+        from ptcp.loc_quy_b import ro_thi_truong
+        ro, mo_ta = ro_thi_truong()
+    except (ImportError, AttributeError):
+        ro, mo_ta = list(C.MA_CHIEN_LUOC), f"{len(C.MA_CHIEN_LUOC)} mã cố định"
+    print(f"Độ rộng thị trường: rổ {mo_ta}")
+    return ro
+
 def _phien_da_dong(df, bay_gio):
     from .vi_the import _phien_da_dong as f
     return f(df, bay_gio)
