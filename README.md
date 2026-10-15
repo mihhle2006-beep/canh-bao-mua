@@ -250,6 +250,8 @@ và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào th
    | Secret | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` | Bot Telegram |
    | Secret | `DANH_MUC_TOKEN` | Token **chỉ đọc** repo danh-muc (cũng dùng để lấy `ptcp/`) |
    | Secret | `DANH_MUC_TOKEN_GHI` | Token **Contents: Read and write** cho repo **danh-muc và gia_lap** – các workflow ghi dữ liệu commit về đó |
+   | Secret (tuỳ chọn) | `TELEGRAM_TOKEN_DANH_MUC`, `TELEGRAM_CHAT_ID_DANH_MUC` | Bot / chat Telegram cũ của repo danh-muc – tin danh mục thật, Loc quy B, Tra cuu, Bao cao ma gửi về đó; trống → gửi vào bot / chat của repo này |
+   | Secret (tuỳ chọn) | `TELEGRAM_TOKEN_GIA_LAP`, `TELEGRAM_CHAT_ID_GIA_LAP` | Bot / chat Telegram cũ của repo gia_lap – tin giả lập, sức khoẻ, tổng kết tuần; trống → bot / chat của repo này |
    | Secret | `TONG_VON_CHINH`, `TONG_VON_PTDTTC` | Tổng tài sản (triệu đồng) danh mục chính / PTĐTTC – để ở SECRET (bị che trong log) |
    | Secret (tuỳ chọn) | `GIU_TIEN_MAT`, `CHON` | % giữ tiền mặt, cách chọn Markowitz (`gmv` / `max_sharpe`) |
    | Secret (tuỳ chọn) | `VNSTOCK_API_KEY` | Khoá vnstock cho các workflow của danh-muc |

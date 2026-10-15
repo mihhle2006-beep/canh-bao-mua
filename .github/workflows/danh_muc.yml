@@ -3,7 +3,8 @@
 #   ghi vào file trong máy chạy rồi gửi Telegram (tóm tắt + dashboard + Excel); KHÔNG tải artifact; tổng vốn để ở
 #   SECRET (bị che trong log, không ghi số mặc định ở đây). Trạng thái cắt lỗ / lịch sử / tiền mặt / danh_muc.csv
 #   commit về repo danh-muc bằng secret DANH_MUC_TOKEN_GHI (Contents: Read and write). Lỗi → chỉ in mã thoát.
-#   Secret cần: DANH_MUC_TOKEN_GHI, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, TONG_VON_CHINH, TONG_VON_PTDTTC (triệu đồng,
+#   Secret cần: DANH_MUC_TOKEN_GHI, TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC (trống → dùng TELEGRAM_TOKEN /
+#   TELEGRAM_CHAT_ID của bot), TONG_VON_CHINH, TONG_VON_PTDTTC (triệu đồng,
 #   tổng tài sản CP + tiền), tuỳ chọn VNSTOCK_API_KEY, GIU_TIEN_MAT, CHON (gmv / max_sharpe).
 name: Danh muc hang ngay
 
@@ -48,8 +49,8 @@ jobs:
           GIU_TIEN_MAT: ${{ secrets.GIU_TIEN_MAT }}
           CHON: ${{ secrets.CHON }}
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: |
           if [ -z "$TONG_VON" ]; then echo "::error::Thiếu secret TONG_VON_CHINH"; exit 1; fi
           ARGS="--khong_ve --tong_von $TONG_VON --chon ${CHON:-gmv}"
@@ -65,8 +66,8 @@ jobs:
           TONG_VON: ${{ secrets.TONG_VON_PTDTTC }}
           CHON: ${{ secrets.CHON }}
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           DM_TEN: ptdttc
           DM_LOG: ket_qua_log_ptdttc.txt
         run: |
@@ -81,8 +82,8 @@ jobs:
       - name: Danh mục cũ (kín)
         if: always() && hashFiles('danh-muc/danh_muc_cu.csv') != ''
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
         run: |
           ma=0; python -m dmuc.danh_muc_cu > /tmp/dm_cu.txt 2>&1 || ma=$?

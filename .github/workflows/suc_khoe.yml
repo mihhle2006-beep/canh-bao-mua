@@ -35,8 +35,8 @@ jobs:
 
       - name: Gửi tin sức khoẻ (kín)
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
           GITHUB_TOKEN: ${{ github.token }}
           BO_LOC_TOKEN: ${{ secrets.BO_LOC_TOKEN }}
           SUC_KHOE_TOKEN: ${{ secrets.SUC_KHOE_TOKEN }}     # tuỳ chọn: fine-grained, Actions: Read repo Bo_Loc

@@ -66,8 +66,8 @@ jobs:
 
       - name: Giao dịch giả lập (kín)
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
         run: |
           ma=0; python chay.py > /tmp/gia_lap.txt 2>&1 || ma=$?
           echo "Giả lập: mã thoát $ma"; exit $ma
