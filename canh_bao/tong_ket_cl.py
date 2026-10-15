@@ -341,7 +341,8 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     cho = [k for k in ks if k["nhom"] == "CHO"]
     if cho:
         dong += ["", f"{TIEU_DE['CHO']} ({len(cho)}): " + " · ".join(
-            f"{k['ma']} {_f(k['tu'])}–{_f(k['den'])}" for k in cho[:n_max]) + (" …" if len(cho) > n_max else "")]
+            (f"{k['ma']} {_f(k['tu'])}–{_f(k['den'])}" if k.get("den") == k.get("den") and k.get("den") is not None
+             else f"{k['ma']} chờ tín hiệu mới") for k in cho[:n_max]) + (" …" if len(cho) > n_max else "")]
     ko = [k for k in ks if k["nhom"] in ("DUOI_VON", "BAN")]
     if ko:
         dong.append(f"⛔ KHÔNG VÀO ({len(ko)}): " + ", ".join(k["ma"] for k in ko))
