@@ -233,6 +233,8 @@ def _dong_nhom(nhom, r):
         return [f"  • {r['Mã']}{tp} {_f(g)} → MUA {vung} | CL {_f(cl)} (−{_f(rr, 1)}%){lai}",
                 f"     ✘ bỏ nếu mở cửa > {_f(den)} hoặc giá rơi < {_f(tu)} trước khi mua" if tu == tu else
                 f"     ✘ bỏ nếu mở cửa > {_f(den)}"]
+    if nhom == "CHO" and den != den:                       # Quỹ B: cắt lỗ HT > giá vào + ½R → hết vùng vào trễ
+        return [f"  • {r['Mã']}{tp} {_f(g)} → chờ tín hiệu MACD mới (hết vùng vào trễ) | CL {_f(cl)}{lai}"]
     if nhom == "CHO":
         return [f"  • {r['Mã']}{tp} {_f(g)} → chờ về {vung} | CL {_f(cl)}{lai}",
                 f"     ✘ bỏ nếu đóng cửa < {_f(cl)}"]

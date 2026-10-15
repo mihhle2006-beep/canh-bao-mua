@@ -39,9 +39,10 @@ luôn tính giống nhau:
 
 | | Luật |
 |---|---|
-| **Chọn mã** | Mã có tín hiệu MUA trong tin tổng kết (🟢 mua mới · ✅ vào như lệnh mới · 🟡 vào ½), thuộc top 100 GTGD. Mỗi tuần đánh dấu **★ 3 mã** ưu tiên cao nhất. |
-| **Số lệnh** | Giữ tối đa **8 mã** · tối đa **3 mã MỚI/tuần** (thứ 2 – thứ 6) · mỗi mã mua thêm tối đa 2 lần. |
-| **Khối lượng** | **0,75% vốn** ÷ (giá mua − cắt lỗ). VN-Index đang *Tăng* → ½ mức rủi ro · mã **ĐẮT** → ½ khối lượng · nhóm 🟡 → ½. |
+| **Chọn mã** | Mã có tín hiệu MUA trong tin tổng kết (🟢 mua mới · ✅ vào trễ), thuộc top 100 GTGD và **không quá nóng** (hạng RS 3 tháng so VN-Index trong toàn rổ < 90). Mỗi tuần đánh dấu **★ 4 mã** ưu tiên cao nhất. |
+| **Số lệnh** | Giữ tối đa **8 mã** · tối đa **4 mã MỚI/tuần** (thứ 2 – thứ 6, tính cả lệnh vào trễ) · mỗi mã mua thêm tối đa 2 lần. |
+| **Vào trễ** | Mã đã bỏ vì **hết suất tuần** được mua sau khi giá **≤ giá vào của hệ thống + ½R** (cắt lỗ hệ thống cách ≤ 7%), đủ khối lượng – như đặt lệnh chờ quanh giá tín hiệu. Lãi > ½R → chờ giá hồi. |
+| **Khối lượng** | **0,75% vốn** ÷ (giá mua − cắt lỗ). VN-Index đang *Tăng* → ½ mức rủi ro · mã **ĐẮT** → ½ khối lượng. |
 | **Giới hạn quỹ** | ≤ 15% vốn/mã · tổng rủi ro mở ≤ 4%. |
 | **Đặt lệnh** | Đặt **LO từ hôm trước** ở giá = cận dưới + ⅓ × (cận trên − cận dưới), làm tròn xuống theo bước giá. |
 | **LO không khớp** | Mã **★** → mua **ATC** nếu giá còn trong vùng · mã không ★ → **bỏ**. |
@@ -73,7 +74,7 @@ Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, đúng phi�
 
 | Khung | Tiêu chí |
 |---|---|
-| **Ngày (chiến lược)** | Hệ B (Quỹ B): MACD ngày cắt lên **kèm MACD tuần > Signal** (🟢 mua mới) / hệ thống đang lãi < 1R (✅ đủ KL) hoặc 1–2R (🟡 ½), cắt lỗ cách ≤ 7%; chỉ mã top 100 GTGD. |
+| **Ngày (chiến lược)** | Hệ B (Quỹ B): MACD ngày cắt lên **kèm MACD tuần > Signal** (🟢 mua mới) / hệ thống đang giữ và giá ≤ giá vào + ½R (✅ vào trễ, đủ KL), cắt lỗ cách ≤ 7%; chỉ mã top 100 GTGD, hạng RS 3T < 90. |
 | **Vùng giá** | Giá trong vùng mua · mở cửa ≤ cận trên (không đuổi) · chưa thủng cận dưới trước khi mua. |
 | **15 phút** *(chỉ cách vào `15P…`)* | MACD 15' cắt lên Signal (≤ 3 nến) **hoặc** phá đỉnh 20 nến, KL ≥ 1,5× TB20 · giá ≥ VWAP · RSI 15' ≤ 75. |
 
@@ -144,9 +145,8 @@ cách đỉnh 1 năm < 10% · > 50% mã trên MA200 · biến động 20 phiên 
 | Nhóm | Khi nào | Làm gì |
 |---|---|---|
 | 🟢 MUA MỚI | Tín hiệu MACD hôm nay | Đặt LO; không mua nếu mở cửa > cận trên |
-| ✅ VÀO NHƯ LỆNH MỚI | Hệ thống đang giữ, lãi < 1R, cắt lỗ cách ≤ 7% | Mua đủ, dùng cắt lỗ hệ thống |
-| 🟡 VÀO ½ | Hệ thống lãi 1–2R, cắt lỗ cách ≤ 7% | Mua một nửa |
-| ⏳ CHỜ ĐIỀU CHỈNH | Lãi ≥ 2R hoặc cắt lỗ cách > 7% | Chờ giá về mức "chờ" hoặc tín hiệu mới |
+| ✅ VÀO NHƯ LỆNH MỚI (vào trễ) | Hệ thống đang giữ, giá ≤ giá vào hệ thống + ½R, cắt lỗ cách ≤ 7% | Mua đủ, dùng cắt lỗ hệ thống (quỹ B: chỉ mã đã bỏ vì hết suất tuần) |
+| ⏳ CHỜ ĐIỀU CHỈNH | Lãi > ½R hoặc cắt lỗ cách > 7% | Chờ giá về ≤ giá vào hệ thống + ½R hoặc tín hiệu mới |
 | 🔻 BÁN PHIÊN TỚI | Đóng cửa tuần < MA10 tuần | Không mua; đang giữ thì bán |
 
 **Danh sách mã:** VN30 (tự lấy online, lỗi thì dùng `MA_VN30`) + `MA_THEM` (DHC, GMD, MWG) + mã từ Bo_Loc.
