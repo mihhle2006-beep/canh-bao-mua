@@ -200,10 +200,12 @@ def test_nhom_hanh_dong_cho_nguoi_chua_mua():
                        "Cắt lỗ dự kiến": 94}])
     hd = hanh_dong({"A0": a0, "B": b}, {"A0": 0.7, "B": 0.0, "VNI": 0.3})       # CL2: B không tính
     nhom = dict(zip(hd["Mã"], hd["Nhóm"]))
-    assert nhom == {"MOI": "MUA_MOI", "SOM": "VAO_NHU_MOI", "VUA": "VAO_NUA", "XA": "CHO", "RONG": "CHO", "BAN": "BAN"}
+    # Quỹ B 10/2026: vào trễ chỉ khi ≤ +½R → VUA (1–2R) chờ giá hồi, không còn nhóm ½
+    assert nhom == {"MOI": "MUA_MOI", "SOM": "VAO_NHU_MOI", "VUA": "CHO", "XA": "CHO", "RONG": "CHO", "BAN": "BAN"}
     r = hd.set_index("Mã")
     assert r.loc["SOM", "Mua tối đa"] == pytest.approx(min(103, 96 / 0.93))
-    assert r.loc["XA", "Chờ giá"] == pytest.approx(95 / 0.95) and r.loc["VUA", "Khối lượng"] == "½"
+    # chờ giá: thiếu giá vào hệ thống → chỉ giới hạn cắt lỗ cách ≤ 7%; VUA không còn mua ½
+    assert r.loc["XA", "Chờ giá"] == pytest.approx(95 / 0.93) and r.loc["VUA", "Khối lượng"] == "–"
     hd1 = hanh_dong({"A0": a0, "B": b}, {"A0": 0.5, "B": 0.5, "VNI": 0})        # CL1: B mua mới thắng ½ của A0
     r1 = hd1.set_index("Mã")
     assert r1.loc["VUA", "Nhóm"] == "MUA_MOI" and r1.loc["VUA", "Thành phần"] == "A0+B"

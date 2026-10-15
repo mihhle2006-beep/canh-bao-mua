@@ -4,6 +4,7 @@ TỔNG KẾT 15:20 THEO CHIẾN LƯỢC THỊ TRƯỜNG – tin Telegram GỌN, 
 
   📊 thị trường & CL đang áp dụng
   🟢 MUA MỚI / ✅ VÀO NHƯ LỆNH MỚI / 🟡 VÀO ½   mã | vùng mua | mục tiêu 1R → 3R | cắt lỗ | đạt điểm mua
+                    (Quỹ B 10/2026: ✅ = vào trễ ở giá ≤ giá vào hệ thống + ½R; không còn nhóm 🟡)
   ⏳ CHỜ ĐIỀU CHỈNH   mã + vùng chờ           ⛔ KHÔNG VÀO   hệ thống đang lỗ / sắp bán
   💼 ĐANG GIỮ (danh mục thật – tin riêng tư)  lãi/lỗ theo giá vốn · cắt lỗ hệ thoát · hành động · mốc tiếp ·
                                               ➕ mua thêm khi đủ điều kiện (luật nhồi lệnh đã backtest)
@@ -21,10 +22,10 @@ from . import cau_hinh as C
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
 TIEU_DE = {"MUA_MOI": "🟢 MUA MỚI", "VAO_NHU_MOI": "✅ VÀO NHƯ LỆNH MỚI", "VAO_NUA": "🟡 VÀO ½ KHỐI LƯỢNG",
            "CHO": "⏳ CHỜ ĐIỀU CHỈNH", "DUOI_VON": "⛔ KHÔNG VÀO – hệ thống đang lỗ", "BAN": "⛔ KHÔNG VÀO – hệ thống sắp bán",
-           "NGOAI_TOP": "⛔ KHÔNG VÀO – ngoài top GTGD"}
+           "NGOAI_TOP": "⛔ KHÔNG VÀO – ngoài top GTGD / RS 3T quá nóng"}
 KHUYEN_NGHI = {"MUA_MOI": "MUA – TÍN HIỆU MỚI", "VAO_NHU_MOI": "MUA – VÀO NHƯ LỆNH MỚI", "VAO_NUA": "MUA TỪNG PHẦN",
                "CHO": "CHỜ ĐIỀU CHỈNH", "DUOI_VON": "CHỜ – HỆ THỐNG ĐANG LỖ", "BAN": "KHÔNG MUA – HỆ THỐNG ĐANG BÁN",
-               "NGOAI_TOP": "KHÔNG MUA – NGOÀI TOP GTGD"}
+               "NGOAI_TOP": "KHÔNG MUA – NGOÀI TOP GTGD / RS 3T QUÁ NÓNG"}
 
 
 def _f(x, le=2):
@@ -92,7 +93,7 @@ def ds_khuyen_nghi(ra):
         nh = ra.get("nhiet") or {}
         k_["nhiet"], k_["he_so_nhiet"] = nh.get("diem"), float(nh.get("he_so", 1.0))
         lq = _loc_quy(k_["ma"], ra.get("vni_df")) if k_["nhom"] in NHOM_MUA else None
-        if lq:                                      # Quỹ B 10/2026: top 100 GTGD · ĐẮT ½ KL · VN-Index Tăng ½
+        if lq:                                      # Quỹ B 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · VNI Tăng ½
             k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
             k_["he_so_vni"] = lq.get("he_so_vni", 1.0)        # gia_lap: × trần tổng rủi ro mở
             if lq["bo"]:
@@ -346,8 +347,9 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
         dong.append(f"⛔ KHÔNG VÀO ({len(ko)}): " + ", ".join(k["ma"] for k in ko))
     ngoai = [k for k in ks if k["nhom"] == "NGOAI_TOP"]
     if ngoai:
-        dong.append(f"⛔ CÓ TÍN HIỆU NHƯNG NGOÀI TOP GTGD – không mua mới ({len(ngoai)}): "
-                    + ", ".join(k["ma"] for k in ngoai))
+        dong.append(f"⛔ CÓ TÍN HIỆU NHƯNG BỊ LỌC (ngoài top GTGD / RS 3T quá nóng) – không mua mới ({len(ngoai)}): "
+                    + ", ".join(k["ma"] + (" (RS nóng)" if "RS 3T" in str(k.get("loc_quy", "")) else "")
+                                for k in ngoai))
     if sum(k["nhom"] in NHOM_MUA for k in ks) > getattr(C, "SO_MA_MOI_TUAN", 2):
         dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: thanh khoản cao · cắt lỗ sát · "
                      f"RS 3 tháng không quá nóng) – quỹ B chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
