@@ -37,6 +37,8 @@ def main(argv=None):
                    help="CHỈ xem mã này (VD FPT hoặc FPT,HPG) theo chiến lược – không ghi trạng thái / danh sách mua")
     p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-08 10:30'")
     p.add_argument("--khong_gui", action="store_true")
+    p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "rong"],
+                   help="backtest: 41 mã chiến lược (đủ phần) hoặc rổ ~400 mã (chỉ cách vào 15')")
     p.add_argument("--khong_ban", action="store_true", help="bỏ danh mục / cảnh báo bán")
     p.add_argument("--khong_chien_luoc", action="store_true", help="(giữ cho tương thích – không còn tác dụng)")
     a = p.parse_args(argv)
@@ -55,7 +57,9 @@ def main(argv=None):
     if che_do == "lich_su":
         return xem_lich_su()
     if che_do == "backtest":
-        from canh_bao.backtest_bot import chay_backtest
+        from canh_bao.backtest_bot import chay_backtest, ro_rong
+        if a.ro == "rong":
+            return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro_rong(), chi_diem_vao=True)
         return chay_backtest(bay_gio, a.khong_gui)
     them = [m.strip().upper() for m in (a.ma or "").split(",") if m.strip()]
     vt, nguon_vt = ({}, "tắt (--khong_ban)") if a.khong_ban else vi_the.doc_danh_muc()

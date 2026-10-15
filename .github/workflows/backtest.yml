@@ -7,6 +7,12 @@ on:
   schedule:
     - cron: "17 19 1 * *"          # 19:17 UTC mùng 1 = 02:17 giờ VN mùng 2
   workflow_dispatch:
+    inputs:
+      ro:
+        description: "chien_luoc = 41 mã (đủ phần) · rong = ~400 mã (chỉ cách vào 15')"
+        default: chien_luoc
+        type: choice
+        options: [chien_luoc, rong]
 
 permissions:
   contents: write
@@ -18,7 +24,7 @@ concurrency:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v5
 
@@ -55,7 +61,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python chay.py --che_do backtest
+        run: python chay.py --che_do backtest --ro ${{ inputs.ro || 'chien_luoc' }}
 
       - name: Lưu kết quả backtest (công khai – chỉ thống kê)
         if: always()

@@ -127,7 +127,13 @@ def dong_nhiet(nh, rr=None):
             + "\n   Danh mục của bạn đang sụt so với đỉnh → giảm thêm: 3–6% ×¾ · 6–10% ×½ · > 10% ×⅓")
 
 
-def dong_mua(k, dang_giu=()):
+def gia_lo(tu, den):
+    """Giá đặt lệnh LO cho phiên tới = ⅓ dưới vùng (như ptcp.diem_vao_15p), làm tròn XUỐNG theo bước giá."""
+    from ptcp.chien_luoc import lam_tron_buoc
+    return lam_tron_buoc(tu + (den - tu) / 3, False)
+
+
+def dong_mua(k, dang_giu=(), bien_the=None):
     ut = k.get("uu_tien")
     sao = "★ " if ut == ut and ut is not None and ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else ""
     hs = k.get("he_so_kl")
@@ -136,6 +142,8 @@ def dong_mua(k, dang_giu=()):
     hq = k.get("he_so_quy")
     if hq is not None and hq < 0.999:
         kl += f" | KL ×{hq:g} ({k.get('loc_quy', '')})"
+    if bien_the and bien_the.startswith("LO") and k.get("tu") and k.get("den"):
+        kl = f" | đặt LO {_f(gia_lo(k['tu'], k['den']))}" + kl
     return (f"{sao}{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl} "
             f"| {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
 
@@ -293,6 +301,10 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
 
 def _tin(ra, bay_gio, kq_bt, dang_giu):
     d = ra["doc"]
+    try:
+        bt = cach_vao(kq_bt)[0]
+    except ImportError:
+        bt = None
     ks = ds_khuyen_nghi(ra)
     n = d["so_chi_bao"]
     w = ra["ty_trong"]
@@ -322,7 +334,7 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                  f"{TIEU_DE[nhom]} ({len(x)})"]
         x = sorted(x, key=lambda k: (k["uu_tien"] if k.get("uu_tien") == k.get("uu_tien") and k.get("uu_tien")
                                      is not None else 999, k["rui_ro"] if k["rui_ro"] == k["rui_ro"] else 99))
-        dong += [dong_mua(k, dang_giu) for k in x[:n_max]]
+        dong += [dong_mua(k, dang_giu, bt) for k in x[:n_max]]
         if len(x) > n_max:
             dong.append(f"… +{len(x) - n_max} mã (xem Excel)")
     cho = [k for k in ks if k["nhom"] == "CHO"]
@@ -372,6 +384,9 @@ def _dong_cach_vao(kq_bt):
     hang = next((h for h in ((kq_bt or {}).get("15p") or {}).get("bang", []) if h.get("Biến thể") == bt), None)
     if hang:
         s += f" (backtest {hang['TB/lệnh khớp %']:+.2f}%/lệnh, khớp {hang['Khớp %']:.0f}%)"
+    if bt.startswith("LO"):
+        s += (". Đặt LO trước giờ mở cửa ở giá 'đặt LO' từng mã (⅓ dưới vùng); không chạm → "
+              + ("ATC nếu đóng cửa còn trong vùng" if bt.endswith("+ATC") else "không mua"))
     return s
 
 

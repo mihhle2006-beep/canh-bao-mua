@@ -38,24 +38,75 @@ def _ket_luan_15p(b, tot):
     return kl
 
 
-def chay_backtest(bay_gio, khong_gui=False, ds_ma=None):
+def ro_rong():
+    """Rổ ~400 mã cho backtest cách vào: bản đồ ngành + đã huỷ niêm yết (ptcp.loc_quy_b.ro_ma) + mã đã xếp hạng GTGD
+    + 41 mã chiến lược."""
+    from ptcp import loc_quy_b
+    loc = loc_quy_b.doc(han_ngay=None) or {}
+    return list(dict.fromkeys(loc_quy_b.ro_ma() + list(loc.get("hang_gtgd", {})) + C.MA_CHIEN_LUOC))
+
+
+def _tai_song_song(ham, ds_ma, luong=6):
+    from concurrent.futures import ThreadPoolExecutor
+
+    def mot(ma):
+        try:
+            return ma, ham(ma)
+        except Exception:                                           # noqa: BLE001 – thiếu 1 mã không dừng backtest
+            return ma, None
+    with ThreadPoolExecutor(max_workers=luong) as ex:
+        return {m: d for m, d in ex.map(mot, ds_ma) if d is not None and len(d)}
+
+
+def _bang_top(ds, n15, xs, top):
+    """Bảng cách vào chỉ trên khuyến nghị của mã top GTGD hiện tại (Quỹ B chỉ mua top) – để so, không dùng chọn."""
+    from ptcp import loc_quy_b
+    from ptcp.diem_vao_15p import backtest_15p
+    hang = (loc_quy_b.doc(han_ngay=None) or {}).get("hang_gtgd", {})
+    ma_top = {m for m, h in hang.items() if h <= top}
+    if not ma_top or not len(ds):
+        return None
+    k = backtest_15p(ds[ds["Mã"].isin(ma_top)], n15, xs)
+    return {"bang": _ban_ghi(k["bang"]), "tot_nhat": k["tot_nhat"], "so_tin_hieu": k["so_tin_hieu"],
+            "ket_luan": _ket_luan_15p(k["bang"], k["tot_nhat"]) if len(k["bang"]) else "chưa đủ tín hiệu"}
+
+
+def chay_backtest(bay_gio, khong_gui=False, ds_ma=None, chi_diem_vao=False):
+    """chi_diem_vao: chỉ backtest cách vào 15' (rổ lớn) – giữ phần điểm bán / bộ lọc mua của lần chạy trước."""
     from ptcp.backtest_diem_ban import backtest_diem_ban
     from ptcp.diem_vao_15p import backtest_15p, tin_hieu_qua_khu
     from . import du_lieu
     from .thong_bao import gui, gui_file
     ds_ma = ds_ma or C.MA_CHIEN_LUOC
-    print(f"=== BACKTEST | {pd.Timestamp(bay_gio):%Y-%m-%d %H:%M} | {len(ds_ma)} mã ===")
+    print(f"=== BACKTEST | {pd.Timestamp(bay_gio):%Y-%m-%d %H:%M} | {len(ds_ma)} mã ===", flush=True)
     vni = du_lieu.tai("VNINDEX", "D", C.BACKTEST_TU, chi_so=True)
-    gia = {}
-    for ma in ds_ma:
-        d = du_lieu.tai(ma, "D", C.BACKTEST_TU)
-        if d is not None and len(d) >= 260:
-            gia[ma] = d
+    gia = {m: d for m, d in _tai_song_song(lambda m: du_lieu.tai(m, "D", C.BACKTEST_TU), ds_ma).items()
+           if len(d) >= 260}
+    print(f"  giá ngày: {len(gia)}/{len(ds_ma)} mã", flush=True)
     if vni is None or len(gia) < 5:
         print("Thiếu dữ liệu ngày → dừng backtest.")
         return 1
-    ra = {"ngay_chay": f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}", "so_ma": len(gia)}
+    cu = doc_cu() if chi_diem_vao else {}
+    ra = {**cu, "ngay_chay": f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}", "so_ma": len(gia)}
+    if chi_diem_vao and not cu.get("diem_ban"):
+        chi_diem_vao = False                                        # chưa có kết quả cũ → chạy đủ
+    if chi_diem_vao:
+        print("\n(bỏ qua ① điểm bán & ①b bộ lọc mua – giữ kết quả lần trước)")
+    else:
+        _diem_ban_loc_mua(ra, gia, vni, backtest_diem_ban)
+    _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu)
+    return _luu_gui(ra, bay_gio, khong_gui, gui, gui_file)
 
+
+def doc_cu():
+    try:
+        with open(C.FILE_BACKTEST, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def _diem_ban_loc_mua(ra, gia, vni, backtest_diem_ban):
     print("\n① Điểm bán & mua thêm (giá ngày)…")
     kb = backtest_diem_ban(gia, vni, start=C.BACKTEST_TU)
     ra["diem_ban"] = {"bang": _ban_ghi(kb["bang"]), "ket_luan": kb["ket_luan"],
@@ -76,12 +127,10 @@ def chay_backtest(bay_gio, khong_gui=False, ds_ma=None):
     except ImportError:
         print("ptcp chưa có backtest_loc_mua – bỏ qua")
 
-    print(f"\n② Điểm vào 15 phút – tải nến 15' từ {C.BACKTEST_15P_TU}…")
-    n15 = {}
-    for ma in gia:
-        d = du_lieu.tai_lich_su_phut(ma, C.BACKTEST_15P_TU)
-        if d is not None and len(d):
-            n15[ma] = d
+
+def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
+    print(f"\n② Điểm vào 15 phút – tải nến 15' từ {C.BACKTEST_15P_TU}…", flush=True)
+    n15 = _tai_song_song(lambda m: du_lieu.tai_lich_su_phut(m, C.BACKTEST_15P_TU), list(gia))
     if not n15:
         ra["15p"] = {"bang": [], "theo_nhom": [], "tot_nhat": None,
                      "ket_luan": "không tải được nến 15' – chưa backtest được"}
@@ -101,11 +150,25 @@ def chay_backtest(bay_gio, khong_gui=False, ds_ma=None):
             with pd.option_context("display.width", 250, "display.max_columns", 30):
                 print(b.drop(columns=["Mô tả"]).round(2).to_string(index=False))
         print(kl)
+        try:
+            from ptcp import cau_hinh as pc
+            top = getattr(pc, "QUY_TOP_GTGD", 0) or 100
+            bt = _bang_top(ds, n15, xs, top)
+        except ImportError:                                         # ptcp cũ chưa có loc_quy_b
+            bt = None
+        if bt:
+            ra["15p"]["top_gtgd"] = {**bt, "top": top}
+            print(f"  Riêng top {top} GTGD ({bt['so_tin_hieu']} khuyến nghị): {bt['ket_luan']}")
+
+
+def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file):
     with open(C.FILE_BACKTEST, "w", encoding="utf-8") as f:
         json.dump(ra, f, ensure_ascii=False, indent=1)
     print(f"Đã lưu {C.FILE_BACKTEST}")
     tin = "\n".join([f"🧪 BACKTEST CHIẾN LƯỢC – {pd.Timestamp(bay_gio):%d/%m/%Y}",
-                     f"Điểm vào 15': {ra['15p']['ket_luan']}",
+                     f"Điểm vào 15' ({ra['15p'].get('mo_ta', '')}): {ra['15p']['ket_luan']}",
+                     *([f"  riêng top {ra['15p']['top_gtgd']['top']} GTGD: {ra['15p']['top_gtgd']['ket_luan']}"]
+                       if ra["15p"].get("top_gtgd") else []),
                      f"Điểm bán & mua thêm: {ra['diem_ban']['ket_luan']}",
                      *([f"Bộ lọc mua: {ra['loc_mua']['ket_luan']}"] if ra.get("loc_mua") else []),
                      "(Chi tiết: file Excel – các sheet BT 15 phut, BT diem ban, BT loc mua)"])
@@ -121,6 +184,8 @@ def chay_backtest(bay_gio, khong_gui=False, ds_ma=None):
         if ra["15p"].get("bang"):
             pd.DataFrame(ra["15p"]["bang"]).to_excel(w, sheet_name="BT 15 phut", index=False)
             pd.DataFrame(ra["15p"]["theo_nhom"]).to_excel(w, sheet_name="BT 15 phut theo nhom", index=False)
+            if ra["15p"].get("top_gtgd"):
+                pd.DataFrame(ra["15p"]["top_gtgd"]["bang"]).to_excel(w, sheet_name="BT 15 phut top GTGD", index=False)
     try:
         from ptcp.excel_xanh import trang_tri_excel
         trang_tri_excel(path)

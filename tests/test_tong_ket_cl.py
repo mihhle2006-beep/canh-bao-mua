@@ -258,3 +258,10 @@ def test_tin_mua_lo_khong_in_tieu_chi_15p():
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", False, "chưa")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 09:58", "LO")
     assert "chưa kích hoạt" not in tin and "[Cách vào LO · nến 09:15] mở cửa ≤ giá LO" in tin
+
+
+def test_dong_mua_ghi_gia_lo():
+    k = {"ma": "DGW", "tu": 44.5, "den": 46.75, "mt1": 47.0, "mt3": 49.9, "cl": 43.49, "ly_do": "MACD", "nhom": "VAO_NHU_MOI"}
+    assert "đặt LO 45.25" in tong_ket_cl.dong_mua(k, bien_the="LO")
+    assert "LO" not in tong_ket_cl.dong_mua(k, bien_the="15P+ATC")
+    assert tong_ket_cl.gia_lo(10.0, 10.5) == 10.15                   # 10,1667 → làm tròn xuống bước 0,05
