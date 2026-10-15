@@ -73,7 +73,7 @@ Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, đúng phi�
 
 | Khung | Tiêu chí |
 |---|---|
-| **Ngày (chiến lược)** | MACD ngày cắt lên (A0) / hệ thống đang lãi 0–3R & cắt lỗ cách ≤ 7%. VN-Index **đi ngang** (biên 60 phiên < 12%) → A0 chỉ lấy khi MACD tuần > Signal. |
+| **Ngày (chiến lược)** | Hệ B (Quỹ B): MACD ngày cắt lên **kèm MACD tuần > Signal** (🟢 mua mới) / hệ thống đang lãi < 1R (✅ đủ KL) hoặc 1–2R (🟡 ½), cắt lỗ cách ≤ 7%; chỉ mã top 100 GTGD. |
 | **Vùng giá** | Giá trong vùng mua · mở cửa ≤ cận trên (không đuổi) · chưa thủng cận dưới trước khi mua. |
 | **15 phút** *(chỉ cách vào `15P…`)* | MACD 15' cắt lên Signal (≤ 3 nến) **hoặc** phá đỉnh 20 nến, KL ≥ 1,5× TB20 · giá ≥ VWAP · RSI 15' ≤ 75. |
 
@@ -95,7 +95,7 @@ Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, đúng phi�
 **Sau khi mua:** MUA MỚI tính lại cắt lỗ theo giá mua thật (2×ATR, ≤ 7%); nhóm vào trễ giữ cắt lỗ hệ thống.
 MT 1R / 3R là mốc dời cắt lỗ, **không phải lệnh bán**.
 
-**Mua thêm** (kiểu B, đã backtest): lãi ≥ 3R · đóng cửa lập đỉnh mới · cách lần trước ≥ 10 phiên · cắt lỗ ≥ giá vốn
+**Mua thêm** (kiểu B, đã backtest): lãi ≥ 2R (khung tuần) · đóng cửa lập đỉnh mới · cách lần trước ≥ 10 phiên · cắt lỗ ≥ giá vốn
 bình quân mới + phí · tối đa 2 lần, mỗi lần 25% số CP. Mua xong cập nhật `so_cp`, `gia_von`, `so_lan_mua_them`,
 `ngay_mua_them` trong `danh_muc.csv`.
 
@@ -110,7 +110,7 @@ Bot đọc `danh_muc.csv` của repo riêng tư **danh-muc** (mã có `so_cp` > 
 |---|---|---|
 | 0 | < 1R | `cat_lo_goc` (thiếu → giá − 2×ATR, tối đa −7%, tối thiểu 1,5×ATR). 1R = giá vốn − cắt lỗ ban đầu |
 | 1 | ≥ 1R | Đóng cửa cao nhất − 3×ATR, không dưới hoà vốn + phí |
-| 2 (tuần) | ≥ 3R | Bán khi **đóng cửa tuần < MA10 tuần**; sàn khoá lãi 2R |
+| 2 (tuần) | ≥ 2R | Bán khi **đóng cửa tuần < MA10 tuần**; sàn khoá lãi 1R |
 | – | 63 phiên chưa tới 1R | Lệnh không chạy → bán |
 
 | Cảnh báo | Khi nào |

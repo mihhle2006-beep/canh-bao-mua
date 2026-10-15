@@ -2,11 +2,11 @@
 """
 BIỂU ĐỒ MỐC GIÁ gửi kèm tín hiệu (MUA NGAY · MUA MỚI · VÀO NHƯ LỆNH MỚI · VÀO ½ · cảnh báo BÁN).
 
-Mốc (R = điểm mua − cắt lỗ; đúng hệ thoát T2-3R-ma10 của bot). KHÔNG chốt lời / cắt lỗ 1 phần – backtest 2019–26
+Mốc (R = điểm mua − cắt lỗ; đúng hệ thoát T2-2R-ma10 của bot – C.NGUONG_KHUNG_TUAN_R). KHÔNG chốt lời / cắt lỗ 1 phần – backtest 2019–26
 chốt ⅓ / ½ ở 3R kém hơn giữ cả lệnh → các mốc đó ghi "GIỮ lại":
-  3R   GIỮ lại (không chốt 1 phần) – từ đây chuyển khung tuần: bán khi tuần đóng cửa < MA10 tuần
-  2R   Chốt lời (bán hết) nếu đã qua 3R rồi rơi về sàn 2R
-  1R   Mua thêm ½ (chỉ khi có tín hiệu mới – đã backtest: có lợi) · dời cắt lỗ về hoà vốn
+  3R   mục tiêu theo dõi – GIỮ lại (không chốt 1 phần)
+  2R   từ đây chuyển khung tuần: bán khi tuần đóng cửa < MA10 tuần
+  1R   Mua thêm ½ (chỉ khi có tín hiệu mới – đã backtest: có lợi) · dời cắt lỗ về hoà vốn · sàn khoá lãi khi đã qua 2R
   Điểm mua – mua toàn bộ (đủ KL) / mua 1 phần (½ KL với nhóm VÀO ½), vùng mua tô màu
   ½ đường xuống cắt lỗ: vẫn GIỮ lại – chỉ bán khi chạm cắt lỗ
   Cắt lỗ toàn bộ – cắt lỗ hệ thoát
@@ -35,9 +35,13 @@ def cac_moc(gia, cl, nhom="MUA_MOI"):
         return []
     R = gia - cl
     mua = "Mua 1 phần (½ KL)" if nhom == "VAO_NUA" else "Mua toàn bộ (đủ KL)"
-    return [(gia + 3 * R, f"3R {_f(gia + 3 * R)} – GIỮ lại (không chốt 1 phần), bán khi tuần < MA10", "tp1", True),
-            (gia + 2 * R, f"2R {_f(gia + 2 * R)} – chốt lời hết nếu đã qua 3R rồi rơi về", "tp2", True),
-            (gia + R, f"1R {_f(gia + R)} – mua thêm ½ (nếu có tín hiệu mới) · dời CL hoà vốn", "them", True),
+    n = float(getattr(C, "NGUONG_KHUNG_TUAN_R", 2.0))           # mốc chuyển khung tuần (Quỹ B: 2R), sàn = n − 1 R
+    san = (f" · sàn khoá lãi: bán hết nếu đã qua {n:g}R rồi rơi về" if n - 1 == 1 else "")
+    return [(gia + 3 * R, f"3R {_f(gia + 3 * R)} – mục tiêu theo dõi, GIỮ lại (không chốt)" if n != 3 else
+             f"3R {_f(gia + 3 * R)} – GIỮ lại (không chốt 1 phần), bán khi tuần < MA10", "tp1", True),
+            (gia + 2 * R, f"2R {_f(gia + 2 * R)} – từ đây khung tuần: bán khi tuần đóng cửa < MA10" if n == 2 else
+             f"2R {_f(gia + 2 * R)} – chốt lời hết nếu đã qua {n:g}R rồi rơi về", "tp2", True),
+            (gia + R, f"1R {_f(gia + R)} – mua thêm ½ (nếu có tín hiệu mới) · dời CL hoà vốn{san}", "them", True),
             (gia, f"{mua} – {_f(gia)}", "mua", False),
             (gia - R / 2, f"{_f(gia - R / 2)} – vẫn GIỮ lại, chỉ bán khi chạm cắt lỗ", "cl_phan", True),
             (cl, f"Cắt lỗ toàn bộ – {_f(cl)} ({(cl / gia - 1) * 100:+.1f}%)", "cl", False)]

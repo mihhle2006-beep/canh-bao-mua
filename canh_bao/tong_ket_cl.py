@@ -174,7 +174,7 @@ def luu_ds_mua(ra, bay_gio, path=None):
 def mua_them(vt, dn, kb, bay_gio=None):
     """
     → {"du": bool, "ly_do", "tu", "den", "so_cp", "cl", "gia_von_moi"} cho 1 vị thế thật.
-    Đủ khi: lãi ≥ 3R (tầng tuần) · đóng cửa hôm nay lập đỉnh đóng cửa mới kể từ ngày mua · cách lần mua gần nhất
+    Đủ khi: lãi ≥ NGUONG_KHUNG_TUAN_R (tầng tuần, Quỹ B 2R) · đóng cửa hôm nay lập đỉnh đóng cửa mới kể từ ngày mua · cách lần mua gần nhất
     ≥ MUA_THEM_GIAN_CACH phiên · số lần mua thêm < MUA_THEM_TOI_DA · cắt lỗ hiện tại ≥ giá vốn BQ mới + phí.
     """
     from .vi_the import _ngay as ngay_vt, _phien_da_dong
@@ -220,7 +220,7 @@ def mua_them(vt, dn, kb, bay_gio=None):
         den = lam_tron_buoc(gia * 1.03, False)
     except ImportError:
         den = gia * 1.03
-    return {"du": True, "ly_do": "lãi ≥ 3R + đóng cửa lập đỉnh mới", "tu": gia, "den": den, "so_cp": them,
+    return {"du": True, "ly_do": f"lãi ≥ {C.NGUONG_KHUNG_TUAN_R:g}R + đóng cửa lập đỉnh mới", "tu": gia, "den": den, "so_cp": them,
             "cl": lo, "gia_von_moi": von_moi}
 
 
