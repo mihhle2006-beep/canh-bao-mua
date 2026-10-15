@@ -186,7 +186,7 @@ chay(["--chien_luoc", "gia_tri", "--bo", "tren_ma200"])                     # b�
   `nguon/vnstock_nguon`, phần đọc BCTC năm đều trỏ tới ptcp (`bo_loc/_ptcp.py`). Sửa ptcp là bộ lọc, danh-muc,
   canh-bao-mua dùng ngay – không còn chép tay (trước đây bản sao lệch: vnstock của bộ lọc còn lỗi CFO / đơn vị đã sửa ở ptcp).
   Nạp ptcp: đã import được → thư mục `ptcp/` cạnh `bo_loc_co_phieu.py` hoặc `PTCP_DIR` → tự tải bằng `DANH_MUC_TOKEN`.
-  GitHub Actions: bước *Lấy ptcp* (`python lay_ptcp.py`) – cần **secret `DANH_MUC_TOKEN`** (token chỉ đọc repo danh-muc,
+  GitHub Actions: bước *Lấy ptcp* (`python lay_ptcp.py`) – cần **secret `DANH_MUC_TOKEN_GHI`** (token repo danh-muc,
   dùng chung với bot).
 - **Đỉnh/đáy, đường xu hướng, cắt lỗ, mục tiêu** = ptcp: đỉnh/đáy theo **giá đóng cửa**, **cắt lỗ thống nhất**
   (max(đáy ngày xác nhận − 0,5×ATR; giá − 2×ATR; giá −7%), tối thiểu 1,5×ATR), mục tiêu = **mục tiêu ngắn hạn khung

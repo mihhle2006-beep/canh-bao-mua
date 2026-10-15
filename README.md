@@ -248,8 +248,7 @@ và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào th
    | Loại | Tên | Giá trị |
    |---|---|---|
    | Secret | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` | Bot Telegram |
-   | Secret | `DANH_MUC_TOKEN` | Token **chỉ đọc** repo danh-muc (cũng dùng để lấy `ptcp/`) – không có thì mọi workflow dùng `DANH_MUC_TOKEN_GHI` |
-   | Secret | `DANH_MUC_TOKEN_GHI` | Token **Contents: Read and write** cho repo **danh-muc và gia_lap** – các workflow ghi dữ liệu commit về đó |
+   | Secret | `DANH_MUC_TOKEN_GHI` | Token DUY NHẤT cho repo riêng tư: **Contents: Read and write**, chọn **danh-muc và gia_lap** – lấy `ptcp/`, đọc danh mục (cảnh báo BÁN), commit dữ liệu về đó |
    | Secret (tuỳ chọn) | `TELEGRAM_TOKEN_DANH_MUC`, `TELEGRAM_CHAT_ID_DANH_MUC` | Bot / chat Telegram cũ của repo danh-muc – tin danh mục thật, Loc quy B, Tra cuu, Bao cao ma gửi về đó; trống → gửi vào bot / chat của repo này |
    | Secret (tuỳ chọn) | `TELEGRAM_TOKEN_GIA_LAP`, `TELEGRAM_CHAT_ID_GIA_LAP` | Bot / chat Telegram cũ của repo gia_lap – tin giả lập, sức khoẻ, tổng kết tuần; trống → bot / chat của repo này |
    | Secret (tuỳ chọn) | `TONG_VON_CHINH`, `TONG_VON_PTDTTC` | Chỉ khi ĐỔI tổng tài sản (triệu đồng); không đặt → giữ số đã lưu trong danh-muc (`tien_mat_*.json`) |
@@ -257,8 +256,8 @@ và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào th
    | Variable | `DANH_MUC_REPO` | `ten-ban/danh-muc` (tuỳ chọn `DANH_MUC_PATH`, `DANH_MUC_CU_PATH`) |
    | Variable | `PTCP_REPO`, `PTCP_PATH` | Chỉ khi `ptcp/` không nằm ở repo danh-muc |
 
-   Tạo token: GitHub → Settings → Developer settings → **Fine-grained tokens** → *Only select repositories* →
-   *Contents: Read-only*.
+   Tạo token: GitHub → Settings → Developer settings → **Fine-grained tokens** → *Only select repositories*
+   (danh-muc, gia_lap) → *Contents: Read and write*.
 4. Chạy thử: Actions → **Canh bao mua** → Run workflow → `tong_ket`. Log phải có
    `Vị thế đang giữ: N mã (nguồn: repo danh-muc)`; báo `HTTP 404` → sai tên repo hoặc token chưa được cấp repo đó.
 
@@ -272,7 +271,7 @@ và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào th
 - `danh_muc.csv` nằm trong `.gitignore`. Mã chỉ có trong danh mục không hiện tên trong log, không ghi vào file commit.
 - Trạng thái riêng (chống báo trùng, nhật ký bán) lưu trong cache Actions `cache_ptcp/`, không commit. Cache bị xoá
   nếu repo không chạy > 7 ngày.
-- Token chỉ cấp quyền **đọc**, trừ `DANH_MUC_TOKEN_GHI` (chỉ dùng trong các workflow ghi dữ liệu về danh-muc / gia_lap).
+- Một token `DANH_MUC_TOKEN_GHI` (chỉ 2 repo danh-muc, gia_lap) cho mọi workflow; secret không hiện trong log.
 - Danh mục thật, giả lập, sức khoẻ, tổng kết tuần **chạy kín**: log chỉ có mã thoát; nội dung chỉ qua Telegram.
 - Workflow của danh-muc chạy với `CONG_KHAI=1`: không đọc danh mục thật / mã PTĐTTC; mã PTĐTTC không quét ở repo này.
 

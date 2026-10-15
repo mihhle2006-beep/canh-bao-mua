@@ -44,7 +44,7 @@ def nap_ptcp():
         "Bộ lọc cần gói ptcp (lõi dùng chung, ở repo danh-muc). Cách lấy:\n"
         "  • Máy/Colab: chép thư mục ptcp/ vào cạnh bo_loc_co_phieu.py, hoặc đặt PTCP_DIR = thư mục chứa ptcp/\n"
         "  • Hoặc đặt DANH_MUC_TOKEN (token chỉ đọc repo danh-muc) → tự tải\n"
-        "  • GitHub Actions: secret DANH_MUC_TOKEN (bước 'Lấy ptcp' tự chạy python lay_ptcp.py)")
+        "  • GitHub Actions: secret DANH_MUC_TOKEN_GHI (bước 'Lấy ptcp' tự chạy python lay_ptcp.py)")
 
 
 def bi_danh(ten_bo_loc, ten_ptcp):
