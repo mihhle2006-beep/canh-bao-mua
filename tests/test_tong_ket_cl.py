@@ -265,3 +265,12 @@ def test_dong_mua_ghi_gia_lo():
     assert "đặt LO 45.25" in tong_ket_cl.dong_mua(k, bien_the="LO")
     assert "LO" not in tong_ket_cl.dong_mua(k, bien_the="15P+ATC")
     assert tong_ket_cl.gia_lo(10.0, 10.5) == 10.15                   # 10,1667 → làm tròn xuống bước 0,05
+
+
+def test_cach_vao_uu_tien_bang_top_gtgd():
+    kq = {"15p": {"tot_nhat": "15P+GIO+ATC", "bang": [],
+                  "top_gtgd": {"top": 100, "tot_nhat": "LO", "bang": [{"Biến thể": "LO", "TB/lệnh khớp %": -2.37,
+                                                                         "Khớp %": 62.5}]}}}
+    assert tong_ket_cl.cach_vao(kq) == ("LO", "tốt nhất theo backtest top 100 GTGD")
+    assert "LO – tốt nhất theo backtest top 100 GTGD (backtest -2.37%/lệnh, khớp 62%)" in tong_ket_cl._dong_cach_vao(kq)
+    assert tong_ket_cl.cach_vao({"15p": {"tot_nhat": "VWAP"}})[0] == "VWAP"
