@@ -169,6 +169,20 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
         if bt:
             ra["15p"]["top_gtgd"] = {**bt, "top": top}
             print(f"  Riêng top {top} GTGD ({bt['so_tin_hieu']} khuyến nghị): {bt['ket_luan']}")
+        try:                                                        # ptcp mới: mô phỏng cả quỹ B theo từng cách vào
+            from ptcp.diem_vao_15p import quy_b_theo_cach_vao
+            q = quy_b_theo_cach_vao(k15["chi_tiet"], gia, vni)
+        except ImportError:
+            q = None
+        if q is not None and len(q):
+            q = q.sort_values("Calmar", ascending=False)
+            t = q.iloc[0]
+            ra["15p"]["quy_b"] = {"bang": _ban_ghi(q), "ket_luan":
+                                  f"quỹ B tốt nhất {t['Biến thể']}: lãi kỳ {t['Lãi kỳ %']:+.1f}%, MDD {t['MDD %']:.1f}%, "
+                                  f"{int(t['Lệnh vào'])} lệnh"}
+            print("\n  Quỹ B (luật vốn thật, top GTGD) theo cách vào:")
+            with pd.option_context("display.width", 250, "display.max_columns", 30):
+                print(q.round(2).to_string(index=False))
 
 
 def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file):
@@ -179,6 +193,7 @@ def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file):
                      f"Điểm vào 15' ({ra['15p'].get('mo_ta', '')}): {ra['15p']['ket_luan']}",
                      *([f"  riêng top {ra['15p']['top_gtgd']['top']} GTGD: {ra['15p']['top_gtgd']['ket_luan']}"]
                        if ra["15p"].get("top_gtgd") else []),
+                     *([f"  {ra['15p']['quy_b']['ket_luan']}"] if ra["15p"].get("quy_b") else []),
                      f"Điểm bán & mua thêm: {ra['diem_ban']['ket_luan']}",
                      *([f"Bộ lọc mua: {ra['loc_mua']['ket_luan']}"] if ra.get("loc_mua") else []),
                      "(Chi tiết: file Excel – các sheet BT 15 phut, BT diem ban, BT loc mua)"])
@@ -194,6 +209,8 @@ def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file):
         if ra["15p"].get("bang"):
             pd.DataFrame(ra["15p"]["bang"]).to_excel(w, sheet_name="BT 15 phut", index=False)
             pd.DataFrame(ra["15p"]["theo_nhom"]).to_excel(w, sheet_name="BT 15 phut theo nhom", index=False)
+            if ra["15p"].get("quy_b"):
+                pd.DataFrame(ra["15p"]["quy_b"]["bang"]).to_excel(w, sheet_name="BT 15 phut quy B", index=False)
             if ra["15p"].get("top_gtgd"):
                 pd.DataFrame(ra["15p"]["top_gtgd"]["bang"]).to_excel(w, sheet_name="BT 15 phut top GTGD", index=False)
     try:
