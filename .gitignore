@@ -3,3 +3,4 @@ danh_muc.csv
 ptcp/
 __pycache__/
 *.pyc
+cache_du_lieu/
