@@ -280,3 +280,14 @@ def test_cach_vao_uu_tien_bang_top_gtgd(monkeypatch):
 
 def test_cach_vao_co_dinh():
     assert tong_ket_cl.cach_vao({"15p": {"tot_nhat": "VWAP"}}) == (C.CACH_VAO_15P, "cấu hình")
+
+
+def test_atc_chi_cho_ma_sao():
+    hom_nay = _phien("2026-10-08", [20.3] * 17)                       # cả phiên trên giá LO (19,83) – không khớp LO
+    dp = _nen_15p(hom_nay)
+    z = {"ma": "AAA", "nhom": "MUA_MOI", "tu": 19.5, "den": 20.5, "cl": 18.7, "ly_do": "MACD", "atr": 0.6}
+    sao = diem_vao.danh_gia({**z, "uu_tien": 1.0}, dp, "2026-10-08 14:50", "LO+ATC")
+    assert sao["trang_thai"] == "MUA" and sao["atc"]
+    for ut in (C.SO_MA_MOI_TUAN + 1.0, None):
+        k = diem_vao.danh_gia({**z, "uu_tien": ut}, dp, "2026-10-08 14:50", "LO+ATC")
+        assert k["trang_thai"] == "BỎ" and "không phải mã ★" in k["ly_do"]
