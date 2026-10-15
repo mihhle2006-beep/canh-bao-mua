@@ -275,7 +275,8 @@ def ban_tin(ra, bay_gio):
             dong += _dong_nhom(nhom, r)
         if len(x) > n_max:
             dong.append(f"  … và {len(x) - n_max} mã khác")
-    dong += ["", "Khối lượng = 1% vốn ÷ (giá mua − cắt lỗ); nhóm 🟡 mua ½. Đặt lệnh trong vùng MUA, ngoài vùng thì bỏ.",
+    dong += ["", f"Khối lượng = {getattr(C, 'RUI_RO_MOI_LENH_PCT', 0.75):g}% vốn ÷ (giá mua − cắt lỗ). Đặt lệnh trong "
+                 "vùng MUA, ngoài vùng thì bỏ.",
              "Đã mua → ghi gia_von, cat_lo_goc (= CL), ngay_mua vào danh mục để bot báo dời cắt lỗ / bán."]
     for k in ("A0", "B"):
         b = ra["diem_mua"].get(k)
