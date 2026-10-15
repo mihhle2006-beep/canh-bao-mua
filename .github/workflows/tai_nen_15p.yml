@@ -1,0 +1,63 @@
+# TẢI NẾN 15' HẰNG TUẦN cho backtest điểm vào (rổ ~320 mã): chỉ tải phần mới → giữ cache backtest không bị GitHub xoá
+# (7 ngày không dùng) và tích luỹ lịch sử 15' dài hơn giới hạn ~1 năm của nguồn. Cùng nhóm concurrency với Backtest.
+name: Tai nen 15p
+
+on:
+  schedule:
+    - cron: "43 18 * * 6"          # 18:43 UTC thứ Bảy = 01:43 giờ VN Chủ nhật
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backtest
+  cancel-in-progress: false
+
+jobs:
+  tai:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt
+
+      - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
+        env:
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}
+          REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
+        run: python lay_ptcp.py
+
+      - name: Khôi phục cache backtest
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            cache_gia
+            cache_ptcp
+            cache_du_lieu
+          key: bt-${{ github.run_id }}
+          restore-keys: |
+            bt-
+            gia-
+
+      - name: Tải phần nến 15' mới
+        timeout-minutes: 100
+        run: python chay.py --che_do tai_nen
+
+      - name: Lưu cache backtest (kể cả khi lỗi / hết giờ)
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            cache_gia
+            cache_ptcp
+            cache_du_lieu
+          key: bt-${{ github.run_id }}

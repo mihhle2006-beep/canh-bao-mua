@@ -77,6 +77,19 @@ def _bang_top(ct, top):
             "ket_luan": _ket_luan_15p(k["bang"], k["tot_nhat"])}
 
 
+def tai_nen_15p(ds_ma=None):
+    """Chỉ tải phần nến 15' mới cho rổ backtest (workflow hằng tuần): giữ cache không bị GitHub xoá (7 ngày không
+    dùng) và tích luỹ lịch sử dài hơn giới hạn ~1 năm của nguồn. Trả số mã có dữ liệu."""
+    from . import du_lieu
+    ds_ma = ds_ma or ro_rong()
+    n15 = _tai_song_song(lambda m: du_lieu.tai_lich_su_phut(m, C.BACKTEST_15P_TU), ds_ma)
+    if n15:
+        tu = min(d.index[0] for d in n15.values())
+        print(f"Nến 15': {len(n15)}/{len(ds_ma)} mã · từ {tu:%d/%m/%Y} · "
+              f"{sum(len(d) for d in n15.values()):,} nến")
+    return len(n15)
+
+
 def chay_backtest(bay_gio, khong_gui=False, ds_ma=None, chi_diem_vao=False):
     """chi_diem_vao: chỉ backtest cách vào 15' (rổ lớn) – giữ phần điểm bán / bộ lọc mua của lần chạy trước."""
     from ptcp.backtest_diem_ban import backtest_diem_ban

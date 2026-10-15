@@ -31,7 +31,7 @@ from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_anh, gui
 def main(argv=None):
     p = argparse.ArgumentParser(description="Cảnh báo mua theo chiến lược thị trường")
     p.add_argument("--che_do", default="tu_dong",
-                   choices=["tu_dong", "trong_phien", "tong_ket", "lich_su", "chien_luoc", "backtest"])
+                   choices=["tu_dong", "trong_phien", "tong_ket", "lich_su", "chien_luoc", "backtest", "tai_nen"])
     p.add_argument("--ma", default=None, help="thêm mã theo dõi ngoài danh sách chiến lược (VD MWG,FPT)")
     p.add_argument("--chi_ma", default=None,
                    help="CHỈ xem mã này (VD FPT hoặc FPT,HPG) theo chiến lược – không ghi trạng thái / danh sách mua")
@@ -56,6 +56,9 @@ def main(argv=None):
             return 0
     if che_do == "lich_su":
         return xem_lich_su()
+    if che_do == "tai_nen":                                         # chỉ tải nến 15' cho backtest (hằng tuần)
+        from canh_bao.backtest_bot import tai_nen_15p
+        return 0 if tai_nen_15p() else 1
     if che_do == "backtest":
         from canh_bao.backtest_bot import chay_backtest, ro_rong
         if a.ro == "rong":

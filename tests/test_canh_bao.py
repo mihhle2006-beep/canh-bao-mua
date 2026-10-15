@@ -487,3 +487,12 @@ def test_doc_danh_muc_gop_danh_muc_phu(monkeypatch):
     assert set(vt) == {"BSR", "DHC", "MWG"} and "danh_muc_ptdttc.csv" in nguon
     monkeypatch.setenv("DANH_MUC_PHU_PATH", "-")
     assert set(vi_the.doc_danh_muc(path_cuc_bo="khong_co.csv")[0]) == {"BSR"}
+
+
+def test_quy_thang_cu_khi_nguon_dieu_chinh_quyen():
+    idx = pd.date_range("2026-10-01 09:15", periods=6, freq="15min")
+    cu = pd.DataFrame({"open": 26.0, "high": 26.0, "low": 26.0, "close": 26.0, "volume": 100.0}, index=idx)
+    moi = cu.iloc[3:] / 1.3                                          # chia cổ phiếu 1,3 → nguồn giảm cả chuỗi
+    q = du_lieu.quy_thang_cu(cu, moi)
+    assert q.close.iloc[0] == pytest.approx(20.0) and q.volume.iloc[0] == pytest.approx(130.0)
+    assert du_lieu.quy_thang_cu(cu, cu.iloc[3:] * 1.01) is cu        # lệch nhỏ → giữ nguyên
