@@ -1,0 +1,68 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
+# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN (token CHỈ ĐỌC repo danh-muc). CONG_KHAI=1: không đọc / in danh mục
+# thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
+# BÁO CÁO ĐẦY ĐỦ MÃ – bấm "Run workflow", nhập mã (VD HPG hoặc HPG,FPT) → phân tích đủ các phần (A–K, J6 dòng tiền)
+# → gửi Telegram: "Chỉ file HTML" ('<MÃ> báo cáo dd-mm-yyyy.html') hoặc "File HTML + khuyến nghị" (tin tóm tắt
+#   khuyến nghị, vùng mua, cắt lỗ, mục tiêu… rồi file) · luôn lưu ở mục Artifacts của lần chạy (giữ 14 ngày).
+name: Bao cao ma
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Mã cổ phiếu, phân cách dấu phẩy (VD HPG,FPT)"
+        default: "HPG"
+      noi_dung:
+        description: "Gửi Telegram"
+        type: choice
+        options:
+          - "Chỉ file HTML"
+          - "File HTML + khuyến nghị"
+          - "Không gửi (chỉ lưu Artifacts)"
+        default: "Chỉ file HTML"
+
+permissions:
+  contents: read
+
+jobs:
+  bao_cao:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN }}
+          path: danh-muc
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt
+
+      - name: Phân tích & gửi báo cáo
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
+          MA: ${{ inputs.ma }}
+          GUI: ${{ inputs.noi_dung == 'Chỉ file HTML' && '--chi_html' || (inputs.noi_dung == 'File HTML + khuyến nghị' && ' ' || '--khong_gui') }}
+        run: python bao_cao_ma.py "$MA" $GUI
+
+      - name: Lưu file báo cáo (Artifacts)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: bao-cao-${{ github.run_id }}
+          path: danh-muc/ket_qua_*/*_bao_cao.html
+          retention-days: 14
+          if-no-files-found: ignore

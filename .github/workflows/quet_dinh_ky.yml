@@ -1,0 +1,120 @@
+# Quét định kỳ (bộ lọc bo_loc/ – chuyển từ repo Bo_Loc 10/2026): cuối MỖI PHIÊN T2–T6 quét TOÀN SÀN HOSE với chiến
+# lược quy_b + xu_huong, mã có Hành động "MUA" ghi vào ma_mua_bo_loc.json (commit vào repo này).
+# Bot đọc file đó, theo dõi mỗi mã 4 phiên kế tiếp (lọc lại / đạt điểm mua thì tính lại) rồi tự xoá.
+# Repo CÔNG KHAI: không quét / gửi mã PTĐTTC (việc đó ở repo riêng tư Bo_Loc).
+name: Quet dinh ky
+
+on:
+  schedule:
+    - cron: "5 8 * * 1-5"          # 15:05 giờ VN (UTC+7) MỖI PHIÊN T2–T6 – sau khi đóng cửa
+  workflow_dispatch:
+    inputs:
+      chien_luoc:
+        description: "Chiến lược (phân cách dấu phẩy)"
+        default: "quy_b,xu_huong"
+      tham_so:
+        description: "Tham số cho bộ lọc (mặc định toàn sàn HOSE: --nhom hose)"
+        default: "--nhom hose"
+      gui_telegram:
+        description: "Gửi kết quả lọc qua Telegram"
+        type: choice
+        options:
+          - "Không gửi"
+          - "Chỉ file HTML"
+          - "File HTML + mã MUA"
+        default: "Không gửi"
+      ban_html:
+        description: "Bản HTML gửi đi (lưu ý: artifact của repo công khai ai cũng tải được)"
+        type: choice
+        options:
+          - "Người ngoài"
+          - "Nội bộ"
+        default: "Người ngoài"
+
+permissions:
+  contents: write
+  actions: write                   # kích hoạt lại tổng kết canh_bao.yml (GITHUB_TOKEN – cùng repo)
+
+concurrency:
+  group: quet-dinh-ky
+  cancel-in-progress: false
+
+jobs:
+  quet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt
+
+      # giá ngày từ 2019 cho ~390 mã HOSE: giữ bộ nhớ đệm giữa các lần quét → lần sau chỉ tải thêm phiên mới
+      - name: Khôi phục bộ nhớ đệm giá & cơ bản
+        uses: actions/cache@v5
+        with:
+          path: |
+            du_lieu_gia
+            du_lieu_co_ban
+          key: bo-loc-${{ github.run_id }}
+          restore-keys: bo-loc-
+
+      - name: Lấy ptcp – lõi dùng chung (repo danh-muc)
+        env:
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN }}                       # token CHỈ ĐỌC repo danh-muc (như canh-bao-mua)
+          REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
+        run: python lay_ptcp.py
+
+      - name: Quét toàn sàn HOSE – quy_b + xu_huong
+        env:
+          MPLBACKEND: Agg
+          # mặc định toàn sàn HOSE; đổi bằng biến repo BO_LOC_THAM_SO (VD "--nhom vn30")
+          THAM_SO: ${{ inputs.tham_so || vars.BO_LOC_THAM_SO || '--nhom hose' }}
+        run: python -m bo_loc.quet_dinh_ky --chien_luoc "${{ inputs.chien_luoc || 'quy_b,xu_huong' }}" $THAM_SO
+
+      - name: Lưu kết quả chi tiết (Excel / HTML)
+        if: always() && hashFiles('ket_qua_loc_*/**') != ''
+        uses: actions/upload-artifact@v6
+        with:
+          name: ket-qua-loc-${{ github.run_id }}
+          path: ket_qua_loc_*/
+          retention-days: 14
+
+      # tuỳ chọn: bấm Run → chọn "Chỉ file HTML" / "File HTML + mã MUA"; lịch tự động gửi theo biến repo
+      # BO_LOC_GUI_HTML: "html" (chỉ file) | "ma" (file + mã MUA) | trống = không gửi.
+      # Bản HTML: mặc định bản NGƯỜI NGOÀI (không khối lượng/NAV, điểm, tiêu chí lọc); chọn "Nội bộ" khi bấm Run,
+      # hoặc đặt biến repo BO_LOC_HTML = noi_bo cho lịch tự động.
+      - name: Gửi kết quả lọc qua Telegram
+        if: (inputs.gui_telegram && inputs.gui_telegram != 'Không gửi') || (github.event_name == 'schedule' && (vars.BO_LOC_GUI_HTML == 'html' || vars.BO_LOC_GUI_HTML == 'ma'))
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          CHE_DO: ${{ (inputs.gui_telegram == 'Chỉ file HTML' || (github.event_name == 'schedule' && vars.BO_LOC_GUI_HTML == 'html')) && '--chi_html' || '' }}
+          BAN_HTML: ${{ (inputs.ban_html == 'Nội bộ' || (github.event_name == 'schedule' && vars.BO_LOC_HTML == 'noi_bo')) && 'noi_bo' || 'ngoai' }}
+        run: python -m bo_loc.gui_html --chien_luoc "${{ inputs.chien_luoc || 'quy_b,xu_huong' }}" $CHE_DO --che_do "$BAN_HTML" || true
+
+      - name: Commit danh sách mã MUA
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ma_mua_bo_loc.json
+          git diff --cached --quiet && echo "Không có thay đổi" && exit 0
+          git commit -m "Quét định kỳ $(date -u +%F) – mã MUA cho canh-bao-mua"
+          for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
+          echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"
+
+      # Quét xong SAU 15:20 (lịch GitHub trễ) → tổng kết 15:20 đã chạy mà chưa có mã mới → kích hoạt lại tổng kết.
+      - name: Kích hoạt lại tổng kết (nếu quét xong trễ)
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gio=$(TZ=Asia/Ho_Chi_Minh date +%H%M)
+          if [ "$gio" -lt 1520 ]; then echo "Quét xong lúc $gio – tổng kết 15:20 sẽ tự nhận mã mới"; exit 0; fi
+          gh workflow run canh_bao.yml --ref main -f che_do=tong_ket -R "$GITHUB_REPOSITORY"

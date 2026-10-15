@@ -67,11 +67,6 @@ jobs:
           key: gia-${{ github.run_id }}
           restore-keys: gia-
 
-      # lần chạy 15' trong phiên bỏ kiểm thử (~30 giây) để tin MUA NGAY đến sớm hơn – tổng kết / chạy tay vẫn kiểm thử
-      - name: Kiểm thử
-        if: github.event.schedule != '*/15 2-4 * * 1-5' && github.event.schedule != '*/15 6-7 * * 1-5'
-        run: python -m pytest -q
-
       - name: Quét & gửi cảnh báo
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -79,8 +74,6 @@ jobs:
           DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN }}      # token CHỈ ĐỌC repo danh-muc (cảnh báo BÁN)
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
-          BO_LOC_TOKEN: ${{ secrets.BO_LOC_TOKEN }}          # token CHỈ ĐỌC repo Bo_Loc (bỏ trống nếu Bo_Loc công khai)
-          BO_LOC_REPO: ${{ vars.BO_LOC_REPO }}               # để trống = cau_hinh.BO_LOC_REPO
           MA: ${{ inputs.ma }}
           CHI_THU: ${{ inputs.chi_thu }}
         # lịch thứ Bảy → lich_su; chạy tay → chế độ đã chọn; còn lại → tu_dong

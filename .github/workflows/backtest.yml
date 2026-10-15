@@ -56,9 +56,6 @@ jobs:
             bt-
             gia-
 
-      - name: Kiểm thử
-        run: python -m pytest -q
-
       - name: Backtest điểm vào 15' & điểm bán
         timeout-minutes: 300                 # dừng bước trước hạn job → các bước lưu cache vẫn chạy
         env:

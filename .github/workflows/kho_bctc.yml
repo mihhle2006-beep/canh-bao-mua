@@ -1,0 +1,71 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
+# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI (token có quyền
+# GHI Contents repo danh-muc – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục
+# thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
+# KHO BCTC – tải BCTC năm + quý (≥ 5 năm, ≥ 10 quý) từ Vietcap IQ cho mã trong danh mục + bản đồ ngành
+# → du_lieu/bctc/<MÃ>.json (gộp với kho cũ: kỳ cũ giữ, kỳ mới / điều chỉnh ghi đè). Chạy tối thứ Bảy, trước
+# "Boi so nganh" (đọc BCTC từ kho → không tốn lượt vnstock).
+name: Kho BCTC
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Mã, phân cách dấu phẩy (để trống = danh mục + toàn bộ bản đồ ngành)"
+        default: ""
+  schedule:
+    - cron: "0 18 * * 6"           # 01:00 Chủ nhật giờ VN
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dm-kho-bctc
+  cancel-in-progress: false
+
+jobs:
+  cap_nhat:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: danh-muc
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+
+      - name: Cài thư viện
+        run: pip install -r requirements.txt
+
+      - name: Tải BCTC
+        timeout-minutes: 100
+        env:
+          MA: ${{ inputs.ma }}
+        run: |
+          if [ -n "$MA" ]; then
+            python -m ptcp.kho_bctc --ma "$MA"
+          else
+            python -m ptcp.kho_bctc
+          fi
+
+      - name: Lưu kho
+        if: always()
+        run: |
+          [ -d du_lieu/bctc ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add du_lieu/bctc
+          git commit -m "Kho BCTC $(date +%F)" || { echo "Không có thay đổi"; exit 0; }
+          for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
+          echo "Không đẩy được – kiểm tra Settings → Actions → Workflow permissions"; exit 1
