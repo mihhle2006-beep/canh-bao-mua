@@ -4,3 +4,9 @@ ptcp/
 __pycache__/
 *.pyc
 cache_du_lieu/
+# bộ lọc (bo_loc/) – bộ nhớ đệm & kết quả chi tiết; PTĐTTC chỉ ở repo riêng tư Bo_Loc
+du_lieu_gia/
+du_lieu_co_ban/
+ket_qua_loc_*/
+danh_muc_ptdttc.csv
+ptdttc_bo_loc.json

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-MÃ TỪ BỘ LỌC (repo Bo_Loc) – theo dõi có thời hạn.
+MÃ TỪ BỘ LỌC (bo_loc/ trong repo này, trước 10/2026 là repo Bo_Loc) – theo dõi có thời hạn.
 
-  Bo_Loc chạy cuối MỖI PHIÊN (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã có Hành động MUA).
+  Bộ lọc chạy cuối MỖI PHIÊN (chiến lược quy_b + xu_huong) → ma_mua_bo_loc.json (mã có Hành động MUA).
   Tổng kết 15:20 ở đây:
     1) đọc file đó (lần quét MỚI mới xử lý) → thêm mã vào danh sách theo dõi, hạn BO_LOC_SO_PHIEN phiên
        kế tiếp (lọc lại vẫn đạt → hạn tính lại từ lần quét đó);

@@ -1,0 +1,31 @@
+{
+ "ngay_quet": "2026-10-15",
+ "luc": "2026-10-15 15:39",
+ "phien": "2026-10-15",
+ "chien_luoc": [
+  "rieng",
+  "xu_huong"
+ ],
+ "ma": {
+  "DGW": [
+   "rieng"
+  ],
+  "PDR": [
+   "rieng"
+  ],
+  "TCB": [
+   "rieng"
+  ],
+  "TLG": [
+   "rieng",
+   "xu_huong"
+  ],
+  "VGC": [
+   "rieng"
+  ],
+  "VPB": [
+   "rieng ½"
+  ]
+ },
+ "loi": {}
+}

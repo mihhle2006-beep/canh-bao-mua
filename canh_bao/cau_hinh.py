@@ -147,7 +147,7 @@ LUAT_QUY = ("QUỸ B: tối đa 8 mã · ≤ 15% vốn/mã · tổng rủi ro m�
 VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền để tin ghi luôn số CP; None = chỉ ghi công thức
 
 # --- MÃ TỪ BỘ LỌC (canh_bao/ma_bo_loc.py) ---
-#   Bo_Loc chạy cuối phiên thứ 2 & thứ 5 (chiến lược rieng + xu_huong) → ma_mua_bo_loc.json (mã Hành động MUA).
+#   Bộ lọc (bo_loc/, workflow Quet dinh ky của repo này) chạy cuối mỗi phiên (quy_b + xu_huong) → ma_mua_bo_loc.json.
 #   Tổng kết 15:20 đọc file đó, thêm mã vào danh sách quét trong BO_LOC_SO_PHIEN phiên kế tiếp. Bo_Loc lọc lại vẫn
 #   đạt, hoặc vào nhóm mua 🟢/✅/🟡 = ĐẠT → hạn = BO_LOC_SO_PHIEN phiên tính từ ngày đó. Hết hạn → tự xoá (kể cả mã đang giữ – mã đó vẫn có cảnh báo bán / mua thêm ở phần danh mục riêng tư).
 #   Muốn bỏ sớm 1 mã: xoá dòng của mã đó trong FILE_MA_BO_LOC.
@@ -157,7 +157,8 @@ BO_LOC_SO_PHIEN = 4                # theo dõi 4 PHIÊN GIAO DỊCH kế tiếp 
 # Chỉ thêm ở đây ngày HOSE nghỉ THÊM mà thư viện không có (để dự kiến hạn đúng ngay từ đầu).
 NGAY_NGHI_GIAO_DICH = ["2025-05-02", "2026-01-02"]
 FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – chỉ mã & ngày)
-BO_LOC_REPO = "mihhle2006-beep/Bo_Loc"   # ghi đè bằng biến BO_LOC_REPO; repo riêng tư → secret BO_LOC_TOKEN
+BO_LOC_REPO = "mihhle2006-beep/canh-bao-mua"   # 10/2026: bộ lọc (bo_loc/) chạy NGAY TRONG repo này (workflow
+#                                                 Quet dinh ky) – đọc qua GitHub API để luôn lấy bản mới nhất
 BO_LOC_PATH = "ma_mua_bo_loc.json"
 BO_LOC_FILE = None                 # đường dẫn file trên máy (ưu tiên hơn GitHub) – hoặc biến môi trường BO_LOC_FILE
 

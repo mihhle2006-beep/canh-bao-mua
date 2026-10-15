@@ -1,0 +1,56 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
+# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN (token CHỈ ĐỌC repo danh-muc). CONG_KHAI=1: không đọc / in danh mục
+# thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
+# KIỂM ĐỊNH ĐỊNH GIÁ – dựng lại định giá J8 mỗi cuối quý từ 2021 chỉ bằng số liệu đã công bố lúc đó (kho BCTC), đo
+# lợi nhuận vượt trung bình 6 / 12 tháng sau theo nhóm RẺ / HỢP LÝ / ĐẮT và IC từng phương pháp; so các biến thể cấu
+# hình (không chỉnh tăng trưởng, không trần 35% bội số ngành). Kết quả: log + Artifacts (Excel, CSV quan sát).
+name: Kiem dinh dinh gia
+
+on:
+  workflow_dispatch:
+    inputs:
+      so_ma:
+        description: "Số mã đầu mỗi ngành (0 = tất cả ~290 mã)"
+        default: "0"
+      tu:
+        description: "Từ năm"
+        default: "2012"
+
+permissions:
+  contents: read
+
+jobs:
+  kiem_dinh:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN }}
+          path: danh-muc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Kiểm định
+        timeout-minutes: 130
+        env:
+          SO_MA: ${{ inputs.so_ma }}
+          TU: ${{ inputs.tu }}
+        run: python -m ptcp.kiem_dinh_dinh_gia --so_ma "$SO_MA" --tu "$TU" --bien_the
+      - name: Lưu kết quả
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: kiem-dinh-dinh-gia-${{ github.run_id }}
+          path: danh-muc/ket_qua_kiem_dinh_dinh_gia/
+          retention-days: 30
+          if-no-files-found: ignore

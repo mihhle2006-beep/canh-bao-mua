@@ -1,0 +1,58 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
+# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN (token CHỈ ĐỌC repo danh-muc). CONG_KHAI=1: không đọc / in danh mục
+# thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
+# SIÊU CỔ PHIẾU – đặc điểm các mã tăng ≥ 100% / 12 tháng TRƯỚC khi tăng (phan_tich_sieu_cp.py). Kết quả: log + Artifacts.
+name: Sieu co phieu
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Danh sách mã (all = mọi mã ngành + huỷ niêm yết + kho BCTC)"
+        default: "all"
+      tu:
+        description: "Từ năm"
+        default: "2013"
+
+permissions:
+  contents: read
+
+jobs:
+  phan_tich:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN }}
+          path: danh-muc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Lấy cache giá lần trước
+        uses: actions/cache@v5
+        with:
+          path: danh-muc/cache_du_lieu
+          key: gia-ngay-sieu-${{ github.run_id }}
+          restore-keys: gia-ngay-
+      - name: Phân tích
+        env:
+          MA: ${{ inputs.ma }}
+          TU: ${{ inputs.tu }}
+        run: python phan_tich_sieu_cp.py --ma "$MA" --tu "$TU"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: sieu-co-phieu-${{ github.run_id }}
+          path: danh-muc/sieu_co_phieu.xlsx
+          retention-days: 30
+          if-no-files-found: ignore

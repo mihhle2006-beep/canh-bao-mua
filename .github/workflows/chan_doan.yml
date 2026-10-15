@@ -1,0 +1,71 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
+# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN (token CHỈ ĐỌC repo danh-muc). CONG_KHAI=1: không đọc / in danh mục
+# thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
+# CHẨN ĐOÁN NGUỒN – in mẫu dữ liệu thô các API (sự kiện quyền, giá mục tiêu CTCK…) để viết / sửa bộ đọc. Chỉ đọc.
+name: Chan doan nguon
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Mã, phân cách dấu phẩy"
+        default: "MWG,PNJ"
+      ctck:
+        description: "Liệt kê CTCK có giá mục tiêu + thử nguồn tổng hợp khác"
+        type: boolean
+        default: false
+      gia:
+        description: "Thử từng nguồn giá ngày cho các mã (VD mã đã huỷ niêm yết)"
+        type: boolean
+        default: false
+      bctc_cu:
+        description: "Nguồn nào có BCTC năm cũ hơn 2018"
+        type: boolean
+        default: false
+      khop_vnd:
+        description: "Ghép tên chỉ tiêu BCTC VNDirect với Vietcap"
+        type: boolean
+        default: false
+      so_vnd:
+        description: "So BCTC năm VNDirect với Vietcap (năm trùng)"
+        type: boolean
+        default: false
+      ma_vnd:
+        description: "Mã chỉ tiêu VNDirect các dòng vốn chủ / vay / CĐ không kiểm soát"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  chan_doan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN }}
+          path: danh-muc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Chẩn đoán
+        env:
+          MA: ${{ inputs.ma }}
+          CTCK: ${{ inputs.ctck && '--ctck' || '' }}
+          GIA: ${{ inputs.gia && '--gia' || '' }}
+          BCTC_CU: ${{ inputs.bctc_cu && '--bctc_cu' || '' }}
+          KHOP_VND: ${{ inputs.khop_vnd && '--khop_vnd' || '' }}
+          SO_VND: ${{ inputs.so_vnd && '--so_vnd' || '' }}
+          MA_VND: ${{ inputs.ma_vnd && '--ma_vnd' || '' }}
+        run: python -m ptcp.chan_doan --ma "$MA" $CTCK $GIA $BCTC_CU $KHOP_VND $SO_VND $MA_VND

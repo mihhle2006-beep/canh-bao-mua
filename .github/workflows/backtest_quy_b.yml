@@ -1,0 +1,124 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
+# liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN (token CHỈ ĐỌC repo danh-muc). CONG_KHAI=1: không đọc / in danh mục
+# thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
+# BACKTEST QUỸ B – đúng luật QUY_* (chay_backtest_quy_b.py), chia 3 job song song (mỗi job đều có dòng B đang áp dụng):
+#   gop      – biến thể gộp (B+A0, B+A0+nghi10, B+ttTangKL, B+gop)
+#   thoat    – Quỹ B với hệ thoát khác (input thoat)
+#   dinh_gia – kiểm định định giá J8 theo quý + Quỹ B lọc định giá
+#   ket_hop  – tổ hợp B / B+ttTangKL / B-2R-ma10(+tt) × top GTGD × bỏ ĐẮT × ½ rủi ro VNI Tăng (kèm định giá)
+#   bo_lo    – đo phần bỏ lỡ của trần mã mới/tuần (lệnh bị gạt theo lý do) + thử VÀO TRỄ / nới trần (chỉ chạy khi chọn)
+#   song     – luật đang áp dụng + CHẾ ĐỘ SÓNG (nới trần khi thị trường vào sóng lớn) + bảng chỉ số (chỉ chạy khi chọn)
+# Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
+name: Backtest quy B
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Danh sách mã, phân cách dấu phẩy (trống = 119 mã mặc định; all = mọi mã ngành + huỷ niêm yết + kho BCTC + cache)"
+        default: "all"
+      tu:
+        description: "Từ ngày"
+        default: "2012-01-01"
+      thoat:
+        description: "Hệ thoát khác cho phần thoat (VD 2R-ma10,2R-day2,3R-day2)"
+        default: "2R-ma10,2R-day2,3R-day2"
+      phan:
+        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song (phân cách dấu phẩy)"
+        default: "all"
+      co_huy:
+        description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
+        default: "true"
+      dung_lai_ngay:
+        description: "Dùng lại tín hiệu backtest đã lưu ≤ N ngày (0 = tính lại mỗi ngày; thử luật quỹ: 7)"
+        default: "7"
+      nhanh_danh_muc:
+        description: "Nhánh repo danh-muc để chạy (trống = main) – thử code chưa gộp"
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  backtest:
+    strategy:
+      fail-fast: false
+      matrix:
+        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 300
+    steps:
+      - name: Bỏ qua phần không chọn
+        id: chon
+        working-directory: .
+        env:
+          PHAN: ${{ inputs.phan }}
+        run: |
+          case ",$PHAN," in *",${{ matrix.phan }},"*) echo "chay=1" >> "$GITHUB_OUTPUT";;
+            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
+      - uses: actions/checkout@v5
+        if: steps.chon.outputs.chay
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          ref: ${{ inputs.nhanh_danh_muc || '' }}
+          token: ${{ secrets.DANH_MUC_TOKEN }}
+          path: danh-muc
+      - uses: actions/setup-python@v6
+        if: steps.chon.outputs.chay
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - run: pip install -r requirements.txt
+        if: steps.chon.outputs.chay
+      - name: Lấy cache giá lần trước
+        if: steps.chon.outputs.chay
+        uses: actions/cache@v5
+        with:
+          path: danh-muc/cache_du_lieu
+          key: gia-ngay-${{ matrix.phan }}-${{ github.run_id }}
+          restore-keys: gia-ngay-
+      - name: Backtest (${{ matrix.phan }})
+        if: steps.chon.outputs.chay
+        env:
+          TU: ${{ inputs.tu }}
+          MA: ${{ inputs.ma }}
+          CO_HUY: ${{ inputs.co_huy }}
+          DUNG_LAI: ${{ inputs.dung_lai_ngay }}
+          THOAT: ${{ inputs.thoat }}
+          PHAN: ${{ matrix.phan }}
+        run: |
+          them=""
+          case "$PHAN" in
+            gop) them="--gop" ;;
+            thoat) them="--thoat $THOAT" ;;
+            dinh_gia) them="--dinh_gia" ;;
+            ket_hop) them="--ket_hop" ;;
+            bo_lo) them="--bo_lo" ;;
+            song) them="--song" ;;
+          esac
+          python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" $them \
+            --dung_lai_ngay "${DUNG_LAI:-0}" \
+            $([ "$CO_HUY" = "true" ] && echo --co_huy)
+      - uses: actions/upload-artifact@v6
+        if: always() && steps.chon.outputs.chay
+        with:
+          name: backtest-quy-b-${{ matrix.phan }}-${{ github.run_id }}
+          path: danh-muc/backtest_quy_b_${{ matrix.phan }}.xlsx
+          retention-days: 30
+          if-no-files-found: ignore
+      - name: Đóng gói cache giá (dùng cho Colab)
+        if: always() && steps.chon.outputs.chay && matrix.phan == 'gop'
+        run: zip -qr cache_du_lieu.zip cache_du_lieu -i '*_ngay.csv' || true
+      - uses: actions/upload-artifact@v6
+        if: always() && steps.chon.outputs.chay && matrix.phan == 'gop'
+        with:
+          name: cache-du-lieu-${{ github.run_id }}
+          path: danh-muc/cache_du_lieu.zip
+          retention-days: 30
+          if-no-files-found: ignore
