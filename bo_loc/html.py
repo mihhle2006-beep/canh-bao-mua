@@ -11,13 +11,13 @@ import pandas as pd
 from .so import vn_hoa
 
 CSS = """
-:root{--chu:#1d1d1b;--phu:#5b5b57;--vien:#d9ddd6;--nen:#fbfbf8;--the:#ffffff;--xanh:#1f5f2e;--xanh-nhat:#eef4ec;
+:root{--chu:#17211b;--phu:#5c6b62;--vien:#C8E6C9;--nen:#ffffff;--the:#ffffff;--xanh:#2E7D32;--xanh-nhat:#E8F5E9;
   --vang:#9a6a00;--vang-nhat:#fbf3df;--xam:#8a8a85;--do:#a3261f}
 *{box-sizing:border-box}
 html{font-size:17px}
 body{font-family:"Times New Roman",Times,"Liberation Serif",serif;margin:0;color:var(--chu);background:var(--nen);
   line-height:1.5;-webkit-text-size-adjust:100%}
-header{background:var(--the);border-bottom:1px solid var(--vien);padding:28px 20px 18px}
+header{background:var(--xanh-nhat);border-bottom:3px solid var(--xanh);padding:28px 20px 18px}
 .khung{max-width:960px;margin:0 auto}
 header .nho{font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;color:var(--phu);margin:0 0 6px}
 header h1{margin:0;font-size:1.75rem;line-height:1.2;font-weight:700;color:var(--xanh)}
