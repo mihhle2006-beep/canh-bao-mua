@@ -15,12 +15,12 @@
    ]
   },
   "TLG": {
-   "ngay": "2026-10-14",
+   "ngay": "2026-10-15",
    "trang_thai": "CHỜ",
    "da_bao": []
   },
   "HDB": {
-   "ngay": "2026-10-14",
+   "ngay": "2026-10-15",
    "trang_thai": "CHỜ",
    "da_bao": []
   },
@@ -111,18 +111,14 @@
    ]
   },
   "VGC": {
-   "ngay": "2026-10-14",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-15",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "VPB": {
-   "ngay": "2026-10-14",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-15",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "TRC": {
    "ngay": "2026-10-14",
@@ -132,16 +128,14 @@
    ]
   },
   "TCB": {
-   "ngay": "2026-10-14",
+   "ngay": "2026-10-15",
    "trang_thai": "CHỜ",
    "da_bao": []
   },
   "DGW": {
-   "ngay": "2026-10-14",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-15",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "FRT": {
    "ngay": "2026-10-14",
@@ -152,108 +146,68 @@
   }
  },
  "_15p_hom_nay": {
-  "ngay": "2026-10-14",
+  "ngay": "2026-10-15",
   "cach_vao": "LO",
   "ds": [
-   {
-    "Mã": "MSN",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "71.10–73.20",
-    "Giá": 71.4,
-    "Trạng thái": "MUA",
-    "Lý do": "mở cửa ≤ giá LO",
-    "Giờ": "09:15",
-    "Giá mua": 71.2
-   },
-   {
-    "Mã": "MWG",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "74.50–77.00",
-    "Giá": 73.6,
-    "Trạng thái": "MUA",
-    "Lý do": "mở cửa ≤ giá LO",
-    "Giờ": "09:15",
-    "Giá mua": 75.0
-   },
    {
     "Mã": "TCB",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "32.15–33.60",
-    "Giá": 32.9,
+    "Giá": null,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
     "Giờ": "",
     "Giá mua": null
    },
    {
     "Mã": "VGC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "42.80–44.55",
-    "Giá": 43.9,
-    "Trạng thái": "MUA",
-    "Lý do": "mở cửa ≤ giá LO",
-    "Giờ": "09:15",
-    "Giá mua": 43.3
-   },
-   {
-    "Mã": "DGW",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "44.75–46.75",
-    "Giá": 45.95,
-    "Trạng thái": "MUA",
-    "Lý do": "khớp LO 45.42",
-    "Giờ": "09:30",
-    "Giá mua": 45.416666666666664
-   },
-   {
-    "Mã": "FRT",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "139.70–145.70",
-    "Giá": 140.5,
-    "Trạng thái": "MUA",
-    "Lý do": "khớp LO 141.70",
-    "Giờ": "09:15",
-    "Giá mua": 141.7
-   },
-   {
-    "Mã": "TLG",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "53.50–55.50",
-    "Giá": 55.7,
+    "Vùng": "43.05–45.05",
+    "Giá": null,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
     "Giờ": "",
     "Giá mua": null
    },
    {
     "Mã": "VPB",
-    "Nhóm": "VÀO ½ KL",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "23.85–25.00",
-    "Giá": 24.3,
-    "Trạng thái": "MUA",
-    "Lý do": "mở cửa ≤ giá LO",
-    "Giờ": "09:15",
-    "Giá mua": 24.2
-   },
-   {
-    "Mã": "HDB",
-    "Nhóm": "VÀO ½ KL",
-    "Vùng": "22.45–23.35",
-    "Giá": 23.1,
+    "Giá": null,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
     "Giờ": "",
     "Giá mua": null
    },
    {
-    "Mã": "TRC",
+    "Mã": "DGW",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "44.50–46.75",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "TLG",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "53.80–55.80",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "HDB",
     "Nhóm": "VÀO ½ KL",
-    "Vùng": "23.70–24.70",
-    "Giá": 24.1,
-    "Trạng thái": "MUA",
-    "Lý do": "khớp LO 24.03",
-    "Giờ": "09:15",
-    "Giá mua": 24.03333333333333
+    "Vùng": "22.55–23.45",
+    "Giá": null,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giờ": "",
+    "Giá mua": null
    }
   ]
  }
