@@ -116,7 +116,8 @@ LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị
 
 # --- ĐIỂM VÀO 15 PHÚT – đồng bộ chiến lược (ptcp/diem_vao_15p.py: một bộ tiêu chí cho cảnh báo & backtest) ---
 #   Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, trong đúng phiên hiệu lực; không phủ quyết MACD tuần.
-CACH_VAO_15P = "tu_dong"           # "tu_dong": cách vào tốt nhất của lần backtest gần nhất (FILE_BACKTEST);
+CACH_VAO_15P = "LO+ATC"            # cố định 10/2026 (backtest Quỹ B theo cách vào: LO+ATC ngang tốt nhất, dễ làm nhất);
+                                   # "tu_dong": cách vào tốt nhất của lần backtest gần nhất (FILE_BACKTEST);
                                    # chưa backtest → "15P+ATC". Hoặc đặt cố định: ATO | 15P | 15P+ATC | 15P+GIO | VWAP | LO …
 GIO_ATC = "14:25"                  # từ giờ này, cách vào "+ATC" chưa có điểm vào → báo đặt ATC nếu giá còn trong vùng
 QUET_DANH_MUC_CU = True            # trong phiên: quét cả danh_muc_cu.csv (repo danh-muc) – chạm / sát cắt lỗ đề xuất

@@ -53,6 +53,7 @@ def moi_truong(tmp_path, monkeypatch):
     monkeypatch.delenv("DANH_MUC_TOKEN", raising=False)
     monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)
     monkeypatch.setattr(tong_ket_cl, "_loc_quy", lambda ma, vni: None)   # mã giả không có trong ptcp/loc_quy_b.json
+    monkeypatch.setattr(C, "CACH_VAO_15P", "tu_dong")     # test chọn cách vào theo backtest (cấu hình thật cố định)
     return tmp_path
 
 
@@ -267,10 +268,15 @@ def test_dong_mua_ghi_gia_lo():
     assert tong_ket_cl.gia_lo(10.0, 10.5) == 10.15                   # 10,1667 → làm tròn xuống bước 0,05
 
 
-def test_cach_vao_uu_tien_bang_top_gtgd():
+def test_cach_vao_uu_tien_bang_top_gtgd(monkeypatch):
+    monkeypatch.setattr(C, "CACH_VAO_15P", "tu_dong")
     kq = {"15p": {"tot_nhat": "15P+GIO+ATC", "bang": [],
                   "top_gtgd": {"top": 100, "tot_nhat": "LO", "bang": [{"Biến thể": "LO", "TB/lệnh khớp %": -2.37,
                                                                          "Khớp %": 62.5}]}}}
     assert tong_ket_cl.cach_vao(kq) == ("LO", "tốt nhất theo backtest top 100 GTGD")
     assert "LO – tốt nhất theo backtest top 100 GTGD (backtest -2.37%/lệnh, khớp 62%)" in tong_ket_cl._dong_cach_vao(kq)
     assert tong_ket_cl.cach_vao({"15p": {"tot_nhat": "VWAP"}})[0] == "VWAP"
+
+
+def test_cach_vao_co_dinh():
+    assert tong_ket_cl.cach_vao({"15p": {"tot_nhat": "VWAP"}}) == (C.CACH_VAO_15P, "cấu hình")
