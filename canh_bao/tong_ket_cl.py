@@ -369,7 +369,11 @@ def cach_vao(kq_bt=None):
     from ptcp.diem_vao_15p import BIEN_THE, MAC_DINH
     if C.CACH_VAO_15P != "tu_dong" and C.CACH_VAO_15P in BIEN_THE:
         return C.CACH_VAO_15P, "cấu hình"
-    tot = ((kq_bt or {}).get("15p") or {}).get("tot_nhat")
+    b15 = (kq_bt or {}).get("15p") or {}
+    top = b15.get("top_gtgd") or {}
+    if top.get("tot_nhat") in BIEN_THE:                       # Quỹ B chỉ mua top GTGD → chọn theo đúng rổ đó
+        return top["tot_nhat"], f"tốt nhất theo backtest top {top.get('top', 100)} GTGD"
+    tot = b15.get("tot_nhat")
     if tot in BIEN_THE:
         return tot, "tốt nhất theo backtest"
     return MAC_DINH, "mặc định – chưa backtest 15'"
@@ -381,7 +385,9 @@ def _dong_cach_vao(kq_bt):
     except ImportError:
         return ""
     s = f"Điểm vào 15' phiên tới: {bt} – {nguon}"
-    hang = next((h for h in ((kq_bt or {}).get("15p") or {}).get("bang", []) if h.get("Biến thể") == bt), None)
+    b15 = (kq_bt or {}).get("15p") or {}
+    bang = (b15.get("top_gtgd") or {}).get("bang") if "top" in nguon else b15.get("bang")
+    hang = next((h for h in bang or [] if h.get("Biến thể") == bt), None)
     if hang:
         s += f" (backtest {hang['TB/lệnh khớp %']:+.2f}%/lệnh, khớp {hang['Khớp %']:.0f}%)"
     if bt.startswith("LO"):
