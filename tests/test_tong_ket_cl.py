@@ -250,3 +250,11 @@ def test_loc_quy_b_ngoai_top_va_he_so(monkeypatch):
     assert "VN-Index Tăng" in tong_ket_cl.dong_mua(a)
     assert a["uu_tien"] == 1 and tong_ket_cl.dong_mua(a).startswith("★ ")   # BBB (hạng 1) bị loại → AAA lên ★
     assert b["nhom"] == "NGOAI_TOP" and b["nhom"] not in tong_ket_cl.NHOM_MUA
+
+
+def test_tin_mua_lo_khong_in_tieu_chi_15p():
+    kq = {"ma": "DGW", "nhom": "VAO_NHU_MOI", "tu": 44.5, "den": 46.75, "cl": 43.49, "gia_mua": 45.1, "gia_nay": 45.1,
+          "thoi_diem": pd.Timestamp("2026-10-15 09:15"), "ly_do": "mở cửa ≤ giá LO", "ly_do_ngay": "MACD",
+          "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", False, "chưa")], "atr": np.nan}
+    tin = diem_vao.tin_mua(kq, "2026-10-15 09:58", "LO")
+    assert "chưa kích hoạt" not in tin and "[Cách vào LO · nến 09:15] mở cửa ≤ giá LO" in tin

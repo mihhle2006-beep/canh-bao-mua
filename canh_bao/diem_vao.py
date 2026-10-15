@@ -148,7 +148,9 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
          f"{TEN_NHOM.get(kq['nhom'], kq['nhom'])} | vùng {_f(kq['tu'])}–{_f(kq['den'])} | CL {_f(cl)}"
          + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "") + f" | MT {_f(mt1)} → {_f(mt3)}",
          f"Đạt điểm mua: [Ngày] {kq.get('ly_do_ngay', '')} ✔ · [Vùng] trong vùng ✔",
-         (f"  [15'{nen}] {_gon(kq['tieu_chi'])}" if kq["tieu_chi"] and not kq.get("atc") else f"  {kq['ly_do']}"),
+         # tiêu chí 15' chỉ là điều kiện mua của cách vào 15P…; LO / ATO / VWAP mua theo lý do riêng
+         (f"  [15'{nen}] {_gon(kq['tieu_chi'])}" if kq["tieu_chi"] and not kq.get("atc") and bien_the.startswith("15P")
+          else f"  [Cách vào {bien_the}{nen}] {kq['ly_do']}"),
          _khoi_luong(kq, gia, cl)]
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / CL của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
