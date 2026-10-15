@@ -1,11 +1,12 @@
 # DANH MỤC THẬT HẰNG NGÀY – chuyển từ repo riêng tư danh-muc (hết phút Actions) sang đây 10/2026, CHẠY KÍN:
 #   repo này CÔNG KHAI (log ai cũng xem được) nên KHÔNG bước nào in nội dung danh mục: mọi đầu ra của chương trình
 #   ghi vào file trong máy chạy rồi gửi Telegram (tóm tắt + dashboard + Excel); KHÔNG tải artifact; tổng vốn để ở
-#   SECRET (bị che trong log, không ghi số mặc định ở đây). Trạng thái cắt lỗ / lịch sử / tiền mặt / danh_muc.csv
+#   repo danh-muc (tien_mat_chinh.json / tien_mat_ptdttc.json – "tong_von_trieu" lần nhập gần nhất, giữ nguyên như
+#   cũ); muốn đổi thì đặt SECRET TONG_VON_CHINH / TONG_VON_PTDTTC (bị che trong log) – không ghi số ở file này. Trạng thái cắt lỗ / lịch sử / tiền mặt / danh_muc.csv
 #   commit về repo danh-muc bằng secret DANH_MUC_TOKEN_GHI (Contents: Read and write). Lỗi → chỉ in mã thoát.
-#   Secret cần: DANH_MUC_TOKEN_GHI, TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC (trống → dùng TELEGRAM_TOKEN /
-#   TELEGRAM_CHAT_ID của bot), TONG_VON_CHINH, TONG_VON_PTDTTC (triệu đồng,
-#   tổng tài sản CP + tiền), tuỳ chọn VNSTOCK_API_KEY, GIU_TIEN_MAT, CHON (gmv / max_sharpe).
+#   Secret cần: DANH_MUC_TOKEN_GHI; tuỳ chọn TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC (trống → bot chung),
+#   TONG_VON_CHINH / TONG_VON_PTDTTC (triệu đồng, chỉ khi đổi tổng tài sản), VNSTOCK_API_KEY. Giữ tiền mặt & cách chia
+#   vốn theo luật Quỹ B trong code (không còn tham số GIU_TIEN_MAT / CHON).
 name: Danh muc hang ngay
 
 on:
@@ -46,15 +47,14 @@ jobs:
       - name: Chạy danh mục chính (kín)
         env:
           TONG_VON: ${{ secrets.TONG_VON_CHINH }}
-          GIU_TIEN_MAT: ${{ secrets.GIU_TIEN_MAT }}
-          CHON: ${{ secrets.CHON }}
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: |
-          if [ -z "$TONG_VON" ]; then echo "::error::Thiếu secret TONG_VON_CHINH"; exit 1; fi
-          ARGS="--khong_ve --tong_von $TONG_VON --chon ${CHON:-gmv}"
-          if [ -n "$GIU_TIEN_MAT" ]; then ARGS="$ARGS --giu_tien_mat $GIU_TIEN_MAT"; fi
+          # tổng vốn: secret nếu có, không thì giữ như cũ (lần nhập gần nhất lưu trong danh-muc) – không in ra log
+          TONG_VON="${TONG_VON:-$(python -c 'import json; print(json.load(open("tien_mat_chinh.json"))["tong_von_trieu"])' 2>/dev/null)}"
+          if [ -z "$TONG_VON" ]; then echo "::error::Chưa có tổng vốn – đặt secret TONG_VON_CHINH"; exit 1; fi
+          ARGS="--khong_ve --tong_von $TONG_VON"
           ma=0; python -c "from dmuc.chuong_trinh import main; main()" $ARGS > ket_qua_log.txt 2>&1 || ma=$?
           echo "Danh mục chính: mã thoát $ma"
           gui=0; python gui_telegram.py > /tmp/gui_chinh.txt 2>&1 || gui=$?
@@ -64,17 +64,17 @@ jobs:
         if: always() && hashFiles('danh-muc/danh_muc_ptdttc.csv') != ''
         env:
           TONG_VON: ${{ secrets.TONG_VON_PTDTTC }}
-          CHON: ${{ secrets.CHON }}
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           DM_TEN: ptdttc
           DM_LOG: ket_qua_log_ptdttc.txt
         run: |
-          if [ -z "$TONG_VON" ]; then echo "::error::Thiếu secret TONG_VON_PTDTTC"; exit 1; fi
+          TONG_VON="${TONG_VON:-$(python -c 'import json; print(json.load(open("tien_mat_ptdttc.json"))["tong_von_trieu"])' 2>/dev/null)}"
+          if [ -z "$TONG_VON" ]; then echo "::error::Chưa có tổng vốn PTĐTTC – đặt secret TONG_VON_PTDTTC"; exit 1; fi
           ma=0; python -c "from dmuc.chuong_trinh import main; main()" --khong_ve --khong_tran --ten ptdttc \
             --file danh_muc_ptdttc.csv --trang_thai trang_thai_ptdttc.json --lich_su lich_su_ptdttc.csv \
-            --tong_von "$TONG_VON" --giu_tien_mat 0 --chon ${CHON:-gmv} > ket_qua_log_ptdttc.txt 2>&1 || ma=$?
+            --tong_von "$TONG_VON" --giu_tien_mat 0 > ket_qua_log_ptdttc.txt 2>&1 || ma=$?
           echo "Danh mục PTĐTTC: mã thoát $ma"
           gui=0; python gui_telegram.py > /tmp/gui_ptdttc.txt 2>&1 || gui=$?
           echo "Gửi Telegram: mã thoát $gui"

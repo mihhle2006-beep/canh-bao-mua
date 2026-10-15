@@ -233,7 +233,7 @@ và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào th
 - **Log và artifact ở đây ai cũng xem được.** Các workflow đặt `CONG_KHAI=1` → ptcp **không đọc** `danh_muc.csv` /
   `danh_muc_ptdttc.csv` (Kho BCTC chỉ báo mã top GTGD, Bao cao ma không kèm vị thế đang giữ).
 - **Chạy kín** (danh mục thật, giả lập, sức khoẻ, tổng kết tuần): mọi đầu ra chương trình ghi vào file trong máy chạy
-  rồi gửi Telegram; log chỉ in mã thoát; không tải artifact; tổng vốn ở secret `TONG_VON_CHINH` / `TONG_VON_PTDTTC`.
+  rồi gửi Telegram; log chỉ in mã thoát; không tải artifact; tổng vốn lấy từ file đã lưu trong danh-muc (đổi bằng secret `TONG_VON_CHINH` / `TONG_VON_PTDTTC`).
 - **Ở lại repo riêng tư:** quét mã PTĐTTC (Bo_Loc). Bản *Danh muc hang ngay* trong danh-muc chỉ còn chạy tay.
 - Test chạy trên máy (`python -m pytest`), không chạy trên GitHub nữa.
 
@@ -252,8 +252,7 @@ và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào th
    | Secret | `DANH_MUC_TOKEN_GHI` | Token **Contents: Read and write** cho repo **danh-muc và gia_lap** – các workflow ghi dữ liệu commit về đó |
    | Secret (tuỳ chọn) | `TELEGRAM_TOKEN_DANH_MUC`, `TELEGRAM_CHAT_ID_DANH_MUC` | Bot / chat Telegram cũ của repo danh-muc – tin danh mục thật, Loc quy B, Tra cuu, Bao cao ma gửi về đó; trống → gửi vào bot / chat của repo này |
    | Secret (tuỳ chọn) | `TELEGRAM_TOKEN_GIA_LAP`, `TELEGRAM_CHAT_ID_GIA_LAP` | Bot / chat Telegram cũ của repo gia_lap – tin giả lập, sức khoẻ, tổng kết tuần; trống → bot / chat của repo này |
-   | Secret | `TONG_VON_CHINH`, `TONG_VON_PTDTTC` | Tổng tài sản (triệu đồng) danh mục chính / PTĐTTC – để ở SECRET (bị che trong log) |
-   | Secret (tuỳ chọn) | `GIU_TIEN_MAT`, `CHON` | % giữ tiền mặt, cách chọn Markowitz (`gmv` / `max_sharpe`) |
+   | Secret (tuỳ chọn) | `TONG_VON_CHINH`, `TONG_VON_PTDTTC` | Chỉ khi ĐỔI tổng tài sản (triệu đồng); không đặt → giữ số đã lưu trong danh-muc (`tien_mat_*.json`) |
    | Secret (tuỳ chọn) | `VNSTOCK_API_KEY` | Khoá vnstock cho các workflow của danh-muc |
    | Variable | `DANH_MUC_REPO` | `ten-ban/danh-muc` (tuỳ chọn `DANH_MUC_PATH`, `DANH_MUC_CU_PATH`) |
    | Variable | `PTCP_REPO`, `PTCP_PATH` | Chỉ khi `ptcp/` không nằm ở repo danh-muc |
