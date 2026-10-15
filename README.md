@@ -150,7 +150,8 @@ cách đỉnh 1 năm < 10% · > 50% mã trên MA200 · biến động 20 phiên 
 | 🔻 BÁN PHIÊN TỚI | Đóng cửa tuần < MA10 tuần | Không mua; đang giữ thì bán |
 
 **Danh sách mã:** VN30 (tự lấy online, lỗi thì dùng `MA_VN30`) + `MA_THEM` (DHC, GMD, MWG) + mã từ Bo_Loc.
-Độ rộng thị trường vẫn tính trên 41 mã đã backtest (`MA_CHIEN_LUOC`) để điểm thị trường không đổi theo danh sách.
+Độ rộng thị trường tính trên **rổ top 100 GTGD chốt ở phiên thứ Sáu tuần liền trước** (giữ cố định cả tuần, lấy từ
+`ptcp/loc_quy_b.json`) để điểm thị trường không đổi theo danh sách; chưa có rổ tuần thì dùng 41 mã `MA_CHIEN_LUOC`.
 
 ---
 
