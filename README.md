@@ -27,7 +27,7 @@ luôn tính giống nhau:
 7. [Theo dõi & chấm điểm tín hiệu](#-theo-dõi--chấm-điểm-tín-hiệu)
 8. [Trang tổng hợp, biểu đồ, tin Telegram](#-trang-tổng-hợp-biểu-đồ-tin-telegram)
 9. [Backtest](#-backtest)
-10. [Workflow của danh-muc chạy ở đây](#-workflow-của-danh-muc-chạy-ở-đây)
+10. [Workflow của danh-muc & gia_lap chạy ở đây](#-workflow-của-danh-muc--gia_lap-chạy-ở-đây)
 11. [Cài đặt](#%EF%B8%8F-cài-đặt)
 12. [Bảo mật](#-bảo-mật-repo-công-khai)
 13. [Chạy tay & tuỳ chỉnh](#-chạy-tay--tuỳ-chỉnh)
@@ -216,10 +216,10 @@ Kết luận đã chốt:
 
 ---
 
-## 🏗 Workflow của danh-muc chạy ở đây
+## 🏗 Workflow của danh-muc & gia_lap chạy ở đây
 
 Repo riêng tư có giới hạn phút GitHub Actions; repo công khai này thì không. Từ 10/2026 các workflow sau của danh-muc
-chạy ở đây – mỗi workflow checkout repo danh-muc vào thư mục `danh-muc/` rồi chạy như cũ:
+và gia_lap chạy ở đây – mỗi workflow checkout repo riêng tư vào thư mục `danh-muc/` hoặc `gia_lap/` rồi chạy như cũ:
 
 | Workflow | Lịch | Ghi về danh-muc |
 |---|---|---|
@@ -227,10 +227,14 @@ chạy ở đây – mỗi workflow checkout repo danh-muc vào thư mục `danh
 | **Loc quy B** – hạng GTGD, RS 3T, định giá → `ptcp/loc_quy_b.json` | 07:30 T2–T6 | ✔ |
 | **Kho BCTC** · **Boi so nganh** | Chủ nhật | ✔ |
 | **Kiem dinh dinh gia** · **Sieu co phieu** · **Chan doan** · **Tra cuu ma** · **Bao cao ma** | chạy tay (Tra cuu: thứ Bảy) | – |
+| **Danh muc hang ngay** – danh mục thật + PTĐTTC + danh mục cũ, **chạy kín** | 15:45 T2–T6 | ✔ (cắt lỗ, lịch sử, tiền mặt) |
+| **Gia lap** (16:30, 17:30, 19:00) · **Suc khoe he thong** (19:55) · **Tong ket tuan** (thứ Bảy) – **chạy kín** | T2–T6 / thứ Bảy | ✔ gia_lap |
 
 - **Log và artifact ở đây ai cũng xem được.** Các workflow đặt `CONG_KHAI=1` → ptcp **không đọc** `danh_muc.csv` /
   `danh_muc_ptdttc.csv` (Kho BCTC chỉ báo mã top GTGD, Bao cao ma không kèm vị thế đang giữ).
-- **Ở lại repo riêng tư:** *Danh muc hang ngay* (danh-muc – vị thế thật) và quét mã PTĐTTC (Bo_Loc).
+- **Chạy kín** (danh mục thật, giả lập, sức khoẻ, tổng kết tuần): mọi đầu ra chương trình ghi vào file trong máy chạy
+  rồi gửi Telegram; log chỉ in mã thoát; không tải artifact; tổng vốn ở secret `TONG_VON_CHINH` / `TONG_VON_PTDTTC`.
+- **Ở lại repo riêng tư:** quét mã PTĐTTC (Bo_Loc). Bản *Danh muc hang ngay* trong danh-muc chỉ còn chạy tay.
 - Test chạy trên máy (`python -m pytest`), không chạy trên GitHub nữa.
 
 ---
@@ -245,7 +249,9 @@ chạy ở đây – mỗi workflow checkout repo danh-muc vào thư mục `danh
    |---|---|---|
    | Secret | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` | Bot Telegram |
    | Secret | `DANH_MUC_TOKEN` | Token **chỉ đọc** repo danh-muc (cũng dùng để lấy `ptcp/`) |
-   | Secret | `DANH_MUC_TOKEN_GHI` | Token repo danh-muc quyền **Contents: Read and write** – Loc quy B / Kho BCTC / Boi so nganh commit kết quả về danh-muc |
+   | Secret | `DANH_MUC_TOKEN_GHI` | Token **Contents: Read and write** cho repo **danh-muc và gia_lap** – các workflow ghi dữ liệu commit về đó |
+   | Secret | `TONG_VON_CHINH`, `TONG_VON_PTDTTC` | Tổng tài sản (triệu đồng) danh mục chính / PTĐTTC – để ở SECRET (bị che trong log) |
+   | Secret (tuỳ chọn) | `GIU_TIEN_MAT`, `CHON` | % giữ tiền mặt, cách chọn Markowitz (`gmv` / `max_sharpe`) |
    | Secret (tuỳ chọn) | `VNSTOCK_API_KEY` | Khoá vnstock cho các workflow của danh-muc |
    | Variable | `DANH_MUC_REPO` | `ten-ban/danh-muc` (tuỳ chọn `DANH_MUC_PATH`, `DANH_MUC_CU_PATH`) |
    | Variable | `PTCP_REPO`, `PTCP_PATH` | Chỉ khi `ptcp/` không nằm ở repo danh-muc |
@@ -265,7 +271,8 @@ chạy ở đây – mỗi workflow checkout repo danh-muc vào thư mục `danh
 - `danh_muc.csv` nằm trong `.gitignore`. Mã chỉ có trong danh mục không hiện tên trong log, không ghi vào file commit.
 - Trạng thái riêng (chống báo trùng, nhật ký bán) lưu trong cache Actions `cache_ptcp/`, không commit. Cache bị xoá
   nếu repo không chạy > 7 ngày.
-- Token chỉ cấp quyền **đọc**, trừ `DANH_MUC_TOKEN_GHI` (chỉ dùng trong 3 workflow ghi dữ liệu về danh-muc).
+- Token chỉ cấp quyền **đọc**, trừ `DANH_MUC_TOKEN_GHI` (chỉ dùng trong các workflow ghi dữ liệu về danh-muc / gia_lap).
+- Danh mục thật, giả lập, sức khoẻ, tổng kết tuần **chạy kín**: log chỉ có mã thoát; nội dung chỉ qua Telegram.
 - Workflow của danh-muc chạy với `CONG_KHAI=1`: không đọc danh mục thật / mã PTĐTTC; mã PTĐTTC không quét ở repo này.
 
 ---

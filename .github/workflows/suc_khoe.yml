@@ -1,0 +1,45 @@
+# TIN SỨC KHOẺ HỆ THỐNG – 19:55 giờ VN T2–T6 (chuyển từ gia_lap 10/2026): các workflow có chạy không, lần gần nhất
+# OK / lỗi, NAV giả lập. Code ở repo gia_lap (checkout vào gia_lap/).
+# CHẠY KÍN (repo công khai): đầu ra chương trình chỉ ghi file trong máy chạy / gửi Telegram, log chỉ in mã thoát.
+name: Suc khoe he thong
+
+on:
+  schedule:
+    - cron: "55 12 * * 1-5"         # 19:55 giờ VN (UTC+7)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  kiem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: gia_lap
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: gia_lap
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Cài thư viện
+        run: pip install -q requests pandas > /dev/null
+
+      - name: Gửi tin sức khoẻ (kín)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+          BO_LOC_TOKEN: ${{ secrets.BO_LOC_TOKEN }}
+          SUC_KHOE_TOKEN: ${{ secrets.SUC_KHOE_TOKEN }}     # tuỳ chọn: fine-grained, Actions: Read repo Bo_Loc
+        run: |
+          ma=0; python suc_khoe.py > /tmp/suc_khoe.txt 2>&1 || ma=$?
+          echo "Sức khoẻ: mã thoát $ma"; exit $ma
