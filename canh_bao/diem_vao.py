@@ -95,7 +95,16 @@ def danh_gia(z, dp, bay_gio, bien_the):
     tc = r["tieu_chi"] or tieu_chi_nen(L, z["tu"], z["den"], bool(g.iloc[-1]) if "GIO" in bien_the else None)
     kq.update({"trang_thai": r["trang_thai"], "ly_do": r["ly_do"], "gia_nay": float(L.close), "tieu_chi": tc,
                "gia_mua": r["gia"], "thoi_diem": r["thoi_diem"], "atc": "ATC" in r["ly_do"]})
+    if kq["trang_thai"] == "MUA" and kq["atc"] and not la_sao(z):      # ATC chỉ cho mã ★ – mã khác chỉ mua khi khớp LO
+        kq.update({"trang_thai": "BỎ", "ly_do": "không khớp LO, không phải mã ★ → không mua ATC", "gia_mua": np.nan,
+                   "atc": False})
     return kq
+
+
+def la_sao(z):
+    """Mã ★ của tin tổng kết: ưu tiên ≤ SO_MA_MOI_TUAN (số mã mới tối đa / tuần)."""
+    ut = z.get("uu_tien")
+    return ut is not None and ut == ut and ut <= getattr(C, "SO_MA_MOI_TUAN", 2)
 
 
 def muc_sau_mua(kq):
