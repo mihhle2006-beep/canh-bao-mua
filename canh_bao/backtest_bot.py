@@ -46,7 +46,7 @@ def ro_rong():
     return list(dict.fromkeys(loc_quy_b.ro_ma() + list(loc.get("hang_gtgd", {})) + C.MA_CHIEN_LUOC))
 
 
-def _tai_song_song(ham, ds_ma, luong=6):
+def _tai_song_song(ham, ds_ma, luong=8):
     from concurrent.futures import ThreadPoolExecutor
 
     def mot(ma):
@@ -58,17 +58,17 @@ def _tai_song_song(ham, ds_ma, luong=6):
         return {m: d for m, d in ex.map(mot, ds_ma) if d is not None and len(d)}
 
 
-def _bang_top(ds, n15, xs, top):
+def _bang_top(ct, top):
     """Bảng cách vào chỉ trên khuyến nghị của mã top GTGD hiện tại (Quỹ B chỉ mua top) – để so, không dùng chọn."""
     from ptcp import loc_quy_b
-    from ptcp.diem_vao_15p import backtest_15p
+    from ptcp.diem_vao_15p import tong_hop_15p
     hang = (loc_quy_b.doc(han_ngay=None) or {}).get("hang_gtgd", {})
     ma_top = {m for m, h in hang.items() if h <= top}
-    if not ma_top or not len(ds):
+    if not ma_top or not len(ct):
         return None
-    k = backtest_15p(ds[ds["Mã"].isin(ma_top)], n15, xs)
+    k = tong_hop_15p(ct[ct["Mã"].isin(ma_top)])
     return {"bang": _ban_ghi(k["bang"]), "tot_nhat": k["tot_nhat"], "so_tin_hieu": k["so_tin_hieu"],
-            "ket_luan": _ket_luan_15p(k["bang"], k["tot_nhat"]) if len(k["bang"]) else "chưa đủ tín hiệu"}
+            "ket_luan": _ket_luan_15p(k["bang"], k["tot_nhat"])}
 
 
 def chay_backtest(bay_gio, khong_gui=False, ds_ma=None, chi_diem_vao=False):
@@ -139,8 +139,12 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
         tu = min(d.index[0] for d in n15.values()).normalize()
         den = max(d.index[-1] for d in n15.values())
         print(f"  nến 15': {len(n15)} mã, {tu:%d/%m/%Y} → {den:%d/%m/%Y}")
-        ds, xs = tin_hieu_qua_khu(gia, vni, tu - pd.Timedelta(days=3))
-        k15 = backtest_15p(ds, n15, xs)
+        try:                                                        # ptcp mới: song song + lưu kết quả từng mã
+            from ptcp.diem_vao_15p import backtest_15p_song_song
+            k15 = backtest_15p_song_song(gia, vni, n15, tu - pd.Timedelta(days=3))
+        except ImportError:
+            ds, xs = tin_hieu_qua_khu(gia, vni, tu - pd.Timedelta(days=3))
+            k15 = backtest_15p(ds, n15, xs)
         b = k15["bang"]
         kl = _ket_luan_15p(b, k15["tot_nhat"])
         ra["15p"] = {"bang": _ban_ghi(b), "theo_nhom": _ban_ghi(k15["theo_nhom"]), "tot_nhat": k15["tot_nhat"],
@@ -153,7 +157,7 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
         try:
             from ptcp import cau_hinh as pc
             top = getattr(pc, "QUY_TOP_GTGD", 0) or 100
-            bt = _bang_top(ds, n15, xs, top)
+            bt = _bang_top(k15["chi_tiet"], top)
         except ImportError:                                         # ptcp cũ chưa có loc_quy_b
             bt = None
         if bt:

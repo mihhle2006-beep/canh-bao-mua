@@ -43,12 +43,14 @@ jobs:
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
 
-      - name: Khôi phục cache giá (riêng cho backtest)
-        uses: actions/cache@v5
+      # restore + save riêng (save if: always) → lượt hết giờ / lỗi vẫn giữ nến 15' đã tải & kết quả từng mã
+      - name: Khôi phục cache giá & kết quả (riêng cho backtest)
+        uses: actions/cache/restore@v5
         with:
           path: |
             cache_gia
             cache_ptcp
+            cache_du_lieu
           key: bt-${{ github.run_id }}
           restore-keys: |
             bt-
@@ -58,10 +60,21 @@ jobs:
         run: python -m pytest -q
 
       - name: Backtest điểm vào 15' & điểm bán
+        timeout-minutes: 300                 # dừng bước trước hạn job → các bước lưu cache vẫn chạy
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python chay.py --che_do backtest --ro ${{ inputs.ro || 'chien_luoc' }}
+
+      - name: Lưu cache giá & kết quả (kể cả khi lỗi / hết giờ)
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            cache_gia
+            cache_ptcp
+            cache_du_lieu
+          key: bt-${{ github.run_id }}
 
       - name: Lưu kết quả backtest (công khai – chỉ thống kê)
         if: always()
