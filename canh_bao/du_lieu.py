@@ -61,7 +61,8 @@ def tu_dnse(ma, tu, den, khung, chi_so=False):
 
 
 SSI_KHUNG = {"D": "1D", "60": "60", "30": "30", "15": "15", "5": "5"}
-VCI_KHUNG = {"D": "ONE_DAY", "60": "ONE_HOUR"}          # phút: VCI chỉ có 1 phút → bỏ qua cho gọn
+VCI_KHUNG = {"D": "ONE_DAY", "60": "ONE_HOUR", "15": "FIFTEEN_MINUTES"}   # 15': từ 11/09/2023 (nguồn khác chỉ ~1 năm)
+VCI_NEN_NGAY = {"D": 1, "60": 7, "15": 20}
 
 
 def tu_ssi(ma, tu, den, khung, chi_so=False):
@@ -73,7 +74,7 @@ def tu_ssi(ma, tu, den, khung, chi_so=False):
 def tu_vci(ma, tu, den, khung, chi_so=False):
     if khung not in VCI_KHUNG:
         raise ValueError("không hỗ trợ khung này")
-    so_nen = max((den - tu) // 86400, 5) * (1 if khung == "D" else 7) + 10
+    so_nen = max((den - tu) // 86400, 5) * VCI_NEN_NGAY[khung] + 10
     r = requests.post("https://trading.vietcap.com.vn/api/chart/OHLCChart/gap-chart",
                       json={"timeFrame": VCI_KHUNG[khung], "symbols": [ma], "to": den, "countBack": int(so_nen)},
                       headers={**HEADERS, "Content-Type": "application/json",
@@ -344,24 +345,33 @@ def tai_lich_su_phut(ma, tu_ngay, khung="15", cua_so=30, nghi=0.3):
     moc = pd.Timestamp(tu_ngay)
     if cu is not None and len(cu):
         moc = max(moc, cu.index[-1].normalize() - pd.Timedelta(days=2))
-    phan, rong, t_den = [], 0, den
-    while t_den > int(moc.timestamp()) and rong < 3:
-        t_tu = max(t_den - cua_so * 86400, int(moc.timestamp()))
-        df = None
-        for ten, ham in cac_nguon(ma, t_tu, t_den, khung)[:3]:          # VNDirect, DNSE, SSI (có khung phút)
-            try:
-                df = chuan_hoa(ham())
-                if len(df):
-                    break
-            except Exception:
-                df = None
-        if df is not None and len(df):
-            phan.append(df)
-            rong = 0
-        else:
-            rong += 1
-        t_den = t_tu
-        time.sleep(nghi)
+    def _lui(t_den, moc):
+        """Tải lùi từng cửa sổ từ t_den về moc (3 cửa sổ rỗng liên tiếp → dừng)."""
+        out, rong = [], 0
+        while t_den > int(moc.timestamp()) and rong < 3:
+            t_tu = max(t_den - cua_so * 86400, int(moc.timestamp()))
+            df = None
+            nguon = cac_nguon(ma, t_tu, t_den, khung)
+            for ten, ham in nguon[:3] + [x for x in nguon if x[0] == "VCI" and khung in VCI_KHUNG]:
+                try:                                                # VNDirect, DNSE, SSI, VCI (Vietcap lùi xa nhất)
+                    df = chuan_hoa(ham())
+                    if len(df):
+                        break
+                except Exception:
+                    df = None
+            if df is not None and len(df):
+                out.append(df)
+                rong = 0
+            else:
+                rong += 1
+            t_den = t_tu
+            time.sleep(nghi)
+        return out
+
+    phan = _lui(den, moc)
+    goc = pd.Timestamp(tu_ngay)
+    if cu is not None and len(cu) and cu.index[0].normalize() > goc + pd.Timedelta(days=7):
+        phan += _lui(int(cu.index[0].normalize().timestamp()), goc)    # tải BÙ phần đầu (mốc tu_ngay lùi xa hơn cache)
     if cu is not None:
         phan.append(quy_thang_cu(cu, pd.concat(phan) if phan else None))
     if not phan:

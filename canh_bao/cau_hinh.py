@@ -125,7 +125,7 @@ QUET_DANH_MUC_CU = True            # trong phiên: quét cả danh_muc_cu.csv (r
 GAN_CAT_LO_PCT = 1.0               # trong phiên: mã đang giữ cách cắt lỗ ≤ 1% → nhắc chuẩn bị lệnh bán
 FILE_BACKTEST = "ket_qua_backtest.json"   # kết quả backtest (công khai – chỉ thống kê, không có danh mục)
 BACKTEST_TU = "2019-01-01"         # giá ngày cho backtest điểm bán / mua thêm
-BACKTEST_15P_TU = "2024-01-01"     # nến 15' lấy từ ngày này (nguồn giới hạn bao xa thì dùng tới đó)
+BACKTEST_15P_TU = "2023-09-11"     # nến 15' lấy từ ngày này – Vietcap có từ 11/09/2023 (VNDirect/DNSE/SSI chỉ ~1 năm)
 
 # --- MUA THÊM mã đang giữ (đúng luật nhồi lệnh đã backtest – kiểu B) ---
 #   Đủ cả: lãi đã ≥ NGUONG_KHUNG_TUAN_R (khung tuần) · đóng cửa lập đỉnh mới từ ngày mua · cách lần mua trước ≥ 10 phiên ·
