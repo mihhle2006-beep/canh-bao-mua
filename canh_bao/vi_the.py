@@ -226,8 +226,15 @@ def _he_thoat(vt, dn, bay_gio):
     if d is None or len(d) < 60:
         return None
     try:
-        return theo_doi_vi_the(tinh_chi_bao(d[["open", "high", "low", "close", "volume"]]), vt["gia_von"],
-                               _ngay(vt.get("ngay_mua")), vt.get("cat_lo_goc"), C.NGUONG_KHUNG_TUAN_R)
+        gv, nm, clg = float(vt["gia_von"]), _ngay(vt.get("ngay_mua")), vt.get("cat_lo_goc")
+        if nm is not None:          # VỊ THẾ CŨ (như ptcp.theo_chien_luoc): giá vốn ngoài biên giá phiên "ngày mua" (mua từ
+            j = min(int(d.index.searchsorted(pd.Timestamp(nm).normalize())), len(d) - 1)   # lâu) → theo dõi từ giá
+            if not d.low.iloc[j] * 0.98 <= gv <= d.high.iloc[j] * 1.02:                    # đóng cửa phiên đó, không neo
+                gv, clg = float(d.close.iloc[j]), None                                     # cắt lỗ vào giá vốn cũ
+        ht = theo_doi_vi_the(tinh_chi_bao(d[["open", "high", "low", "close", "volume"]]), gv, nm, clg,
+                             C.NGUONG_KHUNG_TUAN_R)
+        ht["gia_tham_chieu"] = gv
+        return ht
     except Exception as e:                                       # lỗi tính toán không được làm hỏng cảnh báo
         print(f"  ⚠ hệ thoát: {type(e).__name__}")
         return None
@@ -283,7 +290,7 @@ def danh_gia_ban(vt, kq, dn=None, bay_gio=None):
     return {"muc": muc, "ly_do": ly_do, "ghi_chu": ghi_chu, "gia": gia, "lai_lo_pct": lai, "cat_lo": lo,
             "ma10_tuan": ht.get("ma10_tuan"), "nguong_ma10": nguong, "so_phien": ht.get("so_phien"),
             "cat_lo_he_thong": cl_he, "cat_lo_dat": lo_dat, "muc_tieu": ht["gia_moc_tiep"], "tang": ht["tang"],
-            "lai_R": (gia - gv) / ht["R"], "R": ht["R"], "he_thoat": True,
+            "lai_R": (gia - ht.get("gia_tham_chieu", gv)) / ht["R"], "R": ht["R"], "he_thoat": True,
             "cach_cat_lo_pct": (lo / gia - 1) * 100,
             "cach_muc_tieu_pct": (ht["gia_moc_tiep"] / gia - 1) * 100 if ht["gia_moc_tiep"] else np.nan}
 

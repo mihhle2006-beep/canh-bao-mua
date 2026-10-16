@@ -499,3 +499,15 @@ def test_quy_thang_cu_khi_nguon_dieu_chinh_quyen():
     q = du_lieu.quy_thang_cu(cu, moi)
     assert q.close.iloc[0] == pytest.approx(20.0) and q.volume.iloc[0] == pytest.approx(130.0)
     assert du_lieu.quy_thang_cu(cu, cu.iloc[3:] * 1.01) is cu        # lệch nhỏ → giữ nguyên
+
+
+def test_vi_the_cu_gia_von_ngoai_bien_khong_cat_lo_oan():
+    """Vị thế cũ: giá vốn 50 (mua từ lâu), 'ngày mua' giá ~44 → theo dõi từ giá ngày đó như danh-muc (không cắt lỗ oan)."""
+    import numpy as np
+    import pandas as pd
+    idx = pd.bdate_range(end="2026-10-16", periods=120)
+    c = np.r_[np.linspace(48, 44, 115), [44.0, 43.4, 43.0, 43.8, 43.6]]
+    dn = pd.DataFrame({"open": c, "high": c * 1.01, "low": c * 0.99, "close": c, "volume": 1e6}, idx)
+    vt = {"ma": "AAA", "so_cp": 100, "gia_von": 50.0, "ngay_mua": "12/10/2026", "cat_lo": 42.4, "cat_lo_goc": 42.4}
+    kb = vi_the.danh_gia_ban(vt, {"ma": "AAA", "gia": 43.6}, dn, "2026-10-16 20:00")
+    assert kb.get("he_thoat") and kb["muc"] != "CAT_LO" and kb["cat_lo"] < 43.6
