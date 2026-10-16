@@ -157,7 +157,8 @@ def _nhiet_gon(nh):
     """Nhiệt thị trường 2 phần: dài hạn (VN-Index Tăng) · ngắn hạn (x/6)."""
     dai = nh.get("dai_han")
     ngan = f"ngắn hạn {nh['diem']}/{nh.get('so_chi_bao', 6)}"
-    return (f"dài hạn {'Tăng' if dai.get('tang') else 'chưa Tăng'} · " if dai else "") + ngan
+    tt = (dai or {}).get("trang_thai") or ("Tăng" if (dai or {}).get("tang") else "Ngang")
+    return (f"dài hạn {tt} · " if dai else "") + ngan
 
 
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
