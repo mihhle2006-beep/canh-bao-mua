@@ -139,8 +139,8 @@ def _loc_quy(ma, vni):
 
 
 def dong_nhiet(nh, rr=None):
-    """Dòng 🌡 NHIỆT THỊ TRƯỜNG (công khai – chỉ dữ liệu thị trường), 2 phần nhân với nhau: DÀI HẠN (VN-Index Tăng ½ /
-    Giảm ×1,5) · NGẮN HẠN (6 chỉ báo) → rủi ro/lệnh mới sau cả hai hệ số."""
+    """Dòng 🌡 NHIỆT THỊ TRƯỜNG (công khai – chỉ dữ liệu thị trường), 2 phần nhân với nhau: DÀI HẠN (VN-Index Tăng nóng ½ /
+    Tăng nhẹ ×1 / Giảm ×1,5; MA50 dốc mạnh ½) · NGẮN HẠN (6 chỉ báo) → rủi ro/lệnh mới sau cả hai hệ số."""
     if not nh:
         return None
     rr = getattr(C, "RUI_RO_MOI_LENH_PCT", 0.75) if rr is None else rr
@@ -152,11 +152,20 @@ def dong_nhiet(nh, rr=None):
     dong = [f"🌡 Nhiệt thị trường → rủi ro/lệnh mới {rr:g}% × {hd:g} × {hs:g} = {rr * hd * hs:.2f}% vốn"]
     if dai:
         tt = dai.get("trang_thai") or ("Tăng" if dai.get("tang") else "Ngang")
-        mo_ta = {"Tăng": "Tăng (trên MA200 & MA200 dốc lên)", "Giảm": "Giảm (dưới MA200 & MA200 dốc xuống)"}.get(
-            tt, "đi ngang (chưa Tăng / chưa Giảm so với MA200)")
-        dong.append(f"   • Dài hạn: VN-Index {mo_ta} → ×{hd:g}"
-                    + (" – cả trần rủi ro mở (tín hiệu muộn trong sóng tăng dài lãi kém)" if hd < 1 else
-                       " – cả trần rủi ro mở (tín hiệu lúc VN-Index Giảm lãi tốt nhất)" if hd > 1 else ""))
+        htt = float(dai.get("he_so_tt", hd))
+        so = (f" – cách MA200 {dai['cach_ma200']:+.1f}%, lãi 3T {dai['lai_3t']:+.1f}%"
+              if dai.get("cach_ma200") is not None and dai.get("lai_3t") is not None else "")
+        if tt == "Tăng":
+            mo_ta = ("Tăng NÓNG" if dai.get("nong") else "Tăng nhẹ") + f" (trên MA200 & MA200 dốc lên{so})"
+        else:
+            mo_ta = {"Giảm": "Giảm (dưới MA200 & MA200 dốc xuống)"}.get(tt, "đi ngang (chưa Tăng / chưa Giảm so với MA200)")
+        dong.append(f"   • Dài hạn: VN-Index {mo_ta} → ×{htt:g}"
+                    + (" – cả trần rủi ro mở (mua lúc thị trường đã chạy nóng lãi kém)" if htt < 1 else
+                       " – cả trần rủi ro mở (tín hiệu lúc VN-Index Giảm lãi tốt nhất)" if htt > 1 else
+                       " – vào đủ cỡ" if tt == "Tăng" else ""))
+        if dai.get("doc_manh"):
+            dong.append(f"   • MA50 VN-Index dốc mạnh ({dai.get('doc_ma50', 0):+.1f}%/10 phiên) → "
+                        f"×{float(dai.get('he_so_doc', 1.0)):g} – cả trần rủi ro mở (đà tăng quá dốc dễ hụt hơi)")
     dong.append(f"   • Ngắn hạn: {nh['diem']}/{nh.get('so_chi_bao', 6)} ({muc}) → ×{hs:g}"
                 + (" – mua nhỏ lại (tín hiệu lúc thị trường nóng lãi kém hơn)" if hs < 1 else "")
                 + (f"\n     đang bật: {', '.join(bat)}" if bat else ""))

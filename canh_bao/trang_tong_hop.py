@@ -158,6 +158,10 @@ def _nhiet_gon(nh):
     dai = nh.get("dai_han")
     ngan = f"ngắn hạn {nh['diem']}/{nh.get('so_chi_bao', 6)}"
     tt = (dai or {}).get("trang_thai") or ("Tăng" if (dai or {}).get("tang") else "Ngang")
+    if dai and tt == "Tăng" and "nong" in dai:
+        tt += " nóng" if dai["nong"] else " nhẹ"
+    if dai and dai.get("doc_manh"):
+        tt += ", MA50 dốc"
     return (f"dài hạn {tt} · " if dai else "") + ngan
 
 
