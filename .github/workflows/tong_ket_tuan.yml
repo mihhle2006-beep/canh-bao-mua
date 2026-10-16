@@ -1,7 +1,7 @@
-# TỔNG KẾT TUẦN – 20:17 tối thứ Sáu giờ VN (chuyển từ gia_lap 10/2026): 1 tin tổng hợp gọn + file Excel – lãi / lỗ
-# tuần so VN-Index, mã mua & bán trong tuần của danh mục thật, PTĐTTC, giả lập. Code ở repo gia_lap (checkout vào gia_lap/), repo này vào gia_lap/canh-bao-mua.
+# TỔNG KẾT TUẦN GIẢ LẬP – 20:17 tối thứ Sáu: tin + Excel gửi Telegram giả lập. Thật + PTĐTTC nằm trong file HTML
+# của workflow Danh muc (thứ Sáu). Code ở repo gia_lap (checkout vào gia_lap/), repo này vào gia_lap/canh-bao-mua.
 # CHẠY KÍN (repo công khai): đầu ra chương trình chỉ ghi file trong máy chạy / gửi Telegram, log chỉ in mã thoát.
-name: Tong ket tuan
+name: Tong ket tuan (gia lap)
 
 on:
   schedule:

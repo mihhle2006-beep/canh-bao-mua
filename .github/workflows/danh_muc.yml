@@ -35,6 +35,12 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
 
+      - uses: actions/checkout@v5                 # tổng kết tuần (thật + PTĐTTC) trong file HTML – code ở gia_lap
+        with:
+          repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: gia_lap
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -86,6 +92,8 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          GIA_LAP_DIR: ${{ github.workspace }}/gia_lap
+          TONG_KET_TUAN: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}   # thứ Sáu tự có; chạy tay → có
         run: |
           gui=0; python tom_tat_danh_muc.py > /tmp/tom_tat.txt 2>&1 || gui=$?
           echo "Tóm tắt Telegram: mã thoát $gui"
