@@ -50,6 +50,7 @@ jobs:
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          DM_CHI_LOI: "1"                  # tin hằng ngày: bước "Tóm tắt Telegram" (gộp thật + PTĐTTC)
         run: |
           # tổng vốn: secret nếu có, không thì giữ như cũ (lần nhập gần nhất lưu trong danh-muc) – không in ra log
           TONG_VON="${TONG_VON:-$(python -c 'import json; print(json.load(open("tien_mat_chinh.json"))["tong_von_trieu"])' 2>/dev/null)}"
@@ -69,6 +70,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           DM_TEN: ptdttc
           DM_LOG: ket_qua_log_ptdttc.txt
+          DM_CHI_LOI: "1"
         run: |
           TONG_VON="${TONG_VON:-$(python -c 'import json; print(json.load(open("tien_mat_ptdttc.json"))["tong_von_trieu"])' 2>/dev/null)}"
           if [ -z "$TONG_VON" ]; then echo "::error::Chưa có tổng vốn PTĐTTC – đặt secret TONG_VON_PTDTTC"; exit 1; fi
@@ -78,6 +80,15 @@ jobs:
           echo "Danh mục PTĐTTC: mã thoát $ma"
           gui=0; python gui_telegram.py > /tmp/gui_ptdttc.txt 2>&1 || gui=$?
           echo "Gửi Telegram: mã thoát $gui"
+
+      - name: Tóm tắt Telegram (kín – gộp thật + PTĐTTC, 1 tin ngắn + Excel)
+        if: always()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          gui=0; python tom_tat_danh_muc.py > /tmp/tom_tat.txt 2>&1 || gui=$?
+          echo "Tóm tắt Telegram: mã thoát $gui"
 
       - name: Danh mục cũ (kín)
         if: always() && hashFiles('danh-muc/danh_muc_cu.csv') != ''
