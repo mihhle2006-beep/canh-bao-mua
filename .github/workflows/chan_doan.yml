@@ -34,6 +34,13 @@ on:
         description: "Mã chỉ tiêu VNDirect các dòng vốn chủ / vay / CĐ không kiểm soát"
         type: boolean
         default: false
+      nen_15p:
+        description: "Nguồn nào có nến 15' / 5' / 1' lùi xa nhất (2 mã đầu)"
+        type: boolean
+        default: false
+      nhanh_danh_muc:
+        description: "Nhánh repo danh-muc (trống = main)"
+        default: ""
 
 permissions:
   contents: read
@@ -46,11 +53,12 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          ref: ${{ inputs.nhanh_danh_muc || '' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
       - uses: actions/setup-python@v6
@@ -68,4 +76,5 @@ jobs:
           KHOP_VND: ${{ inputs.khop_vnd && '--khop_vnd' || '' }}
           SO_VND: ${{ inputs.so_vnd && '--so_vnd' || '' }}
           MA_VND: ${{ inputs.ma_vnd && '--ma_vnd' || '' }}
-        run: python -m ptcp.chan_doan --ma "$MA" $CTCK $GIA $BCTC_CU $KHOP_VND $SO_VND $MA_VND
+          NEN_15P: ${{ inputs.nen_15p && '--nen_15p' || '' }}
+        run: python -m ptcp.chan_doan --ma "$MA" $CTCK $GIA $BCTC_CU $KHOP_VND $SO_VND $MA_VND $NEN_15P
