@@ -81,7 +81,7 @@ jobs:
           gui=0; python gui_telegram.py > /tmp/gui_ptdttc.txt 2>&1 || gui=$?
           echo "Gửi Telegram: mã thoát $gui"
 
-      - name: Tóm tắt Telegram (kín – gộp thật + PTĐTTC, 1 tin ngắn + Excel)
+      - name: Tóm tắt Telegram (kín – gộp thật + PTĐTTC, 1 tin ngắn + trang HTML)
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
