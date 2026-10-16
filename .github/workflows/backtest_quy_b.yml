@@ -99,8 +99,6 @@ jobs:
           MA: ${{ inputs.ma || 'all' }}
           CO_HUY: ${{ inputs.co_huy || 'true' }}
           DUNG_LAI: ${{ inputs.dung_lai_ngay || '7' }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           THOAT: ${{ inputs.thoat }}
           PHAN: ${{ matrix.phan }}
         run: |
