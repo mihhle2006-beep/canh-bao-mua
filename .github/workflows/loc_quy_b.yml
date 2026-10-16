@@ -68,7 +68,8 @@ jobs:
       - name: Lịch sử mã (điểm ★ – tính lại khi file cũ ≥ 6 ngày)
         continue-on-error: true
         timeout-minutes: 40
-        run: python -m ptcp.lich_su_ma > /dev/null 2>&1; echo "Lịch sử mã: mã thoát $?"
+        run: |
+          python -m ptcp.lich_su_ma > /dev/null 2>&1; echo "Lịch sử mã – mã thoát $?"
 
       - name: Lưu
         run: |
