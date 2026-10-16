@@ -140,7 +140,8 @@
     "quy_b"
    ],
    "dat_mua": "2026-10-16",
-   "dat_gan_nhat": "2026-10-16"
+   "dat_gan_nhat": "2026-10-16",
+   "loc_gan_nhat": "2026-10-16"
   },
   "PVT": {
    "ngay_them": "2026-10-16",
@@ -149,7 +150,25 @@
     "quy_b"
    ],
    "dat_mua": null
+  },
+  "BCM": {
+   "ngay_them": "2026-10-16",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": "2026-10-16",
+   "dat_gan_nhat": "2026-10-16"
+  },
+  "TCH": {
+   "ngay_them": "2026-10-16",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": "2026-10-16",
+   "dat_gan_nhat": "2026-10-16"
   }
  },
- "ngay_quet_da_nhan": "2026-10-16 05:03"
+ "ngay_quet_da_nhan": "2026-10-16 15:34"
 }
