@@ -2,13 +2,14 @@
  "ma": {
   "SBT": {
    "ngay_them": "2026-10-08",
-   "het_han": "2026-10-16",
+   "het_han": "2026-10-22",
    "chien_luoc": [
+    "quy_b",
     "rieng"
    ],
    "dat_mua": "2026-10-08",
-   "dat_gan_nhat": "2026-10-12",
-   "loc_gan_nhat": "2026-10-12"
+   "dat_gan_nhat": "2026-10-16",
+   "loc_gan_nhat": "2026-10-16"
   },
   "TLG": {
    "ngay_them": "2026-10-08",
@@ -23,12 +24,14 @@
   },
   "DBC": {
    "ngay_them": "2026-10-08",
-   "het_han": "2026-10-15",
+   "het_han": "2026-10-22",
    "chien_luoc": [
+    "quy_b",
     "rieng"
    ],
    "dat_mua": "2026-10-08",
-   "dat_gan_nhat": "2026-10-09"
+   "dat_gan_nhat": "2026-10-16",
+   "loc_gan_nhat": "2026-10-16"
   },
   "DPR": {
    "ngay_them": "2026-10-08",
@@ -51,24 +54,16 @@
    "dat_gan_nhat": "2026-10-10",
    "loc_gan_nhat": "2026-10-12"
   },
-  "TDP": {
-   "ngay_them": "2026-10-08",
-   "het_han": "2026-10-15",
-   "chien_luoc": [
-    "rieng"
-   ],
-   "dat_mua": "2026-10-08",
-   "dat_gan_nhat": "2026-10-09"
-  },
   "PDR": {
    "ngay_them": "2026-10-12",
-   "het_han": "2026-10-21",
+   "het_han": "2026-10-22",
    "chien_luoc": [
+    "quy_b",
     "rieng"
    ],
    "dat_mua": "2026-10-12",
-   "dat_gan_nhat": "2026-10-15",
-   "loc_gan_nhat": "2026-10-15"
+   "dat_gan_nhat": "2026-10-16",
+   "loc_gan_nhat": "2026-10-16"
   },
   "PHR": {
    "ngay_them": "2026-10-12",
@@ -128,14 +123,33 @@
   },
   "FRT": {
    "ngay_them": "2026-10-13",
-   "het_han": "2026-10-19",
+   "het_han": "2026-10-22",
    "chien_luoc": [
+    "quy_b",
     "rieng",
     "xu_huong"
    ],
    "dat_mua": "2026-10-13",
-   "dat_gan_nhat": "2026-10-13"
+   "dat_gan_nhat": "2026-10-13",
+   "loc_gan_nhat": "2026-10-16"
+  },
+  "PLX": {
+   "ngay_them": "2026-10-16",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": "2026-10-16",
+   "dat_gan_nhat": "2026-10-16"
+  },
+  "PVT": {
+   "ngay_them": "2026-10-16",
+   "het_han": "2026-10-22",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": null
   }
  },
- "ngay_quet_da_nhan": "2026-10-15 15:39"
+ "ngay_quet_da_nhan": "2026-10-16 05:03"
 }
