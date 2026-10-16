@@ -214,11 +214,12 @@ def von_lenh(k):
 
 
 def chu_von_lenh(k):
-    """' | 💰 0.07% → ≤1.0% NAV (nhiệt ×0.75 · VNI ×0.25 · ĐẮT ×0.5)' – rủi ro % NAV đã nhân hệ số → tỷ trọng mua."""
+    """' | 💰 ≤5.4% NAV (VNI ×0.5 · ĐẮT ×0.5)' – tỷ trọng mua tối đa, đã nhân mọi hệ số (rủi ro % ÷ khoảng cắt lỗ)."""
     v = von_lenh(k)
-    tt = f" → ≤{v['ty_trong']:.1f}% NAV" if v["ty_trong"] == v["ty_trong"] else " NAV"
+    if v["ty_trong"] != v["ty_trong"]:
+        return ""
     ct = " · ".join(f"{t} ×{h:g}" for t, h in v["he_so"])
-    return f" | 💰 {v['rr']:.2f}%{tt}" + (f" ({ct})" if ct else "")
+    return f" | 💰 ≤{v['ty_trong']:.1f}% NAV" + (f" ({ct})" if ct else "")
 
 
 def dong_mua(k, dang_giu=(), bien_the=None):
