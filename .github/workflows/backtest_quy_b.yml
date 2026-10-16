@@ -12,6 +12,8 @@
 name: Backtest quy B
 
 on:
+  schedule:
+    - cron: "13 2 1 * *"            # 09:13 giờ VN ngày 1 hằng tháng: phần chuan (mốc luật hiện tại + đối chiếu giả lập)
   workflow_dispatch:
     inputs:
       ma:
@@ -24,7 +26,7 @@ on:
         description: "Hệ thoát khác cho phần thoat (VD 2R-ma10,2R-day2,3R-day2)"
         default: "2R-ma10,2R-day2,3R-day2"
       phan:
-        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao / von / loc / von2 (phân cách dấu phẩy)"
+        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao / von / loc / von2 / chuan (phân cách dấu phẩy)"
         default: "all"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von, loc, von2]
+        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von, loc, von2, chuan]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -57,10 +59,10 @@ jobs:
         id: chon
         working-directory: .
         env:
-          PHAN: ${{ inputs.phan }}
+          PHAN: ${{ inputs.phan || 'chuan' }}          # lịch hằng tháng (không có inputs) → chỉ phần chuan
         run: |
           case ",$PHAN," in *",${{ matrix.phan }},"*) echo "chay=1" >> "$GITHUB_OUTPUT";;
-            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao|von|loc|von2) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
+            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao|von|loc|von2|chuan) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
       - uses: actions/checkout@v5
         if: steps.chon.outputs.chay
         with:
@@ -68,6 +70,13 @@ jobs:
           ref: ${{ inputs.nhanh_danh_muc || '' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
+      - uses: actions/checkout@v5                 # phần chuan: đối chiếu giả lập (repo kín – chỉ gửi Telegram)
+        if: steps.chon.outputs.chay && matrix.phan == 'chuan'
+        continue-on-error: true
+        with:
+          repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: gia_lap
       - uses: actions/setup-python@v6
         if: steps.chon.outputs.chay
         with:
@@ -86,10 +95,12 @@ jobs:
       - name: Backtest (${{ matrix.phan }})
         if: steps.chon.outputs.chay
         env:
-          TU: ${{ inputs.tu }}
-          MA: ${{ inputs.ma }}
-          CO_HUY: ${{ inputs.co_huy }}
-          DUNG_LAI: ${{ inputs.dung_lai_ngay }}
+          TU: ${{ inputs.tu || '2012-01-01' }}
+          MA: ${{ inputs.ma || 'all' }}
+          CO_HUY: ${{ inputs.co_huy || 'true' }}
+          DUNG_LAI: ${{ inputs.dung_lai_ngay || '7' }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           THOAT: ${{ inputs.thoat }}
           PHAN: ${{ matrix.phan }}
         run: |
@@ -103,8 +114,10 @@ jobs:
             song) them="--song" ;;
             sao) them="--song"; export CHI_SAO=1 ;;            # chỉ phần chấm ★ (nhanh)
             von) them="--song"; export CHI_VON=1 ;;            # chỉ phần quản lý vốn (gỡ phanh, lưới rủi ro, ETF)
-            loc) them="--song"; export CHI_LOC=1 ;;
-            von2) them="--song"; export CHI_VON=2 ;;           # vốn v2: tìm CAGR ~20% trong MDD −15%            # chỉ phần lọc từ dữ liệu lệnh lỗ
+            loc) them="--song"; export CHI_LOC=1 ;;            # chỉ phần lọc từ dữ liệu lệnh lỗ
+            von2) them="--song"; export CHI_VON=2 ;;           # vốn v2: tìm CAGR ~20% trong MDD −15%
+            chuan) them="--song"; export CHI_CHUAN=1           # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
+                   if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập → Telegram
           esac
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" $them \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
