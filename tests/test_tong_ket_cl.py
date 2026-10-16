@@ -214,7 +214,8 @@ def test_khoi_luong_theo_bien_dong(monkeypatch):
     assert "× 0.50" in s and "ATR 7.0%/ngày > 3.5%" in s and "1,700 CP" in s
     monkeypatch.setattr(C, "KL_THEO_BIEN_DONG", False)
     assert tong_ket_cl.he_so_kl(20.0, 1.4)[0] == 1.0
-    assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4) == "Khối lượng: 1% vốn ÷ (giá mua − cắt lỗ)"
+    assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4) == "Khối lượng: 1% vốn ÷ (giá mua − cắt lỗ) → mua ≤ 14.3% NAV"
+    assert "≤ 20.0% NAV" in tong_ket_cl.dong_khoi_luong(20.0, 19.6, 1.4)          # 1% ÷ 2% = 50% → trần 20%/mã
     assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, nua=True).startswith("Khối lượng: ½ – 0.5% vốn")
 
 
@@ -261,6 +262,19 @@ def test_tin_mua_lo_khong_in_tieu_chi_15p():
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", False, "chưa")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 09:58", "LO")
     assert "chưa kích hoạt" not in tin and "[Cách vào LO · nến 09:15] mở cửa ≤ giá LO" in tin
+
+
+def test_von_lenh_nhan_san_moi_he_so():
+    k = {"ma": "BBB", "nhom": "MUA_MOI", "tu": 24.1, "den": 24.6, "mt1": 26.0, "mt3": 28.4, "cl": 22.9, "ly_do": "MACD",
+         "rui_ro": 6.0, "he_so_kl": 1.0, "nhiet": 4, "he_so_nhiet": 0.75, "he_so_quy": 0.125, "he_so_vni": 0.25,
+         "he_so_quy_ma": 0.5, "loc_quy_ma": "ĐẮT (định giá -32%) ×0.5"}
+    v = tong_ket_cl.von_lenh(k)
+    assert abs(v["rr"] - 0.75 * 0.75 * 0.125) < 1e-9 and abs(v["ty_trong"] - v["rr"] / 6 * 100) < 1e-9
+    s = tong_ket_cl.dong_mua(k)
+    assert "💰 rủi ro 0.07% NAV → mua ≤ 1.2% NAV" in s and "VN-Index dài hạn ×0.25" in s and "×0.5 ×0.5" not in s
+    g = tong_ket_cl.von_lenh({**k, "he_so_nhiet": 1.0, "he_so_quy": 1.5, "he_so_vni": 1.5, "he_so_quy_ma": 1.0,
+                              "rui_ro": 2.0})
+    assert g["ty_trong"] == 20.0                                       # 1,125% ÷ 2% = 56% → trần 20%/mã
 
 
 def test_dong_mua_ghi_gia_lo():

@@ -13,6 +13,7 @@ này, đúng vùng giá này (canh_bao/diem_vao.py).
 """
 import json
 import math
+import re
 
 import numpy as np
 import pandas as pd
@@ -179,19 +180,62 @@ def gia_lo(tu, den):
     return lam_tron_buoc(tu + (den - tu) / 3, False)
 
 
+def _tran_ma_pct():
+    """% NAV tối đa / mã (ptcp QUY_TRAN_MA_PCT, mặc định 20)."""
+    try:
+        from ptcp import cau_hinh as P
+        return float(getattr(P, "QUY_TRAN_MA_PCT", 20.0))
+    except ImportError:
+        return 20.0
+
+
+def _hs(x):
+    return float(x) if x is not None and x == x else 1.0
+
+
+def von_lenh(k):
+    """VỐN CHO LỆNH đã nhân sẵn mọi hệ số (người đọc không phải tự tính): rủi ro % NAV = RUI_RO_MOI_LENH_PCT × nhiệt ngắn
+    hạn × lọc Quỹ B (nhiệt dài hạn VN-Index · ĐẮT …) × khối lượng (nhóm 🟡 ½ / ATR) → tỷ trọng mua = rủi ro % ÷ khoảng
+    cách cắt lỗ %, ≤ trần %/mã. → {"rr", "ty_trong", "he_so": [(nhãn, hệ số)]} (ty_trong NaN khi thiếu cắt lỗ)."""
+    rr0 = float(getattr(C, "RUI_RO_MOI_LENH_PCT", 0.75))
+    hn, hq, hk = _hs(k.get("he_so_nhiet")), _hs(k.get("he_so_quy")), _hs(k.get("he_so_kl"))
+    hv = _hs(k.get("he_so_vni")) if "he_so_quy_ma" in k else 1.0
+    hm = _hs(k.get("he_so_quy_ma")) if "he_so_quy_ma" in k else hq
+    ds = []
+    if hn != 1:
+        ds.append((f"nhiệt ngắn hạn {k.get('nhiet')}/6" if k.get("nhiet") is not None else "nhiệt ngắn hạn", hn))
+    if hv != 1:
+        ds.append(("VN-Index dài hạn", hv))
+    if hm != 1:                                      # lý do đã ghi sẵn "×k" ở cuối → bỏ để không lặp
+        ly = re.sub(r"\s*×\s*[\d.,]+$", "", str(k.get("loc_quy_ma", k.get("loc_quy", "")) or "lọc quỹ"))
+        ds.append((ly, hm))
+    if hk != 1:
+        ds.append(("nhóm 🟡" if k.get("nhom") == "VAO_NUA" else "khối lượng", hk))
+    rr = rr0 * hn * hq * hk
+    R = _so(k.get("rui_ro"))
+    if not (R == R and R > 0):
+        den, cl = _so(k.get("den")), _so(k.get("cl"))
+        R = (den - cl) / den * 100 if den == den and cl == cl and den > cl > 0 else np.nan
+    tt = min(rr / R * 100, _tran_ma_pct()) if R == R and R > 0 else np.nan
+    return {"rr": rr, "ty_trong": tt, "he_so": ds, "rr0": rr0}
+
+
+def chu_von_lenh(k):
+    """' | 💰 rủi ro 0.19% NAV → mua ≤ 6.3% NAV (0.75% × VN-Index dài hạn ×0.5 × ĐẮT … ×0.5)'."""
+    v = von_lenh(k)
+    ct = " × ".join([f"{v['rr0']:g}%"] + [f"{t} ×{h:g}" for t, h in v["he_so"]])
+    tt = f" → mua ≤ {v['ty_trong']:.1f}% NAV" if v["ty_trong"] == v["ty_trong"] else ""
+    return f" | 💰 rủi ro {v['rr']:.2f}% NAV{tt}" + (f" ({ct})" if v["he_so"] else "")
+
+
 def dong_mua(k, dang_giu=(), bien_the=None):
     ut = k.get("uu_tien")
     sao = "★ " if ut == ut and ut is not None and ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else ""
-    hs = k.get("he_so_kl")
-    kl = f" | KL ×{hs:.2f}" if (getattr(C, "KL_THEO_BIEN_DONG", False) and hs is not None and hs == hs
-                                and hs < 0.999) else ""
-    hq = k.get("he_so_quy_ma", k.get("he_so_quy"))    # chỉ phần riêng của mã (ĐẮT…) – nhiệt in ở dòng 🌡
-    if hq is not None and hq < 0.999:
-        kl += f" | KL ×{hq:g} ({k.get('loc_quy_ma', k.get('loc_quy', ''))})"
+    kl = ""
     if bien_the and bien_the.startswith("LO") and k.get("tu") and k.get("den"):
-        kl = f" | đặt LO {_f(gia_lo(k['tu'], k['den']))}" + kl
-    return (f"{sao}{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl} "
-            f"| {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
+        kl = f" | đặt LO {_f(gia_lo(k['tu'], k['den']))}"
+    return (f"{sao}{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl}"
+            f"{chu_von_lenh(k)} | {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
 
 
 # ------------------------------------------------------------------ danh sách mua cho cảnh báo 15 phút
@@ -486,7 +530,7 @@ def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None, he_so_nhiet=None):
     he_so_nhiet: hệ số nhiệt thị trường của tin tổng kết (< 1 → rủi ro/lệnh nhân theo)."""
     hs, atr_pct = he_so_kl(gia, atr, nua)
     rr = getattr(C, "RUI_RO_MOI_LENH_PCT", 1.0)
-    if he_so_nhiet is not None and he_so_nhiet == he_so_nhiet and he_so_nhiet < 1:
+    if he_so_nhiet is not None and he_so_nhiet == he_so_nhiet and he_so_nhiet != 1:   # nhiệt × lọc Quỹ B (kể cả ×1,5)
         rr = round(rr * he_so_nhiet, 4)
     ly = []
     if getattr(C, "KL_THEO_BIEN_DONG", False) and atr_pct == atr_pct:
@@ -499,9 +543,11 @@ def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None, he_so_nhiet=None):
     else:
         s = (f"Khối lượng: ½ – {rr / 2:g}% vốn ÷ (giá mua − cắt lỗ)" if nua else
              f"Khối lượng: {rr:g}% vốn ÷ (giá mua − cắt lỗ)")
+    if gia and cl == cl and 0 < cl < gia:                      # tỷ trọng đã nhân sẵn mọi hệ số, ≤ trần %/mã
+        s += f" → mua ≤ {min(rr * hs / ((gia - cl) / gia * 100) * 100, _tran_ma_pct()):.1f}% NAV"
     von = von_trieu if von_trieu is not None else getattr(C, "VON_TRIEU", None)
     if von and gia and cl == cl and cl < gia:
-        cp = von * 1e6 * rr / 100 * hs / ((gia - cl) * 1000)
+        cp = min(von * 1e6 * rr / 100 * hs / ((gia - cl) * 1000), von * 1e6 * _tran_ma_pct() / 100 / (gia * 1000))
         cp = int(cp // 100 * 100)
         if cp > 0:
             s += f" ≈ {cp:,.0f} CP (≈ {cp * gia / 1000:,.1f} triệu, mất ≈ {cp * (gia - cl) / 1000:,.1f} triệu nếu chạm CL)"
