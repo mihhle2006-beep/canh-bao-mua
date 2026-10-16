@@ -24,7 +24,7 @@ on:
         description: "Hệ thoát khác cho phần thoat (VD 2R-ma10,2R-day2,3R-day2)"
         default: "2R-ma10,2R-day2,3R-day2"
       phan:
-        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao / von / loc (phân cách dấu phẩy)"
+        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao / von / loc / von2 (phân cách dấu phẩy)"
         default: "all"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von, loc]
+        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von, loc, von2]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,7 +60,7 @@ jobs:
           PHAN: ${{ inputs.phan }}
         run: |
           case ",$PHAN," in *",${{ matrix.phan }},"*) echo "chay=1" >> "$GITHUB_OUTPUT";;
-            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao|von|loc) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
+            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao|von|loc|von2) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
       - uses: actions/checkout@v5
         if: steps.chon.outputs.chay
         with:
@@ -103,7 +103,8 @@ jobs:
             song) them="--song" ;;
             sao) them="--song"; export CHI_SAO=1 ;;            # chỉ phần chấm ★ (nhanh)
             von) them="--song"; export CHI_VON=1 ;;            # chỉ phần quản lý vốn (gỡ phanh, lưới rủi ro, ETF)
-            loc) them="--song"; export CHI_LOC=1 ;;            # chỉ phần lọc từ dữ liệu lệnh lỗ
+            loc) them="--song"; export CHI_LOC=1 ;;
+            von2) them="--song"; export CHI_VON=2 ;;           # vốn v2: tìm CAGR ~20% trong MDD −15%            # chỉ phần lọc từ dữ liệu lệnh lỗ
           esac
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" $them \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
