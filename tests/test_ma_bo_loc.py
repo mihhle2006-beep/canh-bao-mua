@@ -50,7 +50,7 @@ def test_doc_ghi_va_nguon_file(tmp_path, monkeypatch):
     f.write_text(json.dumps(_nguon("2026-10-05", FPT=["rieng"])), encoding="utf-8")
     monkeypatch.setenv("BO_LOC_FILE", str(f))
     assert bl.lay_nguon()["ma"] == {"FPT": ["rieng"]}
-    assert "➕ thêm: FPT" in bl.dong_tin(["FPT"], [], [], {"ma": {"FPT": {}}})
+    assert "+1 thêm" in bl.dong_tin(["FPT"], [], [], {"ma": {"FPT": {}}})
     assert bl.dong_tin([], [], [], {}) == ""
 
 
@@ -64,7 +64,7 @@ def test_cung_ngay_quet_lan_hai_van_nhan():
 def test_dong_tin_ghi_ro_ma_tham_do():
     tt = {"ma": {"HDB": {"chien_luoc": ["xu_huong ½"]}, "TLG": {"chien_luoc": ["rieng", "xu_huong"]}}}
     t = bl.dong_tin(["HDB", "TLG"], ["TLG"], [], tt)
-    assert "➕ thêm: HDB (xu_huong ½), TLG (rieng, xu_huong)" in t and "✅" in t and "½ = mua thăm dò" in t
+    assert "✅ đạt điểm mua: TLG (rieng, xu_huong)" in t and "+2 thêm" in t and "½ = thăm dò" in t
 
 
 def test_han_bo_qua_ngay_le():

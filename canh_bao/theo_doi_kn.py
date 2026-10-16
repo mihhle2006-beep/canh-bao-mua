@@ -141,7 +141,8 @@ def dong_moi(dong, tt):
 
 
 def tom_tat(bay_gio, gia_ngay=None, tai=None, path=None, path_tt=FILE, ghi=True):
-    """→ list dòng tin mục "📌 THEO DÕI KHUYẾN NGHỊ ĐÃ GỬI" ([] nếu không có gì)."""
+    """→ list dòng tin mục "📌 Theo dõi khuyến nghị" – chỉ dòng cần làm ([] nếu không có gì); đủ danh sách ghi vào
+    tt["bang"] cho Bảng tổng hợp (trang_tong_hop)."""
     nk = nhat_ky.doc(path or nhat_ky.FILE_CONG_KHAI)
     mo, dong = lenh_gia_dinh(nk, bay_gio)
     tt = doc_tt(path_tt)
@@ -150,13 +151,17 @@ def tom_tat(bay_gio, gia_ngay=None, tai=None, path=None, path_tt=FILE, ghi=True)
     xong = dong_moi(dong, tt)
     if lan_dau:
         xong = []                                   # lần đầu: không báo lại các lệnh đã đóng từ trước
+    tt["bang"] = {"luc": f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}", "dang_mo": ds, "da_dong": xong}   # → trang HTML
     if ghi:
         ghi_tt(tt, path_tt)
     if not ds and not xong:
         return []
-    out = ["", f"📌 THEO DÕI KHUYẾN NGHỊ ĐÃ GỬI – nếu đã mua theo khuyến nghị ({len(ds)} lệnh đang mở)"]
-    out += ds[:TOI_DA] + ([f"… +{len(ds) - TOI_DA} mã (xem Excel/trang)"] if len(ds) > TOI_DA else [])
+    # tin ngắn: chỉ dòng CẦN LÀM (bán / dời cắt lỗ / sát cắt lỗ) + lệnh vừa đóng; đủ danh sách ở Bảng tổng hợp (HTML)
+    lam = [d for d in ds if d[:1] in ("🔴", "⬆", "⚠")]
+    giu = len(ds) - len(lam)
+    out = ["", f"📌 Theo dõi khuyến nghị: {len(ds)} lệnh mở" + (f" · {giu} GIỮ" if giu else "")
+           + (" · cần làm:" if lam else "") + " (đủ danh sách ở Bảng tổng hợp)"]
+    out += lam[:TOI_DA] + ([f"… +{len(lam) - TOI_DA} mã" ] if len(lam) > TOI_DA else [])
     if xong:
         out += ["Đã đóng:"] + xong
-    out.append("(giá vào = mở cửa phiên sau khuyến nghị nếu trong vùng mua; thoát theo hệ thoát – như danh mục thật)")
     return out
