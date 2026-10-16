@@ -95,6 +95,12 @@ def danh_gia(z, dp, bay_gio, bien_the):
     tc = r["tieu_chi"] or tieu_chi_nen(L, z["tu"], z["den"], bool(g.iloc[-1]) if "GIO" in bien_the else None)
     kq.update({"trang_thai": r["trang_thai"], "ly_do": r["ly_do"], "gia_nay": float(L.close), "tieu_chi": tc,
                "gia_mua": r["gia"], "thoi_diem": r["thoi_diem"], "atc": "ATC" in r["ly_do"]})
+    gm, gn = kq["gia_mua"], kq["gia_nay"]
+    if kq["trang_thai"] == "MUA" and not kq["atc"] and gm == gm and z["tu"] - 1e-9 <= gn < gm - 1e-9:
+        # lúc báo, giá đã DƯỚI giá LO nhưng vẫn trong vùng → mua theo giá hiện tại (lệnh LO cao hơn vẫn chỉ khớp ở giá
+        # chào bán thấp nhất); cắt lỗ % / mục tiêu / khối lượng tính theo giá này, không theo giá LO
+        kq.update({"gia_mua": gn, "ly_do": f"giá {gn:,.2f} dưới LO {gm:,.2f}, còn trong vùng → mua giá hiện tại "
+                                           f"(đặt LO {gn:,.2f}, không cần đặt cao hơn)"})
     if kq["trang_thai"] == "MUA" and kq["atc"] and not la_sao(z):      # ATC chỉ cho mã ★ – mã khác chỉ mua khi khớp LO
         kq.update({"trang_thai": "BỎ", "ly_do": "không khớp LO, không phải mã ★ → không mua ATC", "gia_mua": np.nan,
                    "atc": False})
@@ -179,7 +185,6 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / CL của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")
-    d.append(f"(Cách vào {bien_the} · đã mua → ghi gia_von, cat_lo_goc = CL, ngay_mua vào danh mục)")
     return "\n".join(d)
 
 
