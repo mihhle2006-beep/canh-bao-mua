@@ -26,7 +26,7 @@ on:
         description: "Hệ thoát khác cho phần thoat (VD 2R-ma10,2R-day2,3R-day2)"
         default: "2R-ma10,2R-day2,3R-day2"
       phan:
-        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao / von / loc / von2 / chuan / tang / vni / vni2 (phân cách dấu phẩy)"
+        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao / von / loc / von2 / chuan / tang / vni / vni2 / vni3 (phân cách dấu phẩy)"
         default: "all"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von, loc, von2, chuan, tang, vni, vni2]
+        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von, loc, von2, chuan, tang, vni, vni2, vni3]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -62,7 +62,7 @@ jobs:
           PHAN: ${{ inputs.phan || 'chuan' }}          # lịch hằng tháng (không có inputs) → chỉ phần chuan
         run: |
           case ",$PHAN," in *",${{ matrix.phan }},"*) echo "chay=1" >> "$GITHUB_OUTPUT";;
-            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao|von|loc|von2|chuan|tang|vni|vni2) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
+            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao|von|loc|von2|chuan|tang|vni|vni2|vni3) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
       - uses: actions/checkout@v5
         if: steps.chon.outputs.chay
         with:
@@ -121,6 +121,7 @@ jobs:
             tang) them="--song"; export CHI_TANG=1 ;;          # cải thiện khi thị trường tăng nhẹ (không ETF)
             vni) them="--song"; export CHI_VNI=1 ;;            # hệ số rủi ro theo nhiều yếu tố VN-Index
             vni2) them="--song"; export CHI_VNI=2 ;;           # luật nóng mới + hệ số theo yếu tố VNI (lượt 2)
+            vni3) them="--song"; export CHI_VNI=3 ;;           # luật cuối + nới trần / suất / hệ số Giảm (lượt 3)
           esac
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" $them \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
