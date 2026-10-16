@@ -11,6 +11,7 @@ nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
 |---|---|
 | 9:00 – 14:45, mỗi 15 phút (T2–T6) | 🟢 MUA NGAY · ⏰ MUA ATC · 🚫 BỎ cho mã trong danh sách mua hôm trước; cảnh báo bán mã đang giữ |
 | 15:20 (T2–T6) | Tổng kết: thị trường, danh sách mua phiên tới, file Excel và file HTML "Bảng tổng hợp" |
+| 16:20 ngày 1 hằng tháng | 🚀 File HTML "Siêu CP tiềm năng": mã vốn hoá ≤ 10.000 tỷ, thanh khoản tăng ≥ 1,3× (danh sách theo dõi, chưa phải lệnh mua) |
 | 9:07 thứ Bảy | Không gửi tin: chấm lại đúng/sai mọi tín hiệu cũ, kết quả xem trong log |
 
 - Ngày nghỉ lễ bot tự bỏ qua.

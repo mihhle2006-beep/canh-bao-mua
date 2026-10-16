@@ -75,6 +75,11 @@ TIEU_CHI = {
     "breakout_20": ("Đóng cửa vượt đỉnh 20 phiên trước", lambda m, t: m["gia"] > m["dinh20"]),
     # --- Bổ sung bộ tiêu chuẩn ---
     "von_hoa_min": ("Vốn hoá ≥ {:,} tỷ", lambda m, t: m["von_hoa"] >= t if _co(m["von_hoa"]) else None),
+    "von_hoa_max": ("Vốn hoá ≤ {:,} tỷ", lambda m, t: m["von_hoa"] <= t if _co(m.get("von_hoa")) else None),
+    "gtgd_tang_min": ("GTGD TB20 ≥ {}× TB120 (thanh khoản tăng)",
+                      lambda m, t: m["gtgd_tang"] >= t if _co(m.get("gtgd_tang")) else None),
+    "bien_dong_co_max": ("Biến động 20 phiên ≤ {}× 120 phiên (nền co lại)",
+                         lambda m, t: m["bien_dong_co"] <= t if _co(m.get("bien_dong_co")) else None),
     "klgd_min": ("KLGD TB20 ≥ {:,} CP", lambda m, t: m["klgd20"] >= t),
     "klgd_cao": ("KLGD TB20 ≥ {:,} CP (thanh khoản cao)", lambda m, t: m["klgd20"] >= t),
     "tren_supertrend": ("Giá trên SuperTrend ({}, ×{})", lambda m, t: m["st_dir"] > 0),
@@ -99,7 +104,7 @@ TIEU_CHI = {
 
 
 # Các tiêu chí cần dữ liệu cơ bản (để biết khi nào phải tải dữ liệu cơ bản)
-KHOA_CO_BAN = {"pe_max", "pb_max", "roe_min", "roa_min", "von_hoa_min", "eps_tang_nam", "eps_tang_quy",
+KHOA_CO_BAN = {"pe_max", "pb_max", "roe_min", "roa_min", "von_hoa_min", "von_hoa_max", "eps_tang_nam", "eps_tang_quy",
                "kiem_toan_5nam", "no_vay_tts_max", "no_phai_tra_tts_max", "fcf_duong",
                "tt_hien_thoi_min", "tt_nhanh_min", "co_tuc_lien_tuc", "ty_suat_co_tuc_min", "eps_duong", "eps_min",
                "pe_duoi_tv_nganh", "fa_khong_nguy_hiem", "fa_diem_min"}
