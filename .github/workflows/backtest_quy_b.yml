@@ -6,6 +6,7 @@
 # code vẫn còn trong danh-muc, thêm lại vào matrix khi cần):
 #   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   sieu  – suất riêng cho siêu cổ phiếu (+1/+2, đối chứng mọi tín hiệu & ngẫu nhiên)
+#   thang – tăng tỷ lệ thắng: 15 hệ thoát / cách vào + 6 lọc tín hiệu, đối chứng bỏ ngẫu nhiên
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -21,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / sieu (phân cách dấu phẩy; all = cả hai)"
+        description: "Phần chạy: chuan / sieu / thang (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -41,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, sieu]
+        phan: [chuan, sieu, thang]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -99,6 +100,7 @@ jobs:
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
             sieu) export CHI_SIEU=1 ;;                         # suất riêng cho siêu cổ phiếu (+1/+2, NN đối chứng)
+            thang) export CHI_THANG=1 ;;                       # tăng tỷ lệ thắng: 21 phiên bản thoát / vào / lọc
           esac
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" --song \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
