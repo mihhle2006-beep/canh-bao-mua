@@ -2,8 +2,10 @@
  "_15p": {
   "SBT": {
    "ngay": "2026-10-16",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "MCH": {
    "ngay": "2026-10-09",
@@ -164,11 +166,11 @@
     "Mã": "PLX",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "35.05–36.60",
-    "Giá": 35.25,
+    "Giá": 35.1,
     "Trạng thái": "MUA",
-    "Lý do": "giá 35.25 dưới LO 35.57, còn trong vùng → mua giá hiện tại (đặt LO 35.25, không cần đặt cao hơn)",
+    "Lý do": "giá 35.10 dưới LO 35.57, còn trong vùng → mua giá hiện tại (đặt LO 35.10, không cần đặt cao hơn)",
     "Giờ": "09:15",
-    "Giá mua": 35.25
+    "Giá mua": 35.1
    },
    {
     "Mã": "TCB",
@@ -184,11 +186,11 @@
     "Mã": "SBT",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "22.35–23.15",
-    "Giá": 22.7,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 22.65,
+    "Trạng thái": "MUA",
+    "Lý do": "khớp LO 22.62",
+    "Giờ": "11:15",
+    "Giá mua": 22.616666666666667
    },
    {
     "Mã": "PDR",
