@@ -24,7 +24,7 @@ on:
         description: "Hệ thoát khác cho phần thoat (VD 2R-ma10,2R-day2,3R-day2)"
         default: "2R-ma10,2R-day2,3R-day2"
       phan:
-        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao (phân cách dấu phẩy)"
+        description: "Phần chạy: all hoặc gop / thoat / dinh_gia / ket_hop / bo_lo / song / sao / von (phân cách dấu phẩy)"
         default: "all"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao]
+        phan: [gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,7 +60,7 @@ jobs:
           PHAN: ${{ inputs.phan }}
         run: |
           case ",$PHAN," in *",${{ matrix.phan }},"*) echo "chay=1" >> "$GITHUB_OUTPUT";;
-            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
+            *",all,"*) case "${{ matrix.phan }}" in bo_lo|song|sao|von) ;; *) echo "chay=1" >> "$GITHUB_OUTPUT";; esac;; esac
       - uses: actions/checkout@v5
         if: steps.chon.outputs.chay
         with:
@@ -102,6 +102,7 @@ jobs:
             bo_lo) them="--bo_lo" ;;
             song) them="--song" ;;
             sao) them="--song"; export CHI_SAO=1 ;;            # chỉ phần chấm ★ (nhanh)
+            von) them="--song"; export CHI_VON=1 ;;            # chỉ phần quản lý vốn (gỡ phanh, lưới rủi ro, ETF)
           esac
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" $them \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
