@@ -149,7 +149,22 @@ def _gon(tc):
     return " · ".join(out)
 
 
+def tin_giu_theo_he_thong(kq, bay_gio):
+    """Mã ĐANG GIỮ trong danh mục mà hệ thống vừa có điểm mua: KHÔNG báo "MUA NGAY" (tránh vừa cắt lỗ vừa mua) –
+    giữ vị thế theo đúng lệnh hệ thống (cắt lỗ / mốc của lệnh này), như dmuc._theo_he_thong của danh mục thật."""
+    gia, cl, mt1, mt3 = muc_sau_mua(kq)
+    return "\n".join([
+        f"💼 GIỮ THEO HỆ THỐNG – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
+        f"Mã đang có trong danh mục, hệ thống vừa có điểm mua ({TEN_NHOM.get(kq['nhom'], kq['nhom'])}) → "
+        "KHÔNG mua trùng, KHÔNG cắt lỗ theo mức cũ",
+        f"Giữ theo lệnh hệ thống: cắt lỗ {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "")
+        + f" · mốc 1R {_f(mt1)} → 3R {_f(mt3)}",
+        "Mua thêm chỉ khi tin tổng kết ghi MUA THÊM."])
+
+
 def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
+    if dang_giu:
+        return tin_giu_theo_he_thong(kq, bay_gio)
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
     dau = "⏰ MUA ATC" if kq.get("atc") else "🟢 MUA NGAY"
     nen = f" · nến {pd.Timestamp(kq['thoi_diem']):%H:%M}" if kq.get("thoi_diem") is not None and not kq.get("atc") else ""
@@ -164,8 +179,6 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / CL của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")
-    if dang_giu:
-        d.append("💼 Mã đang có trong danh mục – xem điều kiện MUA THÊM trong tin tổng kết, không mua trùng.")
     d.append(f"(Cách vào {bien_the} · đã mua → ghi gia_von, cat_lo_goc = CL, ngay_mua vào danh mục)")
     return "\n".join(d)
 

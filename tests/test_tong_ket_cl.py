@@ -293,3 +293,14 @@ def test_atc_chi_cho_ma_sao():
     for ut in (C.SO_MA_MOI_TUAN + 1.0, None):
         k = diem_vao.danh_gia({**z, "uu_tien": ut}, dp, "2026-10-08 14:50", "LO+ATC")
         assert k["trang_thai"] == "BỎ" and "không phải mã ★" in k["ly_do"]
+
+
+def test_ma_dang_giu_khong_bao_mua_ngay():
+    """Mã đang giữ + hệ thống có điểm mua → tin GIỮ THEO HỆ THỐNG (không 'MUA NGAY', không khối lượng mua)."""
+    kq = {"ma": "MSN", "nhom": "VAO_NHU_MOI", "tu": 72.0, "den": 75.0, "cl": 70.92, "gia_mua": 73.8, "gia_nay": 73.8,
+          "thoi_diem": pd.Timestamp("2026-10-12 09:15"), "ly_do": "mở cửa ≤ giá LO", "ly_do_ngay": "MACD",
+          "tieu_chi": [], "atr": np.nan}
+    tin = diem_vao.tin_mua(kq, "2026-10-12 09:20", "LO", dang_giu=True)
+    assert tin.startswith("💼 GIỮ THEO HỆ THỐNG – MSN") and "MUA NGAY" not in tin and "KHÔNG mua trùng" in tin
+    assert "cắt lỗ 70" in tin and "CP" not in tin
+    assert diem_vao.tin_mua(kq, "2026-10-12 09:20", "LO").startswith("🟢 MUA NGAY – MSN")
