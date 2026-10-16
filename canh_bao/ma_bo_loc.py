@@ -190,14 +190,11 @@ def _nhan(ma, tt):
 
 
 def dong_tin(moi, dat, xoa, tt):
-    """Tóm tắt cho tin tổng kết (rỗng nếu không có gì đổi). Mã thăm dò ghi '<chiến lược> ½'."""
+    """1 dòng cho tin tổng kết (rỗng nếu không đổi): mã ĐẠT điểm mua ghi tên (cần làm), thêm / xoá chỉ đếm – đủ ở
+    Bảng tổng hợp (HTML). Mã thăm dò ghi '<chiến lược> ½'."""
     if not (moi or dat or xoa):
         return ""
-    dong = [f"🔎 Mã từ bộ lọc ({len(tt.get('ma') or {})} đang theo dõi, hạn {C.BO_LOC_SO_PHIEN} phiên · ½ = mua thăm dò):"]
-    if moi:
-        dong.append(f"  ➕ thêm: {', '.join(_nhan(m, tt) for m in moi)}")
-    if dat:
-        dong.append(f"  ✅ đạt điểm mua (+{C.BO_LOC_SO_PHIEN} phiên): {', '.join(_nhan(m, tt) for m in dat)}")
-    if xoa:
-        dong.append(f"  🗑 xoá (hết hạn {C.BO_LOC_SO_PHIEN} phiên): {', '.join(xoa)}")
-    return "\n".join(dong)
+    phan = [f"✅ đạt điểm mua: {', '.join(_nhan(m, tt) for m in dat)}"] if dat else []
+    phan += [f"+{len(moi)} thêm"] if moi else []
+    phan += [f"−{len(xoa)} hết hạn"] if xoa else []
+    return f"🔎 Bộ lọc ({len(tt.get('ma') or {})} theo dõi · ½ = thăm dò): " + " · ".join(phan) + " (chi tiết ở Bảng tổng hợp)"

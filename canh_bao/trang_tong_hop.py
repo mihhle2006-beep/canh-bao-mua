@@ -4,6 +4,7 @@ TRANG TỔNG HỢP – 1 file HTML tự chứa (không thư viện ngoài) gom n
   ① Sức khoẻ thị trường: điểm 8 chỉ báo, CL đang áp dụng, VN-Index đi ngang hay có xu hướng
   ② Tín hiệu hôm nay: danh sách mua phiên tới (tin tổng kết) + trạng thái điểm vào 15' trong phiên
   ③ Mã từ bộ lọc Bo_Loc: ngày thêm, hạn 4 phiên, đã đạt điểm mua chưa (ma_bo_loc.json)
+  ④ Theo dõi khuyến nghị đã gửi: đủ danh sách lệnh giả định (theo_doi_kn.json)
   ④ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv)
   (chỉ bản RIÊNG) danh mục thật: lãi/lỗ, cắt lỗ, hành động – KHÔNG bao giờ ghi vào docs/
 
@@ -212,6 +213,19 @@ def _khoi_chinh_xac(nk):
     return _bang(["Loại", "Nhóm", "Tổng", "Đúng", "Sai", "Đang chờ", "Đúng %", "TB lãi/lỗ"], dong)
 
 
+def _khoi_theo_doi(tt):
+    """Đủ danh sách "nếu đã mua theo khuyến nghị" (theo_doi_kn.tom_tat ghi tt["bang"])."""
+    b = (tt or {}).get("bang") or {}
+    mo, dong = b.get("dang_mo") or [], b.get("da_dong") or []
+    if not mo and not dong:
+        return '<p class="mo">Chưa có lệnh giả định nào đang mở.</p>'
+    ds = "".join(f"<li>{_e(d)}</li>" for d in mo)
+    xong = "".join(f"<li>{_e(d)}</li>" for d in dong)
+    return (f'<p class="mo">{len(mo)} lệnh đang mở (cập nhật {_e(b.get("luc", ""))}) – giá vào = mở cửa phiên sau khuyến '
+            f'nghị nếu trong vùng mua; thoát theo hệ thoát như danh mục thật.</p><ul class="chi-bao">{ds}</ul>'
+            + (f'<p><b>Vừa đóng</b></p><ul class="chi-bao">{xong}</ul>' if xong else ""))
+
+
 def _khoi_bo_loc(bl, hom_nay=None):
     ma = (bl or {}).get("ma") or {}
     if not ma:
@@ -297,7 +311,8 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
     muc = [("thi-truong", "① Sức khoẻ thị trường", _khoi_thi_truong(cl.get("thi_truong"))),
            ("tin-hieu", "② Tín hiệu hôm nay", _khoi_tin_hieu(cl, cb)),
            ("bo-loc", "③ Mã từ bộ lọc Bo_Loc", _khoi_bo_loc(_doc_json(getattr(C, "FILE_MA_BO_LOC", "")), luc)),
-           ("chinh-xac", "④ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv")))]
+           ("theo-doi", "④ Theo dõi khuyến nghị đã gửi", _khoi_theo_doi(_doc_json("theo_doi_kn.json"))),
+           ("chinh-xac", "⑤ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv")))]
     if giu:
         muc.insert(0, ("danh-muc", "💼 Danh mục thật (riêng tư)", _khoi_rieng(giu)))
     nav = "".join(f'<a href="#{i}">{_e(t)}</a>' for i, t, _ in muc)

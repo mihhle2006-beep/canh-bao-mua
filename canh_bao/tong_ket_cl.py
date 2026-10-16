@@ -150,27 +150,19 @@ def dong_nhiet(nh, rr=None):
     dai = nh.get("dai_han") or {}
     hd = float(dai.get("he_so", 1.0)) if dai else 1.0
     muc = "NÓNG" if nh["diem"] >= 5 else "ấm" if nh["diem"] >= 3 else "nguội"
-    dong = [f"🌡 Nhiệt thị trường → rủi ro/lệnh mới {rr:g}% × {hd:g} × {hs:g} = {rr * hd * hs:.2f}% vốn"]
+    dong = [f"🌡 Rủi ro/lệnh mới {rr:g}% × {hd:g} × {hs:g} = {rr * hd * hs:.2f}% vốn"]
     if dai:
         tt = dai.get("trang_thai") or ("Tăng" if dai.get("tang") else "Ngang")
         htt = float(dai.get("he_so_tt", hd))
-        so = (f" – cách MA200 {dai['cach_ma200']:+.1f}%, lãi 3T {dai['lai_3t']:+.1f}%"
+        so = (f" (MA200 {dai['cach_ma200']:+.1f}%, 3T {dai['lai_3t']:+.1f}%)"
               if dai.get("cach_ma200") is not None and dai.get("lai_3t") is not None else "")
-        if tt == "Tăng":
-            mo_ta = ("Tăng NÓNG" if dai.get("nong") else "Tăng nhẹ") + f" (trên MA200 & MA200 dốc lên{so})"
-        else:
-            mo_ta = {"Giảm": "Giảm (dưới MA200 & MA200 dốc xuống)"}.get(tt, "đi ngang (chưa Tăng / chưa Giảm so với MA200)")
-        dong.append(f"   • Dài hạn: VN-Index {mo_ta} → ×{htt:g}"
-                    + (" – cả trần rủi ro mở (mua lúc thị trường đã chạy nóng lãi kém)" if htt < 1 else
-                       " – cả trần rủi ro mở (tín hiệu lúc VN-Index Giảm lãi tốt nhất)" if htt > 1 else
-                       " – vào đủ cỡ" if tt == "Tăng" else ""))
+        mo_ta = {"Tăng": ("Tăng nóng" if dai.get("nong") else "Tăng nhẹ") + so, "Giảm": "Giảm"}.get(tt, "đi ngang")
+        dong.append(f"   • Dài hạn: VNI {mo_ta} ×{htt:g}")
         if dai.get("doc_manh"):
-            dong.append(f"   • MA50 VN-Index dốc mạnh ({dai.get('doc_ma50', 0):+.1f}%/10 phiên) → "
-                        f"×{float(dai.get('he_so_doc', 1.0)):g} – cả trần rủi ro mở (đà tăng quá dốc dễ hụt hơi)")
-    dong.append(f"   • Ngắn hạn: {nh['diem']}/{nh.get('so_chi_bao', 6)} ({muc}) → ×{hs:g}"
-                + (" – mua nhỏ lại (tín hiệu lúc thị trường nóng lãi kém hơn)" if hs < 1 else "")
-                + (f"\n     đang bật: {', '.join(bat)}" if bat else ""))
-    dong.append("   Danh mục của bạn đang sụt so với đỉnh → giảm thêm: 3–6% ×¾ · 6–10% ×½ · > 10% ×⅓")
+            dong.append(f"   • MA50 VNI dốc {dai.get('doc_ma50', 0):+.1f}%/10 phiên ×{float(dai.get('he_so_doc', 1.0)):g}")
+    dong.append(f"   • Ngắn hạn: {nh['diem']}/{nh.get('so_chi_bao', 6)} ({muc}) ×{hs:g}"
+                + (f" – {', '.join(bat)}" if bat else ""))
+    dong.append("   • Danh mục sụt từ đỉnh: 3–6% ×¾ · 6–10% ×½ · >10% ×⅓ (tự nhân)")
     return "\n".join(dong)
 
 
@@ -203,14 +195,15 @@ def von_lenh(k):
     hm = _hs(k.get("he_so_quy_ma")) if "he_so_quy_ma" in k else hq
     ds = []
     if hn != 1:
-        ds.append((f"nhiệt ngắn hạn {k.get('nhiet')}/6" if k.get("nhiet") is not None else "nhiệt ngắn hạn", hn))
+        ds.append(("nhiệt", hn))
     if hv != 1:
-        ds.append(("VN-Index dài hạn", hv))
-    if hm != 1:                                      # lý do đã ghi sẵn "×k" ở cuối → bỏ để không lặp
-        ly = re.sub(r"\s*×\s*[\d.,]+$", "", str(k.get("loc_quy_ma", k.get("loc_quy", "")) or "lọc quỹ"))
-        ds.append((ly, hm))
+        ds.append(("VNI", hv))
+    if hm != 1:                                      # nhãn ngắn: "ĐẮT (định giá −32%) ×0.5" → "ĐẮT"
+        ly = [re.sub(r"\s*(\(.*|×\s*[\d.,]+)$", "", x).strip() for x in
+              str(k.get("loc_quy_ma", k.get("loc_quy", "")) or "lọc").split(";")]
+        ds.append((", ".join(x for x in ly if x) or "lọc", hm))
     if hk != 1:
-        ds.append(("nhóm 🟡" if k.get("nhom") == "VAO_NUA" else "khối lượng", hk))
+        ds.append(("🟡" if k.get("nhom") == "VAO_NUA" else "KL", hk))
     rr = rr0 * hn * hq * hk
     R = _so(k.get("rui_ro"))
     if not (R == R and R > 0):
@@ -221,11 +214,11 @@ def von_lenh(k):
 
 
 def chu_von_lenh(k):
-    """' | 💰 rủi ro 0.19% NAV → mua ≤ 6.3% NAV (0.75% × VN-Index dài hạn ×0.5 × ĐẮT … ×0.5)'."""
+    """' | 💰 0.07% → ≤1.0% NAV (nhiệt ×0.75 · VNI ×0.25 · ĐẮT ×0.5)' – rủi ro % NAV đã nhân hệ số → tỷ trọng mua."""
     v = von_lenh(k)
-    ct = " × ".join([f"{v['rr0']:g}%"] + [f"{t} ×{h:g}" for t, h in v["he_so"]])
-    tt = f" → mua ≤ {v['ty_trong']:.1f}% NAV" if v["ty_trong"] == v["ty_trong"] else ""
-    return f" | 💰 rủi ro {v['rr']:.2f}% NAV{tt}" + (f" ({ct})" if v["he_so"] else "")
+    tt = f" → ≤{v['ty_trong']:.1f}% NAV" if v["ty_trong"] == v["ty_trong"] else " NAV"
+    ct = " · ".join(f"{t} ×{h:g}" for t, h in v["he_so"])
+    return f" | 💰 {v['rr']:.2f}%{tt}" + (f" ({ct})" if ct else "")
 
 
 def dong_mua(k, dang_giu=(), bien_the=None):
@@ -446,12 +439,7 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     if not any(k["nhom"] in NHOM_MUA for k in ks):
         dong += ["", "Không có mã nào để mua phiên tới."]
     dong += dong_su_kien({k["ma"]: k["gia"] for k in ks if k["nhom"] in NHOM_MUA + ("CHO",)}, bay_gio)
-    dong += ["", "Mua trong vùng; mở cửa > vùng thì bỏ (không đuổi), rơi < vùng trước khi mua thì bỏ. "
-                 + (f"KL = {getattr(C, 'RUI_RO_MOI_LENH_PCT', 1.0):g}% vốn ÷ (giá − CL) × hệ số (ATR mục tiêu "
-                    f"{C.ATR_MUC_TIEU_PCT:g}%/ngày). " if getattr(C, "KL_THEO_BIEN_DONG", False) else "")
-                 + (f"{C.LUAT_QUY}. " if getattr(C, "LUAT_QUY", "") else "")
-                 + "MT = mục tiêu tạm thời 1R → 3R (mốc dời cắt lỗ, không phải lệnh bán).",
-             _dong_cach_vao(kq_bt)]
+    # (bỏ đoạn giải thích luật cuối tin – người dùng 17/10/2026: tin ngắn; luật ở README / cau_hinh)
     return dong
 
 
@@ -538,13 +526,17 @@ def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None, he_so_nhiet=None):
                                                 else f" ≤ {C.ATR_MUC_TIEU_PCT:g}% → đủ"))
     if nua:
         ly.append("nhóm 🟡 ½")
-    if getattr(C, "KL_THEO_BIEN_DONG", False):
+    if gia and cl == cl and 0 < cl < gia:              # tính sẵn: tỷ trọng % NAV = rủi ro % ÷ khoảng cách cắt lỗ %
+        r_pct, rr_hs = (gia - cl) / gia * 100, rr * hs
+        tt = min(rr_hs / r_pct * 100, _tran_ma_pct())
+        s = (f"Khối lượng: mua {tt:.1f}% NAV (rủi ro {rr_hs:.2f}% ÷ cắt lỗ {r_pct:.1f}%"
+             + (", chạm trần/mã" if tt >= _tran_ma_pct() - 1e-9 else "") + ")"
+             + (f" – {', '.join(ly)}" if ly else ""))
+    elif getattr(C, "KL_THEO_BIEN_DONG", False):
         s = f"Khối lượng: {rr:g}% vốn ÷ (giá mua − cắt lỗ) × {hs:.2f}" + (f" ({', '.join(ly)})" if ly else "")
     else:
         s = (f"Khối lượng: ½ – {rr / 2:g}% vốn ÷ (giá mua − cắt lỗ)" if nua else
              f"Khối lượng: {rr:g}% vốn ÷ (giá mua − cắt lỗ)")
-    if gia and cl == cl and 0 < cl < gia:                      # tỷ trọng đã nhân sẵn mọi hệ số, ≤ trần %/mã
-        s += f" → mua ≤ {min(rr * hs / ((gia - cl) / gia * 100) * 100, _tran_ma_pct()):.1f}% NAV"
     von = von_trieu if von_trieu is not None else getattr(C, "VON_TRIEU", None)
     if von and gia and cl == cl and cl < gia:
         cp = min(von * 1e6 * rr / 100 * hs / ((gia - cl) * 1000), von * 1e6 * _tran_ma_pct() / 100 / (gia * 1000))

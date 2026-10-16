@@ -66,7 +66,7 @@ def test_tong_ket_gon_cong_khai_va_luu_ds_mua(moi_truong):
     tin = [nd for nd, _ in gui if nd.startswith("📊 TỔNG KẾT")]
     assert len(tin) == 1 and all(rt is False for _, rt in gui)              # không có danh mục → công khai
     t = tin[0]
-    assert "CL" in t and "💼" not in t and "Điểm vào 15' phiên tới: 15P+ATC – mặc định" in t
+    assert "CL" in t and "💼" not in t and "Điểm vào 15' phiên tới" not in t and "Mua trong vùng" not in t
     ds = json.load(open(C.FILE_TRANG_THAI_CL, encoding="utf-8"))["ds_mua"]
     assert ds["hieu_luc"] == "2026-10-05"                                    # thứ Sáu → phiên thứ Hai
     for z in ds["ma"]:
@@ -211,12 +211,13 @@ def test_khoi_luong_theo_bien_dong(monkeypatch):
     assert tong_ket_cl.he_so_kl(20.0, 1.4, nua=True)[0] == pytest.approx(0.25)
     s = tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, von_trieu=500)
     # 500 tr × 1% × 0,5 ÷ 1,4 nghìn/CP = 1.785 CP → làm tròn lô 100 = 1.700 CP
-    assert "× 0.50" in s and "ATR 7.0%/ngày > 3.5%" in s and "1,700 CP" in s
+    assert "rủi ro 0.50%" in s and "ATR 7.0%/ngày > 3.5%" in s and "1,700 CP" in s
     monkeypatch.setattr(C, "KL_THEO_BIEN_DONG", False)
     assert tong_ket_cl.he_so_kl(20.0, 1.4)[0] == 1.0
-    assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4) == "Khối lượng: 1% vốn ÷ (giá mua − cắt lỗ) → mua ≤ 14.3% NAV"
-    assert "≤ 20.0% NAV" in tong_ket_cl.dong_khoi_luong(20.0, 19.6, 1.4)          # 1% ÷ 2% = 50% → trần 20%/mã
-    assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, nua=True).startswith("Khối lượng: ½ – 0.5% vốn")
+    assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4) == "Khối lượng: mua 14.3% NAV (rủi ro 1.00% ÷ cắt lỗ 7.0%)"
+    assert "mua 20.0% NAV" in tong_ket_cl.dong_khoi_luong(20.0, 19.6, 1.4)          # 1% ÷ 2% = 50% → trần 20%/mã
+    assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, nua=True).startswith("Khối lượng: mua 7.1% NAV (rủi ro 0.50%")
+    assert tong_ket_cl.dong_khoi_luong(20.0, np.nan, 1.4) == "Khối lượng: 1% vốn ÷ (giá mua − cắt lỗ)"
 
 
 def test_dong_su_kien_bao_truoc_gdkhq(monkeypatch):
@@ -238,7 +239,7 @@ def test_dong_nhiet_va_khoi_luong_theo_nhiet():
     s = tong_ket_cl.dong_nhiet(nh, rr=0.75)
     assert "5/6 (NÓNG)" in s and "= 0.38% vốn" in s and "RSI14" in s
     assert tong_ket_cl.dong_nhiet(None) is None
-    assert "0.375% vốn" in tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, he_so_nhiet=0.5)
+    assert "mua 5.4% NAV (rủi ro 0.38%" in tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, he_so_nhiet=0.5)
 
 
 def test_loc_quy_b_ngoai_top_va_he_so(monkeypatch):
@@ -271,7 +272,7 @@ def test_von_lenh_nhan_san_moi_he_so():
     v = tong_ket_cl.von_lenh(k)
     assert abs(v["rr"] - 0.75 * 0.75 * 0.125) < 1e-9 and abs(v["ty_trong"] - v["rr"] / 6 * 100) < 1e-9
     s = tong_ket_cl.dong_mua(k)
-    assert "💰 rủi ro 0.07% NAV → mua ≤ 1.2% NAV" in s and "VN-Index dài hạn ×0.25" in s and "×0.5 ×0.5" not in s
+    assert "💰 0.07% → ≤1.2% NAV (nhiệt ×0.75 · VNI ×0.25 · ĐẮT ×0.5)" in s
     g = tong_ket_cl.von_lenh({**k, "he_so_nhiet": 1.0, "he_so_quy": 1.5, "he_so_vni": 1.5, "he_so_quy_ma": 1.0,
                               "rui_ro": 2.0})
     assert g["ty_trong"] == 20.0                                       # 1,125% ÷ 2% = 56% → trần 20%/mã

@@ -353,8 +353,11 @@ def test_gui_html_loi_thi_gui_lai_chu_thuong(monkeypatch, tmp_path):
     anh = tmp_path / "a.png"
     anh.write_bytes(b"png")
     assert thong_bao.gui("TIÊU ĐỀ 1,234.5\nnội dung", anh=str(anh))
-    assert [g[0] for g in goi] == ["sendPhoto", "sendMessage", "sendMessage"]
-    assert goi[0][1]["caption"] == "TIÊU ĐỀ 1.234,5" and "parse_mode" not in goi[2][1]
+    assert [g[0] for g in goi] == ["sendPhoto", "sendPhoto"]            # gộp 1 tin: ảnh + chú thích đủ nội dung
+    assert goi[1][1]["caption"] == "TIÊU ĐỀ 1.234,5\nnội dung" and "parse_mode" not in goi[1][1]
+    goi.clear()
+    assert thong_bao.gui("\n".join(f"dòng {i} " + "x" * 80 for i in range(20)), anh=str(anh))
+    assert [g[0] for g in goi][-2:] == ["sendMessage", "sendMessage"] and len(goi[1][1]["caption"]) <= 1000
 
 
 def test_ptcp_rut_gon_co_vung_mua_va_backtest(tmp_path, monkeypatch):
