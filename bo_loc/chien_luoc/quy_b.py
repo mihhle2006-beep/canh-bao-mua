@@ -7,7 +7,7 @@ CHIẾN LƯỢC QUỸ B (mặc định) – chiến lược đang áp dụng 10/
   · chỉ mã top 100 GTGD TB20 (hạng chốt thứ Sáu tuần trước, cố định cả tuần) và hạng RS 3 tháng < 90
     (ptcp/loc_quy_b.json – ngoài top / quá nóng → không mua mới),
     GTGD ≥ 3 tỷ
-  · mã ĐẮT (định giá ≤ −20%) ½ khối lượng · VN-Index Tăng ½ rủi ro
+  · mã ĐẮT (định giá ≤ −20%) ½ khối lượng · nhiệt dài hạn (VN-Index Tăng) ½ rủi ro
   · thoát theo hệ thoát 2R – MA10 tuần
 Điểm cộng chỉ để xếp hạng trong danh sách lọc.
 """

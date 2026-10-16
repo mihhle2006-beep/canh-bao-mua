@@ -93,9 +93,11 @@ def ds_khuyen_nghi(ra):
         nh = ra.get("nhiet") or {}
         k_["nhiet"], k_["he_so_nhiet"] = nh.get("diem"), float(nh.get("he_so", 1.0))
         lq = _loc_quy(k_["ma"], ra.get("vni_df")) if k_["nhom"] in NHOM_MUA else None
-        if lq:                                      # Quỹ B 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · VNI Tăng ½
+        if lq:                                      # Quỹ B 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · nhiệt dài hạn ½
             k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
             k_["he_so_vni"] = lq.get("he_so_vni", 1.0)        # gia_lap: × trần tổng rủi ro mở
+            if "he_so_ma" in lq:                              # in tin: phần riêng của mã (nhiệt dài hạn ở dòng 🌡)
+                k_["he_so_quy_ma"], k_["loc_quy_ma"] = lq["he_so_ma"], "; ".join(lq["ly_do_ma"])
             if lq["bo"]:
                 k_["nhom"] = "NGOAI_TOP"
     # xếp hạng ưu tiên lại CHỈ trong các mã còn mua (mã ngoài top GTGD bị loại không giữ chỗ ★)
@@ -115,17 +117,27 @@ def _loc_quy(ma, vni):
 
 
 def dong_nhiet(nh, rr=None):
-    """Dòng 🌡 nhiệt thị trường (công khai – chỉ dữ liệu thị trường) + rủi ro/lệnh mới sau hệ số nhiệt."""
+    """Dòng 🌡 NHIỆT THỊ TRƯỜNG (công khai – chỉ dữ liệu thị trường), 2 phần nhân với nhau: DÀI HẠN (VN-Index Tăng:
+    trên MA200 & MA200 dốc lên) · NGẮN HẠN (6 chỉ báo) → rủi ro/lệnh mới sau cả hai hệ số."""
     if not nh:
         return None
     rr = getattr(C, "RUI_RO_MOI_LENH_PCT", 0.75) if rr is None else rr
     bat = [c["ten"] for c in nh.get("chi_bao", []) if c.get("dat")]
     hs = float(nh.get("he_so", 1.0))
+    dai = nh.get("dai_han") or {}
+    hd = float(dai.get("he_so", 1.0)) if dai else 1.0
     muc = "NÓNG" if nh["diem"] >= 5 else "ấm" if nh["diem"] >= 3 else "nguội"
-    return (f"🌡 Nhiệt thị trường {nh['diem']}/{nh.get('so_chi_bao', 6)} ({muc}) → rủi ro/lệnh mới {rr:g}% × {hs:g} = "
-            f"{rr * hs:.2f}% vốn" + (" · nóng: mua nhỏ lại (backtest: tín hiệu lúc thị trường nóng lãi kém hơn)" if hs < 1
-                                     else "") + (f"\n   đang bật: {', '.join(bat)}" if bat else "")
-            + "\n   Danh mục của bạn đang sụt so với đỉnh → giảm thêm: 3–6% ×¾ · 6–10% ×½ · > 10% ×⅓")
+    dong = [f"🌡 Nhiệt thị trường → rủi ro/lệnh mới {rr:g}% × {hd:g} × {hs:g} = {rr * hd * hs:.2f}% vốn"]
+    if dai:
+        dong.append(f"   • Dài hạn: VN-Index " + ("Tăng (trên MA200 & MA200 dốc lên)" if dai.get("tang") else
+                                                 "chưa Tăng (cần trên MA200 & MA200 dốc lên)")
+                    + f" → ×{hd:g}" + (" – cả trần rủi ro mở (tín hiệu muộn trong sóng tăng dài lãi kém)"
+                                     if hd < 1 else ""))
+    dong.append(f"   • Ngắn hạn: {nh['diem']}/{nh.get('so_chi_bao', 6)} ({muc}) → ×{hs:g}"
+                + (" – mua nhỏ lại (tín hiệu lúc thị trường nóng lãi kém hơn)" if hs < 1 else "")
+                + (f"\n     đang bật: {', '.join(bat)}" if bat else ""))
+    dong.append("   Danh mục của bạn đang sụt so với đỉnh → giảm thêm: 3–6% ×¾ · 6–10% ×½ · > 10% ×⅓")
+    return "\n".join(dong)
 
 
 def gia_lo(tu, den):
@@ -140,9 +152,9 @@ def dong_mua(k, dang_giu=(), bien_the=None):
     hs = k.get("he_so_kl")
     kl = f" | KL ×{hs:.2f}" if (getattr(C, "KL_THEO_BIEN_DONG", False) and hs is not None and hs == hs
                                 and hs < 0.999) else ""
-    hq = k.get("he_so_quy")
+    hq = k.get("he_so_quy_ma", k.get("he_so_quy"))    # chỉ phần riêng của mã (ĐẮT…) – nhiệt in ở dòng 🌡
     if hq is not None and hq < 0.999:
-        kl += f" | KL ×{hq:g} ({k.get('loc_quy', '')})"
+        kl += f" | KL ×{hq:g} ({k.get('loc_quy_ma', k.get('loc_quy', ''))})"
     if bien_the and bien_the.startswith("LO") and k.get("tu") and k.get("den"):
         kl = f" | đặt LO {_f(gia_lo(k['tu'], k['den']))}" + kl
     return (f"{sao}{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl} "

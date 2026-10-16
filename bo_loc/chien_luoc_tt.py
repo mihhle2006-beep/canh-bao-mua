@@ -9,7 +9,7 @@ QUỸ B (ptcp CHIEN_LUOC_AP_DUNG = "quy_b"): chỉ hệ B ở mọi trạng thá
                🟢 MUA MỚI · ✅ VÀO NHƯ LỆNH MỚI · 🟡 VÀO ½ · ⏳ CHỜ ĐIỀU CHỈNH · ⛔ hệ thống lỗ / sắp bán · chưa có tín hiệu,
                vùng mua (1 phiên hiệu lực), cắt lỗ (chuẩn hệ thoát), mục tiêu tạm thời 1R → 3R (mốc dời cắt lỗ,
                KHÔNG phải lệnh bán), lý do đạt điểm mua, điều kiện vô hiệu.
-Lõi bo_loc/loi trỏ thẳng tới ptcp. Nhóm mua lọc thêm theo ptcp.loc_quy_b (top 100 GTGD · ĐẮT ½ · VN-Index Tăng ½).
+Lõi bo_loc/loi trỏ thẳng tới ptcp. Nhóm mua lọc thêm theo ptcp.loc_quy_b (top 100 GTGD · ĐẮT ½ · nhiệt dài hạn – VN-Index Tăng ½).
 """
 import numpy as np
 import pandas as pd
@@ -155,7 +155,7 @@ def danh_gia(gia, vni, tt=None):
                         "khoi_luong": r.get("Khối lượng", "–"), "lai_ht": r.get("Lãi HT (R)"),
                         "rui_ro_pct": r.get("Rủi ro %")}
         lq = _loc_quy(r["Mã"], vni) if nhom in NHOM_MUA else None
-        if lq:                                         # Quỹ B 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · VNI Tăng ½
+        if lq:                                         # Quỹ B 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · nhiệt dài hạn ½
             k = out[r["Mã"]]
             k["he_so_quy"], k["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
             if lq["bo"]:

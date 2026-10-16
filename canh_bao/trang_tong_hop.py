@@ -142,14 +142,22 @@ def _khoi_thi_truong(tt):
            + _the("Điểm thị trường", f"{d}/{n}", f'<span class="vach">{vach}</span>')
            + _the("Chiến lược", f"CL{tt['cl']}", _e(chia))
            + _the("Trạng thái VN-Index", _e(xu.split(" (")[0]), _e(xu[len(xu.split(" (")[0]):].strip(" ()")))
-           + (_the("Nhiệt thị trường", f"{tt['nhiet']['diem']}/{tt['nhiet'].get('so_chi_bao', 6)}",
-                   f"rủi ro/lệnh mới × {tt['nhiet'].get('he_so', 1):g}") if tt.get("nhiet") else ""))
+           + (_the("Nhiệt thị trường", _e(_nhiet_gon(tt["nhiet"])),
+                   f"rủi ro/lệnh mới × {tt['nhiet'].get('he_so_tong', tt['nhiet'].get('he_so', 1)):g}")
+              if tt.get("nhiet") else ""))
     ds = "".join(f'<li class="{"dat" if c["dat"] else "truot"}"><b>{"✔" if c["dat"] else "✘"}</b> {_e(c["ten"])}'
                  + (f' <span class="mo">– {_e(c["chi_tiet"])}</span>' if c.get("chi_tiet") else "") + "</li>"
                  for c in tt.get("chi_bao", []))
     return (f'<div class="luoi-the">{the}</div><p><b>{_e(tt.get("ten_cl"))}</b>'
             + (f' · <span class="mo">{_e(tt["dieu_kien_doi"])}</span>' if tt.get("dieu_kien_doi") else "")
             + f'</p><ul class="chi-bao">{ds}</ul>')
+
+
+def _nhiet_gon(nh):
+    """Nhiệt thị trường 2 phần: dài hạn (VN-Index Tăng) · ngắn hạn (x/6)."""
+    dai = nh.get("dai_han")
+    ngan = f"ngắn hạn {nh['diem']}/{nh.get('so_chi_bao', 6)}"
+    return (f"dài hạn {'Tăng' if dai.get('tang') else 'chưa Tăng'} · " if dai else "") + ngan
 
 
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
