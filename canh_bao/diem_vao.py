@@ -185,7 +185,6 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / CL của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")
-    d.append(f"(Cách vào {bien_the} · đã mua → ghi gia_von, cat_lo_goc = CL, ngay_mua vào danh mục)")
     return "\n".join(d)
 
 
