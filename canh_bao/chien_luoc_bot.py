@@ -129,7 +129,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
             r = mo_phong(x, sig, bt)
             diem_mua[ten].append({"Mã": ma, **_bang_diem_mua(r["cuoi"], x, 0.5 if bt.nhoi else 1.0),
                                   "GTGD TB20 (tỷ)": float((df.close * df.volume / 1e6).tail(20).mean()),
-                                  "RS 3T %": _rs_3t(df.close, vni)})
+                                  "RS 3T %": _rs_3t(df.close, vni), "Số lần đỉnh 52T 3T": _dinh_52t(df.close)})
     if len(gia) < 5:
         return None, f"quá ít mã có dữ liệu ({len(gia)}/{len(ds_ma)})"
     F, diem, muc = bang_chi_bao(vni, pd.DataFrame(gia))
@@ -195,6 +195,15 @@ def _rs_3t(c, vni):
         return float((c.iloc[-1] / c.iloc[-64] - v.iloc[-1] / v.iloc[-64]) * 100) if len(c) > 64 else np.nan
     except Exception:                                           # noqa: BLE001
         return np.nan
+
+
+def _dinh_52t(c):
+    """Số phiên lập đỉnh 52T trong 3 tháng (điểm ★ – ptcp.chien_luoc.diem_uu_tien); ptcp cũ → NaN."""
+    try:
+        from ptcp.chien_luoc import so_lan_dinh_52t
+    except ImportError:
+        return np.nan
+    return so_lan_dinh_52t(c)
 
 
 def _ty_trong(w):
