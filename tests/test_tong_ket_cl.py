@@ -272,7 +272,7 @@ def test_von_lenh_nhan_san_moi_he_so():
     v = tong_ket_cl.von_lenh(k)
     assert abs(v["rr"] - 0.75 * 0.75 * 0.125) < 1e-9 and abs(v["ty_trong"] - v["rr"] / 6 * 100) < 1e-9
     s = tong_ket_cl.dong_mua(k)
-    assert "💰 0.07% → ≤1.2% NAV (nhiệt ×0.75 · VNI ×0.25 · ĐẮT ×0.5)" in s
+    assert "💰 ≤1.2% NAV (nhiệt ×0.75 · VNI ×0.25 · ĐẮT ×0.5)" in s and "0.07%" not in s
     g = tong_ket_cl.von_lenh({**k, "he_so_nhiet": 1.0, "he_so_quy": 1.5, "he_so_vni": 1.5, "he_so_quy_ma": 1.0,
                               "rui_ro": 2.0})
     assert g["ty_trong"] == 20.0                                       # 1,125% ÷ 2% = 56% → trần 20%/mã

@@ -21,7 +21,7 @@ nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
 ## Cách đọc một dòng mua
 
 Ví dụ (giá tính bằng nghìn đồng):
-`★ ABC | 20.00–21.00 | MT 22.00 → 26.00 | CL 19.50 | đặt LO 20.30 | 💰 0.50% → ≤7.0% NAV`
+`★ ABC | 20.00–21.00 | MT 22.00 → 26.00 | CL 19.50 | đặt LO 20.30 | 💰 ≤7.0% NAV`
 
 - **★**: mã ưu tiên trong tuần (tối đa 4 mã).
 - **20.00–21.00**: vùng mua. Chỉ mua khi giá nằm trong vùng. Mở cửa cao hơn vùng thì không đuổi.
@@ -29,9 +29,8 @@ Ví dụ (giá tính bằng nghìn đồng):
 - **CL**: giá cắt lỗ. Giá chạm mức này thì bán.
 - **đặt LO**: giá đặt lệnh LO trước giờ mở cửa (ở ⅓ dưới của vùng mua).
   Không khớp: mã ★ mua ATC nếu giá còn trong vùng; mã không ★ thì bỏ.
-- **💰 rủi ro % NAV → ≤ X% NAV**: số đầu là phần tài sản (NAV) chấp nhận mất nếu chạm cắt lỗ.
-  Số sau là tỷ trọng tối đa nên mua cho mã đó. Mọi hệ số (nhiệt thị trường, VN-Index, mã đắt…) đã nhân sẵn,
-  không cần tự tính.
+- **💰 ≤ X% NAV**: mua tối đa X% tài sản cho mã này (đã nhân sẵn mọi hệ số).
+  Số cổ = NAV × X% ÷ (giá × 1.000). VD NAV 10 tr, ≤5.4%, giá 11.15 → 540.000 ÷ 11.150 ≈ 48 cổ.
 
 ## Dòng 🌡 nhiệt thị trường
 
