@@ -317,3 +317,10 @@ def test_gia_duoi_lo_van_trong_vung_mua_gia_hien_tai():
     assert diem_vao.muc_sau_mua(k)[0] == 19.6
     tin = diem_vao.tin_mua(k, "2026-10-08 10:20", "LO")
     assert "MUA NGAY – AAA 19.60" in tin and "đặt LO 19.60" in tin
+
+
+def test_xep_sao_toi_da_2_ma_cung_nganh():
+    from canh_bao.tong_ket_cl import xep_sao_theo_nganh
+    mua = [{"ma": m} for m in ("VCB", "BID", "CTG", "HPG", "FPT")]          # 3 ngân hàng đứng đầu
+    out = [k["ma"] for k in xep_sao_theo_nganh(mua, so_sao=4, toi_da=2)]
+    assert out[:4] == ["VCB", "BID", "HPG", "FPT"] and out[4] == "CTG"

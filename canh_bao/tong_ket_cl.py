@@ -102,9 +102,31 @@ def ds_khuyen_nghi(ra):
                 k_["nhom"] = "NGOAI_TOP"
     # xếp hạng ưu tiên lại CHỈ trong các mã còn mua (mã ngoài top GTGD bị loại không giữ chỗ ★)
     mua = sorted((k for k in out if k["nhom"] in NHOM_MUA and k["uu_tien"] == k["uu_tien"]), key=lambda k: k["uu_tien"])
-    for i, k in enumerate(mua, 1):
+    for i, k in enumerate(xep_sao_theo_nganh(mua), 1):
         k["uu_tien"] = float(i)
     return out
+
+
+def xep_sao_theo_nganh(mua, so_sao=None, toi_da=None):
+    """★ tối đa QUY_TOI_DA_MOI_NGANH mã cùng ngành (ptcp/nganh.py): mã thứ 3 trở đi của 1 ngành nhường chỗ ★ cho mã
+    ngành khác, xuống sau các mã ★ (vẫn giữ thứ tự ưu tiên). → list đã xếp lại."""
+    so_sao = getattr(C, "SO_MA_MOI_TUAN", 4) if so_sao is None else so_sao
+    try:
+        from ptcp import cau_hinh as P
+        from ptcp.loc_quy_b import nganh_cua
+        toi_da = getattr(P, "QUY_TOI_DA_MOI_NGANH", None) if toi_da is None else toi_da
+    except ImportError:                             # ptcp cũ
+        return list(mua)
+    if not toi_da:
+        return list(mua)
+    sao, dem = [], {}
+    for k in mua:
+        ng = nganh_cua(k["ma"])
+        if len(sao) < so_sao and (ng is None or dem.get(ng, 0) < toi_da):
+            sao.append(k)
+            if ng:
+                dem[ng] = dem.get(ng, 0) + 1
+    return sao + [k for k in mua if k not in sao]
 
 
 def _loc_quy(ma, vni):
@@ -117,8 +139,8 @@ def _loc_quy(ma, vni):
 
 
 def dong_nhiet(nh, rr=None):
-    """Dòng 🌡 NHIỆT THỊ TRƯỜNG (công khai – chỉ dữ liệu thị trường), 2 phần nhân với nhau: DÀI HẠN (VN-Index Tăng:
-    trên MA200 & MA200 dốc lên) · NGẮN HẠN (6 chỉ báo) → rủi ro/lệnh mới sau cả hai hệ số."""
+    """Dòng 🌡 NHIỆT THỊ TRƯỜNG (công khai – chỉ dữ liệu thị trường), 2 phần nhân với nhau: DÀI HẠN (VN-Index Tăng ½ /
+    Giảm ×1,5) · NGẮN HẠN (6 chỉ báo) → rủi ro/lệnh mới sau cả hai hệ số."""
     if not nh:
         return None
     rr = getattr(C, "RUI_RO_MOI_LENH_PCT", 0.75) if rr is None else rr
@@ -129,10 +151,12 @@ def dong_nhiet(nh, rr=None):
     muc = "NÓNG" if nh["diem"] >= 5 else "ấm" if nh["diem"] >= 3 else "nguội"
     dong = [f"🌡 Nhiệt thị trường → rủi ro/lệnh mới {rr:g}% × {hd:g} × {hs:g} = {rr * hd * hs:.2f}% vốn"]
     if dai:
-        dong.append(f"   • Dài hạn: VN-Index " + ("Tăng (trên MA200 & MA200 dốc lên)" if dai.get("tang") else
-                                                 "chưa Tăng (cần trên MA200 & MA200 dốc lên)")
-                    + f" → ×{hd:g}" + (" – cả trần rủi ro mở (tín hiệu muộn trong sóng tăng dài lãi kém)"
-                                     if hd < 1 else ""))
+        tt = dai.get("trang_thai") or ("Tăng" if dai.get("tang") else "Ngang")
+        mo_ta = {"Tăng": "Tăng (trên MA200 & MA200 dốc lên)", "Giảm": "Giảm (dưới MA200 & MA200 dốc xuống)"}.get(
+            tt, "đi ngang (chưa Tăng / chưa Giảm so với MA200)")
+        dong.append(f"   • Dài hạn: VN-Index {mo_ta} → ×{hd:g}"
+                    + (" – cả trần rủi ro mở (tín hiệu muộn trong sóng tăng dài lãi kém)" if hd < 1 else
+                       " – cả trần rủi ro mở (tín hiệu lúc VN-Index Giảm lãi tốt nhất)" if hd > 1 else ""))
     dong.append(f"   • Ngắn hạn: {nh['diem']}/{nh.get('so_chi_bao', 6)} ({muc}) → ×{hs:g}"
                 + (" – mua nhỏ lại (tín hiệu lúc thị trường nóng lãi kém hơn)" if hs < 1 else "")
                 + (f"\n     đang bật: {', '.join(bat)}" if bat else ""))
@@ -364,8 +388,8 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                     + ", ".join(k["ma"] + (" (RS nóng)" if "RS 3T" in str(k.get("loc_quy", "")) else "")
                                 for k in ngoai))
     if sum(k["nhom"] in NHOM_MUA for k in ks) > getattr(C, "SO_MA_MOI_TUAN", 2):
-        dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: thanh khoản cao · cắt lỗ sát · "
-                     f"RS 3 tháng không quá nóng) – quỹ B chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
+        dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: cắt lỗ sát · lịch sử mã · "
+                     f"lập đỉnh 52T; ≤ 2 mã/ngành) – quỹ B chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
     if not any(k["nhom"] in NHOM_MUA for k in ks):
         dong += ["", "Không có mã nào để mua phiên tới."]
     dong += dong_su_kien({k["ma"]: k["gia"] for k in ks if k["nhom"] in NHOM_MUA + ("CHO",)}, bay_gio)

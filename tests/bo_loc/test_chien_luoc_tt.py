@@ -56,7 +56,7 @@ def test_ke_hoach_va_hanh_dong_theo_chien_luoc():
     kh = ke_hoach_giao_dich(m, 1000, 1.0)
     assert kh["cat_lo_kh"] == 18.8 and kh["muc_tieu_kh"] == pytest.approx(21.2) and kh["muc_tieu_3r"] == pytest.approx(23.6)
     assert kh["vung_mua"] == "19.40 – 20.60" and kh["nhom_cl"] == "VAO_NUA" and kh["rr_kh"] != kh["rr_kh"]
-    assert kh["so_cp_kh"] == 7500                       # 1% × 1 tỷ ÷ 1,2 nghìn = 8.333 > trần 15% × 1 tỷ ÷ 20 nghìn = 7.500
+    assert kh["so_cp_kh"] == 8300                       # 1% × 1 tỷ ÷ 1,2 nghìn = 8.333 < trần 20% × 1 tỷ ÷ 20 nghìn = 10.000
     kh2 = ke_hoach_giao_dich({"gia": 20.0, "atr": 0.5, "klgd20": 1e6, "cl_tt": {"nhom": "CHO_TIN_HIEU", "cl": np.nan}},
                              1000, 1.0)
     assert kh2["cat_lo_kh"] == pytest.approx(stop_chuan(20.0, 0.5)) and kh2["vung_mua"] == "–"
