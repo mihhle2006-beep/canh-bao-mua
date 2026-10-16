@@ -86,6 +86,11 @@ def tinh_chi_so(ma, df, vni=None, cb=None, nhom="", nguon_gia=""):
         "ev_mt": np.nan,
         "khuyen_nghi": "",                       # = nhóm chiến lược thị trường (ghi sau khi chạy chiến lược)
         "klgd20": d.volume.tail(20).mean(),
+        # siêu cổ phiếu tiềm năng (danh-muc/phan_tich_sieu_cp 10/2026): thanh khoản tăng · biến động co lại
+        "gtgd_tang": ((d.close * d.volume).tail(20).mean() / max((d.close * d.volume).tail(120).mean(), 1e-9)
+                      if len(d) >= 120 else np.nan),
+        "bien_dong_co": (np.log(d.close).diff().tail(20).std() / max(np.log(d.close).diff().tail(120).std(), 1e-12)
+                         if len(d) >= 121 else np.nan),
         "adx": adx.iloc[-1], "pdi": pdi.iloc[-1], "mdi": mdi.iloc[-1],
         "ma20_doc": d.MA20.iloc[-1] - d.MA20.iloc[-6] if len(d) > 6 else np.nan,
         "dinh20": d.high.iloc[-21:-1].max(),

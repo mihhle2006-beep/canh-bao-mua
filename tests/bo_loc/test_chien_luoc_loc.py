@@ -9,10 +9,10 @@ from bo_loc import chien_luoc as clm
 from bo_loc.loc import bang_ket_qua, danh_gia, gan_dat, nhan_dat
 from bo_loc.tieu_chi import TIEU_CHI, kiem_tra, ten_tieu_chi
 
-CHIEN_LUOC_GOC = ["quy_b", "ky_thuat", "xu_huong", "diem_mua", "bat_day", "gia_tri", "tich_luy_vuot", "tuy_chinh"]
+CHIEN_LUOC_GOC = ["quy_b", "ky_thuat", "xu_huong", "diem_mua", "bat_day", "gia_tri", "tich_luy_vuot", "tuy_chinh", "sieu_cp"]
 
 
-def test_du_8_chien_luoc_va_deu_hop_le():
+def test_du_9_chien_luoc_va_deu_hop_le():
     ds = clm.tai_tat_ca(thu_muc_rieng=None)
     assert set(ds) == set(CHIEN_LUOC_GOC)                                 # đã gộp, bỏ bản *_goc
     for ten, cl in ds.items():
@@ -125,3 +125,9 @@ def test_them_bo_tieu_chi_luc_chay():
         clm.them_bot(cl, "khong_co=1")
     with pytest.raises(SystemExit, match="rsi_duoi"):
         clm.them_bot(cl, None, "rsi_duoi")
+
+
+def test_sieu_cp_tieu_chi_moi():
+    m = {"von_hoa": 5_000, "gtgd_tang": 1.5, "bien_dong_co": 0.7}
+    assert TIEU_CHI["von_hoa_max"][1](m, 10_000) and TIEU_CHI["gtgd_tang_min"][1](m, 1.3)
+    assert TIEU_CHI["bien_dong_co_max"][1](m, 0.8) and TIEU_CHI["von_hoa_max"][1]({}, 1) is None
