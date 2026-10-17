@@ -33,6 +33,9 @@ on:
       dung_lai_ngay:
         description: "Dùng lại tín hiệu backtest đã lưu ≤ N ngày (0 = tính lại mỗi ngày; thử luật quỹ: 7)"
         default: "7"
+      so_nn:
+        description: "Số lần chạy ngẫu nhiên đối chứng (trống = mặc định của phần; 200 ≈ thêm 1–1,5 giờ)"
+        default: ""
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc để chạy (trống = main) – thử code chưa gộp"
         default: ""
@@ -98,6 +101,7 @@ jobs:
           CO_HUY: ${{ inputs.co_huy || 'true' }}
           DUNG_LAI: ${{ inputs.dung_lai_ngay || '7' }}
           PHAN: ${{ matrix.phan }}
+          SO_NN: ${{ inputs.so_nn }}
         run: |
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
