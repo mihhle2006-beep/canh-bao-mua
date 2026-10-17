@@ -275,6 +275,22 @@ def cach_vao_ma(k, bien_the):
     return f"↳ vào: {x} · mở cửa > {_f(den)} → bỏ"
 
 
+def canh_bao_nganh(ma, dang_giu):
+    """' · ⚠ đã giữ 2 mã ngành X (…) – không mua thêm mã ngành này' khi danh mục đang giữ đủ QUY_TOI_DA_MOI_NGANH mã cùng
+    ngành với mã tín hiệu (ptcp/nganh.py); không có / ptcp cũ → ''. Chỉ dùng ở bản tin RIÊNG (có danh mục)."""
+    if not dang_giu or ma in dang_giu:
+        return ""
+    try:
+        from ptcp.loc_quy_b import nganh_cua
+    except ImportError:
+        return ""
+    toi_da, ng = _quy("QUY_TOI_DA_MOI_NGANH", 2), nganh_cua(ma)
+    cung = sorted(m for m in dang_giu if ng and nganh_cua(m) == ng)
+    if not toi_da or len(cung) < toi_da:
+        return ""
+    return f" · ⚠ đã giữ {len(cung)} mã ngành {ng} ({', '.join(cung)}) – không mua thêm (tối đa {toi_da}/ngành)"
+
+
 def dong_mua(k, dang_giu=(), bien_the=None):
     ut = k.get("uu_tien")
     sao = "★ " if ut == ut and ut is not None and ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else ""
@@ -282,6 +298,7 @@ def dong_mua(k, dang_giu=(), bien_the=None):
     vao = cach_vao_ma(k, bien_the)                      # giá LO / ATC / chờ 15' của riêng mã này
     return (f"{sao}{k['ma']}{manh} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}"
             f"{chu_von_lenh(k)} | {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else "")
+            + canh_bao_nganh(k["ma"], dang_giu)
             + (f"\n   {vao}" if vao else ""))
 
 
