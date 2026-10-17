@@ -115,10 +115,19 @@ def tu_vci(ma, tu, den, khung, chi_so=False):
     return df[df.time >= pd.Timestamp(tu, unit="s")]
 
 
+def _ma_yahoo(ma):
+    """Mã Yahoo: HOSE '.VN', HNX '.HN' (ptcp.san; ptcp cũ → '.VN')."""
+    try:
+        from ptcp.san import ma_yahoo
+        return ma_yahoo(ma)
+    except ImportError:
+        return f"{ma}.VN"
+
+
 def tu_yahoo(ma, tu, den, khung, chi_so=False):
     if chi_so or khung != "D":
         raise ValueError("chỉ hỗ trợ giá ngày cổ phiếu")
-    j = _get(f"https://query1.finance.yahoo.com/v8/finance/chart/{ma}.VN",
+    j = _get(f"https://query1.finance.yahoo.com/v8/finance/chart/{_ma_yahoo(ma)}",
              {"period1": tu, "period2": den, "interval": "1d"}, so_lan=2)
     r = (j.get("chart", {}).get("result") or [None])[0]
     if not r or not r.get("timestamp"):

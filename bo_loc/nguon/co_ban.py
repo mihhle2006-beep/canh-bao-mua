@@ -253,12 +253,21 @@ def lnst_4q_tu_bang_yahoo(df):
     return sum(v for _, v in ds), "+".join(k for k, _ in ds)
 
 
+def _ma_yahoo(ma):
+    """Mã Yahoo: HOSE '.VN', HNX '.HN' (ptcp.san; ptcp cũ → '.VN')."""
+    try:
+        from ptcp.san import ma_yahoo
+        return ma_yahoo(ma)
+    except ImportError:
+        return f"{ma}.VN"
+
+
 def tu_yahoo(ma):
     try:
         import yfinance as yf
     except ImportError:
         raise ValueError("chưa cài yfinance (pip install yfinance)")
-    t = yf.Ticker(f"{ma}.VN")
+    t = yf.Ticker(_ma_yahoo(ma))
     info = t.info or {}
     kq = doc_yahoo_info(info)
     cp = cp_luu_hanh_yahoo(t, info)
