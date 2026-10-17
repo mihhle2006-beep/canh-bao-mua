@@ -6,6 +6,7 @@
 # đã xoá 17/10/2026 – xem lịch sử git:
 #   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   von12 – tăng CAGR / không lỡ lệnh lớn: chẩn đoán lệnh ≥5R bị lỡ, suất dự phòng rộng, rủi ro mở, nạp thêm, đổi mã chậm
+#   von13 – dùng hết ngân sách sụt giảm −15%: rủi ro/lệnh 0,85–1%, nhồi × 1,5, trần mã 25–30%, tổ hợp
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -21,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von12 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von12 / von13 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von12]
+        phan: [chuan, von12, von13]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -115,6 +116,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von13) export CHI_VON13=1 ;;                       # dùng hết ngân sách sụt giảm −15% (rủi ro, nhồi, trần mã)
             von12) export CHI_VON12=1 ;;                       # tăng CAGR / không lỡ lệnh lớn (đổi mã chậm, nạp thêm…)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
