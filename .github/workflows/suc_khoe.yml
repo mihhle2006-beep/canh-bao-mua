@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   kiem:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     defaults:
       run:
@@ -25,6 +25,16 @@ jobs:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           path: gia_lap
+
+      - uses: actions/checkout@v5                 # bản đồ ngành + rổ top GTGD → nhắc mã chưa có ngành
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: danh-muc
+          sparse-checkout: |
+            ptcp/nganh.py
+            ptcp/loc_quy_b.json
+          sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v6
         with:
@@ -40,6 +50,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           BO_LOC_TOKEN: ${{ secrets.BO_LOC_TOKEN }}
           SUC_KHOE_TOKEN: ${{ secrets.SUC_KHOE_TOKEN }}     # tuỳ chọn: fine-grained, Actions: Read repo Bo_Loc
+          DANH_MUC_DIR: ${{ github.workspace }}/danh-muc
         run: |
           ma=0; python suc_khoe.py > /tmp/suc_khoe.txt 2>&1 || ma=$?
           echo "Sức khoẻ: mã thoát $ma"; exit $ma
