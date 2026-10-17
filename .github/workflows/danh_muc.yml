@@ -7,6 +7,8 @@
 #   Secret cần: DANH_MUC_TOKEN_GHI; tuỳ chọn TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC (trống → bot chung),
 #   TONG_VON_CHINH / TONG_VON_PTDTTC (triệu đồng, chỉ khi đổi tổng tài sản), VNSTOCK_API_KEY. Giữ tiền mặt & cách chia
 #   vốn theo luật Quỹ B trong code (không còn tham số GIU_TIEN_MAT / CHON).
+#   Nhập lệnh: ghi dòng ngắn vào nhap.txt / nhap_ptdttc.txt ở repo danh-muc (VD "20/10 HPG 1000") → lần chạy kế tiếp
+#   tự áp vào danh_muc.csv / da_ban.csv.
 name: Danh muc hang ngay
 
 on:
@@ -122,7 +124,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           for f in danh_muc.csv danh_muc_cu.csv danh_muc_ptdttc.csv trang_thai_ptdttc.json lich_su_ptdttc.csv \
                    tien_mat_chinh.json tien_mat_ptdttc.json trang_thai_vi_the.json gia_tham_chieu_quyen.json \
-                   lich_su_danh_muc.csv cache_du_lieu; do
+                   lich_su_danh_muc.csv nhap.txt nhap_ptdttc.txt da_ban.csv da_ban_ptdttc.csv cache_du_lieu; do
             if [ -e "$f" ]; then git add -f "$f"; fi
           done
           if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
