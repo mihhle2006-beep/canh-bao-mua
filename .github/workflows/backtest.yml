@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
     inputs:
       ro:
-        description: "chien_luoc = 41 mã (đủ phần) · rong = ~400 mã (chỉ cách vào 15')"
+        description: "chien_luoc = 41 mã (đủ phần) · rong = ~400 mã · tat_ca = toàn sàn HOSE + HNX (chỉ cách vào 15')"
         default: chien_luoc
         type: choice
-        options: [chien_luoc, rong]
+        options: [chien_luoc, rong, tat_ca]
 
 permissions:
   contents: write
