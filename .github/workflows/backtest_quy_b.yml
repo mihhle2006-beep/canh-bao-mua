@@ -2,10 +2,10 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # BACKTEST QUỸ B – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
-# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von16, rổ hose riêng)
+# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von17, rổ hose riêng)
 # đã xoá 17/10/2026 – xem lịch sử git:
 #   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
-#   von17 – hệ thứ hai C (mua quá bán ngắn hạn trong xu hướng tăng) chạy chung quỹ với hệ B
+#   von18 – ★ chấm theo tuần / tháng / 1 năm / toàn lịch sử (điểm tuyệt đối) + ngưỡng ★, giữ suất cho tín hiệu mạnh
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -21,7 +21,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von17 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von18 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von17]
+        phan: [chuan, von18]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -115,7 +115,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
-            von17) export CHI_VON17=1 ;;                       # hệ thứ hai C (quá bán ngắn hạn) chung quỹ với B
+            von18) export CHI_VON18=1 ;;                       # ★ theo tuần / tháng / lịch sử + ngưỡng ★
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
