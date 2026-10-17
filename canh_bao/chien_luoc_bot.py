@@ -13,13 +13,11 @@ BẢN TIN CHIẾN LƯỢC CL1 / CL2 cho bot (dùng ptcp/chien_luoc.py + ptcp/he_
   Đổi CL so với lần chạy trước (trang_thai_chien_luoc.json) → gửi thêm tin 🔔 ĐỔI CHIẾN LƯỢC.
 """
 import json
-import os
 
 import numpy as np
 import pandas as pd
 
 from . import cau_hinh as C
-
 
 
 def ro_do_rong():
@@ -225,98 +223,3 @@ def tin_doi(ra, cl_cu):
         "(Tham khảo – tự kiểm tra trước khi đặt lệnh)"])
 
 
-def _r(x):
-    return "–" if x is None or x != x else f"{x:+.1f}R".replace(".", ",")
-
-
-def _dong_nhom(nhom, r):
-    """2 dòng / mã: vùng mua + cắt lỗ, rồi điều kiện vô hiệu."""
-    tp = f" [{r['Thành phần']}]" if r["Thành phần"] != "A0" else ""
-    g, cl, rr = r["Giá đóng cửa"], r["Cắt lỗ"], r["Rủi ro %"]
-    tu, den = r.get("Vùng mua từ", np.nan), r.get("Vùng mua đến", np.nan)
-    if tu != tu:                                           # ptcp cũ: chỉ có Mua tối đa / Chờ giá
-        tu, den = (np.nan, r.get("Mua tối đa")) if nhom != "CHO" else (np.nan, r.get("Chờ giá"))
-    vung = f"{_f(tu)}–{_f(den)}" if tu == tu else f"≤ {_f(den)}"
-    lai = f" · HT {_r(r['Lãi HT (R)'])}" if nhom != "MUA_MOI" else ""
-    if nhom in ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA"):
-        return [f"  • {r['Mã']}{tp} {_f(g)} → MUA {vung} | CL {_f(cl)} (−{_f(rr, 1)}%){lai}",
-                f"     ✘ bỏ nếu mở cửa > {_f(den)} hoặc giá rơi < {_f(tu)} trước khi mua" if tu == tu else
-                f"     ✘ bỏ nếu mở cửa > {_f(den)}"]
-    if nhom == "CHO" and den != den:                       # Quỹ B: cắt lỗ HT > giá vào + ½R → hết vùng vào trễ
-        return [f"  • {r['Mã']}{tp} {_f(g)} → chờ tín hiệu MACD mới (hết vùng vào trễ) | CL {_f(cl)}{lai}"]
-    if nhom == "CHO":
-        return [f"  • {r['Mã']}{tp} {_f(g)} → chờ về {vung} | CL {_f(cl)}{lai}",
-                f"     ✘ bỏ nếu đóng cửa < {_f(cl)}"]
-    return [f"  • {r['Mã']}{tp} {_f(g)}{lai}"]
-
-
-def ban_tin(ra, bay_gio):
-    """Tin chữ bản tin chiến lược (công khai): thị trường → CL đang áp dụng → hành động phiên tới theo nhóm."""
-    d, w, n_max = ra["doc"], ra["ty_trong"], C.SO_MA_TRONG_TIN
-    n = d["so_chi_bao"]
-    phan = " · ".join(f"{ten} {w[k] * 100:.0f}%" for k, ten in (("A0", "A0"), ("B", "B"), ("TIEN", "tiền nhàn rỗi"), ("VNI", "VN-Index"))
-                      if w.get(k, 0) > 0)
-    dong = [f"📈 CHIẾN LƯỢC THEO THỊ TRƯỜNG – {pd.Timestamp(bay_gio):%d/%m/%Y}",
-            f"Dữ liệu phiên {d['ngay']:%d/%m} · VN-Index {_f(ra['vni'])}", "",
-            f"① Thị trường: {d['diem']}/{n} điểm {'█' * d['diem']}{'░' * (n - d['diem'])}"]
-    for _, r in d["bang"].iterrows():
-        dong.append(f"  {'✔' if r['Đạt'] else '✘'} {r['Chỉ báo']}" + (f" – {r['Chi tiết']}" if r["Chi tiết"] else ""))
-    dong += ["", f"② Đang áp dụng: {ra['ten_cl'][ra['cl']]}", f"Chia vốn: {phan}",
-             f"Điều kiện đổi: {d['dieu_kien_doi']}", ""]
-    hd = ra.get("hanh_dong")
-    if hd is None:                                         # ptcp cũ: dùng danh sách thô
-        return _ban_tin_tho(ra, bay_gio, dong)
-    from ptcp.chien_luoc import NHOM_HANH_DONG
-    hl = (pd.Timestamp(d["ngay"]) + pd.offsets.BDay(1)) if d.get("ngay") is not None else None
-    dong.append(f"③ Hành động phiên {hl:%d/%m} (cho người CHƯA mua):" if hl is not None else
-                "③ Hành động phiên tới (cho người CHƯA mua):")
-    if not len(hd):
-        dong.append("  Không có mã nào để mua / theo dõi.")
-    for nhom, (bieu, mo_ta) in NHOM_HANH_DONG.items():
-        x = hd[hd["Nhóm"] == nhom] if len(hd) else hd
-        if not len(x):
-            continue
-        dong.append(f"{bieu} {mo_ta.split(' – ')[0]} ({len(x)}) – {mo_ta.split(' – ', 1)[1]}"
-                    if " – " in mo_ta else f"{bieu} {mo_ta} ({len(x)})")
-        if nhom in ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA") and hl is not None:
-            dong.append(f"  (chỉ áp dụng phiên {hl:%d/%m} – sau đó xem bản tin mới)")
-        for _, r in x.head(n_max).iterrows():
-            dong += _dong_nhom(nhom, r)
-        if len(x) > n_max:
-            dong.append(f"  … và {len(x) - n_max} mã khác")
-    dong += ["", f"Khối lượng = {getattr(C, 'RUI_RO_MOI_LENH_PCT', 0.75):g}% vốn ÷ (giá mua − cắt lỗ). Đặt lệnh trong "
-                 "vùng MUA, ngoài vùng thì bỏ.",
-             "Đã mua → ghi gia_von, cat_lo_goc (= CL), ngay_mua vào danh mục để bot báo dời cắt lỗ / bán."]
-    for k in ("A0", "B"):
-        b = ra["diem_mua"].get(k)
-        if w.get(k, 0) <= 0 and b is not None and len(b):
-            mua = b[b["Trạng thái"].astype(str).str.startswith("MUA")]["Mã"].tolist()
-            if mua:
-                dong.append(f"({k} có tỷ trọng 0% ở CL hiện tại – tín hiệu {k} chỉ tham khảo: {', '.join(mua)})")
-    if ra["thieu"]:
-        dong.append(f"Thiếu dữ liệu: {', '.join(ra['thieu'][:10])}")
-    dong.append(f"(HT = hệ thống mô phỏng trên {ra['so_ma']} mã, không phải danh mục thật. Tham khảo.)")
-    return "\n".join(dong)
-
-
-def _ban_tin_tho(ra, bay_gio, dong):
-    """Dự phòng khi ptcp chưa có hanh_dong(): mua / bán / đang giữ của hệ thống."""
-    n_max = C.SO_MA_TRONG_TIN
-    mua, giu, ban = [], [], []
-    for tp, b in ra["diem_mua"].items():
-        if not ra["ty_trong"].get(tp) or b is None or not len(b):
-            continue
-        for _, r in b.iterrows():
-            tt = str(r["Trạng thái"])
-            if tt.startswith("MUA"):
-                mua.append(f"  • {r['Mã']} {_f(r['Giá đóng cửa'])} [{tp}] | CL {_f(r.get('Cắt lỗ dự kiến'))}")
-            elif "BÁN phiên tới" in tt:
-                ban.append(f"  • {r['Mã']} {_f(r['Giá đóng cửa'])} [{tp}]")
-            elif tt.startswith("ĐANG GIỮ"):
-                giu.append(f"  • {r['Mã']} {_f(r['Giá đóng cửa'])} [{tp}] tầng {int(r.get('Tầng', 0))} | "
-                           f"CL {_f(r.get('Cắt lỗ phiên tới'))}")
-    for tieu_de, ds in (("🟢 MUA PHIÊN TỚI:", mua), ("🔻 BÁN PHIÊN TỚI:", ban), ("💼 HỆ THỐNG ĐANG GIỮ:", giu)):
-        if ds:
-            dong += [tieu_de] + sorted(ds)[:n_max]
-    dong.append(f"(Mô phỏng hệ thống trên {ra['so_ma']} mã – KHÔNG phải danh mục thật. Tham khảo.)")
-    return "\n".join(dong)

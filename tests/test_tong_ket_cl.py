@@ -291,7 +291,6 @@ def test_cach_vao_uu_tien_bang_top_gtgd(monkeypatch):
                   "top_gtgd": {"top": 100, "tot_nhat": "LO", "bang": [{"Biến thể": "LO", "TB/lệnh khớp %": -2.37,
                                                                          "Khớp %": 62.5}]}}}
     assert tong_ket_cl.cach_vao(kq) == ("LO", "tốt nhất theo backtest top 100 GTGD")
-    assert "LO – tốt nhất theo backtest top 100 GTGD (backtest -2.37%/lệnh, khớp 62%)" in tong_ket_cl._dong_cach_vao(kq)
     assert tong_ket_cl.cach_vao({"15p": {"tot_nhat": "VWAP"}})[0] == "VWAP"
 
 

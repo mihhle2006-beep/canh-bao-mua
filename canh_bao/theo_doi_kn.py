@@ -15,7 +15,6 @@ Trạng thái báo (mức cắt lỗ đã báo, lệnh đóng đã báo) lưu th
 """
 import json
 
-import numpy as np
 import pandas as pd
 
 from . import cau_hinh as C

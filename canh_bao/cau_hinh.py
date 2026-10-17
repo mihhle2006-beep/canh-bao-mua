@@ -24,31 +24,13 @@ NGAY_BAT_DAU = "2019-01-01"        # dữ liệu ngày TỐI THIỂU từ 2019 (
 # --- Chỉ báo ---
 MACD_NHANH, MACD_CHAM, MACD_TIN_HIEU = 12, 26, 9
 SUPERTREND = (10, 3.5)             # (chu kỳ ATR, hệ số) – như bộ lọc
-BO_QUA_DAU = 30                    # bỏ N nến đầu khi tìm đỉnh/đáy (MACD chưa ổn định)
-N_XAC_NHAN = 5                     # đỉnh/đáy của đoạn MACD đang chạy cần ≥ 5 nến chưa bị phá mới xác nhận
 
-# --- KHUNG TUẦN (bắt buộc) ---
-TUAN_MACD_TREN_0_LA_BAT_BUOC = False   # True: đòi thêm MACD tuần > 0 (chặt hơn)
 
-# --- KHUNG NGÀY – bắt buộc (chiến lược ky_thuat của bộ lọc) ---
-GTGD_MIN = 5.0                     # tỷ đồng/phiên – GTGD TB20
-KLGD_MIN = 100_000                 # CP/phiên – KLGD TB20
-RSI_NGAY = (45, 75)                # khoẻ nhưng chưa quá mua
-# --- KHUNG NGÀY – cộng điểm ---
-ADX_MIN = 20
 VOL_DOT_BIEN = 1.5                 # KL phiên ≥ 1.5× TB20
-GAN_DINH52 = 15.0                  # cách đỉnh 52 tuần ≤ 15%
-DIEM_CONG_TOI_THIEU = 3            # cần ≥ 3 điểm cộng (trên 9) để coi khung ngày "đạt"
 
-# --- KHUNG GIỜ ---
-SO_NEN_GIO_GAN = 10                # MACD giờ cắt lên trong 10 nến gần nhất / phá đỉnh 10 nến
 
 # --- KHUNG PHÚT (điểm vào) ---
 KHUNG_PHUT = "15"                  # "5" | "15" | "30" – nến phút dùng làm điểm vào
-SO_NEN_PHUT_GAN = 3                # tín hiệu phải xảy ra trong 3 nến phút gần nhất
-DINH_PHUT_N = 20                   # phá đỉnh 20 nến phút ...
-VOL_PHUT_DOT_BIEN = 1.5            # ... kèm KL nến ≥ 1.5× TB20 nến
-RSI_PHUT_MAX = 75                  # không mua đuổi khi RSI phút quá cao
 
 # --- Cắt lỗ / mục tiêu / R/R (cắt lỗ thống nhất như ptcp) ---
 BUFFER_ATR, STOP_ATR_MAX, STOP_ATR_MIN, LO_CUNG_PCT = 0.5, 2.0, 1.5, 7.0
@@ -56,8 +38,6 @@ UPSIDE_TOI_THIEU = 3.0             # % – mục tiêu phải cao hơn giá ít 
 SO_PHIEN_XAC_SUAT = 63             # kỳ hạn (phiên) tính XS chạm mục tiêu / cắt lỗ khi không có ptcp
 RR_TOI_THIEU = 2.0                 # R/R tối thiểu để phát "MUA NGAY" (= ngưỡng của ptcp)
 
-# --- Thị trường chung ---
-CHAN_KHI_THI_TRUONG_XAU = False    # True: VN-Index xấu → KHÔNG phát MUA NGAY (False: vẫn báo, kèm cảnh báo)
 
 # --- Phiên giao dịch (giờ Việt Nam) ---
 PHIEN = [("09:00", "11:30"), ("13:00", "14:45")]
@@ -70,13 +50,7 @@ BAO_LAI_TRONG_NGAY = False         # False: chỉ báo khi mã CHUYỂN sang MUA
 FILE_TRANG_THAI = "trang_thai_canh_bao.json"
 THU_MUC_CACHE = "cache_gia"
 
-# --- Phân tích NGÀY bằng bộ ptcp (chạy 1 lần/ngày/mã, có cache) ---
-DUNG_PTCP = True                   # True: lấy cắt lỗ/mục tiêu/EV/sự kiện từ ptcp; False: chỉ dùng tiêu chí 4 khung
 EV_NGUONG = 1.0                    # % – EV sau phí (ptcp) tối thiểu để phát MUA NGAY (= ngưỡng ptcp)
-YEU_CAU_PTCP_MUA = False           # True: CHỈ báo khi khuyến nghị cuối của ptcp là MUA / MUA TỪNG PHẦN (chặt nhất)
-SU_KIEN = {                        # ngày công bố KQKD / GDKHQ đã biết → ptcp chặn mua trong 5 phiên trước sự kiện
-    # "MWG": {"ngay_kqkd": "20/10/2026", "ngay_gdkhq": "05/11/2026"},
-}
 
 # --- Nhật ký & chấm điểm tín hiệu (canh_bao/nhat_ky.py) ---
 GHI_NHAT_KY = True                 # ghi mọi tín hiệu (MUA NGAY, khuyến nghị ptcp, cảnh báo bán) & tự chấm ĐÚNG/SAI
@@ -93,17 +67,12 @@ DUNG_HE_THOAT = True               # False: quay về cách cũ (cắt lỗ / m�
 NGUONG_KHUNG_TUAN_R = 2.0          # lãi (theo R) chuyển khung tuần – PHẢI = ptcp QUY_NGUONG_TUAN (test kiểm tra; trước 10/2026: 3)
 DOI_CAT_LO_TOI_THIEU_PCT = 0.5     # chỉ nhắc "DỜI CẮT LỖ" khi mức hệ thống cao hơn mức đã đặt ≥ 0,5%
 
-# --- BẢN TIN CHIẾN LƯỢC CL1 / CL2 (canh_bao/chien_luoc_bot.py – dùng ptcp/chien_luoc.py & he_thoat.py) ---
-#   Điểm thị trường 8 chỉ báo (cuối tháng): ≥ 5 → CL2 (A0 70% + VN-Index 30%), ≤ 2 → CL1 (A0 50% + B 50%), 3–4 giữ.
-#   A0 = vào MACD ngày KHÔNG lọc tuần; B = vào MACD ngày lọc tuần + nhồi lệnh; cả hai thoát theo hệ thoát mới.
-DUNG_CHIEN_LUOC = True             # gửi bản tin chiến lược sau tin tổng kết 15:20 (tin CÔNG KHAI – không dùng danh mục)
 # 41 mã đã backtest – dùng cho backtest (backtest_bot.py) & dự phòng độ rộng thị trường; cảnh báo quét MA_THEO_DOI + Bo_Loc.
 MA_CHIEN_LUOC = ["ANV", "BID", "BSR", "CEO", "CSV", "DBC", "DGC", "DGW", "DHC", "DIG", "FPT", "GAS", "GMD", "GVR",
                  "HAG", "HAH", "HCM", "HPG", "HSG", "HVN", "KDH", "LPB", "MBB", "MSB", "MSN", "MWG", "NAB", "NKG",
                  "NVL", "PLX", "PNJ", "POW", "PVD", "PVS", "SSI", "TCB", "VCB", "VHM", "VJC", "VNM", "VPB"]
 NGAY_BAT_DAU_CL = NGAY_BAT_DAU     # dữ liệu cho bản tin (≥ 1 năm để có MA200 & độ rộng thị trường)
 FILE_TRANG_THAI_CL = "trang_thai_chien_luoc.json"   # CL đang áp dụng (để báo khi ĐỔI) – không chứa dữ liệu riêng
-SO_MA_TRONG_TIN = 12               # số dòng tối đa mỗi mục (mua phiên tới / đang giữ) trong bản tin
 
 # --- TỔNG KẾT GỌN + FILE EXCEL (canh_bao/tong_ket_cl.py, bao_cao_excel.py) ---
 #   Tin 15:20 chỉ còn: thị trường & CL · 🟢/✅/🟡 mua (mã | vùng | mục tiêu 1R→3R | cắt lỗ | đạt điểm mua) ·
@@ -141,9 +110,6 @@ KL_THEO_BIEN_DONG = False         # TẮT theo yêu cầu – KL = 1% vốn ÷ (
 ATR_MUC_TIEU_PCT = 3.5             # % / ngày; 2,5 = an toàn hơn (sụt giảm ~−15%, lãi ~8,9%/năm)
 RUI_RO_MOI_LENH_PCT = 0.75         # % vốn chấp nhận mất nếu chạm cắt lỗ – QUỸ B 10/2026 (trước: 1%)
 SO_MA_MOI_TUAN = 4                 # ★ đánh dấu bấy nhiêu mã ưu tiên trong tin (= QUY_MOI_TUAN_TOI_DA của ptcp)
-LUAT_QUY = ("QUỸ B: tối đa 8 mã · ≤ 15% vốn/mã · tổng rủi ro mở ≤ 4% · tối đa 4 mã MỚI/tuần · bỏ mã RS 3T quá "
-            "nóng · ✅ vào trễ chỉ mã đã bỏ vì hết suất, giá ≤ giá vào hệ thống + ½R · "
-            "rủi ro/lệnh × hệ số nhiệt thị trường × hệ số sụt của danh mục · biến động mạnh thì mua nhỏ lại")
 VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền để tin ghi luôn số CP; None = chỉ ghi công thức
 
 # --- MÃ TỪ BỘ LỌC (canh_bao/ma_bo_loc.py) ---

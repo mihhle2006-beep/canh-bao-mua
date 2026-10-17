@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from canh_bao import cau_hinh as C  # noqa: E402
 from canh_bao import nhat_ky as N  # noqa: E402
 
 
@@ -95,8 +94,3 @@ def test_ghi_cap_nhat_thong_ke_va_rieng_tu():
     assert os.path.exists(N.xuat_excel(rieng=True))
 
 
-def test_nhap_lich_su_cu():
-    pd.DataFrame([{"thoi_diem": "2026-09-01 10:30", "ma": "MWG", "gia": 60, "cat_lo": 57, "muc_tieu": 66, "rr": 2,
-                   "kich_hoat": "x"}]).to_csv("lich_su_tin_hieu.csv", index=False)
-    assert N.nhap_lich_su_cu() == 1
-    assert N.nhap_lich_su_cu() == 0                                   # chỉ nhập lần đầu

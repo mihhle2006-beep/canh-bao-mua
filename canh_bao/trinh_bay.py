@@ -35,7 +35,6 @@ _NHAN_DAM = ("Kích hoạt:", "Thị trường:", "Sự kiện:", "Xác suất l
 _NHOM_DAM = ("🟢 ", "✅ ", "🟡 ", "⏳ ", "🔻 ", "💼 ", "⏰ ", "🚫 ")   # tiêu đề nhóm: đậm phần trước ' – '
 
 
-
 _RE_MA_DONG = re.compile(r"^([A-Z][A-Z0-9]{2})(?= \| | \d)")
 
 
@@ -177,16 +176,3 @@ def ve_bang_tong_ket(dong, tieu_de):
         return None
 
 
-def dong_bang_tong_ket(kq):
-    """1 dòng của bảng tổng kết từ kết quả phan_tich_ma."""
-    ky = {True: "✔", False: "✘", None: "–"}
-    g = kq.get("gia")
-    mt, cl = kq.get("muc_tieu"), kq.get("cat_lo")
-    pt = kq.get("ptcp") or {}
-    r = {"Mã": kq["ma"], "Giá": _so(g), "Trạng thái": kq.get("trang_thai", "")}
-    for k in kq.get("khung", []):
-        r[k["khung"]] = ky[k["dat"]]
-    r.update({"Mục tiêu": f"{_so(mt)} ({(mt / g - 1) * 100:+.1f}%)" if mt and mt == mt and g else "–",
-              "Cắt lỗ": f"{_so(cl)} ({(cl / g - 1) * 100:+.1f}%)" if cl and cl == cl and g else "–",
-              "R/R": _so(kq.get("rr"), 1), "ptcp": pt.get("khuyen_nghi", "–")})
-    return r

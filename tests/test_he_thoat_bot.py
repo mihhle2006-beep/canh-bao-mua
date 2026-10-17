@@ -122,7 +122,7 @@ def _tai(ma, tu, chi_so=False):
 DS = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF"]
 
 
-def test_chay_chien_luoc_va_ban_tin(tmp_path, monkeypatch):
+def test_chay_chien_luoc(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(C, "NGAY_BAT_DAU_CL", "2021-01-01")
     ra, loi = chien_luoc_bot.chay_chien_luoc(_tai, BAY_GIO, ds_ma=DS)
@@ -131,16 +131,9 @@ def test_chay_chien_luoc_va_ban_tin(tmp_path, monkeypatch):
     pb = ra["phan_bo"]
     if len(pb):
         assert pb["Tỷ trọng mục tiêu % vốn"].sum() == pytest.approx(100)
-    tin = chien_luoc_bot.ban_tin(ra, BAY_GIO)
-    for chu in ("CHIẾN LƯỢC THEO THỊ TRƯỜNG", "① Thị trường:", "② Đang áp dụng: QUỸ B", "Chia vốn:", "Điều kiện đổi:",
-                "③ Hành động phiên", "không phải danh mục thật"):
-        assert chu in tin
-    so_bo = tin.count("✘ bỏ nếu")
-    assert tin.count("✔") + tin.count("✘") - so_bo == ra["doc"]["so_chi_bao"]
     hd = ra["hanh_dong"]
     for _, r in hd[hd["Nhóm"].isin(["MUA_MOI", "VAO_NHU_MOI", "VAO_NUA"])].iterrows():
         assert r["Cắt lỗ"] < r["Vùng mua từ"] <= r["Vùng mua đến"]
-        assert f"MUA {chien_luoc_bot._f(r['Vùng mua từ'])}–{chien_luoc_bot._f(r['Vùng mua đến'])}" in tin
 
 
 def test_thieu_du_lieu_va_dung_lai_du_lieu_san(monkeypatch):
