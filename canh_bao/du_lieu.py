@@ -9,7 +9,6 @@ import json
 import os
 import re
 import time
-from datetime import date
 
 import pandas as pd
 import requests
@@ -302,10 +301,6 @@ def hom_nay_co_giao_dich(df_ngay, bay_gio=None):
     """Ngày lễ / nghỉ: không có nến ngày của hôm nay (trong phiên các nguồn đã có nến ngày đang chạy)."""
     bay_gio = pd.Timestamp(bay_gio) if bay_gio is not None else gio_viet_nam()
     return df_ngay is not None and len(df_ngay) and df_ngay.index[-1].normalize() == bay_gio.normalize()
-
-
-def ngay_hom_nay():
-    return date.today()
 
 
 def quy_thang_cu(cu, moi, nguong=0.03):

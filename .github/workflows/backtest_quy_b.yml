@@ -1,14 +1,9 @@
 # CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
-# BACKTEST QUỸ B – đúng luật QUY_* (chay_backtest_quy_b.py). Chỉ giữ các phần còn dùng (17/10/2026 bỏ các phần thử
-# nghiệm đã xong: gop, thoat, dinh_gia, ket_hop, bo_lo, song, sao, von, loc, von2, tang, vni, vni2, vni3, canslim –
-# code vẫn còn trong danh-muc, thêm lại vào matrix khi cần):
+# BACKTEST QUỸ B – đúng luật QUY_* (chay_backtest_quy_b.py). Các phần thử nghiệm đã có kết luận đã xoá (10/2026,
+# xem lịch sử git):
 #   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
-#   sieu  – suất riêng cho siêu cổ phiếu (+1/+2, đối chứng mọi tín hiệu & ngẫu nhiên)
-#   thang – tăng tỷ lệ thắng: 15 hệ thoát / cách vào + 6 lọc tín hiệu, đối chứng bỏ ngẫu nhiên
-#   ytuong – ý tưởng từ nghiên cứu / bot khác (MAX, đảo chiều 1 tháng, frog, VCP, tương quan, vượt đỉnh 55)
-#   nong1t – kiểm tra độ chắc lọc bỏ mã tăng nóng (lưới 10–30 phiên × top 5–15%, đếm lệnh lớn bị bỏ)
 #   von3  – tăng CAGR bằng vốn: rủi ro/lệnh, rủi ro mở, số mã, trần/mã, mã mới/tuần, nhồi 3 lần, tổ hợp
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
@@ -25,7 +20,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / sieu / thang / ytuong / nong1t / von3 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von3 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -48,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, sieu, thang, ytuong, nong1t, von3]
+        phan: [chuan, von3]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -106,10 +101,6 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
-            sieu) export CHI_SIEU=1 ;;                         # suất riêng cho siêu cổ phiếu (+1/+2, NN đối chứng)
-            thang) export CHI_THANG=1 ;;                       # tăng tỷ lệ thắng: 21 phiên bản thoát / vào / lọc
-            ytuong) export CHI_YTUONG=1 ;;                     # ý tưởng từ nghiên cứu: MAX, đảo chiều, VCP, tương quan, đỉnh 55
-            nong1t) export CHI_NONG=1 ;;                       # độ chắc lọc bỏ mã tăng nóng: lưới phiên × top %, lệnh lớn
             von3) export CHI_VON3=1 ;;                         # tăng CAGR bằng vốn: rủi ro, số mã, trần, nhồi
           esac
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" --song \

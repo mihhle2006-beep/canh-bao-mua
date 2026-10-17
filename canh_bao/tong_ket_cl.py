@@ -459,25 +459,6 @@ def cach_vao(kq_bt=None):
     return MAC_DINH, "mặc định – chưa backtest 15'"
 
 
-def _dong_cach_vao(kq_bt):
-    try:
-        bt, nguon = cach_vao(kq_bt)
-    except ImportError:
-        return ""
-    s = f"Điểm vào 15' phiên tới: {bt} – {nguon}"
-    b15 = (kq_bt or {}).get("15p") or {}
-    bang = (b15.get("top_gtgd") or {}).get("bang") if "top" in nguon else b15.get("bang")
-    hang = next((h for h in bang or [] if h.get("Biến thể") == bt), None)
-    if hang:
-        s += f" (backtest {hang['TB/lệnh khớp %']:+.2f}%/lệnh, khớp {hang['Khớp %']:.0f}%)"
-    if bt.startswith("LO"):
-        s += (". Đặt LO trước giờ mở cửa ở giá 'đặt LO' từng mã (⅓ dưới vùng); không chạm → "
-              + ({"": "ATC (chỉ mã ★) nếu đóng cửa còn trong vùng; mã không ★ chỉ mua khi khớp LO", "_VWAP": "ATC chỉ khi giá ≥ VWAP phiên",
-                  "_XANH": "ATC chỉ khi giá ≥ giá mở cửa", "_TREN": "ATC chỉ khi giá ở nửa trên biên độ phiên"}
-                 .get(bt.partition("+ATC")[2], "ATC") if "+ATC" in bt else "không mua"))
-    return s
-
-
 def doc_ket_qua_backtest(path=None):
     try:
         with open(path or C.FILE_BACKTEST, encoding="utf-8") as f:

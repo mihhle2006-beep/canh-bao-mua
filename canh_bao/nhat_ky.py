@@ -82,17 +82,6 @@ def ghi_ban(kq, kb, bay_gio):
                           "nhom": "BÁN", "san": "HOSE", "gia": _so(kq["gia"]), "ky_han": C.KY_HAN_BAN}, FILE_RIENG)
 
 
-def nhap_lich_su_cu(path_cu="lich_su_tin_hieu.csv"):
-    """Lần đầu: chép các tin MUA NGAY đã gửi (lich_su_tin_hieu.csv) sang nhật ký để chấm luôn."""
-    if not os.path.exists(path_cu) or os.path.exists(FILE_CONG_KHAI):
-        return 0
-    n = 0
-    for _, r in pd.read_csv(path_cu, encoding="utf-8").iterrows():
-        n += ghi_mua_ngay({"ma": r["ma"], "gia": r["gia"], "cat_lo": r["cat_lo"], "muc_tieu": r["muc_tieu"],
-                           "rr": r.get("rr")}, r["thoi_diem"])
-    return n
-
-
 def cap_nhat(tai_gia, du_lieu_san=None, paths=(FILE_CONG_KHAI, FILE_RIENG)):
     """Chấm lại mọi dòng chưa có kết luận. Trả số dòng vừa có kết luận."""
     return _nk.cap_nhat(tai_gia, du_lieu_san, list(paths))

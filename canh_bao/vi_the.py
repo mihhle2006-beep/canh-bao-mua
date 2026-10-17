@@ -37,14 +37,12 @@ import requests
 from . import cau_hinh as C
 from .chi_bao import supertrend
 
-MUC = ["CAT_LO", "BAN_TUAN", "HET_HAN", "CHOT_LOI", "CAN_NHAC_BAN", "GAN_CAT_LO", "DOI_CAT_LO", "GIU"]
 NHAN = {"CAT_LO": "🔴 CẮT LỖ", "BAN_TUAN": "🔴 BÁN – GÃY XU HƯỚNG TUẦN", "HET_HAN": "🟠 BÁN – LỆNH KHÔNG CHẠY",
         "CHOT_LOI": "🟢 CHỐT LỜI", "CAN_NHAC_BAN": "🟠 CÂN NHẮC BÁN", "GAN_CAT_LO": "🟠 SÁT CẮT LỖ",
         "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ"}
 TEN_TANG = {0: "tầng 0 (< 1R)", 1: "tầng 1 (≥ 1R – cắt lỗ động)",
             2: f"tầng tuần (≥ {C.NGUONG_KHUNG_TUAN_R:g}R – MA10 tuần)"}
 FILE_TRANG_THAI_BAN = os.path.join("cache_ptcp", "trang_thai_ban.json")
-FILE_TRANG_THAI_MUA_AN = os.path.join("cache_ptcp", "trang_thai_mua_ma_an.json")
 
 
 def _so(x):

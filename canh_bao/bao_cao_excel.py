@@ -15,7 +15,6 @@ FILE EXCEL CHI TIẾT gửi kèm tin tổng kết (tông xanh của ptcp).
 File có danh mục thật → chỉ gửi Telegram, không commit.
 """
 import json
-import os
 
 import numpy as np
 import pandas as pd

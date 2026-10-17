@@ -2,7 +2,6 @@
 """Kiểm thử không cần mạng: python -m pytest -q"""
 import os
 import sys
-from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -11,7 +10,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import chay  # noqa: E402
 from canh_bao import cau_hinh as C  # noqa: E402
-from canh_bao import danh_gia, du_lieu, thong_bao, tieu_chi  # noqa: E402
+from canh_bao import du_lieu, thong_bao  # noqa: E402
 
 BAY_GIO = pd.Timestamp("2026-10-02 10:50")          # thứ Sáu, trong phiên sáng
 PT_TOT = {"ngay_du_lieu": "2026-10-01", "khuyen_nghi": "MUA TỪNG PHẦN", "hanh_dong": "", "ev": 2.5,
@@ -101,57 +100,6 @@ def test_trong_phien():
     assert not du_lieu.trong_phien("2026-10-02 12:00") and not du_lieu.trong_phien("2026-10-03 10:00")
 
 
-# ------------------------------------------------------------------ tiêu chí từng khung
-def test_khung_tuan_va_ngay():
-    assert tieu_chi.khung_tuan(du_lieu.gop_tuan(ngay_tang(), BAY_GIO))["dat"]
-    assert not tieu_chi.khung_tuan(du_lieu.gop_tuan(ngay_giam(), BAY_GIO))["dat"]
-    kn = tieu_chi.khung_ngay(ngay_tang())
-    assert kn["dat"], kn["truot"]
-    assert not tieu_chi.khung_ngay(ngay_giam())["dat"]
-    ten = [m["ten"] for m in kn["muc"]]
-    assert any("SuperTrend" in t for t in ten) and any("GTGD" in t for t in ten)
-
-
-def test_khung_gio_phut(du_lieu_tot):
-    _, dh, dp, _ = du_lieu_tot
-    assert tieu_chi.khung_gio(dh)["dat"]
-    kp = tieu_chi.khung_phut(dp)
-    assert kp["dat"], kp["truot"]
-    assert "phá đỉnh" in kp["kich_hoat"] or "cắt lên" in kp["kich_hoat"]
-
-
-def test_muc_gia(du_lieu_tot):
-    kn = tieu_chi.khung_ngay(du_lieu_tot[0])
-    lo, mt, nguon, rr = tieu_chi.muc_gia(kn)
-    assert lo < kn["gia"] < mt and kn["gia"] - lo >= C.STOP_ATR_MIN * kn["atr"] - 1e-9 and rr > 0
-
-
-# ------------------------------------------------------------------ ghép trạng thái
-def test_mua_ngay_khi_du_4_khung(du_lieu_tot):
-    dn, dh, dp, vni = du_lieu_tot
-    tt = tieu_chi.thi_truong(vni, BAY_GIO)
-    with mock.patch.object(C, "RR_TOI_THIEU", 0.1):
-        kq = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, tt, BAY_GIO)
-        assert kq["trang_thai"] == "MUA NGAY", kq["ly_do"]
-        kq2 = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, tt, "2026-10-02 15:30")
-        assert kq2["trang_thai"] == "ĐẠT CUỐI PHIÊN"
-
-
-def test_tuan_phu_quyet():
-    dn = ngay_giam()
-    g = float(dn.close.iloc[-1])
-    kq = danh_gia.phan_tich_ma("BBB", dn, trong_ngay(60, 120, g), trong_ngay(15, 25, g), None,
-                               {"tot": None, "nhan": ""}, BAY_GIO)
-    assert kq["trang_thai"] == "ĐỨNG NGOÀI" and not kq["mua_ngay"]
-
-
-def test_rr_thap_khong_mua(du_lieu_tot):
-    dn, dh, dp, vni = du_lieu_tot
-    with mock.patch.object(C, "RR_TOI_THIEU", 99):
-        kq = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, {"tot": True, "nhan": ""}, BAY_GIO)
-    assert kq["trang_thai"].startswith("ĐỦ TÍN HIỆU – R/R")
-
-
 # ------------------------------------------------------------------ thông báo
 def test_chong_bao_trung():
     st = {}
@@ -160,61 +108,6 @@ def test_chong_bao_trung():
     assert not thong_bao.can_bao("AAA", False, "2026-10-02 10:30", st)
     assert thong_bao.can_bao("AAA", True, "2026-10-02 10:45", st)               # mất rồi đạt lại → báo
     assert thong_bao.can_bao("AAA", True, "2026-10-05 09:15", st)               # ngày mới → báo
-
-
-# ------------------------------------------------------------------ phần lấy từ bộ ptcp
-def test_cong_ptcp(du_lieu_tot):
-    dn, dh, dp, vni = du_lieu_tot
-    tt = {"tot": True, "nhan": ""}
-    with mock.patch.object(C, "RR_TOI_THIEU", 0.1):
-        g = float(dp.close.iloc[-1])
-        pt = dict(PT_TOT, cat_lo=g * 0.93, muc_tieu=g * 1.2, moc_muc_tieu="Đỉnh cũ", atr=g * 0.02)
-        kq = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, tt, BAY_GIO, pt)
-        assert kq["trang_thai"] == "MUA NGAY"
-        assert kq["cat_lo"] == pytest.approx(g * 0.93) and kq["muc_tieu"] == pytest.approx(g * 1.2)
-        assert "ptcp" in kq["nguon_mt"] and "ptcp (2026-10-01): MUA TỪNG PHẦN" in thong_bao.tin_mua_ngay(kq, BAY_GIO)
-        kq = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, tt, BAY_GIO, dict(pt, ev=-0.5))
-        assert kq["trang_thai"] == "ĐỦ TÍN HIỆU – EV THẤP"
-        kq = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, tt, BAY_GIO,
-                                   dict(pt, chan_su_kien=True, su_kien=["Công bố KQKD 06/10/2026 (còn 2 phiên)"]))
-        assert kq["trang_thai"] == "CHỜ SAU SỰ KIỆN"
-        with mock.patch.object(C, "YEU_CAU_PTCP_MUA", True):
-            kq = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, tt, BAY_GIO, dict(pt, khuyen_nghi="CHƯA MUA"))
-            assert kq["trang_thai"] == "ĐỦ TÍN HIỆU – ptcp CHƯA MUA"
-
-
-def test_ptcp_that_va_cache(tmp_path, monkeypatch):
-    """Chạy ĐÚNG ptcp.main trên dữ liệu CSV giả lập; lần 2 đọc cache."""
-    monkeypatch.chdir(tmp_path)
-    from canh_bao import ptcp_ngay
-    dn = ngay_tang()
-    dn.rename_axis("date").reset_index().to_csv("aaa.csv", index=False)
-    v = _ohlcv(dn.index, 1000 * np.exp(np.linspace(0, 0.3, len(dn))), kl=1e9)
-    v.rename_axis("date").reset_index().to_csv("vni.csv", index=False)
-    pt = ptcp_ngay.phan_tich_ngay("AAA", BAY_GIO, csv_ngay="aaa.csv", csv_vni="vni.csv", san="HOSE")
-    assert pt and pt["khuyen_nghi"] and pt["cat_lo"] < pt["gia"] and "ev" in pt
-    assert [k["ten"] for k in pt["kich_ban"]] == ["TÍCH CỰC", "CƠ SỞ", "TIÊU CỰC"]
-    assert sum(k["xs"] for k in pt["kich_ban"]) == pytest.approx(100, abs=1)
-    with mock.patch("ptcp.main", side_effect=AssertionError("không được gọi lại")):
-        assert ptcp_ngay.phan_tich_ngay("AAA", BAY_GIO) == pt
-
-
-def test_xac_suat_va_kich_ban(du_lieu_tot):
-    dn, dh, dp, vni = du_lieu_tot
-    g = float(dp.close.iloc[-1])
-    kb = [{"ten": "TÍCH CỰC", "gia": g * 1.15, "xs": 30.0, "phien": 20, "dieu_kien": "vượt đỉnh", "chi_tiet": []},
-          {"ten": "CƠ SỞ", "gia": g * 1.05, "xs": 25.0, "phien": 30, "dieu_kien": "",
-           "chi_tiet": ["đạt MT cơ sở 15%", "đi ngang 10%"]},
-          {"ten": "TIÊU CỰC", "gia": g * 0.9, "xs": 45.0, "phien": 10, "dieu_kien": "thủng cắt lỗ", "chi_tiet": []}]
-    pt = dict(PT_TOT, cat_lo=g * 0.93, muc_tieu=g * 1.2, moc_muc_tieu="Đỉnh cũ", atr=g * 0.02, kich_ban=kb)
-    with mock.patch.object(C, "RR_TOI_THIEU", 0.1):
-        kq = danh_gia.phan_tich_ma("AAA", dn, dh, dp, vni, {"tot": True, "nhan": ""}, BAY_GIO, pt)
-    x = kq["xac_suat"]
-    assert x and x["muc_tieu"] + x["cat_lo"] + x["ngang"] == pytest.approx(100)
-    tin = thong_bao.tin_mua_ngay(kq, BAY_GIO)
-    for chu in ("🎯 Mục tiêu", "Chạm MỤC TIÊU trước", "Chạm CẮT LỖ trước", "3 kịch bản", "🟢 TÍCH CỰC", "🔴 TIÊU CỰC"):
-        assert chu in tin
-    assert "Chạm MỤC TIÊU trước" in thong_bao.tin_tong_ket([kq], {"nhan": "VN-Index"}, BAY_GIO)
 
 
 def test_nguon_gia_tu_chuyen_va_ghi_nguon(monkeypatch, tmp_path):
@@ -358,38 +251,6 @@ def test_gui_html_loi_thi_gui_lai_chu_thuong(monkeypatch, tmp_path):
     goi.clear()
     assert thong_bao.gui("\n".join(f"dòng {i} " + "x" * 80 for i in range(20)), anh=str(anh))
     assert [g[0] for g in goi][-2:] == ["sendMessage", "sendMessage"] and len(goi[1][1]["caption"]) <= 1000
-
-
-def test_ptcp_rut_gon_co_vung_mua_va_backtest(tmp_path, monkeypatch):
-    """ptcp mới: JSON rút gọn có vùng mua + kết luận backtest, ghi được JSON, tin nhắn hiện đủ dòng."""
-    import json
-    import numpy as np
-    import pandas as pd_
-    import ptcp
-    from canh_bao import ptcp_ngay, thong_bao
-    rng = np.random.default_rng(3)
-    n = 1500
-    idx = pd_.bdate_range(end="2026-10-02", periods=n)
-
-    def gia(seed, g0, sig):
-        r = np.random.default_rng(seed).normal(0.0005, sig, n)
-        c = g0 * np.exp(np.cumsum(r))
-        return pd_.DataFrame({"date": idx, "open": c * np.exp(rng.normal(0, .005, n)), "close": c,
-                              "high": c * 1.012, "low": c * 0.988, "volume": 1e6}).assign(
-            high=lambda d: d[["open", "close", "high"]].max(axis=1), low=lambda d: d[["open", "close", "low"]].min(axis=1))
-    gia(3, 20, .02).to_csv(tmp_path / "m.csv", index=False)
-    gia(9, 1000, .01).to_csv(tmp_path / "v.csv", index=False)
-    monkeypatch.chdir(tmp_path)
-    ptcp.cau_hinh.GHI_NHAT_KY = False
-    k = ptcp.main(tuong_tac=False, im_lang=True, xuat_file=False, symbol="TEST", san="HOSE", nhom="-",
-                  csv_ngay=str(tmp_path / "m.csv"), csv_vni=str(tmp_path / "v.csv"))
-    pt = ptcp_ngay._rut_gon(k)
-    json.dumps(pt, ensure_ascii=False)
-    assert pt["backtest"] and pt["backtest"]["hanh_dong"]
-    dong = thong_bao.dong_ptcp(dict(pt, mua=False))
-    assert any(x.startswith("Backtest:") for x in dong)
-    if pt["vung_mua"]:
-        assert any(x.startswith("Vùng mua") for x in dong)
 
 
 # ---------------------------------------------------------------- nến ngày cuối điều chỉnh dở dang
