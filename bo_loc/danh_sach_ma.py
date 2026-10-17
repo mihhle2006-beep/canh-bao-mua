@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Nhóm mã, ngưỡng riêng theo nhóm/mã, danh sách toàn sàn HOSE."""
+"""Nhóm mã, ngưỡng riêng theo nhóm/mã, danh sách toàn sàn HOSE (+ HNX: nhóm hose_hnx)."""
 import os
 import time
 
@@ -107,6 +107,23 @@ def lay_danh_sach_hose():
     raise ValueError("không lấy được online (" + "; ".join(loi) + f") và chưa có file {f}")
 
 
+def lay_danh_sach_hnx():
+    """Mã HNX đang niêm yết: ptcp/san_niem_yet.json (cập nhật python -m ptcp.san); thiếu → VNDirect; lỗi → []."""
+    try:
+        from ptcp.san import doc_san
+        ds = doc_san()["HNX"]
+        if ds:
+            return ds
+    except ImportError:
+        pass
+    try:
+        j = lay_json("https://api-finfo.vndirect.com.vn/v4/stocks",
+                     params={"q": "type:STOCK~status:LISTED~floor:HNX", "size": 2000})
+        return sorted({str(d.get("code", "")).upper() for d in (j.get("data") or []) if len(str(d.get("code", ""))) == 3})
+    except Exception:                                   # noqa: BLE001
+        return []
+
+
 def _doc(path):
     with open(path, encoding="utf-8") as fh:
         return fh.read()
@@ -130,6 +147,11 @@ def lay_danh_sach_ma(ma=None, file_ma=None, nhom="tat_ca"):
         except Exception as e:
             raise SystemExit(f"Không lấy được danh sách HOSE ({e}). Dùng --nhom khác, --ma, "
                              f"hoặc tạo file {ch.FILE_DS_HOSE} (mỗi dòng 1 mã).")
+    if nhom == "hose_hnx":                  # 17/10/2026: Quỹ B mua cả HNX (rổ HOSE + HNX – ptcp QUY_RO)
+        ds = lay_danh_sach_ma(nhom="hose")
+        hnx = lay_danh_sach_hnx()
+        print(f"  Danh sách HNX (ptcp/san_niem_yet.json): {len(hnx)} mã")
+        return list(dict.fromkeys(ds + hnx))
     if nhom not in NHOM_MA:
-        raise SystemExit(f"Không có nhóm '{nhom}'. Chọn một trong: {', '.join(NHOM_MA)}, hose")
+        raise SystemExit(f"Không có nhóm '{nhom}'. Chọn một trong: {', '.join(NHOM_MA)}, hose, hose_hnx")
     return NHOM_MA[nhom].split()

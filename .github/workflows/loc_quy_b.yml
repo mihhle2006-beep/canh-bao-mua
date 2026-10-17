@@ -2,7 +2,8 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI (token có quyền
 # GHI Contents repo danh-muc – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
-# LỌC QUỸ B – hạng GTGD TB20 toàn rổ (~420 mã) + định giá J8 cuối quý gần nhất → ptcp/loc_quy_b.json (trong gói ptcp,
+# LỌC QUỸ B – hạng GTGD TB20, RS 3T, biến động, tín hiệu mạnh trong rổ HOSE + HNX (~700 mã, 17/10/2026; trước ~420 mã)
+# + định giá J8 cuối quý gần nhất (mã gần top + bản đồ ngành) → ptcp/loc_quy_b.json (trong gói ptcp,
 # nên canh-bao-mua / gia_lap nhận qua lay_ptcp.py). Chạy 06:07 giờ VN mỗi ngày giao dịch (xong trước phiên 09:00 & tin tổng kết 15:20).
 # Trước khi định giá: tải BCTC quý / năm vừa công bố (mã thiếu đúng kỳ mới nhất đã tới hạn – kho_bctc --moi) và lấy lại
 # số CP của mã có sự kiện quyền mới (cổ tức, chia / thưởng, phát hành – cache_du_lieu/so_cp.json).
@@ -74,7 +75,7 @@ jobs:
 
       - name: Lịch sử mã (điểm ★ – tính lại khi file cũ ≥ 6 ngày)
         continue-on-error: true
-        timeout-minutes: 40
+        timeout-minutes: 60                # rổ HOSE + HNX ~700 mã (trước ~420: 40')
         run: |
           python -m ptcp.lich_su_ma > /dev/null 2>&1; echo "Lịch sử mã – mã thoát $?"
 

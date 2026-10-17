@@ -50,11 +50,20 @@ def _so(x, n=2):
         return np.nan
 
 
+def san_cua(ma):
+    """Sàn của mã (ptcp/san_niem_yet.json: HOSE / HNX); không rõ / ptcp cũ → "HOSE"."""
+    try:
+        from ptcp.san import san_cua as _san
+        return _san(ma) or "HOSE"
+    except ImportError:
+        return "HOSE"
+
+
 def ghi_mua_ngay(kq, bay_gio, rieng_tu=False):
     t = pd.Timestamp(bay_gio)
     return _nk.them_dong({"id": f"MUA_NGAY|{kq['ma']}|{t:%Y-%m-%d %H:%M}", "thoi_diem": f"{t:%Y-%m-%d %H:%M}",
                           "ngay": f"{t:%Y-%m-%d}", "ma": kq["ma"], "loai": "MUA_NGAY", "khuyen_nghi": "MUA NGAY",
-                          "nhom": "MUA", "san": "HOSE", "gia": _so(kq["gia"]), "cat_lo": _so(kq.get("cat_lo")),
+                          "nhom": "MUA", "san": san_cua(kq["ma"]), "gia": _so(kq["gia"]), "cat_lo": _so(kq.get("cat_lo")),
                           "muc_tieu": _so(kq.get("muc_tieu")), "rr": _so(kq.get("rr")),
                           "ev": _so((kq.get("ptcp") or {}).get("ev")),
                           "ky_han": int((kq.get("ptcp") or {}).get("n_phien") or C.KY_HAN_MUA)}, _path(rieng_tu))
@@ -67,7 +76,7 @@ def ghi_ptcp(kq, bay_gio, rieng_tu=False):
         return False
     return _nk.ghi_khuyen_nghi(kq["ma"], pt.get("ngay_du_lieu") or pd.Timestamp(bay_gio), pt.get("gia") or kq["gia"],
                                pt["khuyen_nghi"], kq.get("cat_lo"), kq.get("muc_tieu"),
-                               int(pt.get("n_phien") or C.KY_HAN_MUA), "HOSE", pt.get("ev"), kq.get("rr"),
+                               int(pt.get("n_phien") or C.KY_HAN_MUA), san_cua(kq["ma"]), pt.get("ev"), kq.get("rr"),
                                loai="PTCP", path=_path(rieng_tu),
                                thoi_diem=f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}")
 
@@ -79,7 +88,7 @@ def ghi_ban(kq, kb, bay_gio):
     t = pd.Timestamp(bay_gio)
     return _nk.them_dong({"id": f"BAN|{kq['ma']}|{kb['muc']}|{t:%Y-%m-%d}", "thoi_diem": f"{t:%Y-%m-%d %H:%M}",
                           "ngay": f"{t:%Y-%m-%d}", "ma": kq["ma"], "loai": "BAN", "khuyen_nghi": kb["muc"],
-                          "nhom": "BÁN", "san": "HOSE", "gia": _so(kq["gia"]), "ky_han": C.KY_HAN_BAN}, FILE_RIENG)
+                          "nhom": "BÁN", "san": san_cua(kq["ma"]), "gia": _so(kq["gia"]), "ky_han": C.KY_HAN_BAN}, FILE_RIENG)
 
 
 def cap_nhat(tai_gia, du_lieu_san=None, paths=(FILE_CONG_KHAI, FILE_RIENG)):

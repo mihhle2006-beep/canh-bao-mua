@@ -94,3 +94,10 @@ def test_ghi_cap_nhat_thong_ke_va_rieng_tu():
     assert os.path.exists(N.xuat_excel(rieng=True))
 
 
+
+
+def test_san_cua_ma(monkeypatch):
+    from canh_bao import nhat_ky as N
+    from ptcp import san
+    monkeypatch.setattr(san, "doc_san", lambda: {"HOSE": ["HPG"], "HNX": ["SHS"]})
+    assert (N.san_cua("SHS"), N.san_cua("HPG"), N.san_cua("ZZZ")) == ("HNX", "HOSE", "HOSE")

@@ -23,10 +23,10 @@ from . import cau_hinh as C
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
 TIEU_DE = {"MUA_MOI": "🟢 MUA MỚI", "VAO_NHU_MOI": "✅ VÀO NHƯ LỆNH MỚI", "VAO_NUA": "🟡 VÀO ½ KHỐI LƯỢNG",
            "CHO": "⏳ CHỜ ĐIỀU CHỈNH", "DUOI_VON": "⛔ KHÔNG VÀO – hệ thống đang lỗ", "BAN": "⛔ KHÔNG VÀO – hệ thống sắp bán",
-           "NGOAI_TOP": "⛔ KHÔNG VÀO – ngoài top GTGD / RS 3T quá nóng"}
+           "NGOAI_TOP": "⛔ KHÔNG VÀO – ngoài top GTGD / RS 3T quá nóng / biến động mạnh"}
 KHUYEN_NGHI = {"MUA_MOI": "MUA – TÍN HIỆU MỚI", "VAO_NHU_MOI": "MUA – VÀO NHƯ LỆNH MỚI", "VAO_NUA": "MUA TỪNG PHẦN",
                "CHO": "CHỜ ĐIỀU CHỈNH", "DUOI_VON": "CHỜ – HỆ THỐNG ĐANG LỖ", "BAN": "KHÔNG MUA – HỆ THỐNG ĐANG BÁN",
-               "NGOAI_TOP": "KHÔNG MUA – NGOÀI TOP GTGD / RS 3T QUÁ NÓNG"}
+               "NGOAI_TOP": "KHÔNG MUA – NGOÀI TOP GTGD / RS 3T QUÁ NÓNG / BIẾN ĐỘNG MẠNH"}
 
 
 def _f(x, le=2):
@@ -94,8 +94,10 @@ def ds_khuyen_nghi(ra):
         nh = ra.get("nhiet") or {}
         k_["nhiet"], k_["he_so_nhiet"] = nh.get("diem"), float(nh.get("he_so", 1.0))
         lq = _loc_quy(k_["ma"], ra.get("vni_df")) if k_["nhom"] in NHOM_MUA else None
-        if lq:                                      # Quỹ B 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · nhiệt dài hạn ½
+        if lq:                  # Quỹ B: top 100 GTGD · RS 3T nóng · biến động top 30% · ĐẮT ½ · nhiệt dài hạn ½
             k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
+            k_["manh_b"] = bool(lq.get("manh_b"))            # tín hiệu MẠNH B → được dùng suất dự phòng (mã thứ 9)
+            k_["dau_hieu_manh"] = ", ".join(lq.get("dau_hieu_manh") or [])
             k_["he_so_vni"] = lq.get("he_so_vni", 1.0)        # gia_lap: × trần tổng rủi ro mở
             if "he_so_ma" in lq:                              # in tin: phần riêng của mã (nhiệt dài hạn ở dòng 🌡)
                 k_["he_so_quy_ma"], k_["loc_quy_ma"] = lq["he_so_ma"], "; ".join(lq["ly_do_ma"])
@@ -128,6 +130,15 @@ def xep_sao_theo_nganh(mua, so_sao=None, toi_da=None):
             if ng:
                 dem[ng] = dem.get(ng, 0) + 1
     return sao + [k for k in mua if k not in sao]
+
+
+def _quy(ten, mac_dinh):
+    """Tham số Quỹ B của ptcp/cau_hinh.py (ptcp cũ → mặc định)."""
+    try:
+        from ptcp import cau_hinh as P
+        return getattr(P, ten, mac_dinh)
+    except ImportError:
+        return mac_dinh
 
 
 def _loc_quy(ma, vni):
@@ -228,7 +239,8 @@ def dong_mua(k, dang_giu=(), bien_the=None):
     kl = ""
     if bien_the and bien_the.startswith("LO") and k.get("tu") and k.get("den"):
         kl = f" | đặt LO {_f(gia_lo(k['tu'], k['den']))}"
-    return (f"{sao}{k['ma']} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl}"
+    manh = "💪" if k.get("manh_b") else ""
+    return (f"{sao}{k['ma']}{manh} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl}"
             f"{chu_von_lenh(k)} | {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
 
 
@@ -431,12 +443,17 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
         dong.append(f"⛔ KHÔNG VÀO ({len(ko)}): " + ", ".join(k["ma"] for k in ko))
     ngoai = [k for k in ks if k["nhom"] == "NGOAI_TOP"]
     if ngoai:
-        dong.append(f"⛔ CÓ TÍN HIỆU NHƯNG BỊ LỌC (ngoài top GTGD / RS 3T quá nóng) – không mua mới ({len(ngoai)}): "
+        dong.append(f"⛔ CÓ TÍN HIỆU NHƯNG BỊ LỌC (ngoài top GTGD / RS 3T quá nóng / biến động mạnh) – không mua mới "
+                    f"({len(ngoai)}): "
                     + ", ".join(k["ma"] + (" (RS nóng)" if "RS 3T" in str(k.get("loc_quy", "")) else "")
+                                + (" (biến động)" if "biến động mạnh" in str(k.get("loc_quy", "")) else "")
                                 for k in ngoai))
     if sum(k["nhom"] in NHOM_MUA for k in ks) > getattr(C, "SO_MA_MOI_TUAN", 2):
         dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: cắt lỗ sát · lịch sử mã · "
                      f"lập đỉnh 52T; ≤ 2 mã/ngành) – quỹ B chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
+    if any(k["nhom"] in NHOM_MUA and k.get("manh_b") for k in ks):
+        dong.append(f"💪 = tín hiệu mạnh (≥ 3/4: sát đỉnh 52T · RS 3T cao · thanh khoản tăng · ngành mạnh) – đã đủ "
+                    f"{_quy('QUY_SO_MA', 8)} mã vẫn được mua thêm {_quy('QUY_SUAT_DU_PHONG', 1)} mã (suất dự phòng)")
     if not any(k["nhom"] in NHOM_MUA for k in ks):
         dong += ["", "Không có mã nào để mua phiên tới."]
     dong += dong_su_kien({k["ma"]: k["gia"] for k in ks if k["nhom"] in NHOM_MUA + ("CHO",)}, bay_gio)
@@ -471,6 +488,7 @@ def doc_ket_qua_backtest(path=None):
 def ghi_nhat_ky(ra, path=None):
     """Ghi khuyến nghị nhóm mua & chờ (khi đổi) – chấm theo hệ thoát (ptcp/nhat_ky.cham_he_thoat). Trả số dòng ghi."""
     from ptcp import nhat_ky as nk
+    from .nhat_ky import san_cua
     path = path or "lich_su_danh_gia.csv"
     n = 0
     for k in ds_khuyen_nghi(ra):
@@ -481,7 +499,8 @@ def ghi_nhat_ky(ra, path=None):
                 "gia_kn_mua": k["gia"] if k["nhom"] in NHOM_MUA else np.nan, "gia_kn_ban": k["cl"],
                 "muc_tieu_2": k["mt3"]}
         n += bool(nk.ghi_khuyen_nghi(k["ma"], ra["doc"]["ngay"], k["gia"], KHUYEN_NGHI[k["nhom"]], k["cl"], k["mt1"],
-                                     C.KY_HAN_MUA, "HOSE", loai=C.LOAI_NHAT_KY_CL, path=path, chien_luoc=info))
+                                     C.KY_HAN_MUA, san_cua(k["ma"]), loai=C.LOAI_NHAT_KY_CL, path=path,
+                                     chien_luoc=info))
     return n
 
 

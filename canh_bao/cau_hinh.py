@@ -86,7 +86,9 @@ LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị
 
 # --- ĐIỂM VÀO 15 PHÚT – đồng bộ chiến lược (ptcp/diem_vao_15p.py: một bộ tiêu chí cho cảnh báo & backtest) ---
 #   Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, trong đúng phiên hiệu lực; không phủ quyết MACD tuần.
-CACH_VAO_15P = "LO+ATC"            # cố định 10/2026 (backtest Quỹ B theo cách vào: LO+ATC ngang tốt nhất, dễ làm nhất);
+CACH_VAO_15P = "15P+GIO+ATC"       # 17/10/2026 (backtest điểm vào 15' rổ HOSE + HNX, 687 mã 09/2023–10/2026): quỹ B theo
+                                   # cách vào 22,5%/năm so LO+ATC 12,2%, ATO 10,4%; 15P+GIO một mình khớp chỉ 17%. Trước:
+                                   # LO+ATC (cố định 10/2026, rổ chiến lược 41 mã);
                                    # "tu_dong": cách vào tốt nhất của lần backtest gần nhất (FILE_BACKTEST);
                                    # chưa backtest → "15P+ATC". Hoặc đặt cố định: ATO | 15P | 15P+ATC | 15P+GIO | VWAP | LO …
 GIO_ATC = "14:25"                  # từ giờ này, cách vào "+ATC" chưa có điểm vào → báo đặt ATC nếu giá còn trong vùng
