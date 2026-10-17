@@ -24,7 +24,7 @@ nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
 Ví dụ (giá tính bằng nghìn đồng):
 `★ ABC | 20.00–21.00 | MT 22.00 → 26.00 | CL 19.50 | đặt LO 20.30 | 💰 ≤7.0% NAV`
 
-- **★**: mã ưu tiên trong tuần (tối đa 4 mã).
+- **★**: mã ưu tiên trong tuần (tối đa 5 mã).
 - **20.00–21.00**: vùng mua. Chỉ mua khi giá nằm trong vùng. Mở cửa cao hơn vùng thì không đuổi.
 - **MT**: mục tiêu 1R → 3R. Đây là mốc để dời cắt lỗ lên, không phải lệnh bán.
 - **CL**: giá cắt lỗ. Giá chạm mức này thì bán.
