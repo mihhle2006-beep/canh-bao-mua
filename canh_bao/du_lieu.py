@@ -8,6 +8,7 @@ thử lại khi lỗi, cache cục bộ khi mọi nguồn lỗi. Không dùng vn
 import json
 import os
 import re
+import threading
 import time
 
 import pandas as pd
@@ -25,18 +26,46 @@ def gio_viet_nam():
     return (pd.Timestamp.now(tz="UTC") + pd.Timedelta(hours=7)).tz_localize(None)
 
 
+_LUONG = threading.local()
+_KHOA_GHI = threading.Lock()
+
+
+def _phien():
+    """requests.Session riêng mỗi luồng – giữ kết nối (keep-alive), khỏi bắt tay TLS mỗi lần gọi cùng máy chủ."""
+    s = getattr(_LUONG, "s", None)
+    if s is None:
+        s = _LUONG.s = requests.Session()
+    return s
+
+
 def _get(url, params, so_lan=3):
     loi = None
     for k in range(so_lan):
         try:
-            r = requests.get(url, params=params, headers=HEADERS, timeout=20)
+            r = _phien().get(url, params=params, headers=HEADERS, timeout=20)
             if r.status_code != 200:
                 raise ValueError(f"HTTP {r.status_code}")
             return r.json()
         except (requests.RequestException, ValueError) as e:
             loi = e
-            time.sleep(0.6 * 2 ** k)
+            if str(e).startswith("HTTP 4") and "429" not in str(e):   # 4xx (trừ 429): thử lại vô ích → nguồn sau
+                break
+            if k < so_lan - 1:                                       # lần cuối không chờ
+                time.sleep(0.6 * 2 ** k)
     raise ValueError(str(loi)[:80])
+
+
+def tai_nhieu(ham, ds_ma, luong=8):
+    """Tải SONG SONG {mã: ham(mã)} (bỏ mã lỗi / None) – mạng chậm, tính nhanh."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def mot(ma):
+        try:
+            return ham(ma)
+        except Exception:                                           # noqa: BLE001 – thiếu 1 mã không dừng cả lượt
+            return None
+    with ThreadPoolExecutor(max_workers=luong) as ex:
+        return {m: d for m, d in zip(ds_ma, ex.map(mot, ds_ma)) if d is not None}
 
 
 def _tu_unix(j, khung):
@@ -74,7 +103,7 @@ def tu_vci(ma, tu, den, khung, chi_so=False):
     if khung not in VCI_KHUNG:
         raise ValueError("không hỗ trợ khung này")
     so_nen = max((den - tu) // 86400, 5) * VCI_NEN_NGAY[khung] + 10
-    r = requests.post("https://trading.vietcap.com.vn/api/chart/OHLCChart/gap-chart",
+    r = _phien().post("https://trading.vietcap.com.vn/api/chart/OHLCChart/gap-chart",
                       json={"timeFrame": VCI_KHUNG[khung], "symbols": [ma], "to": den, "countBack": int(so_nen)},
                       headers={**HEADERS, "Content-Type": "application/json",
                                "Referer": "https://trading.vietcap.com.vn/", "Origin": "https://trading.vietcap.com.vn"},
@@ -167,16 +196,17 @@ def doc_nguon_uu_tien():
 
 
 def _ghi_nguon_uu_tien(khoa, ten):
-    d = doc_nguon_uu_tien()
-    if d.get(khoa) == ten:
-        return
-    d[khoa] = ten
-    try:
-        os.makedirs(THU_MUC_CACHE, exist_ok=True)
-        with open(_file_nguon(), "w", encoding="utf-8") as f:
-            json.dump(d, f, ensure_ascii=False, indent=0, sort_keys=True)
-    except OSError:
-        pass
+    with _KHOA_GHI:                                             # tai_nhieu gọi song song → 1 luồng ghi file mỗi lúc
+        d = doc_nguon_uu_tien()
+        if d.get(khoa) == ten:
+            return
+        d[khoa] = ten
+        try:
+            os.makedirs(THU_MUC_CACHE, exist_ok=True)
+            with open(_file_nguon(), "w", encoding="utf-8") as f:
+                json.dump(d, f, ensure_ascii=False, indent=0, sort_keys=True)
+        except OSError:
+            pass
 
 
 def lech_thang(df, cu, so_phien=20):

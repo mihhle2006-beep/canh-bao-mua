@@ -102,10 +102,13 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
     chi_do_rong = [m for m in dict.fromkeys(x.strip().upper() for x in (ds_do_rong or []) if x.strip())
                    if m not in ds_ma]
     gia, diem_mua, thieu, gia_ngay, atr = {}, {k: [] for k in thanh_phan}, [], {}, {}
+    from .du_lieu import tai_nhieu
+    can = [m for m in ds_ma + chi_do_rong if not _dung_duoc((du_lieu_san or {}).get(m), tu)]
+    da_tai = tai_nhieu(lambda m: tai(m, tu), can)                 # tải song song trước (mạng chậm, tính nhanh)
     for ma in ds_ma + chi_do_rong:
         df = (du_lieu_san or {}).get(ma)
         if not _dung_duoc(df, tu):
-            df = tai(ma, tu)
+            df = da_tai.get(ma)
         df = _phien_da_dong(df, bay_gio) if df is not None else None
         if df is None or len(df) < 260:
             if ma in ds_ma:
