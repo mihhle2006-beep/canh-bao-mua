@@ -1,6 +1,6 @@
-# QUÉT MÃ PTĐTTC – chuyển từ repo riêng tư Bo_Loc (hết phút Actions) sang đây 10/2026, CHẠY KÍN: checkout Bo_Loc vào
-# Bo_Loc/ bằng secret DANH_MUC_TOKEN_GHI (token phải gồm repo Bo_Loc, và danh-muc để lay_ptcp.py chép ptcp +
-# danh_muc_ptdttc.csv), quét đúng các mã PTĐTTC, gửi tin 📌 PTĐTTC. Repo này CÔNG KHAI: mọi đầu ra chỉ ghi file trong
+# QUÉT MÃ PTĐTTC – CHẠY KÍN ngay bằng bộ lọc bo_loc/ của repo này (10/2026 gộp repo Bo_Loc vào đây): lay_ptcp.py chép
+# ptcp + danh_muc_ptdttc.csv từ danh-muc (CHEP_PTDTTC=1 – chỉ workflow này), quét đúng các mã PTĐTTC
+# (quet_dinh_ky --chi_ptdttc), gửi tin 📌 PTĐTTC. Repo này CÔNG KHAI: mọi đầu ra chỉ ghi file trong
 # máy chạy, log chỉ in mã thoát, không artifact, KHÔNG cache (giá các mã PTĐTTC không lưu lại ở đây).
 name: Quet PTDTTC
 
@@ -25,21 +25,13 @@ jobs:
   quet:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: Bo_Loc
     steps:
       - uses: actions/checkout@v5
-        with:
-          repository: ${{ vars.BO_LOC_REPO_RIENG || 'mihhle2006-beep/Bo_Loc' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
-          path: Bo_Loc
 
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: Bo_Loc/requirements.txt
 
       - name: Cài thư viện
         run: pip install -q -r requirements.txt > /dev/null
@@ -49,6 +41,7 @@ jobs:
           TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           REPO: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
+          CHEP_PTDTTC: "1"
         run: |
           ma=0; python lay_ptcp.py > /tmp/lay_ptcp.txt 2>&1 || ma=$?
           echo "Lấy ptcp: mã thoát $ma"; exit $ma
