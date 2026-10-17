@@ -41,6 +41,16 @@ def chep_ptdttc(goc):
         print(f"✔ {FILE_PTDTTC}")
 
 
+def clone_ptcp(url, tmp, duong_dan, nhanh="", chay=subprocess.run):
+    """Clone NÔNG + THƯA: chỉ thư mục ptcp và các file ở gốc repo (danh_muc_ptdttc.csv…) – bỏ du_lieu/bctc (~155 MB),
+    cache… mà bot không dùng → vài giây thay vì tải cả repo mỗi lần chạy. → mã thoát git (0 = được)."""
+    r = chay(["git", "clone", "--depth", "1", "--filter=blob:none", "--sparse", "--quiet",
+              *(["--branch", nhanh] if nhanh else []), url, tmp], capture_output=True, text=True)
+    if r.returncode != 0:
+        return r.returncode
+    return chay(["git", "-C", tmp, "sparse-checkout", "set", duong_dan], capture_output=True, text=True).returncode
+
+
 def _la_goi_ptcp(d):
     return os.path.isfile(os.path.join(d, "__init__.py")) and os.path.isfile(os.path.join(d, "cau_hinh.py"))
 
@@ -80,11 +90,11 @@ def main():
             sys.exit("✘ Thiếu secret DANH_MUC_TOKEN_GHI hoặc variable DANH_MUC_REPO / PTCP_REPO – xem README (Cài đặt).")
         with tempfile.TemporaryDirectory() as tmp:
             nhanh = os.environ.get("NHANH", "").strip()
-            r = subprocess.run(["git", "clone", "--depth", "1", "--quiet", *(["--branch", nhanh] if nhanh else []),
-                                f"https://x-access-token:{token}@github.com/{repo}.git", tmp],
-                               capture_output=True, text=True)
-            if r.returncode != 0:                      # không in thông báo lỗi gốc (có thể chứa URL kèm token)
+            if clone_ptcp(f"https://x-access-token:{token}@github.com/{repo}.git", tmp, duong_dan, nhanh) != 0:
+                # không in thông báo lỗi gốc (có thể chứa URL kèm token)
                 sys.exit(f"✘ Không clone được {repo}: token sai/hết hạn hoặc chưa được cấp quyền đọc repo này.")
+            if not _la_goi_ptcp(os.path.join(tmp, duong_dan)):   # ptcp không ở DUONG_DAN → lấy đủ repo để tự tìm
+                subprocess.run(["git", "-C", tmp, "sparse-checkout", "disable"], capture_output=True, text=True)
             chep(tim_ptcp(tmp, duong_dan, repo))
             chep_ptdttc(tmp)
     sys.path.insert(0, os.path.dirname(DICH))

@@ -32,8 +32,15 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+      - name: Cache thư viện Python (bỏ bước cài ~30 giây khi requirements không đổi)
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
 
       - name: Cài thư viện
+        if: steps.cache_py.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
 
       - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
