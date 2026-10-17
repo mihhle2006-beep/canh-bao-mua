@@ -8,7 +8,10 @@
 #   von4  – độ chắc mã mới/tuần 4–6 × rủi ro 0,75–1%, ★ ngẫu nhiên 50 lần, chẩn đoán 6/tuần
 #   von5  – cải thiện danh mục: nới 9/10 mã theo chế độ thị trường, KL theo ★, đổi mã yếu, mức phí, tổ hợp
 #   von6  – rổ mã: HOSE (như bot) / + HNX / + UPCoM × top 100–300 GTGD, cắt lệnh chết, tổ hợp (thêm toàn sàn HOSE + HNX)
-# Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
+# RỔ (input ro, 10/2026): hose = toàn sàn HOSE như bot (mặc định) · hose_hnx = HOSE + HNX – luôn kèm mã đã huỷ
+# niêm yết; giá tải cho cả HOSE + HNX (cache gia-san-), hạng GTGD / RS / độ rộng tính trong rổ. Rổ cũ (bản đồ ngành +
+# kho BCTC, ma: all) chọn mã đã biết hôm nay → thiên lệch sống sót (CAGR 17,7% so với 12,7% trên HOSE thật).
+# Kết quả: log + Artifacts (backtest_quy_b_<phần>_<rổ>.xlsx).
 name: Backtest quy B
 
 on:
@@ -17,8 +20,8 @@ on:
   workflow_dispatch:
     inputs:
       ma:
-        description: "Danh sách mã, phân cách dấu phẩy (trống = 119 mã mặc định; all = mọi mã ngành + huỷ niêm yết + kho BCTC + cache)"
-        default: "all"
+        description: "Mã tải giá (HOSE, HNX = toàn sàn; all = bản đồ ngành + kho BCTC + cache – rổ cũ, thiên lệch sống sót)"
+        default: "HOSE,HNX"
       tu:
         description: "Từ ngày"
         default: "2012-01-01"
@@ -34,6 +37,9 @@ on:
       so_nn:
         description: "Số lần chạy ngẫu nhiên đối chứng (trống = mặc định của phần; 200 ≈ thêm 1–1,5 giờ)"
         default: ""
+      ro:
+        description: "Rổ mua: hose (như bot) / hose_hnx / cả hai (phân cách dấu phẩy); trống = tải gì mua nấy"
+        default: "hose,hose_hnx"
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc để chạy (trống = main) – thử code chưa gộp"
         default: ""
@@ -47,6 +53,7 @@ jobs:
       fail-fast: false
       matrix:
         phan: [chuan, von3, von4, von5, von6]
+        ro: [hose, hose_hnx]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,9 +67,11 @@ jobs:
         id: chon
         working-directory: .
         env:
-          PHAN: ${{ inputs.phan || 'chuan' }}          # lịch hằng tháng (không có inputs) → chỉ phần chuan
+          PHAN: ${{ inputs.phan || 'chuan' }}          # lịch hằng tháng (không có inputs) → chỉ phần chuan, rổ hose
+          RO: ${{ github.event_name == 'workflow_dispatch' && inputs.ro || 'hose' }}
         run: |
-          case ",$PHAN," in *",${{ matrix.phan }},"*|*",all,"*) echo "chay=1" >> "$GITHUB_OUTPUT";; esac
+          case ",$PHAN," in *",${{ matrix.phan }},"*|*",all,"*) ;; *) exit 0;; esac
+          case ",$RO," in *",${{ matrix.ro }},"*) echo "chay=1" >> "$GITHUB_OUTPUT";; esac
       - uses: actions/checkout@v5
         if: steps.chon.outputs.chay
         with:
@@ -71,7 +80,7 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
       - uses: actions/checkout@v5                 # phần chuan: đối chiếu giả lập (repo kín – chỉ gửi Telegram)
-        if: steps.chon.outputs.chay && matrix.phan == 'chuan'
+        if: steps.chon.outputs.chay && matrix.phan == 'chuan' && matrix.ro == 'hose'
         continue-on-error: true
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
@@ -98,16 +107,18 @@ jobs:
         uses: actions/cache@v5
         with:
           path: danh-muc/cache_du_lieu
-          # von6 tải thêm toàn sàn HOSE + HNX → cache riêng (không lẫn vào rổ "all" của các phần khác)
-          key: ${{ matrix.phan == 'von6' && 'gia-von6' || 'gia-ngay' }}-${{ matrix.phan }}-${{ github.run_id }}
+          # giá toàn sàn HOSE + HNX (+ BCTC mã mới ở cache_du_lieu/bctc_moi) dùng chung mọi phần
+          key: gia-san-${{ matrix.phan }}-${{ matrix.ro }}-${{ github.run_id }}
           restore-keys: |
-            ${{ matrix.phan == 'von6' && 'gia-von6-' || 'gia-ngay-' }}
+            gia-san-
+            gia-von6-
             gia-ngay-
       - name: Backtest (${{ matrix.phan }})
         if: steps.chon.outputs.chay
         env:
           TU: ${{ inputs.tu || '2012-01-01' }}
-          MA: ${{ inputs.ma || 'all' }}
+          MA: ${{ inputs.ma || 'HOSE,HNX' }}
+          RO_BT: ${{ matrix.ro }}
           CO_HUY: ${{ inputs.co_huy || 'true' }}
           DUNG_LAI: ${{ inputs.dung_lai_ngay || '7' }}
           PHAN: ${{ matrix.phan }}
@@ -119,19 +130,19 @@ jobs:
             von3) export CHI_VON3=1 ;;                         # tăng CAGR bằng vốn: rủi ro, số mã, trần, nhồi
             von4) export CHI_VON4=1 ;;                         # độ chắc mã mới/tuần × rủi ro, ★ ngẫu nhiên 50 lần
             von5) export CHI_VON5=1 ;;                         # cải thiện danh mục: số mã, KL theo ★, đổi mã yếu, phí
-            von6) export CHI_VON6=1; MA="${MA:-all},HOSE,HNX" ;;  # rổ HOSE/HNX × top GTGD, cắt lệnh chết
+            von6) export CHI_VON6=1 ;;                         # top GTGD, cắt lệnh chết (trong rổ RO_BT)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
           if [ -d cache_du_lieu/bctc_moi ]; then cp -n cache_du_lieu/bctc_moi/*.json du_lieu/bctc/ 2>/dev/null || true; fi
           trap 'mkdir -p cache_du_lieu/bctc_moi; git ls-files --others --exclude-standard du_lieu/bctc | xargs -r cp -t cache_du_lieu/bctc_moi/' EXIT
-          python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" --song \
+          python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_${PHAN}_${RO_BT}.xlsx" --song \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
             $([ "$CO_HUY" = "true" ] && echo --co_huy)
       - uses: actions/upload-artifact@v6
         if: always() && steps.chon.outputs.chay
         with:
-          name: backtest-quy-b-${{ matrix.phan }}-${{ github.run_id }}
-          path: danh-muc/backtest_quy_b_${{ matrix.phan }}.xlsx
+          name: backtest-quy-b-${{ matrix.phan }}-${{ matrix.ro }}-${{ github.run_id }}
+          path: danh-muc/backtest_quy_b_${{ matrix.phan }}_${{ matrix.ro }}.xlsx
           retention-days: 30
           if-no-files-found: ignore
