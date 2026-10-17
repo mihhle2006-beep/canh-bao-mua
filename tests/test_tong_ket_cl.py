@@ -380,3 +380,15 @@ def test_tin_15p_ghi_ro_gia_va_cach_vao():
     assert tin.split("\n")[1] == "👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75" and len(tin.split("\n")) == 3
     tin = diem_vao.tin_mua({**kq, "atc": True}, "2026-10-15 14:26", "15P+GIO+ATC")
     assert tin.startswith("⏰ MUA ATC") and "👉 Đặt lệnh ATC (giá ước tính 45.10). Không mua nếu giá cao hơn 46.75" in tin
+
+
+def test_canh_bao_da_giu_2_ma_cung_nganh():
+    """Bản tin riêng: danh mục đã giữ 2 mã cùng ngành với mã tín hiệu → cảnh báo không mua thêm."""
+    from ptcp.loc_quy_b import nganh_cua
+    from ptcp.nganh import NGANH
+    ng = next(n for n, ds in NGANH.items() if len(ds.split()) >= 3)
+    a, b, c = NGANH[ng].split()[:3]
+    k = {"ma": c, "tu": 10.0, "den": 10.5, "mt1": 11.0, "mt3": 12.0, "cl": 9.5, "ly_do": "MACD", "nhom": "MUA_MOI"}
+    s = tong_ket_cl.dong_mua(k, {a, b})
+    assert nganh_cua(c) == ng and f"⚠ đã giữ 2 mã ngành {ng}" in s and a in s and b in s
+    assert "⚠" not in tong_ket_cl.dong_mua(k, {a}) and "⚠" not in tong_ket_cl.dong_mua(k, set())   # bản công khai
