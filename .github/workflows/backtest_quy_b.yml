@@ -53,6 +53,7 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
+      PYTHONUNBUFFERED: "1"            # log hiện tiến độ ngay (không gom từng đợt vài phút)
     timeout-minutes: 300
     steps:
       - name: Bỏ qua phần không chọn
@@ -112,6 +113,10 @@ jobs:
             von5) export CHI_VON5=1 ;;                         # cải thiện danh mục: số mã, KL theo ★, đổi mã yếu, phí
             von6) export CHI_VON6=1; MA="${MA:-all},HOSE,HNX" ;;  # rổ HOSE/HNX × top GTGD, cắt lệnh chết
           esac
+          # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
+          # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
+          if [ -d cache_du_lieu/bctc_moi ]; then cp -n cache_du_lieu/bctc_moi/*.json du_lieu/bctc/ 2>/dev/null || true; fi
+          trap 'mkdir -p cache_du_lieu/bctc_moi; git ls-files --others --exclude-standard du_lieu/bctc | xargs -r cp -t cache_du_lieu/bctc_moi/' EXIT
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" --song \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
             $([ "$CO_HUY" = "true" ] && echo --co_huy)
