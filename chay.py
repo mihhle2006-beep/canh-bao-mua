@@ -272,6 +272,7 @@ def _anh_mua_ngay(kq, bay_gio):
 def _nhat_ky(ra, bay_gio):
     try:
         n = tong_ket_cl.ghi_nhat_ky(ra, nhat_ky.FILE_CONG_KHAI)
+        tong_ket_cl.ghi_sao(ra, bay_gio=bay_gio)                 # ★ mỗi lần tổng kết → danh-muc đối chiếu lệnh thật
         xong = nhat_ky.cap_nhat(lambda ma: tai(ma, "D", C.NGAY_BAT_DAU), ra.get("gia_ngay"))
         print(f"Nhật ký: ghi {n} khuyến nghị mới, {xong} tín hiệu vừa có kết luận ĐÚNG/SAI.")
     except Exception as e:                                     # nhật ký lỗi không được làm hỏng tin tổng kết

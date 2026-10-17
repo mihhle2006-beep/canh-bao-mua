@@ -405,3 +405,20 @@ def test_dong_suat_con_lai_tuan(monkeypatch):
     assert tong_ket_cl.dong_suat({}, None) is None
     giu8 = giu + [({"ma": f"Y{i}", "ngay_mua": "01/10/2026"}, None, None) for i in range(5)]
     assert "chỉ mã 💪 được mua" in tong_ket_cl.dong_suat({}, giu8)
+
+
+def test_ghi_sao(tmp_path, monkeypatch):
+    import pandas as pd
+    from canh_bao import tong_ket_cl as T
+    ds = [{"ma": "AAA", "nhom": "MUA_MOI", "uu_tien": 1.0, "manh_b": True},
+          {"ma": "BBB", "nhom": "VAO_NHU_MOI", "uu_tien": 9.0},
+          {"ma": "CCC", "nhom": "CHO", "uu_tien": float("nan")}]
+    monkeypatch.setattr(T, "ds_khuyen_nghi", lambda ra: ds)
+    p = tmp_path / "sao.csv"
+    assert T.ghi_sao({"doc": {"ngay": "2026-10-16"}}, str(p), "2026-10-16 15:20") == 2
+    assert T.ghi_sao({"doc": {"ngay": "2026-10-16"}}, str(p), "2026-10-17 08:30") == 2   # cùng ngày dữ liệu → thay
+    assert T.ghi_sao({"doc": {"ngay": "2026-10-19"}}, str(p), "2026-10-19 15:20") == 2
+    d = pd.read_csv(p, dtype=str)
+    assert len(d) == 4 and d[d.ngay.eq("2026-10-16")].thoi_diem.eq("2026-10-17 08:30").all()
+    assert d.set_index(["ngay", "ma"]).loc[("2026-10-19", "AAA"), "sao"] == "1"
+    assert d.set_index(["ngay", "ma"]).loc[("2026-10-19", "BBB"), "sao"] == "0"

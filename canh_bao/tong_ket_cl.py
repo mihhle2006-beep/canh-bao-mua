@@ -589,6 +589,31 @@ def ghi_nhat_ky(ra, path=None):
     return n
 
 
+FILE_SAO = "lich_su_sao.csv"
+COT_SAO = ["thoi_diem", "ngay", "ma", "nhom", "hang", "sao", "manh_b"]
+
+
+def ghi_sao(ra, path=None, bay_gio=None, giu_ngay=120):
+    """Lưu thứ tự ưu tiên / ★ của nhóm mua mỗi lần tổng kết (công khai: chỉ khuyến nghị) – danh-muc so lệnh thật với ★
+    (dmuc/tuan_thu.py). Cùng ngày dữ liệu ghi lại thì thay bản cũ; giữ giu_ngay ngày. Trả số dòng ghi."""
+    path = path or FILE_SAO
+    so_sao = getattr(C, "SO_MA_MOI_TUAN", 2)
+    td = f"{pd.Timestamp(bay_gio) if bay_gio is not None else pd.Timestamp.now(tz='Asia/Ho_Chi_Minh').tz_localize(None):%Y-%m-%d %H:%M}"
+    ngay = f"{pd.Timestamp(ra['doc']['ngay']):%Y-%m-%d}"
+    moi = [{"thoi_diem": td, "ngay": ngay, "ma": k["ma"], "nhom": k["nhom"], "hang": int(k["uu_tien"]),
+            "sao": int(k["uu_tien"] <= so_sao), "manh_b": int(bool(k.get("manh_b")))}
+           for k in ds_khuyen_nghi(ra) if k["nhom"] in NHOM_MUA and k.get("uu_tien") == k.get("uu_tien")
+           and k.get("uu_tien") is not None]
+    try:
+        cu = pd.read_csv(path, dtype=str, keep_default_na=False)
+    except (OSError, ValueError):
+        cu = pd.DataFrame(columns=COT_SAO)
+    han = f"{pd.Timestamp(ngay) - pd.Timedelta(days=giu_ngay):%Y-%m-%d}"
+    cu = cu[cu["ngay"].ne(ngay) & cu["ngay"].ge(han)]
+    pd.concat([cu, pd.DataFrame(moi, columns=COT_SAO).astype(str)], ignore_index=True)[COT_SAO].to_csv(path, index=False)
+    return len(moi)
+
+
 # ------------------------------------------------------------------ khối lượng theo biến động
 def he_so_kl(gia, atr, nua=False):
     """→ (hệ số khối lượng, ATR % / ngày). hệ số = min(1, ATR mục tiêu ÷ ATR% của mã) × (½ nếu nhóm 🟡)."""
