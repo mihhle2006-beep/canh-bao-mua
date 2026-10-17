@@ -7,6 +7,7 @@
 #   von3  – tăng CAGR bằng vốn: rủi ro/lệnh, rủi ro mở, số mã, trần/mã, mã mới/tuần, nhồi 3 lần, tổ hợp
 #   von4  – độ chắc mã mới/tuần 4–6 × rủi ro 0,75–1%, ★ ngẫu nhiên 50 lần, chẩn đoán 6/tuần
 #   von5  – cải thiện danh mục: nới 9/10 mã theo chế độ thị trường, KL theo ★, đổi mã yếu, mức phí, tổ hợp
+#   von12 – tăng CAGR / không lỡ lệnh lớn: chẩn đoán lệnh ≥5R bị lỡ, suất dự phòng rộng, rủi ro mở, nạp thêm, đổi mã chậm
 #   von11 – cải thiện tỷ lệ thắng / lệnh lớn: xác nhận vào, khoá lãi, thoát MA20 tuần, nhồi, độ rộng yếu
 #   von10 – đối chứng suất dự phòng: tín hiệu mạnh B so với cờ ngẫu nhiên cùng tỷ lệ, 9 mã mọi lúc
 #   von9  – không lỡ lệnh lớn: cắt lệnh chết, suất dự phòng, đổi mã chết, vào trễ, ★ lệnh lớn (nền mới)
@@ -31,7 +32,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von3 / von4 / von5 / von6 / von7 / von8 / von9 / von10 / von11 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von3 / von4 / von5 / von6 / von7 / von8 / von9 / von10 / von11 / von12 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -57,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von3, von4, von5, von6, von7, von8, von9, von10, von11]
+        phan: [chuan, von3, von4, von5, von6, von7, von8, von9, von10, von11, von12]
         ro: [hose, hose_hnx]
     runs-on: ubuntu-latest
     defaults:
@@ -136,6 +137,7 @@ jobs:
             von4) export CHI_VON4=1 ;;                         # độ chắc mã mới/tuần × rủi ro, ★ ngẫu nhiên 50 lần
             von5) export CHI_VON5=1 ;;                         # cải thiện danh mục: số mã, KL theo ★, đổi mã yếu, phí
             von6) export CHI_VON6=1 ;;                         # top GTGD, cắt lệnh chết (trong rổ RO_BT)
+            von12) export CHI_VON12=1 ;;                       # tăng CAGR / không lỡ lệnh lớn (đổi mã chậm, nạp thêm…)
             von11) export CHI_VON11=1 ;;                       # cải thiện tỷ lệ thắng / lệnh lớn (xác nhận, khoá lãi, MA20w…)
             von10) export CHI_VON10=1 ;;                       # đối chứng suất dự phòng (B so với cờ ngẫu nhiên)
             von9) export CHI_VON9=1 ;;                         # không lỡ lệnh lớn trên nền mới (bỏ 30% biến động)
