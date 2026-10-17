@@ -14,17 +14,45 @@ name: Danh muc hang ngay
 on:
   schedule:
     - cron: "45 8 * * 1-5"        # 08:45 UTC = 15:45 giờ VN, thứ Hai → thứ Sáu
+    - cron: "*/10 0-16 * * *"     # 7:00–23:59 giờ VN, mỗi 10 phút: CHỈ xem nhap.txt / nhap_ptdttc.txt ở danh-muc,
+                                  # có dòng lệnh chưa áp mới chạy (sửa nhap.txt trên GitHub → ≤10–15 phút sau tự chạy)
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: danh-muc-that
-  cancel-in-progress: false
+  actions: read
 
 jobs:
+  kiem:                                   # lịch 10 phút: chỉ chạy khi nhap*.txt có lệnh chưa áp và không có lần chạy khác
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      chay: ${{ steps.k.outputs.chay }}
+    steps:
+      - id: k
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOKEN_DM: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          REPO_DM: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+        run: |
+          if [ "${{ github.event.schedule }}" != "*/10 0-16 * * *" ]; then echo "chay=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          dang=$(gh api "repos/${{ github.repository }}/actions/workflows/danh_muc.yml/runs?per_page=20" \
+                 --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.status != \"completed\")] | length" \
+                 2>/dev/null || echo 0)
+          co=0
+          for f in nhap.txt nhap_ptdttc.txt; do
+            if curl -sf -H "Authorization: Bearer $TOKEN_DM" -H "Accept: application/vnd.github.raw" \
+                 "https://api.github.com/repos/$REPO_DM/contents/$f" | sed 's/#.*//' | grep -q '[A-Za-z0-9]'; then co=1; fi
+          done
+          if [ "$co" = 1 ] && [ "$dang" = 0 ]; then echo "chay=true" >> "$GITHUB_OUTPUT"; else echo "chay=false" >> "$GITHUB_OUTPUT"; fi
+          echo "lệnh mới: $co · lần chạy khác đang chạy: $dang"
+
   chay:
+    needs: kiem
+    if: needs.kiem.outputs.chay == 'true'
+    concurrency:
+      group: danh-muc-that
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:
