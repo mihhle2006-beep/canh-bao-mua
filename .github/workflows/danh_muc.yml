@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   kiem:                                   # lịch đầu phiên: chỉ chạy khi nhap*.txt có lệnh chưa áp và không có lần chạy khác
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       chay: ${{ steps.k.outputs.chay }}
@@ -53,7 +53,7 @@ jobs:
     concurrency:
       group: danh-muc-that
       cancel-in-progress: false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     defaults:
       run:
@@ -152,7 +152,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           for f in danh_muc.csv danh_muc_cu.csv danh_muc_ptdttc.csv trang_thai_ptdttc.json lich_su_ptdttc.csv \
                    tien_mat_chinh.json tien_mat_ptdttc.json trang_thai_vi_the.json gia_tham_chieu_quyen.json \
-                   lich_su_danh_muc.csv nhap.txt nhap_ptdttc.txt da_ban.csv da_ban_ptdttc.csv cache_du_lieu; do
+                   lich_su_danh_muc.csv nhap.txt nhap_ptdttc.txt da_ban.csv da_ban_ptdttc.csv lenh_that.csv lenh_that_ptdttc.csv cache_du_lieu; do
             if [ -e "$f" ]; then git add -f "$f"; fi
           done
           if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
