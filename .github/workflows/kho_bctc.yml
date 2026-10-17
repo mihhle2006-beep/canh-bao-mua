@@ -2,7 +2,7 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI (token có quyền
 # GHI Contents repo danh-muc – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
-# KHO BCTC – tải BCTC năm + quý (≥ 5 năm, ≥ 10 quý) từ Vietcap IQ cho mã trong danh mục + bản đồ ngành
+# KHO BCTC – tải BCTC năm + quý (≥ 5 năm, ≥ 10 quý) từ Vietcap IQ cho mã trong danh mục + bản đồ ngành + mã HOSE/HNX gần top GTGD
 # → du_lieu/bctc/<MÃ>.json (gộp với kho cũ: kỳ cũ giữ, kỳ mới / điều chỉnh ghi đè). Chạy tối thứ Bảy, trước
 # "Boi so nganh" (đọc BCTC từ kho → không tốn lượt vnstock).
 name: Kho BCTC
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       ma:
-        description: "Mã, phân cách dấu phẩy (để trống = danh mục + toàn bộ bản đồ ngành)"
+        description: "Mã, phân cách dấu phẩy (để trống = danh mục + bản đồ ngành + mã gần top 150 GTGD HOSE/HNX)"
         default: ""
   schedule:
     - cron: "47 17 * * 6"          # 00:47 Chủ nhật giờ VN (≤ 2 giờ → xong trước Boi so nganh 03:13)
