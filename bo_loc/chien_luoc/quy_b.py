@@ -3,7 +3,7 @@
 CHIẾN LƯỢC QUỸ B (mặc định) – chiến lược đang áp dụng 10/2026, cùng luật với danh-muc, canh-bao-mua, gia_lap:
   · tín hiệu hệ B: MACD ngày cắt lên có lọc MACD tuần + nhồi lệnh (chien_luoc_tt → ptcp, mọi trạng thái thị trường)
   · nhóm MUA: 🟢 mua mới · ✅ vào trễ (giá ≤ giá vào hệ thống + ½R, cắt lỗ ≤ 7%, đủ KL – quỹ chỉ vào mã đã bỏ vì
-    hết suất 4 mã mới/tuần); không còn nhóm ½ KL (phân nhóm lấy từ ptcp)
+    hết suất 5 mã mới/tuần); không còn nhóm ½ KL (phân nhóm lấy từ ptcp)
   · chỉ mã top 100 GTGD TB20 (hạng chốt thứ Sáu tuần trước, cố định cả tuần) và hạng RS 3 tháng < 90
     (ptcp/loc_quy_b.json – ngoài top / quá nóng → không mua mới),
     GTGD ≥ 3 tỷ

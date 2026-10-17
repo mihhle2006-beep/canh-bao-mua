@@ -25,7 +25,7 @@ theo dõi mỗi mã **4 phiên kế tiếp**: Bo_Loc lọc lại vẫn đạt ho
 
 - **Chiến lược mặc định `quy_b`** – chiến lược đang áp dụng (Quỹ B, giống danh-muc / canh-bao-mua): hệ B (MACD ngày + tuần),
   nhóm MUA (mới / vào trễ ≤ giá vào hệ thống + ½R), chỉ mã top 100 GTGD và hạng RS 3 tháng < 90 (không quá nóng),
-  GTGD ≥ 3 tỷ, mã ĐẮT ½ KL, tối đa 4 mã mới/tuần, thoát 2R – MA10 tuần.
+  GTGD ≥ 3 tỷ, mã ĐẮT ½ KL, tối đa 5 mã mới/tuần, thoát 2R – MA10 tuần.
 - Nhóm MUA gồm: tín hiệu hệ B hôm nay (MACD ngày cắt lên + MACD tuần > Signal), hoặc hệ thống đang giữ và giá ≤ giá
   vào + ½R (vào trễ, đủ KL) với cắt lỗ cách ≤ 7%.
 - **Dòng thị trường** ở đầu KẾT LUẬN: điểm X/8, CL1/CL2, trạng thái đi ngang.
