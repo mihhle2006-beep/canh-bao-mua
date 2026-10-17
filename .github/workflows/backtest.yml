@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
     inputs:
       ro:
-        description: "hose_hnx = toàn sàn HOSE + HNX (mặc định, chỉ cách vào 15') · chien_luoc = 41 mã (đủ phần) · rong = ~400 mã · tat_ca = rổ rộng + HOSE + HNX"
+        description: "hose_hnx = toàn sàn HOSE + HNX (mặc định, chỉ cách vào 15') · chien_luoc = 41 mã (đủ phần: điểm bán, mua thêm)"
         default: hose_hnx
         type: choice
-        options: [hose_hnx, chien_luoc, rong, tat_ca]
+        options: [hose_hnx, chien_luoc]
 
 permissions:
   contents: write
@@ -78,7 +78,7 @@ jobs:
             cache_du_lieu
           key: bt-${{ github.run_id }}
 
-      - name: Kết quả rổ so sánh (hose_hnx / tat_ca – không đổi cách vào bot đang dùng)
+      - name: Kết quả rổ HOSE + HNX
         if: always() && hashFiles('ket_qua_backtest_*.json') != ''
         uses: actions/upload-artifact@v6
         with:
