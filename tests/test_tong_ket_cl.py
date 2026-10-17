@@ -392,3 +392,16 @@ def test_canh_bao_da_giu_2_ma_cung_nganh():
     s = tong_ket_cl.dong_mua(k, {a, b})
     assert nganh_cua(c) == ng and f"⚠ đã giữ 2 mã ngành {ng}" in s and a in s and b in s
     assert "⚠" not in tong_ket_cl.dong_mua(k, {a}) and "⚠" not in tong_ket_cl.dong_mua(k, set())   # bản công khai
+
+
+def test_dong_suat_con_lai_tuan(monkeypatch):
+    """Bản tin riêng: số mã mới đã mua trong tuần của phiên hiệu lực & số suất còn lại."""
+    k = [{"ma": "AAA", "nhom": "MUA_MOI", "hieu_luc": pd.Timestamp("2026-10-21")}]
+    monkeypatch.setattr(tong_ket_cl, "ds_khuyen_nghi", lambda ra: k)
+    giu = [({"ma": "X1", "ngay_mua": "19/10/2026"}, None, None), ({"ma": "X2", "ngay_mua": "20/10/2026"}, None, None),
+           ({"ma": "X3", "ngay_mua": "10/10/2026"}, None, None)]
+    s = tong_ket_cl.dong_suat({}, giu)
+    assert "đã mua 2/5 mã mới tuần này → còn 3 suất" in s and "đang giữ 3/8 mã" in s and "mua tối đa 3 mã" in s
+    assert tong_ket_cl.dong_suat({}, None) is None
+    giu8 = giu + [({"ma": f"Y{i}", "ngay_mua": "01/10/2026"}, None, None) for i in range(5)]
+    assert "chỉ mã 💪 được mua" in tong_ket_cl.dong_suat({}, giu8)

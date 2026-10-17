@@ -441,6 +441,10 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
     """
     dang_giu = {vt["ma"] for vt, _, _ in (giu or [])}
     day_du = _tin(ra, bay_gio, kq_bt, dang_giu)
+    ds = dong_suat(ra, giu)
+    if ds:                                       # bản riêng: còn bao nhiêu suất → mua lần lượt theo ★ tới hết suất
+        i = next((j for j, x in enumerate(day_du) if x.startswith(tuple(TIEU_DE[n] for n in NHOM_MUA))), len(day_du))
+        day_du[i:i] = [ds, ""] if i < len(day_du) else ["", ds]
     if giu:
         day_du += ["", f"💼 ĐANG GIỮ ({len(giu)})"]
         for vt, kb, mt in giu:
@@ -451,6 +455,27 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
     if C.GUI_EXCEL:
         day_du.append("📎 Chi tiết, lịch sử & backtest: file Excel đính kèm")
     return "\n".join(day_du).rstrip(), "\n".join(_tin(ra, bay_gio, kq_bt, set())).rstrip()
+
+
+def dong_suat(ra, giu):
+    """'🗓 Phiên 20/10 (tuần 43): đã mua 2/5 mã mới tuần này → còn 3 suất · đang giữ 7/8 mã (+1 cho 💪) – mua lần lượt
+    theo ★ tới hết suất' – theo danh mục thật (ngày mua trong tuần của phiên hiệu lực). Không có danh mục → None."""
+    if giu is None:
+        return None
+    from .vi_the import _ngay
+    hl = next((k["hieu_luc"] for k in ds_khuyen_nghi(ra) if k.get("hieu_luc") is not None), None)
+    if hl is None:
+        return None
+    tuan = pd.Timestamp(hl).isocalendar()[:2]
+    moi = sum(1 for vt, _, _ in giu if _ngay(vt.get("ngay_mua")) is not None
+              and pd.Timestamp(_ngay(vt.get("ngay_mua"))).isocalendar()[:2] == tuan)
+    td, so_ma, dp = _quy("QUY_MOI_TUAN_TOI_DA", 5), _quy("QUY_SO_MA", 8), _quy("QUY_SUAT_DU_PHONG", 1)
+    con, con_ma = max(td - moi, 0), max(so_ma - len(giu), 0)
+    goi_y = (f"mua tối đa {min(con, con_ma)} mã theo thứ tự ★" if min(con, con_ma) else
+             ("hết suất tuần – chỉ chờ ✅ vào trễ tuần sau" if not con else
+              f"đủ {so_ma} mã – chỉ mã 💪 được mua (suất dự phòng)"))
+    return (f"🗓 Phiên {pd.Timestamp(hl):%d/%m} (tuần {tuan[1]}): đã mua {moi}/{td} mã mới tuần này → còn {con} suất · "
+            f"đang giữ {len(giu)}/{so_ma} mã" + (f" (+{dp} cho 💪)" if dp else "") + f" → {goi_y}")
 
 
 def _tin(ra, bay_gio, kq_bt, dang_giu):
