@@ -58,6 +58,18 @@ def ro_tat_ca():
     return list(dict.fromkeys(ro_rong() + d["HOSE"] + d["HNX"]))
 
 
+def ro_hose_hnx():
+    """Rổ HOSE + HNX (toàn sàn, ptcp/san_niem_yet.json) + mã đã huỷ niêm yết – rổ mặc định của backtest (10/2026).
+    ptcp cũ chưa có danh sách sàn → ro_rong."""
+    try:
+        from ptcp.nganh import HUY_NIEM_YET
+        from ptcp.san import doc_san
+    except ImportError:
+        return ro_rong()
+    d = doc_san()
+    return list(dict.fromkeys(d["HOSE"] + d["HNX"] + list(HUY_NIEM_YET))) or ro_rong()
+
+
 def _bang_san(ct):
     """Bảng cách vào tách theo sàn (HOSE / HNX / khác – UPCoM, đã huỷ niêm yết) – để so, không dùng chọn."""
     try:

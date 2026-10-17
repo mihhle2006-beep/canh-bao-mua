@@ -20,3 +20,11 @@ def test_bang_san_tach_hose_hnx(monkeypatch):
     assert list(k) == ["HOSE", "HNX", "khác"]
     assert k["HNX"]["so_ma"] == 1 and k["HNX"]["so_tin_hieu"] == 1 and k["HNX"]["bang"][0]["TB/lệnh khớp %"] == -1.0
     assert B._bang_san(ct.iloc[:0]) is None
+
+
+def test_ro_hose_hnx(monkeypatch):
+    import ptcp.nganh as N
+    import ptcp.san as S
+    monkeypatch.setattr(S, "doc_san", lambda: {"HOSE": ["HPG", "FPT"], "HNX": ["SHS"]})
+    monkeypatch.setattr(N, "HUY_NIEM_YET", {"FLC": "x"})
+    assert B.ro_hose_hnx() == ["HPG", "FPT", "SHS", "FLC"]
