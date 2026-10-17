@@ -3,7 +3,7 @@
 BACKTEST cho bot (python chay.py --che_do backtest – chạy tay trên Actions, ~10–20 phút lần đầu):
   1. ĐIỂM BÁN & MUA THÊM: chốt ⅓ / ½ ở 3R, siết cắt lỗ khi thị trường giảm, hạn ngắn hơn, mua thêm kiểu B / khi có
      tín hiệu mới – so với hệ thoát gốc, 2 giai đoạn 2019–22 & 2023–26 (giá ngày).
-  2. ĐIỂM VÀO 15 PHÚT: mọi khuyến nghị mua quá khứ của chiến lược (41 mã / rổ rộng ~400 / tất cả HOSE + HNX, cùng
+  2. ĐIỂM VÀO 15 PHÚT: mọi khuyến nghị mua quá khứ của chiến lược (41 mã / toàn sàn HOSE + HNX, cùng
      cách phân nhóm như tin hằng ngày; bảng tách theo sàn)
      × các cách vào (ATO / 15P / 15P+ATC / 15P+GIO / VWAP / LO …) trên nến 15' thật → lãi/lỗ theo hệ thoát.
      Cách vào được chọn (khớp ≥ 50%, lãi TB / lệnh cao nhất) dùng cho cảnh báo trong phiên (CACH_VAO_15P = "tu_dong").
@@ -40,22 +40,11 @@ def _ket_luan_15p(b, tot):
 
 
 def ro_rong():
-    """Rổ ~400 mã cho backtest cách vào: bản đồ ngành + đã huỷ niêm yết (ptcp.loc_quy_b.ro_ma) + mã đã xếp hạng GTGD
+    """Rổ dự phòng cho backtest cách vào (ptcp cũ chưa có danh sách sàn): ptcp.loc_quy_b.ro_ma + mã đã xếp hạng GTGD
     + 41 mã chiến lược."""
     from ptcp import loc_quy_b
     loc = loc_quy_b.doc(han_ngay=None) or {}
     return list(dict.fromkeys(loc_quy_b.ro_ma() + list(loc.get("hang_gtgd", {})) + C.MA_CHIEN_LUOC))
-
-
-def ro_tat_ca():
-    """Rổ TẤT CẢ mã cho backtest cách vào: ro_rong + toàn sàn HOSE + HNX (ptcp/san_niem_yet.json; ptcp cũ chưa có
-    → chỉ ro_rong)."""
-    try:
-        from ptcp.san import doc_san
-    except ImportError:
-        return ro_rong()
-    d = doc_san()
-    return list(dict.fromkeys(ro_rong() + d["HOSE"] + d["HNX"]))
 
 
 def ro_hose_hnx():
@@ -126,7 +115,7 @@ def tai_nen_15p(ds_ma=None):
     """Chỉ tải phần nến 15' mới cho rổ backtest (workflow hằng tuần): giữ cache không bị GitHub xoá (7 ngày không
     dùng) và tích luỹ lịch sử dài hơn giới hạn ~1 năm của nguồn. Trả số mã có dữ liệu."""
     from . import du_lieu
-    ds_ma = ds_ma or ro_tat_ca()
+    ds_ma = ds_ma or ro_hose_hnx()
     n15 = _tai_song_song(lambda m: du_lieu.tai_lich_su_phut(m, C.BACKTEST_15P_TU), ds_ma)
     if n15:
         tu = min(d.index[0] for d in n15.values())

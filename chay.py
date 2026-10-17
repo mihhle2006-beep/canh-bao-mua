@@ -5,7 +5,7 @@ CẢNH BÁO MUA THEO CHIẾN LƯỢC THỊ TRƯỜNG – chạy:
   python chay.py --che_do tong_ket     (tin tổng kết gọn theo chiến lược + mã đang giữ + file Excel chi tiết)
   python chay.py --che_do trong_phien  (quét 15': chỉ mã trong nhóm mua của tin tổng kết, đúng vùng giá)
   python chay.py --che_do backtest     (backtest điểm vào 15' & điểm bán / mua thêm → ket_qua_backtest.json;
-                                        --ro rong / tat_ca: chỉ cách vào 15' trên rổ ~400 mã / toàn sàn HOSE + HNX)
+                                        --ro hose_hnx: chỉ cách vào 15' trên toàn sàn HOSE + HNX)
   python chay.py --che_do lich_su      (chấm lại mọi tín hiệu đã ghi, in bảng độ chính xác, xuất Excel)
   python chay.py --chi_ma FPT          (xem RIÊNG 1 mã / vài mã: FPT,HPG – không ghi trạng thái; + --khong_gui = chỉ in)
   python chay.py --khong_gui           (chỉ in, không gửi Telegram)
@@ -38,9 +38,8 @@ def main(argv=None):
                    help="CHỈ xem mã này (VD FPT hoặc FPT,HPG) theo chiến lược – không ghi trạng thái / danh sách mua")
     p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-08 10:30'")
     p.add_argument("--khong_gui", action="store_true")
-    p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "rong", "tat_ca", "hose_hnx"],
-                   help="backtest: 41 mã chiến lược (đủ phần), rổ ~400 mã, tất cả (rổ rộng + HOSE + HNX) hoặc "
-                        "hose_hnx = toàn sàn HOSE + HNX (chỉ cách vào 15')")
+    p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "hose_hnx"],
+                   help="backtest: 41 mã chiến lược (đủ phần) hoặc hose_hnx = toàn sàn HOSE + HNX (chỉ cách vào 15')")
     p.add_argument("--khong_ban", action="store_true", help="bỏ danh mục / cảnh báo bán")
     p.add_argument("--khong_chien_luoc", action="store_true", help="(giữ cho tương thích – không còn tác dụng)")
     a = p.parse_args(argv)
@@ -62,12 +61,11 @@ def main(argv=None):
         from canh_bao.backtest_bot import tai_nen_15p
         return 0 if tai_nen_15p() else 1
     if che_do == "backtest":
-        from canh_bao.backtest_bot import chay_backtest, ro_hose_hnx, ro_rong, ro_tat_ca
-        if a.ro in ("rong", "tat_ca", "hose_hnx"):
-            ro = {"rong": ro_rong, "tat_ca": ro_tat_ca, "hose_hnx": ro_hose_hnx}[a.ro]
-            # rổ có HNX: bot chỉ quét HOSE → ghi file riêng, không đổi cách vào 15' bot đang dùng (ket_qua_backtest.json)
-            return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro(), chi_diem_vao=True,
-                                 file_ra=None if a.ro == "rong" else f"ket_qua_backtest_{a.ro}.json")
+        from canh_bao.backtest_bot import chay_backtest, ro_hose_hnx
+        if a.ro == "hose_hnx":
+            # chỉ phần cách vào 15' → file riêng (ket_qua_backtest.json của rổ chiến lược còn phần điểm bán / mua thêm)
+            return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro_hose_hnx(), chi_diem_vao=True,
+                                 file_ra="ket_qua_backtest_hose_hnx.json")
         return chay_backtest(bay_gio, a.khong_gui)
     them = [m.strip().upper() for m in (a.ma or "").split(",") if m.strip()]
     vt, nguon_vt = ({}, "tắt (--khong_ban)") if a.khong_ban else vi_the.doc_danh_muc()
@@ -235,7 +233,8 @@ def xem_ma(bay_gio, ds, khong_gui=False):
         elif k is None:
             dong.append(f"\n{ma}: chưa có tín hiệu mua – " + " · ".join(trang_thai.get(ma, ["CHỜ tín hiệu"])))
         else:
-            dong.append(f"\n{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}\n{tong_ket_cl.dong_mua(k)}")
+            bt = tong_ket_cl.cach_vao(tong_ket_cl.doc_ket_qua_backtest())[0] if k["nhom"] in tong_ket_cl.NHOM_MUA else None
+            dong.append(f"\n{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}\n{tong_ket_cl.dong_mua(k, bien_the=bt)}")
         if cung.get(ma):
             dong.append("  Cùng ngành: " + " · ".join(
                 f"{m} {NHOM_NGAN.get(kn[m]['nhom'], kn[m]['nhom']) if m in kn else '–'}" for m in cung[ma]))

@@ -233,15 +233,56 @@ def chu_von_lenh(k):
     return f" | 💰 ≤{v['ty_trong']:.1f}% NAV" + (f" ({ct})" if ct else "")
 
 
+DK_ATC = {"_VWAP": " và giá ≥ VWAP phiên", "_XANH": " và giá ≥ giá mở cửa", "_TREN": " và giá ở nửa trên biên độ phiên"}
+MO_TA_15P = "MACD 15' cắt lên hoặc phá đỉnh 20 nến + KL ≥ 1,5× · giá ≥ VWAP · RSI 15' ≤ 75"
+
+
+def mo_ta_cach_vao(bien_the):
+    """Dòng giải thích cách vào chung cho tin tổng kết (tiêu chí 15' in 1 lần, từng mã chỉ ghi giá)."""
+    if not bien_the:
+        return None
+    goc, atc, dk = bien_the.partition("+ATC")
+    if goc.startswith("15P"):
+        tc = MO_TA_15P + (" · MACD giờ > Signal" if "GIO" in goc else "")
+        mo = f"chờ tin 🟢 MUA NGAY 15' (đủ: {tc}) rồi mua giá thị trường"
+    elif goc == "LO":
+        mo = "đặt LO ở ⅓ dưới vùng mua từ đầu phiên"
+    elif goc == "VWAP":
+        mo = "mua khi nến 15' (từ 9:30) đóng cửa ≥ VWAP, trong vùng"
+    else:
+        mo = "mua ATO nếu giá mở cửa trong vùng"
+    if atc:
+        mo += f"; {C.GIO_ATC} chưa mua được → ATC nếu giá còn trong vùng{DK_ATC.get(dk, '')}"
+    return f"🎯 Cách vào ({bien_the}): {mo}. Mở cửa > vùng → bỏ (không đuổi); giá thủng vùng trước khi mua → bỏ."
+
+
+def cach_vao_ma(k, bien_the):
+    """Cách vào CỦA TỪNG MÃ (giá cụ thể) – dòng "↳ vào: …" dưới mã trong tin tổng kết."""
+    tu, den = k.get("tu"), k.get("den")
+    if not bien_the or not (tu == tu and den == den) or tu is None or den is None:
+        return ""
+    goc, atc, dk = bien_the.partition("+ATC")
+    if goc.startswith("15P"):
+        x = f"chờ 🟢 15' khi giá {_f(tu)}–{_f(den)}"
+    elif goc == "LO":
+        x = f"đặt LO {_f(gia_lo(tu, den))}"
+    elif goc == "VWAP":
+        x = f"nến 15' đóng ≥ VWAP, giá {_f(tu)}–{_f(den)}"
+    else:
+        x = f"ATO nếu mở cửa {_f(tu)}–{_f(den)}"
+    if atc:
+        x += f" · {C.GIO_ATC} chưa mua → ATC nếu {_f(tu)}–{_f(den)}{DK_ATC.get(dk, '')}"
+    return f"↳ vào: {x} · mở cửa > {_f(den)} → bỏ"
+
+
 def dong_mua(k, dang_giu=(), bien_the=None):
     ut = k.get("uu_tien")
     sao = "★ " if ut == ut and ut is not None and ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else ""
-    kl = ""
-    if bien_the and bien_the.startswith("LO") and k.get("tu") and k.get("den"):
-        kl = f" | đặt LO {_f(gia_lo(k['tu'], k['den']))}"
     manh = "💪" if k.get("manh_b") else ""
-    return (f"{sao}{k['ma']}{manh} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}{kl}"
-            f"{chu_von_lenh(k)} | {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else ""))
+    vao = cach_vao_ma(k, bien_the)                      # giá LO / ATC / chờ 15' của riêng mã này
+    return (f"{sao}{k['ma']}{manh} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}"
+            f"{chu_von_lenh(k)} | {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else "")
+            + (f"\n   {vao}" if vao else ""))
 
 
 # ------------------------------------------------------------------ danh sách mua cho cảnh báo 15 phút
@@ -422,6 +463,8 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     if dn:
         dong.append(dn)
     n_max = C.SO_MA_MOI_NHOM
+    if any(k["nhom"] in NHOM_MUA for k in ks) and mo_ta_cach_vao(bt):
+        dong.append(mo_ta_cach_vao(bt))
     for nhom in NHOM_MUA:
         x = [k for k in ks if k["nhom"] == nhom]
         if not x:

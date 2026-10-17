@@ -356,3 +356,27 @@ def test_tin_hieu_manh_suat_du_phong(monkeypatch):
     assert "AAA💪 |" in tong_ket_cl.dong_mua(a) and "💪" not in tong_ket_cl.dong_mua(b)
     assert c["nhom"] == "NGOAI_TOP"
     assert C.CACH_VAO_15P == "15P+GIO+ATC"
+
+
+def test_tin_ghi_ro_cach_vao_tung_ma():
+    k = {"ma": "DGW", "tu": 44.5, "den": 46.75, "mt1": 47.0, "mt3": 49.9, "cl": 43.49, "ly_do": "MACD", "nhom": "MUA_MOI"}
+    s = tong_ket_cl.dong_mua(k, bien_the="15P+GIO+ATC")
+    assert "↳ vào: chờ 🟢 15' khi giá 44.50–46.75" in s and f"{C.GIO_ATC} chưa mua → ATC nếu 44.50–46.75" in s
+    assert "mở cửa > 46.75 → bỏ" in s
+    m = tong_ket_cl.mo_ta_cach_vao("15P+GIO+ATC")
+    assert "MACD giờ > Signal" in m and "ATC" in m and "không đuổi" in m
+    assert "MACD giờ" not in tong_ket_cl.mo_ta_cach_vao("15P+ATC")
+    assert "đặt LO 45.25" in tong_ket_cl.dong_mua(k, bien_the="LO+ATC_VWAP") and \
+        "VWAP" in tong_ket_cl.cach_vao_ma(k, "LO+ATC_VWAP")
+    assert "ATO nếu mở cửa" in tong_ket_cl.cach_vao_ma(k, "ATO") and tong_ket_cl.cach_vao_ma(k, None) == ""
+
+
+def test_tin_15p_ghi_ro_gia_va_cach_vao():
+    kq = {"ma": "DGW", "nhom": "MUA_MOI", "tu": 44.5, "den": 46.75, "cl": 43.49, "gia_mua": 45.1, "gia_nay": 45.1,
+          "thoi_diem": pd.Timestamp("2026-10-15 10:15"), "ly_do": "đủ tiêu chí 15'", "ly_do_ngay": "MACD",
+          "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", True, "MACD 15' cắt lên")], "atr": np.nan}
+    tin = diem_vao.tin_mua(kq, "2026-10-15 10:16", "15P+GIO+ATC")
+    assert "👉 ĐẶT LỆNH: LO 45.10 ngay" in tin and "không trả cao hơn 46.75" in tin and "15P+GIO+ATC" in tin
+    tin = diem_vao.tin_mua({**kq, "atc": True}, "2026-10-15 14:26", "15P+GIO+ATC")
+    assert tin.startswith("⏰ MUA ATC") and "👉 ĐẶT LỆNH: ATC (14:30–14:45) – giá ước tính 45.10" in tin
+    assert "👉 ĐẶT LỆNH: LO 45.10" in diem_vao.tin_mua(kq, "2026-10-15 10:16", "LO+ATC")

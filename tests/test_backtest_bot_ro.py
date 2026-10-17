@@ -1,14 +1,7 @@
-"""Rổ tất cả mã (HOSE + HNX) & bảng cách vào theo sàn cho backtest điểm vào 15' (không mạng)."""
+"""Rổ HOSE + HNX & bảng cách vào theo sàn cho backtest điểm vào 15' (không mạng)."""
 import pandas as pd
 
 from canh_bao import backtest_bot as B
-
-
-def test_ro_tat_ca_gom_toan_san(monkeypatch):
-    import ptcp.san as S
-    monkeypatch.setattr(B, "ro_rong", lambda: ["HPG", "ACV"])
-    monkeypatch.setattr(S, "doc_san", lambda: {"HOSE": ["HPG", "FPT"], "HNX": ["SHS"]})
-    assert B.ro_tat_ca() == ["HPG", "ACV", "FPT", "SHS"]
 
 
 def test_bang_san_tach_hose_hnx(monkeypatch):

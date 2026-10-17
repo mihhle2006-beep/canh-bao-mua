@@ -1,4 +1,4 @@
-# TẢI NẾN 15' HẰNG TUẦN cho backtest điểm vào (rổ rộng + toàn sàn HOSE + HNX): chỉ tải phần mới → giữ cache backtest không bị GitHub xoá
+# TẢI NẾN 15' HẰNG TUẦN cho backtest điểm vào (toàn sàn HOSE + HNX): chỉ tải phần mới → giữ cache backtest không bị GitHub xoá
 # (7 ngày không dùng) và tích luỹ lịch sử 15' dài hơn giới hạn ~1 năm của nguồn. Cùng nhóm concurrency với Backtest.
 name: Tai nen 15p
 
