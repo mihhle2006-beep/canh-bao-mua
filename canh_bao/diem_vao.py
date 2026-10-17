@@ -168,6 +168,22 @@ def tin_giu_theo_he_thong(kq, bay_gio):
         "Mua thêm chỉ khi tin tổng kết ghi MUA THÊM."])
 
 
+def dong_dat_lenh(kq, bien_the, gia):
+    """Dòng "👉 ĐẶT LỆNH": giá & cách vào cụ thể của lệnh này (theo cách vào đang dùng)."""
+    tu, den = kq.get("tu"), kq.get("den")
+    vung = f"vùng {_f(tu)}–{_f(den)}"
+    if kq.get("atc"):
+        return (f"👉 ĐẶT LỆNH: ATC (14:30–14:45) – giá ước tính {_f(gia)}, {vung}; trong phiên chưa đủ điều kiện "
+                f"15' nên mua cuối phiên ({bien_the})")
+    goc = (bien_the or "").partition("+ATC")[0]
+    if goc.startswith("15P") or goc == "VWAP":
+        return (f"👉 ĐẶT LỆNH: LO {_f(gia)} ngay (giá lúc đủ điều kiện {'15' if goc != 'VWAP' else 'VWAP'}'), "
+                f"không trả cao hơn {_f(den)} – giá chạy quá vùng thì bỏ ({bien_the})")
+    if goc == "LO":
+        return f"👉 ĐẶT LỆNH: LO {_f(gia)} (⅓ dưới {vung}) – giá đã chạm mức LO ({bien_the})"
+    return f"👉 ĐẶT LỆNH: ATO {_f(gia)} – mở cửa trong {vung} ({bien_the})"
+
+
 def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     if dang_giu:
         return tin_giu_theo_he_thong(kq, bay_gio)
@@ -175,6 +191,7 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     dau = "⏰ MUA ATC" if kq.get("atc") else "🟢 MUA NGAY"
     nen = f" · nến {pd.Timestamp(kq['thoi_diem']):%H:%M}" if kq.get("thoi_diem") is not None and not kq.get("atc") else ""
     d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
+         dong_dat_lenh(kq, bien_the, gia),
          f"{TEN_NHOM.get(kq['nhom'], kq['nhom'])} | vùng {_f(kq['tu'])}–{_f(kq['den'])} | CL {_f(cl)}"
          + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "") + f" | MT {_f(mt1)} → {_f(mt3)}",
          f"Đạt điểm mua: [Ngày] {kq.get('ly_do_ngay', '')} ✔ · [Vùng] trong vùng ✔",

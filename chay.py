@@ -233,7 +233,8 @@ def xem_ma(bay_gio, ds, khong_gui=False):
         elif k is None:
             dong.append(f"\n{ma}: chưa có tín hiệu mua – " + " · ".join(trang_thai.get(ma, ["CHỜ tín hiệu"])))
         else:
-            dong.append(f"\n{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}\n{tong_ket_cl.dong_mua(k)}")
+            bt = tong_ket_cl.cach_vao(tong_ket_cl.doc_ket_qua_backtest())[0] if k["nhom"] in tong_ket_cl.NHOM_MUA else None
+            dong.append(f"\n{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}\n{tong_ket_cl.dong_mua(k, bien_the=bt)}")
         if cung.get(ma):
             dong.append("  Cùng ngành: " + " · ".join(
                 f"{m} {NHOM_NGAN.get(kn[m]['nhom'], kn[m]['nhom']) if m in kn else '–'}" for m in cung[ma]))
