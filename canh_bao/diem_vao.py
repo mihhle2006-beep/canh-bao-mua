@@ -169,19 +169,14 @@ def tin_giu_theo_he_thong(kq, bay_gio):
 
 
 def dong_dat_lenh(kq, bien_the, gia):
-    """Dòng "👉 ĐẶT LỆNH": giá & cách vào cụ thể của lệnh này (theo cách vào đang dùng)."""
-    tu, den = kq.get("tu"), kq.get("den")
-    vung = f"vùng {_f(tu)}–{_f(den)}"
+    """Dòng đặt lệnh ngắn gọn: giá đặt + giới hạn (theo cách vào đang dùng)."""
+    den = kq.get("den")
     if kq.get("atc"):
-        return (f"👉 ĐẶT LỆNH: ATC (14:30–14:45) – giá ước tính {_f(gia)}, {vung}; trong phiên chưa đủ điều kiện "
-                f"15' nên mua cuối phiên ({bien_the})")
+        return f"👉 Đặt lệnh ATC (giá ước tính {_f(gia)}). Không mua nếu giá cao hơn {_f(den)}"
     goc = (bien_the or "").partition("+ATC")[0]
-    if goc.startswith("15P") or goc == "VWAP":
-        return (f"👉 ĐẶT LỆNH: LO {_f(gia)} ngay (giá lúc đủ điều kiện {'15' if goc != 'VWAP' else 'VWAP'}'), "
-                f"không trả cao hơn {_f(den)} – giá chạy quá vùng thì bỏ ({bien_the})")
-    if goc == "LO":
-        return f"👉 ĐẶT LỆNH: LO {_f(gia)} (⅓ dưới {vung}) – giá đã chạm mức LO ({bien_the})"
-    return f"👉 ĐẶT LỆNH: ATO {_f(gia)} – mở cửa trong {vung} ({bien_the})"
+    if goc == "ATO":
+        return f"👉 Đặt lệnh ATO {_f(gia)}. Không mua nếu mở cửa cao hơn {_f(den)}"
+    return f"👉 Đặt lệnh {_f(gia)}. Không đặt cao hơn {_f(den)}"
 
 
 def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
@@ -189,16 +184,11 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
         return tin_giu_theo_he_thong(kq, bay_gio)
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
     dau = "⏰ MUA ATC" if kq.get("atc") else "🟢 MUA NGAY"
-    nen = f" · nến {pd.Timestamp(kq['thoi_diem']):%H:%M}" if kq.get("thoi_diem") is not None and not kq.get("atc") else ""
+    # tin gọn (người dùng 17/10/2026): giá đặt + nhóm / vùng / CL / MT – bỏ dòng tiêu chí & khối lượng
     d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
          dong_dat_lenh(kq, bien_the, gia),
          f"{TEN_NHOM.get(kq['nhom'], kq['nhom'])} | vùng {_f(kq['tu'])}–{_f(kq['den'])} | CL {_f(cl)}"
-         + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "") + f" | MT {_f(mt1)} → {_f(mt3)}",
-         f"Đạt điểm mua: [Ngày] {kq.get('ly_do_ngay', '')} ✔ · [Vùng] trong vùng ✔",
-         # tiêu chí 15' chỉ là điều kiện mua của cách vào 15P…; LO / ATO / VWAP mua theo lý do riêng
-         (f"  [15'{nen}] {_gon(kq['tieu_chi'])}" if kq["tieu_chi"] and not kq.get("atc") and bien_the.startswith("15P")
-          else f"  [Cách vào {bien_the}{nen}] {kq['ly_do']}"),
-         _khoi_luong(kq, gia, cl)]
+         + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "") + f" | MT {_f(mt1)} → {_f(mt3)}"]
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / CL của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")

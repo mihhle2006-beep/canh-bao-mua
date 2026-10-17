@@ -138,7 +138,7 @@ def test_trong_phien_chi_quet_ds_mua_va_bao_mot_lan(moi_truong):
             mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False, **k: gui.append(nd)):
         assert chay.main(["--che_do", "trong_phien", "--gio", "2026-10-08 10:50"]) == 0
         assert len(gui) == 1 and gui[0].startswith("🟢 MUA NGAY – AAA")
-        assert "[Ngày] MACD ngày cắt lên 07/10 ✔" in gui[0] and "[15' · nến 10:00]" in gui[0] and "≥ VWAP" in gui[0]
+        assert "👉 Đặt lệnh 19.90. Không đặt cao hơn 20.50" in gui[0]        # tin gọn: không in tiêu chí 15' / KL
         assert {m for m, _ in goi} == {"AAA"}                                  # chỉ quét mã trong danh sách mua
         chay.main(["--che_do", "trong_phien", "--gio", "2026-10-08 11:05"])
         assert len(gui) == 1                                                   # không báo trùng
@@ -262,7 +262,8 @@ def test_tin_mua_lo_khong_in_tieu_chi_15p():
           "thoi_diem": pd.Timestamp("2026-10-15 09:15"), "ly_do": "mở cửa ≤ giá LO", "ly_do_ngay": "MACD",
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", False, "chưa")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 09:58", "LO")
-    assert "chưa kích hoạt" not in tin and "[Cách vào LO · nến 09:15] mở cửa ≤ giá LO" in tin
+    assert "chưa kích hoạt" not in tin and "👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75" in tin
+    assert "Đạt điểm mua" not in tin and "Khối lượng" not in tin
 
 
 def test_von_lenh_nhan_san_moi_he_so():
@@ -330,7 +331,7 @@ def test_gia_duoi_lo_van_trong_vung_mua_gia_hien_tai():
     assert k["trang_thai"] == "MUA" and k["gia_mua"] == 19.6 and "dưới LO" in k["ly_do"]
     assert diem_vao.muc_sau_mua(k)[0] == 19.6
     tin = diem_vao.tin_mua(k, "2026-10-08 10:20", "LO")
-    assert "MUA NGAY – AAA 19.60" in tin and "đặt LO 19.60" in tin
+    assert "MUA NGAY – AAA 19.60" in tin and "Đặt lệnh 19.60" in tin
 
 
 def test_xep_sao_toi_da_2_ma_cung_nganh():
@@ -376,7 +377,6 @@ def test_tin_15p_ghi_ro_gia_va_cach_vao():
           "thoi_diem": pd.Timestamp("2026-10-15 10:15"), "ly_do": "đủ tiêu chí 15'", "ly_do_ngay": "MACD",
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", True, "MACD 15' cắt lên")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 10:16", "15P+GIO+ATC")
-    assert "👉 ĐẶT LỆNH: LO 45.10 ngay" in tin and "không trả cao hơn 46.75" in tin and "15P+GIO+ATC" in tin
+    assert tin.split("\n")[1] == "👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75" and len(tin.split("\n")) == 3
     tin = diem_vao.tin_mua({**kq, "atc": True}, "2026-10-15 14:26", "15P+GIO+ATC")
-    assert tin.startswith("⏰ MUA ATC") and "👉 ĐẶT LỆNH: ATC (14:30–14:45) – giá ước tính 45.10" in tin
-    assert "👉 ĐẶT LỆNH: LO 45.10" in diem_vao.tin_mua(kq, "2026-10-15 10:16", "LO+ATC")
+    assert tin.startswith("⏰ MUA ATC") and "👉 Đặt lệnh ATC (giá ước tính 45.10). Không mua nếu giá cao hơn 46.75" in tin
