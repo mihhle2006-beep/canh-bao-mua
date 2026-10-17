@@ -1,4 +1,4 @@
-# Quét định kỳ (bộ lọc bo_loc/ – chuyển từ repo Bo_Loc 10/2026): cuối MỖI PHIÊN T2–T6 quét TOÀN SÀN HOSE với chiến
+# Quét định kỳ (bộ lọc bo_loc/ – chuyển từ repo Bo_Loc 10/2026): cuối MỖI PHIÊN T2–T6 quét TOÀN SÀN HOSE + HNX (17/10/2026) với chiến
 # lược quy_b + xu_huong, mã có Hành động "MUA" ghi vào ma_mua_bo_loc.json (commit vào repo này).
 # Bot đọc file đó, theo dõi mỗi mã 4 phiên kế tiếp (lọc lại / đạt điểm mua thì tính lại) rồi tự xoá.
 # Repo CÔNG KHAI: không quét / gửi mã PTĐTTC (việc đó ở workflow kín ptdttc.yml, quet_dinh_ky --chi_ptdttc).
@@ -13,8 +13,8 @@ on:
         description: "Chiến lược (phân cách dấu phẩy)"
         default: "quy_b,xu_huong"
       tham_so:
-        description: "Tham số cho bộ lọc (mặc định toàn sàn HOSE: --nhom hose)"
-        default: "--nhom hose"
+        description: "Tham số cho bộ lọc (mặc định toàn sàn HOSE + HNX: --nhom hose_hnx)"
+        default: "--nhom hose_hnx"
       gui_telegram:
         description: "Gửi kết quả lọc qua Telegram"
         type: choice
@@ -61,7 +61,7 @@ jobs:
         if: steps.cache_py.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
 
-      # giá ngày từ 2019 cho ~390 mã HOSE: giữ bộ nhớ đệm giữa các lần quét → lần sau chỉ tải thêm phiên mới
+      # giá ngày từ 2019 cho ~700 mã HOSE + HNX: giữ bộ nhớ đệm giữa các lần quét → lần sau chỉ tải thêm phiên mới
       - name: Khôi phục bộ nhớ đệm giá & cơ bản
         uses: actions/cache@v5
         with:
@@ -78,11 +78,11 @@ jobs:
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
 
-      - name: Quét toàn sàn HOSE – quy_b + xu_huong
+      - name: Quét toàn sàn HOSE + HNX – quy_b + xu_huong
         env:
           MPLBACKEND: Agg
-          # mặc định toàn sàn HOSE; đổi bằng biến repo BO_LOC_THAM_SO (VD "--nhom vn30")
-          THAM_SO: ${{ inputs.tham_so || vars.BO_LOC_THAM_SO || '--nhom hose' }}
+          # mặc định toàn sàn HOSE + HNX (Quỹ B mua cả HNX từ 17/10/2026); đổi bằng biến repo BO_LOC_THAM_SO (VD "--nhom vn30")
+          THAM_SO: ${{ inputs.tham_so || vars.BO_LOC_THAM_SO || '--nhom hose_hnx' }}
         run: python -m bo_loc.quet_dinh_ky --chien_luoc "${{ inputs.chien_luoc || 'quy_b,xu_huong' }}" $THAM_SO
 
       - name: Lưu kết quả chi tiết (Excel / HTML)

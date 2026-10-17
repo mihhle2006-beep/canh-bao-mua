@@ -46,7 +46,7 @@ def doc_tham_so(argv=None):
     p.add_argument("--luon_lay_co_ban", action="store_true",
                    help="Lấy dữ liệu cơ bản kể cả khi chiến lược không cần (để có P/E, P/B so sánh ngành)")
     p.add_argument("--tao_mau_co_ban", action="store_true", help="Tạo file co_ban_mau.csv rồi thoát")
-    p.add_argument("--nhom", default="tat_ca", help="Nhóm mã: hose, " + ", ".join(dsm.NHOM_MA))
+    p.add_argument("--nhom", default="tat_ca", help="Nhóm mã: hose, hose_hnx, " + ", ".join(dsm.NHOM_MA))
     p.add_argument("--khong_cache", action="store_true", help="Không dùng/lưu bộ nhớ đệm (tải lại toàn bộ)")
     p.add_argument("--bo_nen_dang_chay", action="store_true", help="Chỉ dùng nến ngày đã đóng cửa")
     p.add_argument("--ma", default=None, help="Danh sách mã, VD GMD,HAH,VSC")

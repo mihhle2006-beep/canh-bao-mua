@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
     inputs:
       ro:
-        description: "chien_luoc = 41 mã (đủ phần) · rong = ~400 mã · tat_ca = toàn sàn HOSE + HNX (chỉ cách vào 15')"
-        default: chien_luoc
+        description: "hose_hnx = toàn sàn HOSE + HNX (mặc định, chỉ cách vào 15') · chien_luoc = 41 mã (đủ phần) · rong = ~400 mã · tat_ca = rổ rộng + HOSE + HNX"
+        default: hose_hnx
         type: choice
-        options: [chien_luoc, rong, tat_ca]
+        options: [hose_hnx, chien_luoc, rong, tat_ca]
 
 permissions:
   contents: write
@@ -77,6 +77,17 @@ jobs:
             cache_ptcp
             cache_du_lieu
           key: bt-${{ github.run_id }}
+
+      - name: Kết quả rổ so sánh (hose_hnx / tat_ca – không đổi cách vào bot đang dùng)
+        if: always() && hashFiles('ket_qua_backtest_*.json') != ''
+        uses: actions/upload-artifact@v6
+        with:
+          name: ket-qua-backtest-${{ inputs.ro || 'chien_luoc' }}-${{ github.run_id }}
+          path: |
+            ket_qua_backtest_*.json
+            backtest_chien_luoc.xlsx
+          retention-days: 30
+          if-no-files-found: ignore
 
       - name: Lưu kết quả backtest (công khai – chỉ thống kê)
         if: always()

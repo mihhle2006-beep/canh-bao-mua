@@ -338,3 +338,21 @@ def test_xep_sao_toi_da_2_ma_cung_nganh():
     mua = [{"ma": m} for m in ("VCB", "BID", "CTG", "HPG", "FPT")]          # 3 ngân hàng đứng đầu
     out = [k["ma"] for k in xep_sao_theo_nganh(mua, so_sao=4, toi_da=2)]
     assert out[:4] == ["VCB", "BID", "HPG", "FPT"] and out[4] == "CTG"
+
+
+def test_tin_hieu_manh_suat_du_phong(monkeypatch):
+    """17/10/2026: tín hiệu MẠNH B → 💪 trong tin + dòng giải thích suất dự phòng; mã biến động mạnh bị lọc."""
+    hd = pd.DataFrame([{"Mã": m, "Nhóm": "MUA_MOI", "Thành phần": "B", "Giá đóng cửa": 10.0, "Cắt lỗ": 9.5,
+                        "Vùng mua từ": 9.9, "Vùng mua đến": 10.2, "Hiệu lực": "2026-10-19", "Ưu tiên": ut}
+                       for m, ut in (("AAA", 1), ("BBB", 2), ("CCC", 3))])
+    ra = {"hanh_dong": hd, "doc": {"ngay": "2026-10-16"}, "vni_df": None}
+    loc = {"AAA": {"bo": False, "he_so": 1.0, "ly_do": [], "manh_b": True, "dau_hieu_manh": ["sát đỉnh 52T", "RS 3T cao",
+                                                                                           "ngành mạnh"]},
+           "BBB": {"bo": False, "he_so": 1.0, "ly_do": [], "manh_b": False, "dau_hieu_manh": []},
+           "CCC": {"bo": True, "he_so": 1.0, "ly_do": ["biến động mạnh (top 12% rổ, bỏ top 30%)"], "manh_b": False}}
+    monkeypatch.setattr(tong_ket_cl, "_loc_quy", lambda ma, vni: loc[ma])
+    a, b, c = tong_ket_cl.ds_khuyen_nghi(ra)
+    assert a["manh_b"] and "ngành mạnh" in a["dau_hieu_manh"] and not b["manh_b"]
+    assert "AAA💪 |" in tong_ket_cl.dong_mua(a) and "💪" not in tong_ket_cl.dong_mua(b)
+    assert c["nhom"] == "NGOAI_TOP"
+    assert C.CACH_VAO_15P == "15P+GIO+ATC"
