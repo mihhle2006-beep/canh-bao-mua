@@ -1,7 +1,7 @@
 # Quét định kỳ (bộ lọc bo_loc/ – chuyển từ repo Bo_Loc 10/2026): cuối MỖI PHIÊN T2–T6 quét TOÀN SÀN HOSE với chiến
 # lược quy_b + xu_huong, mã có Hành động "MUA" ghi vào ma_mua_bo_loc.json (commit vào repo này).
 # Bot đọc file đó, theo dõi mỗi mã 4 phiên kế tiếp (lọc lại / đạt điểm mua thì tính lại) rồi tự xoá.
-# Repo CÔNG KHAI: không quét / gửi mã PTĐTTC (việc đó ở repo riêng tư Bo_Loc).
+# Repo CÔNG KHAI: không quét / gửi mã PTĐTTC (việc đó ở workflow kín ptdttc.yml, quet_dinh_ky --chi_ptdttc).
 name: Quet dinh ky
 
 on:
