@@ -7,6 +7,7 @@
 #   von3  – tăng CAGR bằng vốn: rủi ro/lệnh, rủi ro mở, số mã, trần/mã, mã mới/tuần, nhồi 3 lần, tổ hợp
 #   von4  – độ chắc mã mới/tuần 4–6 × rủi ro 0,75–1%, ★ ngẫu nhiên 50 lần, chẩn đoán 6/tuần
 #   von5  – cải thiện danh mục: nới 9/10 mã theo chế độ thị trường, KL theo ★, đổi mã yếu, mức phí, tổ hợp
+#   von8  – kiểm định chắc các ứng viên (phân bố xếp ngẫu nhiên, CAGR bỏ 2020–21)
 #   von7  – bỏ mã đầu cơ: giá thấp, trần/sàn liên tục, biến động cao, thanh khoản không bền, vốn hoá nhỏ, tăng nóng
 #   von6  – rổ mã: HOSE (như bot) / + HNX / + UPCoM × top 100–300 GTGD, cắt lệnh chết, tổ hợp (thêm toàn sàn HOSE + HNX)
 # RỔ (input ro, 10/2026): hose = toàn sàn HOSE như bot (mặc định) · hose_hnx = HOSE + HNX – luôn kèm mã đã huỷ
@@ -27,7 +28,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von3 / von4 / von5 / von6 / von7 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von3 / von4 / von5 / von6 / von7 / von8 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -53,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von3, von4, von5, von6, von7]
+        phan: [chuan, von3, von4, von5, von6, von7, von8]
         ro: [hose, hose_hnx]
     runs-on: ubuntu-latest
     defaults:
@@ -132,6 +133,7 @@ jobs:
             von4) export CHI_VON4=1 ;;                         # độ chắc mã mới/tuần × rủi ro, ★ ngẫu nhiên 50 lần
             von5) export CHI_VON5=1 ;;                         # cải thiện danh mục: số mã, KL theo ★, đổi mã yếu, phí
             von6) export CHI_VON6=1 ;;                         # top GTGD, cắt lệnh chết (trong rổ RO_BT)
+            von8) export CHI_VON8=1 ;;                         # kiểm định chắc ứng viên: phân bố 30 lần xếp ngẫu nhiên
             von7) export CHI_VON7=1 ;;                         # bỏ mã đầu cơ: trần/sàn, biến động, vốn hoá, thanh khoản bền
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
