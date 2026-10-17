@@ -65,7 +65,9 @@ def main(argv=None):
         from canh_bao.backtest_bot import chay_backtest, ro_hose_hnx, ro_rong, ro_tat_ca
         if a.ro in ("rong", "tat_ca", "hose_hnx"):
             ro = {"rong": ro_rong, "tat_ca": ro_tat_ca, "hose_hnx": ro_hose_hnx}[a.ro]
-            return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro(), chi_diem_vao=True)
+            # rổ có HNX: bot chỉ quét HOSE → ghi file riêng, không đổi cách vào 15' bot đang dùng (ket_qua_backtest.json)
+            return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro(), chi_diem_vao=True,
+                                 file_ra=None if a.ro == "rong" else f"ket_qua_backtest_{a.ro}.json")
         return chay_backtest(bay_gio, a.khong_gui)
     them = [m.strip().upper() for m in (a.ma or "").split(",") if m.strip()]
     vt, nguon_vt = ({}, "tắt (--khong_ban)") if a.khong_ban else vi_the.doc_danh_muc()

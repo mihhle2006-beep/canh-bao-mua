@@ -78,6 +78,17 @@ jobs:
             cache_du_lieu
           key: bt-${{ github.run_id }}
 
+      - name: Kết quả rổ so sánh (hose_hnx / tat_ca – không đổi cách vào bot đang dùng)
+        if: always() && hashFiles('ket_qua_backtest_*.json') != ''
+        uses: actions/upload-artifact@v6
+        with:
+          name: ket-qua-backtest-${{ inputs.ro || 'chien_luoc' }}-${{ github.run_id }}
+          path: |
+            ket_qua_backtest_*.json
+            backtest_chien_luoc.xlsx
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Lưu kết quả backtest (công khai – chỉ thống kê)
         if: always()
         run: |

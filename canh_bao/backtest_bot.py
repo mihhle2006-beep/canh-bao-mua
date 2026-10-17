@@ -135,8 +135,9 @@ def tai_nen_15p(ds_ma=None):
     return len(n15)
 
 
-def chay_backtest(bay_gio, khong_gui=False, ds_ma=None, chi_diem_vao=False):
-    """chi_diem_vao: chỉ backtest cách vào 15' (rổ lớn) – giữ phần điểm bán / bộ lọc mua của lần chạy trước."""
+def chay_backtest(bay_gio, khong_gui=False, ds_ma=None, chi_diem_vao=False, file_ra=None):
+    """chi_diem_vao: chỉ backtest cách vào 15' (rổ lớn) – giữ phần điểm bán / bộ lọc mua của lần chạy trước.
+    file_ra: ghi kết quả ra file khác C.FILE_BACKTEST (rổ so sánh – KHÔNG đổi cách vào 15' bot đang dùng)."""
     from ptcp.backtest_diem_ban import backtest_diem_ban
     from ptcp.diem_vao_15p import backtest_15p, tin_hieu_qua_khu
     from . import du_lieu
@@ -159,7 +160,7 @@ def chay_backtest(bay_gio, khong_gui=False, ds_ma=None, chi_diem_vao=False):
     else:
         _diem_ban_loc_mua(ra, gia, vni, backtest_diem_ban)
     _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu)
-    return _luu_gui(ra, bay_gio, khong_gui, gui, gui_file)
+    return _luu_gui(ra, bay_gio, khong_gui, gui, gui_file, file_ra or C.FILE_BACKTEST)
 
 
 def doc_cu():
@@ -248,10 +249,11 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
                 print(q.round(2).to_string(index=False))
 
 
-def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file):
-    with open(C.FILE_BACKTEST, "w", encoding="utf-8") as f:
+def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file, file_ra=None):
+    file_ra = file_ra or C.FILE_BACKTEST
+    with open(file_ra, "w", encoding="utf-8") as f:
         json.dump(ra, f, ensure_ascii=False, indent=1)
-    print(f"Đã lưu {C.FILE_BACKTEST}")
+    print(f"Đã lưu {file_ra}")
     tin = "\n".join([f"🧪 BACKTEST CHIẾN LƯỢC – {pd.Timestamp(bay_gio):%d/%m/%Y}",
                      f"Điểm vào 15' ({ra['15p'].get('mo_ta', '')}): {ra['15p']['ket_luan']}",
                      *([f"  riêng top {ra['15p']['top_gtgd']['top']} GTGD: {ra['15p']['top_gtgd']['ket_luan']}"]

@@ -28,3 +28,10 @@ def test_ro_hose_hnx(monkeypatch):
     monkeypatch.setattr(S, "doc_san", lambda: {"HOSE": ["HPG", "FPT"], "HNX": ["SHS"]})
     monkeypatch.setattr(N, "HUY_NIEM_YET", {"FLC": "x"})
     assert B.ro_hose_hnx() == ["HPG", "FPT", "SHS", "FLC"]
+
+
+def test_luu_file_rieng_khong_doi_file_bot(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    ra = {"15p": {"ket_luan": "x", "mo_ta": "m"}, "diem_ban": {"ket_luan": "y"}}
+    assert B._luu_gui(ra, "2026-10-17", True, None, None, "ket_qua_backtest_hose_hnx.json") == 0
+    assert (tmp_path / "ket_qua_backtest_hose_hnx.json").exists() and not (tmp_path / "ket_qua_backtest.json").exists()
