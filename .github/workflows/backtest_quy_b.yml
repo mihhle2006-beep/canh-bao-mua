@@ -8,6 +8,7 @@
 #   von12 – tăng CAGR / không lỡ lệnh lớn: chẩn đoán lệnh ≥5R bị lỡ, suất dự phòng rộng, rủi ro mở, nạp thêm, đổi mã chậm
 #   von13 – dùng hết ngân sách sụt giảm −15%: rủi ro/lệnh 0,85–1%, nhồi × 1,5, trần mã 25–30%, tổ hợp
 #   von14 – hệ thoát (khung tuần 1,5/3R, đáy 2 tuần, bậc thang, hạn lệnh, siết…) & đánh giá lại điểm ★
+#   von15 – tăng rủi ro có điều kiện (VNI Tăng, độ rộng, NAV sát đỉnh, tín hiệu mạnh) để CAGR tăng mà Calmar giữ
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -23,7 +24,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von12 / von13 / von14 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von12 / von13 / von14 / von15 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -46,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von12, von13, von14]
+        phan: [chuan, von12, von13, von14, von15]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -117,6 +118,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von15) export CHI_VON15=1 ;;                       # tăng rủi ro có điều kiện (thị trường, đường vốn, tín hiệu)
             von14) export CHI_VON14=1 ;;                       # hệ thoát & điểm ★ trên luật đang áp dụng
             von13) export CHI_VON13=1 ;;                       # dùng hết ngân sách sụt giảm −15% (rủi ro, nhồi, trần mã)
             von12) export CHI_VON12=1 ;;                       # tăng CAGR / không lỡ lệnh lớn (đổi mã chậm, nạp thêm…)
