@@ -10,7 +10,7 @@
 #   von8  – kiểm định chắc các ứng viên (phân bố xếp ngẫu nhiên, CAGR bỏ 2020–21)
 #   von7  – bỏ mã đầu cơ: giá thấp, trần/sàn liên tục, biến động cao, thanh khoản không bền, vốn hoá nhỏ, tăng nóng
 #   von6  – rổ mã: HOSE (như bot) / + HNX / + UPCoM × top 100–300 GTGD, cắt lệnh chết, tổ hợp (thêm toàn sàn HOSE + HNX)
-# RỔ (input ro, 10/2026): hose = toàn sàn HOSE như bot (mặc định) · hose_hnx = HOSE + HNX – luôn kèm mã đã huỷ
+# RỔ (input ro, 10/2026): hose_hnx = HOSE + HNX (MẶC ĐỊNH – người dùng chọn 17/10/2026) · hose = toàn sàn HOSE – luôn kèm mã đã huỷ
 # niêm yết; giá tải cho cả HOSE + HNX (cache gia-san-), hạng GTGD / RS / độ rộng tính trong rổ. Rổ cũ (bản đồ ngành +
 # kho BCTC, ma: all) chọn mã đã biết hôm nay → thiên lệch sống sót (CAGR 17,7% so với 12,7% trên HOSE thật).
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>_<rổ>.xlsx).
@@ -41,7 +41,7 @@ on:
         default: ""
       ro:
         description: "Rổ mua: hose (như bot) / hose_hnx / cả hai (phân cách dấu phẩy); trống = tải gì mua nấy"
-        default: "hose,hose_hnx"
+        default: "hose_hnx"
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc để chạy (trống = main) – thử code chưa gộp"
         default: ""
@@ -69,8 +69,8 @@ jobs:
         id: chon
         working-directory: .
         env:
-          PHAN: ${{ inputs.phan || 'chuan' }}          # lịch hằng tháng (không có inputs) → chỉ phần chuan, rổ hose
-          RO: ${{ github.event_name == 'workflow_dispatch' && inputs.ro || 'hose' }}
+          PHAN: ${{ inputs.phan || 'chuan' }}          # lịch hằng tháng (không có inputs) → chỉ phần chuan, rổ hose_hnx
+          RO: ${{ github.event_name == 'workflow_dispatch' && inputs.ro || 'hose_hnx' }}
         run: |
           case ",$PHAN," in *",${{ matrix.phan }},"*|*",all,"*) ;; *) exit 0;; esac
           case ",$RO," in *",${{ matrix.ro }},"*) echo "chay=1" >> "$GITHUB_OUTPUT";; esac
@@ -82,7 +82,7 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           path: danh-muc
       - uses: actions/checkout@v5                 # phần chuan: đối chiếu giả lập (repo kín – chỉ gửi Telegram)
-        if: steps.chon.outputs.chay && matrix.phan == 'chuan' && matrix.ro == 'hose'
+        if: steps.chon.outputs.chay && matrix.phan == 'chuan' && matrix.ro == 'hose_hnx'
         continue-on-error: true
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
