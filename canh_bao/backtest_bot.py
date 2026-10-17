@@ -3,7 +3,8 @@
 BACKTEST cho bot (python chay.py --che_do backtest – chạy tay trên Actions, ~10–20 phút lần đầu):
   1. ĐIỂM BÁN & MUA THÊM: chốt ⅓ / ½ ở 3R, siết cắt lỗ khi thị trường giảm, hạn ngắn hơn, mua thêm kiểu B / khi có
      tín hiệu mới – so với hệ thoát gốc, 2 giai đoạn 2019–22 & 2023–26 (giá ngày).
-  2. ĐIỂM VÀO 15 PHÚT: mọi khuyến nghị mua quá khứ của chiến lược (41 mã, cùng cách phân nhóm như tin hằng ngày)
+  2. ĐIỂM VÀO 15 PHÚT: mọi khuyến nghị mua quá khứ của chiến lược (41 mã / rổ rộng ~400 / tất cả HOSE + HNX, cùng
+     cách phân nhóm như tin hằng ngày; bảng tách theo sàn)
      × các cách vào (ATO / 15P / 15P+ATC / 15P+GIO / VWAP / LO …) trên nến 15' thật → lãi/lỗ theo hệ thoát.
      Cách vào được chọn (khớp ≥ 50%, lãi TB / lệnh cao nhất) dùng cho cảnh báo trong phiên (CACH_VAO_15P = "tu_dong").
 Kết quả (chỉ thống kê, không có danh mục) → ket_qua_backtest.json (commit) + file Excel gửi Telegram.
@@ -46,6 +47,38 @@ def ro_rong():
     return list(dict.fromkeys(loc_quy_b.ro_ma() + list(loc.get("hang_gtgd", {})) + C.MA_CHIEN_LUOC))
 
 
+def ro_tat_ca():
+    """Rổ TẤT CẢ mã cho backtest cách vào: ro_rong + toàn sàn HOSE + HNX (ptcp/san_niem_yet.json; ptcp cũ chưa có
+    → chỉ ro_rong)."""
+    try:
+        from ptcp.san import doc_san
+    except ImportError:
+        return ro_rong()
+    d = doc_san()
+    return list(dict.fromkeys(ro_rong() + d["HOSE"] + d["HNX"]))
+
+
+def _bang_san(ct):
+    """Bảng cách vào tách theo sàn (HOSE / HNX / khác – UPCoM, đã huỷ niêm yết) – để so, không dùng chọn."""
+    try:
+        from ptcp.san import doc_san, san_cua
+    except ImportError:
+        return None
+    from ptcp.diem_vao_15p import tong_hop_15p
+    if not len(ct):
+        return None
+    d = doc_san()
+    san = ct["Mã"].map(lambda m: san_cua(m, d) or "khác")
+    out = {}
+    for ten in ("HOSE", "HNX", "khác"):
+        g = ct[san == ten]
+        if len(g):
+            k = tong_hop_15p(g, list(dict.fromkeys(g["Biến thể"])))
+            out[ten] = {"bang": _ban_ghi(k["bang"]), "tot_nhat": k["tot_nhat"], "so_tin_hieu": k["so_tin_hieu"],
+                        "so_ma": int(g["Mã"].nunique()), "ket_luan": _ket_luan_15p(k["bang"], k["tot_nhat"])}
+    return out or None
+
+
 def _tai_song_song(ham, ds_ma, luong=8):
     from concurrent.futures import ThreadPoolExecutor
 
@@ -81,7 +114,7 @@ def tai_nen_15p(ds_ma=None):
     """Chỉ tải phần nến 15' mới cho rổ backtest (workflow hằng tuần): giữ cache không bị GitHub xoá (7 ngày không
     dùng) và tích luỹ lịch sử dài hơn giới hạn ~1 năm của nguồn. Trả số mã có dữ liệu."""
     from . import du_lieu
-    ds_ma = ds_ma or ro_rong()
+    ds_ma = ds_ma or ro_tat_ca()
     n15 = _tai_song_song(lambda m: du_lieu.tai_lich_su_phut(m, C.BACKTEST_15P_TU), ds_ma)
     if n15:
         tu = min(d.index[0] for d in n15.values())
@@ -182,6 +215,11 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
         if bt:
             ra["15p"]["top_gtgd"] = {**bt, "top": top}
             print(f"  Riêng top {top} GTGD ({bt['so_tin_hieu']} khuyến nghị): {bt['ket_luan']}")
+        ts = _bang_san(k15["chi_tiet"])
+        if ts:
+            ra["15p"]["theo_san"] = ts
+            for ten, v in ts.items():
+                print(f"  Sàn {ten} ({v['so_ma']} mã, {v['so_tin_hieu']} khuyến nghị): {v['ket_luan']}")
         try:                                                        # ptcp mới: mô phỏng cả quỹ B theo từng cách vào
             from ptcp.diem_vao_15p import quy_b_theo_cach_vao
             q = quy_b_theo_cach_vao(k15["chi_tiet"], gia, vni)
@@ -226,6 +264,8 @@ def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file):
                 pd.DataFrame(ra["15p"]["quy_b"]["bang"]).to_excel(w, sheet_name="BT 15 phut quy B", index=False)
             if ra["15p"].get("top_gtgd"):
                 pd.DataFrame(ra["15p"]["top_gtgd"]["bang"]).to_excel(w, sheet_name="BT 15 phut top GTGD", index=False)
+            for ten, v in (ra["15p"].get("theo_san") or {}).items():
+                pd.DataFrame(v["bang"]).to_excel(w, sheet_name=f"BT 15 phut san {ten}", index=False)
     try:
         from ptcp.excel_xanh import trang_tri_excel
         trang_tri_excel(path)

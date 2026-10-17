@@ -4,7 +4,8 @@ CẢNH BÁO MUA THEO CHIẾN LƯỢC THỊ TRƯỜNG – chạy:
   python chay.py                       (tu_dong: trong phiên → điểm vào 15' & cảnh báo bán; sau 15h → tổng kết)
   python chay.py --che_do tong_ket     (tin tổng kết gọn theo chiến lược + mã đang giữ + file Excel chi tiết)
   python chay.py --che_do trong_phien  (quét 15': chỉ mã trong nhóm mua của tin tổng kết, đúng vùng giá)
-  python chay.py --che_do backtest     (backtest điểm vào 15' & điểm bán / mua thêm → ket_qua_backtest.json)
+  python chay.py --che_do backtest     (backtest điểm vào 15' & điểm bán / mua thêm → ket_qua_backtest.json;
+                                        --ro rong / tat_ca: chỉ cách vào 15' trên rổ ~400 mã / toàn sàn HOSE + HNX)
   python chay.py --che_do lich_su      (chấm lại mọi tín hiệu đã ghi, in bảng độ chính xác, xuất Excel)
   python chay.py --chi_ma FPT          (xem RIÊNG 1 mã / vài mã: FPT,HPG – không ghi trạng thái; + --khong_gui = chỉ in)
   python chay.py --khong_gui           (chỉ in, không gửi Telegram)
@@ -37,8 +38,8 @@ def main(argv=None):
                    help="CHỈ xem mã này (VD FPT hoặc FPT,HPG) theo chiến lược – không ghi trạng thái / danh sách mua")
     p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-08 10:30'")
     p.add_argument("--khong_gui", action="store_true")
-    p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "rong"],
-                   help="backtest: 41 mã chiến lược (đủ phần) hoặc rổ ~400 mã (chỉ cách vào 15')")
+    p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "rong", "tat_ca"],
+                   help="backtest: 41 mã chiến lược (đủ phần), rổ ~400 mã hoặc tất cả HOSE + HNX (chỉ cách vào 15')")
     p.add_argument("--khong_ban", action="store_true", help="bỏ danh mục / cảnh báo bán")
     p.add_argument("--khong_chien_luoc", action="store_true", help="(giữ cho tương thích – không còn tác dụng)")
     a = p.parse_args(argv)
@@ -60,9 +61,10 @@ def main(argv=None):
         from canh_bao.backtest_bot import tai_nen_15p
         return 0 if tai_nen_15p() else 1
     if che_do == "backtest":
-        from canh_bao.backtest_bot import chay_backtest, ro_rong
-        if a.ro == "rong":
-            return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro_rong(), chi_diem_vao=True)
+        from canh_bao.backtest_bot import chay_backtest, ro_rong, ro_tat_ca
+        if a.ro in ("rong", "tat_ca"):
+            return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro_tat_ca() if a.ro == "tat_ca" else ro_rong(),
+                                 chi_diem_vao=True)
         return chay_backtest(bay_gio, a.khong_gui)
     them = [m.strip().upper() for m in (a.ma or "").split(",") if m.strip()]
     vt, nguon_vt = ({}, "tắt (--khong_ban)") if a.khong_ban else vi_the.doc_danh_muc()
