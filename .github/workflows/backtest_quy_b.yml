@@ -7,6 +7,7 @@
 #   von3  – tăng CAGR bằng vốn: rủi ro/lệnh, rủi ro mở, số mã, trần/mã, mã mới/tuần, nhồi 3 lần, tổ hợp
 #   von4  – độ chắc mã mới/tuần 4–6 × rủi ro 0,75–1%, ★ ngẫu nhiên 50 lần, chẩn đoán 6/tuần
 #   von5  – cải thiện danh mục: nới 9/10 mã theo chế độ thị trường, KL theo ★, đổi mã yếu, mức phí, tổ hợp
+#   von6  – rổ mã: HOSE (như bot) / + HNX / + UPCoM × top 100–300 GTGD, cắt lệnh chết, tổ hợp (thêm toàn sàn HOSE + HNX)
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -22,7 +23,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von3 / von4 / von5 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von3 / von4 / von5 / von6 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -45,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von3, von4, von5]
+        phan: [chuan, von3, von4, von5, von6]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -88,8 +89,11 @@ jobs:
         uses: actions/cache@v5
         with:
           path: danh-muc/cache_du_lieu
-          key: gia-ngay-${{ matrix.phan }}-${{ github.run_id }}
-          restore-keys: gia-ngay-
+          # von6 tải thêm toàn sàn HOSE + HNX → cache riêng (không lẫn vào rổ "all" của các phần khác)
+          key: ${{ matrix.phan == 'von6' && 'gia-von6' || 'gia-ngay' }}-${{ matrix.phan }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ matrix.phan == 'von6' && 'gia-von6-' || 'gia-ngay-' }}
+            gia-ngay-
       - name: Backtest (${{ matrix.phan }})
         if: steps.chon.outputs.chay
         env:
@@ -106,6 +110,7 @@ jobs:
             von3) export CHI_VON3=1 ;;                         # tăng CAGR bằng vốn: rủi ro, số mã, trần, nhồi
             von4) export CHI_VON4=1 ;;                         # độ chắc mã mới/tuần × rủi ro, ★ ngẫu nhiên 50 lần
             von5) export CHI_VON5=1 ;;                         # cải thiện danh mục: số mã, KL theo ★, đổi mã yếu, phí
+            von6) export CHI_VON6=1; MA="${MA:-all},HOSE,HNX" ;;  # rổ HOSE/HNX × top GTGD, cắt lệnh chết
           esac
           python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_$PHAN.xlsx" --song \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
