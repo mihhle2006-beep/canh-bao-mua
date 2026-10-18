@@ -8,6 +8,7 @@
 #   von26 – chỉnh hệ phụ 6 mã: nhịp xoay, vào lại, rổ, điểm chọn, hồi sau sập (từng thứ một)
 #   von29 – định giá mạnh hơn: hệ số KL mã ĐẮT / RẺ, KL tuyến tính, ★ thêm định giá
 #   von30 – định giá: RẺ ×1,25…×3, ngưỡng 10–40%, cập nhật theo giá hiện tại, P/E, EV/EBITDA
+#   von31 – ★ thêm sức mạnh ngành (RS ngành ¼ / ½ / ưu tiên ngành mạnh) so 30 lần ★ ngẫu nhiên
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -23,7 +24,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von26 / von29 / von30 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von26 / von29 / von30 / von31 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -46,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von26, von29, von30]
+        phan: [chuan, von26, von29, von30, von31]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -120,6 +121,7 @@ jobs:
             von26) export CHI_VON26=1 ;;                       # chỉnh hệ phụ 6 mã
             von29) export CHI_VON29=1 ;;                       # định giá mạnh hơn
             von30) export CHI_VON30=1 ;;                       # định giá nhiều mức, cập nhật theo giá
+            von31) export CHI_VON31=1 ;;                       # ★ thêm sức mạnh ngành
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
