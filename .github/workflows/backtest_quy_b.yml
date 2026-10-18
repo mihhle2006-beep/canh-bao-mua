@@ -6,8 +6,7 @@
 # đã xoá 17/10/2026 – xem lịch sử git:
 #   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   von26 – chỉnh hệ phụ 6 mã: nhịp xoay, vào lại, rổ, điểm chọn, hồi sau sập (từng thứ một)
-#   von27 – nới quỹ B: số mã 8/10/12 × rủi ro mở 4/5/6% × mã mới/tuần 5/7
-#   von28 – suất mã mới kiểu cửa sổ trượt (≤ N mã trong P phiên) / trả suất khi bán
+#   von29 – định giá mạnh hơn: hệ số KL mã ĐẮT / RẺ, KL tuyến tính, ★ thêm định giá
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -23,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von26 / von27 / von28 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von26 / von29 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -46,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von26, von27, von28]
+        phan: [chuan, von26, von29]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -118,8 +117,7 @@ jobs:
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
             von26) export CHI_VON26=1 ;;                       # chỉnh hệ phụ 6 mã
-            von27) export CHI_VON27=1 ;;                       # nới số mã / rủi ro mở / mã mới mỗi tuần
-            von28) export CHI_VON28=1 ;;                       # suất mã mới kiểu cửa sổ trượt
+            von29) export CHI_VON29=1 ;;                       # định giá mạnh hơn
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
