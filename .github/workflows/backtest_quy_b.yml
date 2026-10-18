@@ -6,6 +6,7 @@
 # đã xoá 17/10/2026 – xem lịch sử git:
 #   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   von21 – hệ khác loại xoay vòng tháng (giá trị, thấp biến động, động lượng): tương quan với B, đi ngang
+#   von22 – bộ hệ mới: hiệu ứng Tết, đầu tháng, hồi sau sập, xoay vòng ngành mạnh
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -21,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von21 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von21 / von22 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von21]
+        phan: [chuan, von21, von22]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -116,6 +117,7 @@ jobs:
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
             von21) export CHI_VON21=1 ;;                       # hệ khác loại xoay vòng tháng, riêng / chung quỹ với B
+            von22) export CHI_VON22=1 ;;                       # bộ hệ mới: Tết, đầu tháng, hồi sau sập, ngành mạnh
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
