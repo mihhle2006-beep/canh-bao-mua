@@ -167,11 +167,11 @@
     "Mã": "TCH",
     "Nhóm": "MUA MỚI",
     "Vùng": "11.00–11.50",
-    "Giá": 11.35,
+    "Giá": 11.3,
     "Trạng thái": "MUA",
-    "Lý do": "giá 11.35 dưới LO 11.45, còn trong vùng → mua giá hiện tại (đặt LO 11.35, không cần đặt cao hơn)",
+    "Lý do": "giá 11.30 dưới LO 11.45, còn trong vùng → mua giá hiện tại (đặt LO 11.30, không cần đặt cao hơn)",
     "Giờ": "09:15",
-    "Giá mua": 11.35
+    "Giá mua": 11.3
    },
    {
     "Mã": "PLX",
@@ -187,7 +187,7 @@
     "Mã": "PDR",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.90–11.30",
-    "Giá": 11.3,
+    "Giá": 11.25,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -207,7 +207,7 @@
     "Mã": "DBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "15.35–16.05",
-    "Giá": 15.7,
+    "Giá": 15.65,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
