@@ -219,7 +219,7 @@ def _khoi_theo_doi(tt):
     mo, dong = b.get("dang_mo") or [], b.get("da_dong") or []
     if not mo and not dong:
         return '<p class="mo">Chưa có lệnh giả định nào đang mở.</p>'
-    ds = "".join(f"<li>{_e(d)}</li>" for d in mo)
+    ds = "".join(f"<li>{_e(d).replace(chr(10), '<br>')}</li>" for d in mo)      # dòng tin nhiều dòng
     xong = "".join(f"<li>{_e(d)}</li>" for d in dong)
     return (f'<p class="mo">{len(mo)} lệnh đang mở (cập nhật {_e(b.get("luc", ""))}) – giá vào = mở cửa phiên sau khuyến '
             f'nghị nếu trong vùng mua; thoát theo hệ thoát như danh mục thật.</p><ul class="chi-bao">{ds}</ul>'

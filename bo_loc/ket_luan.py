@@ -126,7 +126,7 @@ def _ke_hoach(r):
         lo = (f"đặt LO {_so(r['Đặt LO'])} (chưa khớp → ATC chỉ khi là mã ★ của tin tổng kết) · "
               if co(r.get("Đặt LO")) else "")
         return (f"mua {r['Vùng mua']} · {lo}cắt lỗ {_so(r['Cắt lỗ'])} ({_so(r['Cắt lỗ %'], 1)}%) · "
-                f"MT tạm thời 1R {_so(r['Mục tiêu'])} → 3R {_so(r['MT 3R'])} · bán theo hệ thoát (không chốt cứng)")
+                f"Mục tiêu tạm thời 1R {_so(r['Mục tiêu'])} → 3R {_so(r['MT 3R'])} · bán theo hệ thoát (không chốt cứng)")
     return (f"mua {r['Vùng mua']} · cắt lỗ {_so(r['Cắt lỗ'])} ({_so(r['Cắt lỗ %'], 1)}%) · "
             f"mục tiêu {_so(r['Mục tiêu'])} (+{_so(r['Mục tiêu %'], 1)}%) · R/R {_so(r['R/R'], 1)}")
 

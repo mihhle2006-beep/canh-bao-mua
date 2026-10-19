@@ -157,13 +157,25 @@ def danh_gia_ban_cu(v, gia):
             "cach_cat_lo_pct": (cl / gia - 1) * 100 if cl and gia == gia else np.nan}
 
 
+def dong_da_vao(ngay_mua, gia_von, lai_pct, lai_R=None):
+    """'Đã vào lệnh: 12/10 giá vốn 70.00 · hiện lãi +2.9% (+0.4R)' – dòng chung cho mọi tin mã đang giữ."""
+    ng = _ngay(ngay_mua)
+    s = "Đã vào lệnh:" + (f" {ng:%d/%m}" if ng is not None else "") + f" giá vốn {_f(gia_von)}"
+    if lai_pct is not None and lai_pct == lai_pct:
+        s += f" · hiện {'lãi' if lai_pct >= 0 else 'lỗ'} {lai_pct:+.1f}%"
+        if lai_R is not None and lai_R == lai_R:
+            s += f" ({lai_R:+.1f}R)"
+    return s
+
+
 def tin_ban_cu(v, kb, bay_gio):
     hd = {"CAT_LO": f"Bán toàn bộ {v['so_cp']:,.0f} CP theo kỷ luật cắt lỗ",
           "GAN_CAT_LO": f"Chuẩn bị lệnh bán: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ"}.get(kb["muc"], "")
     d = [f"{NHAN[kb['muc']]} – {v['ma']} (danh mục cũ) @ {_f(kb['gia'])} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
-         f"Đang giữ {v['so_cp']:,.0f} CP | giá vốn {_f(v.get('gia_von'))} | lãi/lỗ {_f(kb['lai_lo_pct'], 1)}%",
-         f"Cắt lỗ đề xuất {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}% so với giá) – bot danh-muc tính cuối ngày, "
-         "chỉ dời lên"]
+         f"Đang giữ: {v['so_cp']:,.0f} CP",
+         dong_da_vao(v.get("ngay_mua"), v.get("gia_von"), kb["lai_lo_pct"]),
+         f"Cắt lỗ đề xuất: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}% so với giá) – bot danh-muc tính cuối "
+         "ngày, chỉ dời lên"]
     if hd:
         d.append(f"➜ {hd}")
     d.append("(Bán xong: xoá dòng / sửa so_cp trong danh_muc_cu.csv · giá nến 15' – tự kiểm tra trước khi đặt lệnh)")
@@ -363,10 +375,10 @@ def _f(x, le=2):
 
 def _dong_he_thoat(kb):
     if not kb.get("he_thoat"):
-        return [f"Cắt lỗ đã đặt {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%) | "
-                f"Mục tiêu đã đặt {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)"]
-    d = [f"Hệ thoát: {TEN_TANG[kb['tang']]} | lãi {_f(kb['lai_R'], 1)}R (1R = {_f(kb['R'])}) | cắt lỗ hiệu lực "
-         f"{_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)"]
+        return [f"Cắt lỗ đã đặt: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)",
+                f"Mục tiêu đã đặt: {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)"]
+    d = [f"Hệ thoát: {TEN_TANG[kb['tang']]}, 1R = {_f(kb['R'])}",
+         f"Cắt lỗ hiệu lực: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)"]
     if kb.get("cat_lo_dat") is not None and abs(kb["cat_lo_he_thong"] - kb["cat_lo_dat"]) > 1e-9:
         d.append(f"  hệ thống {_f(kb['cat_lo_he_thong'])} · đã đặt {_f(kb['cat_lo_dat'])}")
     return d
@@ -383,7 +395,8 @@ def tin_ban(vt, kb, kq, bay_gio):
                  "DOI_CAT_LO": f"Đặt lệnh cắt lỗ mới {_f(kb.get('cat_lo_he_thong'))} & cập nhật cat_lo_dat trong "
                                f"danh_muc.csv (repo danh-muc)"}.get(kb["muc"], "")
     d = [f"{NHAN[kb['muc']]} – {vt['ma']} @ {_f(g)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
-         f"Đang giữ {vt['so_cp']:,.0f} CP | giá vốn {_f(vt.get('gia_von'))} | lãi/lỗ {_f(kb['lai_lo_pct'], 1)}%",
+         f"Đang giữ: {vt['so_cp']:,.0f} CP",
+         dong_da_vao(vt.get("ngay_mua"), vt.get("gia_von"), kb["lai_lo_pct"], kb.get("lai_R")),
          *_dong_he_thoat(kb),
          "Lý do: " + "; ".join(kb["ly_do"])]
     d += [f"  • {x}" for x in kb.get("ghi_chu", [])]
@@ -397,13 +410,19 @@ def tin_ban(vt, kb, kq, bay_gio):
 
 
 def dong_tong_ket(vt, kb):
+    d = [f"■ {vt['ma']} {_f(kb['gia'])} – {NHAN[kb['muc']]}",
+         f"   Đang giữ: {vt['so_cp']:,.0f} CP",
+         "   " + dong_da_vao(vt.get("ngay_mua"), vt.get("gia_von"), kb["lai_lo_pct"], kb.get("lai_R"))]
     if not kb.get("he_thoat"):
-        return (f"■ {vt['ma']} {_f(kb['gia'])} – {NHAN[kb['muc']]} | {vt['so_cp']:,.0f} CP, vốn {_f(vt.get('gia_von'))}, "
-                f"lãi/lỗ {_f(kb['lai_lo_pct'], 1)}% | CL {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%) | "
-                f"MT {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)"
-                + (f"\n  {'; '.join(kb['ly_do'])}" if kb["ly_do"] else ""))
-    moc = (f" | mốc {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)" if kb.get("muc_tieu") else "")
-    return (f"■ {vt['ma']} {_f(kb['gia'])} – {NHAN[kb['muc']]} | {vt['so_cp']:,.0f} CP, vốn {_f(vt.get('gia_von'))}, "
-            f"lãi/lỗ {_f(kb['lai_lo_pct'], 1)}% ({_f(kb['lai_R'], 1)}R) | {TEN_TANG[kb['tang']]} | CL "
-            f"{_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%){moc}"
-            + (f"\n  {'; '.join(kb['ly_do'] + kb.get('ghi_chu', []))}" if kb["ly_do"] or kb.get("ghi_chu") else ""))
+        d += [f"   Cắt lỗ: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)",
+              f"   Mục tiêu: {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)"]
+        ly = kb["ly_do"]
+    else:
+        d += [f"   Hệ thoát: {TEN_TANG[kb['tang']]}",
+              f"   Cắt lỗ: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)"]
+        if kb.get("muc_tieu"):
+            d.append(f"   Mục tiêu tiếp: {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)")
+        ly = kb["ly_do"] + kb.get("ghi_chu", [])
+    if ly:
+        d.append(f"   Lý do: {'; '.join(ly)}")
+    return "\n".join(d)

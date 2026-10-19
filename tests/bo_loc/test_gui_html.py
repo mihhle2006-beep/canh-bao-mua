@@ -84,3 +84,17 @@ def test_khong_gui_ptdttc_o_repo_cong_khai(tmp_path, monkeypatch):
     monkeypatch.setattr(G, "gui_tin", lambda t: tin.append(t) or True)
     G.main(["--chien_luoc", "quy_b", "--che_do", "noi_bo"])
     assert tin and not any("PTĐTTC" in t for t in tin)
+
+
+def test_tin_ptdttc_moi_chien_luoc_mot_dong(tmp_path):
+    f = tmp_path / "pt.json"
+    f.write_text('{"ma": {"AAA": {"quy_b": {"hanh_dong": "MUA"}, "xu_huong": {"hanh_dong": "THEO DÕI"}}}}',
+                 encoding="utf-8")
+    assert G.tin_ptdttc(str(f)).splitlines()[1:] == ["AAA", "   Quỹ B: MUA", "   Xu hướng: THEO DÕI"]
+
+
+def test_ten_anh_khong_gach_duoi(tmp_path):
+    from bo_loc.html import _anh
+    p = tmp_path / "tong_quan_loc.png"
+    p.write_bytes(b"x")
+    assert 'alt="Tổng quan bộ lọc"' in _anh(str(p))

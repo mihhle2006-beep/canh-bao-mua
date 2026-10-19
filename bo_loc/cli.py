@@ -371,7 +371,7 @@ def _chay(argv=None):
     file_xlsx = os.path.join(thu_muc, "ket_qua_loc.xlsx")
     file_cl = os.path.join(thu_muc, f"chien_luoc_{a.chien_luoc}.xlsx")
     anh = [os.path.join(thu_muc, f) for f in ("tong_quan_loc.png", "danh_gia_sau_loc.png", "bieu_do_cac_ma.png")]
-    tq = {"Chiến lược": f"{cl['ten']} ({a.chien_luoc})", "Phiên dữ liệu": f"{phien_moi:%d/%m/%Y}",
+    tq = {"Chiến lược": cl["ten"], "Phiên dữ liệu": f"{phien_moi:%d/%m/%Y}",
           **({"Thị trường": dong_tt.replace("Thị trường: ", "")} if dong_tt else {}),
           "Số mã phân tích": len(b), "Số mã đạt lọc": len(dat)}
     if k is not None and len(k):

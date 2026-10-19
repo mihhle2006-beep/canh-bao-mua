@@ -31,7 +31,8 @@ def vn_hoa(chu):
 _NHAN_DAM = ("Kích hoạt:", "Thị trường:", "Sự kiện:", "Xác suất lịch sử", "3 kịch bản", "Lý do:", "Đang giữ",
              "Cắt lỗ đã đặt", "ptcp", "💼", "🎯", "➜", "Kế hoạch thoát", "Hệ thoát", "Đang áp dụng", "Điểm thị trường",
              "Điều kiện đổi", "Tỷ trọng", "Chia vốn", "① ", "② ", "③ ", "Đạt điểm mua", "Khối lượng", "Mua thêm",
-             "Điểm vào 15'", "⛔ ", "⏳ ")
+             "Điểm vào 15'", "⛔ ", "⏳ ", "Vùng mua", "Đặt LO", "Cách vào:", "ATC:", "Bỏ nếu", "Mục tiêu",
+             "Cắt lỗ", "Đã vào lệnh", "Thoát:", "Nhóm:")
 _NHOM_DAM = ("🟢 ", "✅ ", "🟡 ", "⏳ ", "🔻 ", "💼 ", "⏰ ", "🚫 ")   # tiêu đề nhóm: đậm phần trước ' – '
 
 

@@ -18,6 +18,8 @@ TEN_NHOM = {"vn30": "VN30", "ngan_hang": "Ngân hàng", "chung_khoan": "Dịch v
             "cang_bien": "Cảng biển", "van_tai_bien": "Vận tải biển", "ban_le": "Bán lẻ", "thep": "Thép",
             "hoa_chat": "Hoá chất", "viettel": "Viễn thông", "vien_thong_cntt": "Viễn thông – CNTT"}
 
+TEN_LOAI_TC = {"bat_buoc": "Bắt buộc", "cong_diem": "Cộng điểm", "toi_thieu": "Đạt tối thiểu"}
+
 
 def _xep_hang(s):
     """Xếp hạng phần trăm 1–99 (kiểu chỉ số RS của IBD)."""
@@ -301,11 +303,10 @@ def xuat_excel(path, bang, tieu_chi=None, ghi_chu="", ten_chien_luoc="", anh=Non
                         o.fill = PatternFill("solid", fgColor=mau_fa[x])
                         o.alignment = Alignment(horizontal="center")
                         if gt.get((dong[0], cot)):
-                            o.comment = Comment(gt[(dong[0], cot)], "bo_loc")
+                            o.comment = Comment(gt[(dong[0], cot)], "Bộ lọc")
             ws.column_dimensions["A"].width = 28
     if tieu_chi is not None and len(tieu_chi):
-        ws = sheet("TIÊU CHÍ", tieu_chi.rename(columns={"Loại": "Nhóm"}).replace(
-            {"bat_buoc": "Bắt buộc", "cong_diem": "Cộng điểm", "toi_thieu": "Đạt tối thiểu"}))
+        ws = sheet("TIÊU CHÍ", tieu_chi.rename(columns={"Loại": "Nhóm"}).replace(TEN_LOAI_TC))
         ws.column_dimensions["B"].width = 80
     if wb.sheetnames and wb.sheetnames[0] != "TỔNG QUAN CHUNG" and "TỔNG QUAN CHUNG" in wb.sheetnames:
         wb.move_sheet("TỔNG QUAN CHUNG", offset=-wb.sheetnames.index("TỔNG QUAN CHUNG"))
