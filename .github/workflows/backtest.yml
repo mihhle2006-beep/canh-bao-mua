@@ -50,6 +50,22 @@ jobs:
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
 
+      - name: Lấy kho BCTC (định giá → mã ĐẮT ½ KL trong backtest 15' – chỉ du_lieu/bctc, không lấy file danh mục)
+        uses: actions/checkout@v5
+        continue-on-error: true
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: _kho_dm
+          sparse-checkout: du_lieu/bctc/
+          sparse-checkout-cone-mode: false
+
+      - name: Nối kho BCTC vào cạnh ptcp
+        run: |
+          [ -d _kho_dm/du_lieu/bctc ] && ln -sfn _kho_dm/du_lieu du_lieu && ls du_lieu/bctc | wc -l || echo "Không có kho BCTC → backtest không áp ĐẮT"
+          rm -f _kho_dm/*.csv _kho_dm/*.json _kho_dm/*.txt
+
       # restore + save riêng (save if: always) → lượt hết giờ / lỗi vẫn giữ nến 15' đã tải & kết quả từng mã
       - name: Khôi phục cache giá & kết quả (riêng cho backtest)
         uses: actions/cache/restore@v5

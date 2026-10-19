@@ -111,6 +111,21 @@ def _bang_top(ct, top):
             "ket_luan": _ket_luan_15p(k["bang"], k["tot_nhat"])}
 
 
+def _dinh_gia(ct, gia):
+    """Định giá J8 theo quý (kho BCTC du_lieu/bctc của danh-muc) cho các mã có tín hiệu → mã ĐẮT × ½ KL như live.
+    Thiếu kho / lỗi → None (backtest chạy không có ĐẮT, ghi rõ trong log)."""
+    try:
+        from ptcp import kiem_dinh_dinh_gia as kd
+        ma = sorted(set(ct["Mã"]) & set(gia))
+        dg = kd.chay(ma, gia_san={m: gia[m]["close"] for m in ma})
+        dg = dg[dg.bien_the == "hiện tại"] if "bien_the" in dg else dg
+        print(f"  Định giá J8: {dg['ma'].nunique()}/{len(ma)} mã có số liệu → áp ĐẮT ½ khối lượng")
+        return dg
+    except Exception as e:                                          # noqa: BLE001 – không có định giá vẫn backtest
+        print(f"  ⚠ Không có định giá ({type(e).__name__}: {str(e)[:120]}) → backtest 15' không áp ĐẮT ½")
+        return None
+
+
 def tai_nen_15p(ds_ma=None):
     """Chỉ tải phần nến 15' mới cho rổ backtest (workflow hằng tuần): giữ cache không bị GitHub xoá (7 ngày không
     dùng) và tích luỹ lịch sử dài hơn giới hạn ~1 năm của nguồn. Trả số mã có dữ liệu."""
@@ -224,7 +239,7 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
                 print(f"  Sàn {ten} ({v['so_ma']} mã, {v['so_tin_hieu']} khuyến nghị): {v['ket_luan']}")
         try:                                                        # ptcp mới: mô phỏng cả quỹ B theo từng cách vào
             from ptcp.diem_vao_15p import quy_b_theo_cach_vao
-            q = quy_b_theo_cach_vao(k15["chi_tiet"], gia, vni)
+            q = quy_b_theo_cach_vao(k15["chi_tiet"], gia, vni, dg=_dinh_gia(k15["chi_tiet"], gia))
         except ImportError:
             q = None
         if q is not None and len(q):
