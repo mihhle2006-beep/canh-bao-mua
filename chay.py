@@ -296,7 +296,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                      "Lý do": kq["ly_do"], "Giờ": f"{pd.Timestamp(kq['thoi_diem']):%H:%M}" if kq["thoi_diem"] is not None
                      else "", "Giá mua": kq["gia_mua"]})
         if diem_vao.can_bao(kq["ma"], kq["trang_thai"], bay_gio, luu, kq["ly_do"]):
-            nd = diem_vao.tin_mua(kq, bay_gio, bien_the, kq["ma"] in vt) if kq["trang_thai"] == "MUA" else \
+            nd = diem_vao.tin_mua(kq, bay_gio, bien_the, vt.get(kq["ma"])) if kq["trang_thai"] == "MUA" else \
                 diem_vao.tin_bo(kq, bay_gio)
             anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
             gui(nd, rieng_tu=kq["ma"] in vt, anh=anh) if not khong_gui else _in(nd, rieng_tu=kq["ma"] in vt)

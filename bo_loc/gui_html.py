@@ -61,7 +61,7 @@ def tin_ptdttc(path="ptdttc_bo_loc.json"):
     if not ma:
         return None
     return ("📌 PTĐTTC – theo dõi riêng (không vào danh sách MUA)\n"
-            + "\n".join(f"{m}: " + " · ".join(f"{ten_cl(cl)} {v['hanh_dong']}" for cl, v in kq.items())
+            + "\n".join("\n".join([m] + [f"   {ten_cl(cl)}: {v['hanh_dong']}" for cl, v in kq.items()])
                         for m, kq in ma.items()))
 
 

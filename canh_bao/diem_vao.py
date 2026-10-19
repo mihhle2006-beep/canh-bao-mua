@@ -18,7 +18,7 @@ import pandas as pd
 
 from . import cau_hinh as C
 
-TEN_NHOM = {"MUA_MOI": "MUA MỚI", "VAO_NHU_MOI": "VÀO NHƯ LỆNH MỚI", "VAO_NUA": "VÀO ½ KL"}
+TEN_NHOM = {"MUA_MOI": "MUA MỚI", "VAO_NHU_MOI": "VÀO NHƯ LỆNH MỚI", "VAO_NUA": "VÀO ½ KHỐI LƯỢNG"}
 
 
 def _f(x, le=2):
@@ -155,17 +155,22 @@ def _gon(tc):
     return " · ".join(out)
 
 
-def tin_giu_theo_he_thong(kq, bay_gio):
+def tin_giu_theo_he_thong(kq, bay_gio, vt=None):
     """Mã ĐANG GIỮ trong danh mục mà hệ thống vừa có điểm mua: KHÔNG báo "MUA NGAY" (tránh vừa cắt lỗ vừa mua) –
-    giữ vị thế theo đúng lệnh hệ thống (cắt lỗ / mốc của lệnh này), như dmuc._theo_he_thong của danh mục thật."""
+    giữ vị thế theo đúng lệnh hệ thống (cắt lỗ / mốc của lệnh này), như dmuc._theo_he_thong của danh mục thật.
+    vt: vị thế thật (dict danh_muc) → thêm dòng "Đã vào lệnh"."""
+    from .vi_the import dong_da_vao
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
+    gv = vt.get("gia_von") if isinstance(vt, dict) else None
     return "\n".join([
         f"💼 GIỮ THEO HỆ THỐNG – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
         f"Mã đang có trong danh mục, hệ thống vừa có điểm mua ({TEN_NHOM.get(kq['nhom'], kq['nhom'])}) → "
-        "KHÔNG mua trùng, KHÔNG cắt lỗ theo mức cũ",
-        f"Giữ theo lệnh hệ thống: cắt lỗ {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "")
-        + f" · mốc 1R {_f(mt1)} → 3R {_f(mt3)}",
-        "Mua thêm chỉ khi tin tổng kết ghi MUA THÊM."])
+        "KHÔNG mua trùng, KHÔNG cắt lỗ theo mức cũ"]
+        + ([dong_da_vao(vt.get("ngay_mua"), gv, (gia / gv - 1) * 100 if gia == gia else None)] if gv else [])
+        + ["Giữ theo lệnh hệ thống:",
+           f"   Cắt lỗ: {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
+           f"   Mục tiêu: 1R {_f(mt1)} → 3R {_f(mt3)}",
+           "Mua thêm chỉ khi tin tổng kết ghi MUA THÊM."])
 
 
 def dong_dat_lenh(kq, bien_the, gia):
@@ -180,17 +185,20 @@ def dong_dat_lenh(kq, bien_the, gia):
 
 
 def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
-    if dang_giu:
-        return tin_giu_theo_he_thong(kq, bay_gio)
+    if dang_giu:                                       # True hoặc dict vị thế thật (chay.py)
+        return tin_giu_theo_he_thong(kq, bay_gio, dang_giu)
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
     dau = "⏰ MUA ATC" if kq.get("atc") else "🟢 MUA NGAY"
-    # tin gọn (người dùng 17/10/2026): giá đặt + nhóm / vùng / CL / MT – bỏ dòng tiêu chí & khối lượng
+    # tin gọn (người dùng 17/10/2026): giá đặt + nhóm / vùng / cắt lỗ / mục tiêu – bỏ dòng tiêu chí & khối lượng;
+    # 19/10/2026: mỗi mục 1 dòng, ghi đủ chữ (đọc trên điện thoại)
     d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
          dong_dat_lenh(kq, bien_the, gia),
-         f"{TEN_NHOM.get(kq['nhom'], kq['nhom'])} | vùng {_f(kq['tu'])}–{_f(kq['den'])} | CL {_f(cl)}"
-         + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "") + f" | MT {_f(mt1)} → {_f(mt3)}"]
+         f"Nhóm: {TEN_NHOM.get(kq['nhom'], kq['nhom'])}",
+         f"Vùng mua: {_f(kq['tu'])} – {_f(kq['den'])}",
+         f"Mục tiêu: 1R {_f(mt1)} → 3R {_f(mt3)}",
+         f"Cắt lỗ: {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "")]
     if kq.get("he_so_quyen"):
-        d.append(f"(Giá đã điều chỉnh quyền – vùng / CL của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
+        d.append(f"(Giá đã điều chỉnh quyền – vùng / cắt lỗ của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")
     return "\n".join(d)
 

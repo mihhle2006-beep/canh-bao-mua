@@ -116,11 +116,17 @@ def _bang_html(df, dinh_dang=None):
     return f'<div class="cuon"><table><tr>{tieu_de}</tr>{"".join(dong)}</table></div>'
 
 
+TEN_ANH = {"tong_quan_loc.png": "Tổng quan bộ lọc", "danh_gia_sau_loc.png": "Đánh giá sau lọc",
+           "bieu_do_cac_ma.png": "Biểu đồ các mã"}
+
+
 def _anh(p):
     if not p or not os.path.exists(p):
         return ""
+    ten = os.path.basename(p)
+    ten = TEN_ANH.get(ten, os.path.splitext(ten)[0].replace("_", " "))       # tên file trên đĩa không hiện ra
     with open(p, "rb") as f:
-        return f'<img alt="{_h.escape(os.path.basename(p))}" src="data:image/png;base64,{base64.b64encode(f.read()).decode()}">'
+        return f'<img alt="{_h.escape(ten)}" src="data:image/png;base64,{base64.b64encode(f.read()).decode()}">'
 
 
 NHOM_TC = (("bat_buoc", "Bắt buộc", "mã phải đạt tất cả mới qua lọc"),

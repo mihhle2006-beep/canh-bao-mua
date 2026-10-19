@@ -214,7 +214,7 @@ def von_lenh(k):
               str(k.get("loc_quy_ma", k.get("loc_quy", "")) or "lọc").split(";")]
         ds.append((", ".join(x for x in ly if x) or "lọc", hm))
     if hk != 1:
-        ds.append(("🟡" if k.get("nhom") == "VAO_NUA" else "KL", hk))
+        ds.append(("🟡" if k.get("nhom") == "VAO_NUA" else "khối lượng", hk))
     rr = rr0 * hn * hq * hk
     R = _so(k.get("rui_ro"))
     if not (R == R and R > 0):
@@ -225,16 +225,16 @@ def von_lenh(k):
 
 
 def chu_von_lenh(k):
-    """' | 💰 ≤5.4% NAV (VNI ×0.5 · ĐẮT ×0.5)' – tỷ trọng mua tối đa, đã nhân mọi hệ số (rủi ro % ÷ khoảng cắt lỗ)."""
+    """'💰 ≤5.4% NAV (VNI ×0.5 · ĐẮT ×0.5)' – tỷ trọng mua tối đa, đã nhân mọi hệ số (rủi ro % ÷ khoảng cắt lỗ)."""
     v = von_lenh(k)
     if v["ty_trong"] != v["ty_trong"]:
         return ""
     ct = " · ".join(f"{t} ×{h:g}" for t, h in v["he_so"])
-    return f" | 💰 ≤{v['ty_trong']:.1f}% NAV" + (f" ({ct})" if ct else "")
+    return f"💰 ≤{v['ty_trong']:.1f}% NAV" + (f" ({ct})" if ct else "")
 
 
 DK_ATC = {"_VWAP": " và giá ≥ VWAP phiên", "_XANH": " và giá ≥ giá mở cửa", "_TREN": " và giá ở nửa trên biên độ phiên"}
-MO_TA_15P = "MACD 15' cắt lên hoặc phá đỉnh 20 nến + KL ≥ 1,5× · giá ≥ VWAP · RSI 15' ≤ 75"
+MO_TA_15P = "MACD 15' cắt lên hoặc phá đỉnh 20 nến + khối lượng ≥ 1,5× · giá ≥ VWAP · RSI 15' ≤ 75"
 
 
 def mo_ta_cach_vao(bien_the):
@@ -257,26 +257,27 @@ def mo_ta_cach_vao(bien_the):
 
 
 def cach_vao_ma(k, bien_the):
-    """Cách vào CỦA TỪNG MÃ (giá cụ thể) – dòng "↳ vào: …" dưới mã trong tin tổng kết."""
+    """Cách vào CỦA TỪNG MÃ (giá cụ thể) – các dòng "Đặt LO: …" / "Cách vào: …" (+ ATC, Bỏ nếu) dưới mã trong tin
+    tổng kết (đã xuống dòng + thụt lề như các dòng khác của mã)."""
     tu, den = k.get("tu"), k.get("den")
     if not bien_the or not (tu == tu and den == den) or tu is None or den is None:
         return ""
     goc, atc, dk = bien_the.partition("+ATC")
     if goc.startswith("15P"):
-        x = f"chờ 🟢 15' khi giá {_f(tu)}–{_f(den)}"
+        x = f"Cách vào: chờ 🟢 15' khi giá {_f(tu)}–{_f(den)}"
     elif goc == "LO":
-        x = f"đặt LO {_f(gia_lo(tu, den))}"
+        x = f"Đặt LO: {_f(gia_lo(tu, den))}"
     elif goc == "VWAP":
-        x = f"nến 15' đóng ≥ VWAP, giá {_f(tu)}–{_f(den)}"
+        x = f"Cách vào: nến 15' đóng ≥ VWAP, giá {_f(tu)}–{_f(den)}"
     else:
-        x = f"ATO nếu mở cửa {_f(tu)}–{_f(den)}"
+        x = f"Cách vào: ATO nếu mở cửa {_f(tu)}–{_f(den)}"
     if atc:
-        x += f" · {C.GIO_ATC} chưa mua → ATC nếu {_f(tu)}–{_f(den)}{DK_ATC.get(dk, '')}"
-    return f"↳ vào: {x} · mở cửa > {_f(den)} → bỏ"
+        x += f"\n   ATC: {C.GIO_ATC} chưa mua → ATC nếu {_f(tu)}–{_f(den)}{DK_ATC.get(dk, '')}"
+    return x + f"\n   Bỏ nếu: mở cửa > {_f(den)}"
 
 
 def canh_bao_nganh(ma, dang_giu):
-    """' · ⚠ đã giữ 2 mã ngành X (…) – không mua thêm mã ngành này' khi danh mục đang giữ đủ QUY_TOI_DA_MOI_NGANH mã cùng
+    """'⚠ đã giữ 2 mã ngành X (…) – không mua thêm mã ngành này' khi danh mục đang giữ đủ QUY_TOI_DA_MOI_NGANH mã cùng
     ngành với mã tín hiệu (ptcp/nganh.py); không có / ptcp cũ → ''. Chỉ dùng ở bản tin RIÊNG (có danh mục)."""
     if not dang_giu or ma in dang_giu:
         return ""
@@ -288,18 +289,29 @@ def canh_bao_nganh(ma, dang_giu):
     cung = sorted(m for m in dang_giu if ng and nganh_cua(m) == ng)
     if not toi_da or len(cung) < toi_da:
         return ""
-    return f" · ⚠ đã giữ {len(cung)} mã ngành {ng} ({', '.join(cung)}) – không mua thêm (tối đa {toi_da}/ngành)"
+    return f"⚠ đã giữ {len(cung)} mã ngành {ng} ({', '.join(cung)}) – không mua thêm (tối đa {toi_da}/ngành)"
 
 
 def dong_mua(k, dang_giu=(), bien_the=None):
+    """Mã trong nhóm mua – mỗi mục 1 dòng (người dùng 19/10/2026: đọc trên điện thoại):
+    ★ FPT 100.00 | MUA MỚI / Vùng mua / Đặt LO (cách vào) / Mục tiêu 1R → 3R / Cắt lỗ (% so giá) / Khối lượng / Lý do."""
     ut = k.get("uu_tien")
     sao = "★ " if ut == ut and ut is not None and ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else ""
     manh = "💪" if k.get("manh_b") else ""
+    g, cl = _so(k.get("gia")), _so(k.get("cl"))
+    nhom = TIEU_DE.get(k.get("nhom"), str(k.get("nhom") or "")).split(" ", 1)[-1]     # "🟢 MUA MỚI" → "MUA MỚI"
     vao = cach_vao_ma(k, bien_the)                      # giá LO / ATC / chờ 15' của riêng mã này
-    return (f"{sao}{k['ma']}{manh} | {_f(k['tu'])}–{_f(k['den'])} | MT {_f(k['mt1'])} → {_f(k['mt3'])} | CL {_f(k['cl'])}"
-            f"{chu_von_lenh(k)} | {k['ly_do']}" + (" · 💼 đang giữ → xem mua thêm" if k["ma"] in dang_giu else "")
-            + canh_bao_nganh(k["ma"], dang_giu)
-            + (f"\n   {vao}" if vao else ""))
+    von, nganh = chu_von_lenh(k), canh_bao_nganh(k["ma"], dang_giu)
+    d = [f"{sao}{k['ma']}{manh}" + (f" {_f(g)}" if g == g else "") + (f" | {nhom}" if nhom else ""),
+         f"   Vùng mua: {_f(k['tu'])} – {_f(k['den'])}"]
+    d += [f"   {vao}"] if vao else []
+    d += [f"   Mục tiêu: 1R {_f(k['mt1'])} → 3R {_f(k['mt3'])}",
+          f"   Cắt lỗ: {_f(cl)}" + (f" ({(cl / g - 1) * 100:+.1f}%)" if g == g and cl == cl and g else "")]
+    d += [f"   Khối lượng: {von}"] if von else []
+    d.append(f"   Lý do: {k['ly_do']}")
+    d += ["   💼 đang giữ → xem mua thêm"] if k["ma"] in dang_giu else []
+    d += [f"   {nganh}"] if nganh else []
+    return "\n".join(d)
 
 
 # ------------------------------------------------------------------ danh sách mua cho cảnh báo 15 phút
@@ -380,29 +392,29 @@ def mua_them(vt, dn, kb, bay_gio=None):
 
 # ------------------------------------------------------------------ vị thế đang giữ (riêng tư)
 def dong_giu(vt, kb, mt):
-    """2–3 dòng cho 1 mã đang giữ."""
-    from .vi_the import NHAN
+    """Mã đang giữ – mỗi mục 1 dòng: tiêu đề + hành động / Đã vào lệnh / Cắt lỗ / Mục tiêu tiếp / ➕ mua thêm."""
+    from .vi_the import NHAN, dong_da_vao
     hanh = {"CAT_LO": "BÁN – chạm cắt lỗ", "BAN_TUAN": "BÁN ATO phiên tới – gãy MA10 tuần",
             "HET_HAN": "BÁN – lệnh không chạy", "DOI_CAT_LO": f"GIỮ – dời cắt lỗ lên {_f(kb.get('cat_lo_he_thong'))}",
             "GAN_CAT_LO": "GIỮ – sát cắt lỗ, chuẩn bị bán", "GIU": "GIỮ"}.get(kb["muc"], NHAN.get(kb["muc"], ""))
-    r = f" ({kb['lai_R']:+.1f}R)" if kb.get("lai_R") == kb.get("lai_R") and kb.get("lai_R") is not None else ""
-    d = [f"{vt['ma']} {_f(kb['gia'])} | vốn {_f(vt.get('gia_von'))} | {kb['lai_lo_pct']:+.1f}%{r} | "
-         f"CL {_f(kb['cat_lo'])} | {hanh}"]
-    them = []
+    g, lo = _so(kb.get("gia")), _so(kb.get("cat_lo"))
+    d = [f"{vt['ma']} {_f(g)} | {hanh}",
+         "   " + dong_da_vao(vt.get("ngay_mua"), vt.get("gia_von"), kb.get("lai_lo_pct"), kb.get("lai_R")),
+         f"   Cắt lỗ: {_f(lo)}" + (f" ({(lo / g - 1) * 100:+.1f}%)" if g == g and lo == lo and g else "")]
     if kb.get("he_thoat"):
         if kb.get("tang", 0) >= 2 and (kb.get("nguong_ma10") or kb.get("ma10_tuan")):
-            them.append(f"bán ATO thứ Hai nếu đóng cửa thứ Sáu < {_f(kb.get('nguong_ma10') or kb['ma10_tuan'])} "
-                        f"(MA10 tuần)")
+            d.append(f"   Thoát: bán ATO thứ Hai nếu đóng cửa thứ Sáu < "
+                     f"{_f(kb.get('nguong_ma10') or kb['ma10_tuan'])} (MA10 tuần)")
         elif kb.get("muc_tieu"):
-            them.append(f"mốc tiếp {_f(kb['muc_tieu'])}" + (" → CL lên hoà vốn" if kb.get("tang", 0) == 0
-                                                            else " → chuyển sang bán theo tuần"))
-    if any("T+2" in g for g in kb.get("ghi_chu", [])):
-        them.append("CP chưa về (T+2)")
-    if them:
-        d.append("   " + " · ".join(them))
+            d.append(f"   Mục tiêu tiếp: {_f(kb['muc_tieu'])}" + (" → dời cắt lỗ lên hoà vốn" if kb.get("tang", 0) == 0
+                                                                 else " → chuyển sang bán theo tuần"))
+    if any("T+2" in x for x in kb.get("ghi_chu", [])):
+        d.append("   CP chưa về (T+2)")
     if mt and mt.get("du"):
-        d.append(f"   ➕ MUA THÊM {mt['so_cp']:,.0f} CP | {_f(mt['tu'])}–{_f(mt['den'])} | CL cả vị thế {_f(mt['cl'])} | "
-                 f"{mt['ly_do']}")
+        d += [f"   ➕ MUA THÊM {mt['so_cp']:,.0f} CP",
+              f"      Vùng mua: {_f(mt['tu'])} – {_f(mt['den'])}",
+              f"      Cắt lỗ cả vị thế: {_f(mt['cl'])}",
+              f"      Lý do: {mt['ly_do']}"]
     elif mt and mt.get("ly_do"):
         d.append(f"   Mua thêm: {mt['ly_do']}")
     return d
@@ -412,7 +424,7 @@ def dong_giu(vt, kb, mt):
 def dong_su_kien(gia_ma, bay_gio):
     """
     gia_ma {mã: giá đóng cửa} → dòng báo trước GDKHQ trong SO_NGAY_BAO_QUYEN ngày tới (lịch VNDirect).
-    Vùng / CL trong tin là giá TRƯỚC GDKHQ – bot 15' tự quy đổi theo tỷ lệ khi tới ngày.
+    Vùng / cắt lỗ trong tin là giá TRƯỚC GDKHQ – bot 15' tự quy đổi theo tỷ lệ khi tới ngày.
     """
     if not getattr(C, "BAO_SU_KIEN_QUYEN", False) or not gia_ma:
         return []
@@ -431,7 +443,7 @@ def dong_su_kien(gia_ma, bay_gio):
             out.append(f"• {ma} GDKHQ {d:%d/%m}: {x['mo_ta']} → giá × {f:.3f}"
                        + (f" (≈ {_f(gia_ma[ma] * f)})" if gia_ma[ma] == gia_ma[ma] and gia_ma[ma] else "")
                        + (f", số CP × {x['he_so_cp']:.2f}" if x["he_so_cp"] != 1 else ""))
-    return (["", "📅 SẮP GDKHQ – vùng / CL tự quy đổi theo tỷ lệ khi tới ngày"] + out) if out else []
+    return (["", "📅 SẮP GDKHQ – vùng / cắt lỗ tự quy đổi theo tỷ lệ khi tới ngày"] + out) if out else []
 
 
 def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
@@ -450,7 +462,7 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
         for vt, kb, mt in giu:
             day_du += dong_giu(vt, kb, mt)
         sk = dong_su_kien({vt["ma"]: (kb or {}).get("gia", np.nan) for vt, kb, _ in giu}, bay_gio)
-        day_du += [x.replace("vùng / CL tự quy đổi theo tỷ lệ khi tới ngày", "mã đang giữ: cắt lỗ / giá vốn đổi theo "
+        day_du += [x.replace("vùng / cắt lỗ tự quy đổi theo tỷ lệ khi tới ngày", "mã đang giữ: cắt lỗ / giá vốn đổi theo "
                              "tỷ lệ – danh_muc tự quy đổi") for x in sk]
     if C.GUI_EXCEL:
         day_du.append("📎 Chi tiết, lịch sử & backtest: file Excel đính kèm")
@@ -475,7 +487,7 @@ def dong_suat(ra, giu):
              ("hết suất tuần – chỉ chờ ✅ vào trễ tuần sau" if not con else
               f"đủ {so_ma} mã – chỉ mã 💪 được mua (suất dự phòng)"))
     return (f"🗓 Phiên {pd.Timestamp(hl):%d/%m} (tuần {tuan[1]}): đã mua {moi}/{td} mã mới tuần này → còn {con} suất · "
-            f"đang giữ {len(giu)}/{so_ma} mã" + (f" (+{dp} cho 💪)" if dp else "") + f" → {goi_y}")
+            f"đang giữ {len(giu)}/{so_ma} mã" + (f" (+{dp} cho 💪)" if dp else "") + f"\n   → {goi_y}")
 
 
 def _tin(ra, bay_gio, kq_bt, dang_giu):
@@ -520,9 +532,10 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
             dong.append(f"… +{len(x) - n_max} mã (xem Excel)")
     cho = [k for k in ks if k["nhom"] == "CHO"]
     if cho:
-        dong += ["", f"{TIEU_DE['CHO']} ({len(cho)}): " + " · ".join(
-            (f"{k['ma']} {_f(k['tu'])}–{_f(k['den'])}" if k.get("den") == k.get("den") and k.get("den") is not None
-             else f"{k['ma']} chờ tín hiệu mới") for k in cho[:n_max]) + (" …" if len(cho) > n_max else "")]
+        dong += ["", f"{TIEU_DE['CHO']} ({len(cho)})"] + [
+            (f"   {k['ma']}: vùng chờ {_f(k['tu'])} – {_f(k['den'])}" if k.get("den") == k.get("den")
+             and k.get("den") is not None else f"   {k['ma']}: chờ tín hiệu mới") for k in cho[:n_max]] + (
+            [f"   … +{len(cho) - n_max} mã"] if len(cho) > n_max else [])
     ko = [k for k in ks if k["nhom"] in ("DUOI_VON", "BAN")]
     if ko:
         dong.append(f"⛔ KHÔNG VÀO ({len(ko)}): " + ", ".join(k["ma"] for k in ko))
@@ -653,5 +666,5 @@ def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None, he_so_nhiet=None):
         cp = min(von * 1e6 * rr / 100 * hs / ((gia - cl) * 1000), von * 1e6 * _tran_ma_pct() / 100 / (gia * 1000))
         cp = int(cp // 100 * 100)
         if cp > 0:
-            s += f" ≈ {cp:,.0f} CP (≈ {cp * gia / 1000:,.1f} triệu, mất ≈ {cp * (gia - cl) / 1000:,.1f} triệu nếu chạm CL)"
+            s += f" ≈ {cp:,.0f} CP (≈ {cp * gia / 1000:,.1f} triệu, mất ≈ {cp * (gia - cl) / 1000:,.1f} triệu nếu chạm cắt lỗ)"
     return s

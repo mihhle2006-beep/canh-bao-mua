@@ -22,6 +22,7 @@ def test_chay_day_du_xuat_excel(thu_muc_du_lieu, monkeypatch):
     assert os.path.exists(kq["file_excel"])
     with pd.ExcelFile(kq["file_excel"]) as x:
         sheets = x.sheet_names
+        assert not [c for s in sheets for c in x.parse(s, nrows=0).columns if "_" in str(c)]   # tiêu đề không còn "_"
     assert sheets[0] == "Ket luan"
     assert kq["ket_luan"]["Kết luận"].isin(["[NÊN MUA]", "[MUA CÓ ĐIỀU KIỆN]", "[THEO DÕI]", "[LOẠI]"]).all()
     for s in ("Dat loc", "Tat ca", "Tieu chi", "Danh gia sau loc", "Nguon du lieu"):

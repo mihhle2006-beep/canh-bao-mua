@@ -30,7 +30,7 @@ def test_chi_ma_khong_ghi_file(tmp_path, monkeypatch, capsys):
         assert chay.main(["--chi_ma", "fpt, hpg,XYZ", "--khong_gui"]) == 0
     out = capsys.readouterr().out
     assert goi["ds"] == ["FPT", "HPG", "XYZ"]
-    assert "FPT | 100.00–103.00" in out and "HPG: chưa có tín hiệu" in out and "XYZ: thiếu dữ liệu" in out
+    assert "\n   Vùng mua: 100.00 – 103.00\n" in out and "HPG: chưa có tín hiệu" in out and "XYZ: thiếu dữ liệu" in out
     assert os.listdir(tmp_path) == []                       # không ghi trạng thái / nhật ký / trang
 
 
@@ -62,5 +62,5 @@ def test_xem_ma_kem_ma_cung_nganh(tmp_path, monkeypatch, capsys):
         assert chay.main(["--chi_ma", "MBB", "--khong_gui"]) == 0
     out = capsys.readouterr().out
     assert goi["ds"] == ["MBB", "VCB", "BID"]                      # quét thêm mã cùng ngành
-    assert "MBB | 20.00–21.00" in out and "· Ngân hàng" not in out   # dòng mua không ghi ngành
+    assert "MBB" in out and "\n   Vùng mua: 20.00 – 21.00\n" in out and "· Ngân hàng" not in out   # dòng mua không ghi ngành
     assert "Cùng ngành: VCB ⏳ · BID –" in out and "Ngân hàng" not in out

@@ -31,6 +31,32 @@ COT_XUAT = ["Mã", "nhom", "Đạt lọc", "Điểm", "Điểm %", "Thiếu", "g
             "san", "nganh", "Thiếu dữ liệu", "nguon_gia", "nguon_co_ban", "nguon_chi_tieu", "canh_bao_du_lieu",
             "ghi_chu"]
 
+# Tiêu đề cột hiển thị trong ket_qua_loc.xlsx (tên kỹ thuật có "_" → tiếng Việt); cột không có ở đây: "_" → " "
+TEN_COT_EXCEL = {
+    "khuyen_nghi": "Nhóm chiến lược", "cat_lo": "Cắt lỗ", "kc_cat_lo_pct": "Cách cắt lỗ %", "gia_mt": "Mục tiêu 1R",
+    "gia_mt_3r": "Mục tiêu 3R", "MT 3R": "Mục tiêu 3R", "pp_mt": "Cách tính mục tiêu", "cau_truc_d": "Cấu trúc ngày",
+    "cau_truc_w": "Cấu trúc tuần", "cach_dinh52": "Cách đỉnh 52T %", "tren_day52": "Trên đáy 52T %",
+    "vi_tri52": "Vị trí 52T %", "vol_ratio": "Khối lượng so TB20 (lần)", "st_dir": "Hướng SuperTrend",
+    "von_hoa": "Vốn hoá tỷ", "so_cp": "Số CP lưu hành", "pe_nguon": "Nguồn P/E", "pe_cach_tinh": "Cách tính P/E",
+    "eps_dung": "EPS dùng", "ln_4q_ty": "LNST 4 quý (tỷ)", "ky_lnst": "Kỳ LNST", "eps_cot_loi": "EPS cốt lõi",
+    "ky_eps": "Kỳ EPS", "pb_cach_tinh": "Cách tính P/B", "nguon_so_cp": "Nguồn số CP", "so_nguon_so_cp": "Số nguồn số CP",
+    "cat_lo_theo": "Cắt lỗ theo", "ev_mt": "EV mục tiêu", "pb_nguon": "Nguồn P/B", "eps_ttm": "EPS TTM",
+    "eps_nam": "EPS năm", "eps_g_nam": "Tăng EPS năm %", "eps_quy": "EPS quý", "eps_g_quy": "Tăng EPS quý %",
+    "no_vay_tts": "Nợ vay / tổng tài sản %", "no_phai_tra_tts": "Nợ phải trả / tổng tài sản %",
+    "tt_hien_thoi": "Thanh toán hiện thời", "tt_nhanh": "Thanh toán nhanh", "kiem_toan_5nam": "Kiểm toán 5 năm",
+    "so_nam_co_tuc": "Số năm trả cổ tức", "co_tuc_tien_mat_cp": "Cổ tức tiền mặt / CP", "ty_suat_co_tuc": "Cổ tức %",
+    "atr_pct": "ATR %", "bien_dong": "Biến động %", "cach_ma20": "Cách MA20 %", "dt_g_quy": "Tăng doanh thu quý %",
+    "ln_g_quy": "Tăng lợi nhuận quý %", "bien_gop": "Biên gộp %", "bien_gop_ck": "Biên gộp cùng kỳ %",
+    "so_huu_nn": "Sở hữu nước ngoài %", "free_float": "Free float %", "kiem_toan_ngoai_tru": "Kiểm toán ngoại trừ",
+    "nguon_gia": "Nguồn giá", "nguon_co_ban": "Nguồn cơ bản", "nguon_chi_tieu": "Nguồn chỉ tiêu",
+    "canh_bao_du_lieu": "Cảnh báo dữ liệu", "ghi_chu": "Ghi chú",
+    "vung_mua": "Vùng mua", "vung_cho": "Vùng chờ", "cat_lo_kh": "Cắt lỗ kế hoạch", "kc_cat_lo": "Cách cắt lỗ %",
+    "muc_tieu_kh": "Mục tiêu kế hoạch", "muc_tieu_3r": "Mục tiêu 3R", "nguon_mt": "Nguồn mục tiêu",
+    "rr_kh": "R/R kế hoạch", "so_cp_kh": "Số CP kế hoạch", "gia_tri_kh": "Giá trị kế hoạch (tr)",
+    "ty_trong_kh": "Tỷ trọng kế hoạch %", "rang_buoc_kl": "Ràng buộc khối lượng", "so_phien_mua": "Số phiên mua",
+    "nhom_cl": "Mã nhóm chiến lược", "ten_nhom_cl": "Nhóm chiến lược", "dat_diem_mua": "Đạt điểm mua",
+    "vo_hieu": "Vô hiệu khi", "gia_lo": "Đặt LO"}
+
 
 def tieu_de(chu, ky="═"):
     from .mau import xanh, xanh_nhat
@@ -223,7 +249,7 @@ def ve_bieu_do_nho(ds_m, b, file_png):
             muc.append((m["gia_mt_3r"], f"3R {m['gia_mt_3r']:,.2f}", "darkgreen"))
         if co(m["cat_lo"]):
             a.axhline(m["cat_lo"], color="red", ls="--", lw=1)
-            muc.append((m["cat_lo"], f"CL {m['cat_lo']:,.2f}", "red"))
+            muc.append((m["cat_lo"], f"Cắt lỗ {m['cat_lo']:,.2f}", "red"))
         lo_, hi_ = a.get_ylim()
         a.set_ylim(lo_ - 0.03 * (hi_ - lo_), hi_ + 0.06 * (hi_ - lo_))
         nhan_muc_gia(a, muc)
@@ -291,7 +317,8 @@ def xuat_excel(path, b, dat, tieu_chi_cot, bang_tieu_chi, loi, loai_som, e, tham
                 ket_luan.to_excel(w, sheet_name="Ket luan", index=False)
             (dat if len(dat) else b.head(0))[cot].to_excel(w, sheet_name="Dat loc", index=False)
             b[cot].to_excel(w, sheet_name="Tat ca", index=False)
-            bang_tieu_chi.to_excel(w, sheet_name="Tieu chi", index=False)
+            from .bon_bang import TEN_LOAI_TC
+            bang_tieu_chi.replace(TEN_LOAI_TC).to_excel(w, sheet_name="Tieu chi", index=False)
             if loi:
                 pd.DataFrame(loi, columns=["Mã", "Lý do"]).to_excel(w, sheet_name="Bo qua", index=False)
             if loai_som:
@@ -379,4 +406,7 @@ def trang_tri_excel(path):
                 ws.conditional_formatting.add(vung, ColorScaleRule(
                     start_type="min", start_color="FFEF9A9A", mid_type="num", mid_value=0, mid_color="FFFFFFFF",
                     end_type="max", end_color="FFA5D6A7"))
+        for o in ws[1]:                    # đổi tên sau cùng: định dạng số ở trên vẫn dựa trên tên cột gốc
+            if isinstance(o.value, str):
+                o.value = TEN_COT_EXCEL.get(o.value, o.value.replace("_", " "))
     wb.save(path)
