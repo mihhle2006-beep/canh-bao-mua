@@ -13,6 +13,7 @@
 #   von33 – vào trễ cả mã bỏ vì đủ số mã, suất dự phòng 2/3, KL tín hiệu mạnh B ×1,5/×2
 #   von35 – cách thoát kinh điển: chandelier, Donchian, MA50 ngày, MA20/30 tuần, xác nhận 2 tuần, hoà vốn 1,5R, ATR
 #   von36 – giảm rủi ro (trần 15%, ≤ 4/3 mã mới/tuần, rủi ro 0,6%, lô đầu 50%) + vì sao 2022+ yếu (theo trạng thái VNI)
+#   von37 – hai chiến lược: chọn trên 2013–19 / trên 2020+ (xem giai đoạn kia), so trên cùng 20 thứ tự ★ ngẫu nhiên
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -28,7 +29,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von26 / von29 / von30 / von31 / von32 / von33 / von35 / von36 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von26 / von29 / von30 / von31 / von32 / von33 / von35 / von36 / von37 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -51,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von26, von29, von30, von31, von32, von33, von35, von36]
+        phan: [chuan, von26, von29, von30, von31, von32, von33, von35, von36, von37]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -138,6 +139,7 @@ jobs:
             von33) export CHI_VON33=1 ;;                       # vào trễ / suất dự phòng / KL tín hiệu mạnh
             von35) export CHI_VON35=1 ;;                       # cách thoát kinh điển
             von36) export CHI_VON36=1 ;;                       # giảm rủi ro · theo trạng thái VNI
+            von37) export CHI_VON37=1 ;;                       # hai chiến lược theo giai đoạn (20 thứ tự ★ ngẫu nhiên)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
