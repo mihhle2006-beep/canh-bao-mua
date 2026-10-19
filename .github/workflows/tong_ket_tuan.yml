@@ -22,7 +22,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
           path: gia_lap
 
       - name: Lấy canh-bao-mua (Telegram, nhật ký tín hiệu, danh sách mua)
@@ -49,7 +50,7 @@ jobs:
       - name: Lấy ptcp (repo danh-muc)
         working-directory: gia_lap/canh-bao-mua
         env:
-          TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
           REPO: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
@@ -58,7 +59,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
-          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
         run: |
           ma=0; python tong_ket_tuan.py > /tmp/tong_ket.txt 2>&1 || ma=$?

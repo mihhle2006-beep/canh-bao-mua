@@ -30,6 +30,7 @@ jobs:
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
           path: gia_lap
 
       - name: Lấy canh-bao-mua (tải giá, hệ thoát, Telegram, danh sách mua)
@@ -81,9 +82,12 @@ jobs:
 
       - name: Lưu trạng thái về gia_lap
         if: always()
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           for f in giao_dich_ao.json giao_dich_ao_lenh.csv giao_dich_ao_von.csv bao_cao.html; do
             if [ -f "$f" ]; then git add "$f"; fi
           done

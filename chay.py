@@ -70,7 +70,10 @@ def main(argv=None):
     them = [m.strip().upper() for m in (a.ma or "").split(",") if m.strip()]
     vt, nguon_vt = ({}, "tắt (--khong_ban)") if a.khong_ban else vi_the.doc_danh_muc()
     print(f"=== {che_do.upper()} | {bay_gio:%Y-%m-%d %H:%M} ===")
-    print(f"Vị thế đang giữ: {len(vt)} mã (nguồn: {nguon_vt})")
+    if os.environ.get("GITHUB_ACTIONS"):             # log repo công khai: không lộ số mã đang giữ
+        print(f"Đã đọc danh mục (nguồn: {nguon_vt})")
+    else:
+        print(f"Vị thế đang giữ: {len(vt)} mã (nguồn: {nguon_vt})")
     if che_do in ("tong_ket", "chien_luoc"):
         return tong_ket(bay_gio, vt, them, a.khong_gui)
     return trong_phien_15p(bay_gio, vt, a.khong_gui)
@@ -364,7 +367,8 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
                     os.remove(anh)
                 so_cu += 1
     vi_the.ghi_trang_thai_ban(tt_ban)
-    print(f"Đã gửi {so_ban} cảnh báo vị thế đang giữ, {so_cu} cảnh báo danh mục cũ.")
+    if not os.environ.get("GITHUB_ACTIONS"):         # log repo công khai: không lộ số cảnh báo bán
+        print(f"Đã gửi {so_ban} cảnh báo vị thế đang giữ, {so_cu} cảnh báo danh mục cũ.")
 
 
 def _in_nguon():

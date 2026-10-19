@@ -73,7 +73,7 @@ jobs:
 
       - name: Lấy ptcp – lõi dùng chung (repo danh-muc)
         env:
-          TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py

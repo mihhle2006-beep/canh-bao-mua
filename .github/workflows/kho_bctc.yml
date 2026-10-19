@@ -37,7 +37,11 @@ jobs:
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
           path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: danh-muc
+        run: rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
 
       - uses: actions/setup-python@v6
         with:
@@ -68,10 +72,13 @@ jobs:
 
       - name: Lưu kho
         if: always()
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
         run: |
           [ -d du_lieu/bctc ] || exit 0
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           git add du_lieu/bctc
           git commit -m "Kho BCTC $(date +%F)" || { echo "Không có thay đổi"; exit 0; }
           for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
