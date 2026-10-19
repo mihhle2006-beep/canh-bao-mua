@@ -92,6 +92,6 @@ jobs:
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           git add ptcp/loc_quy_b.json du_lieu/bctc
           git add ptcp/lich_su_ma.json 2>/dev/null || true
-          git commit -m "Lọc Quỹ B $(date +%F)" || { echo "Không có thay đổi"; exit 0; }
+          git commit -q -m "Lọc Quỹ B $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
           for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
           echo "Không đẩy được – kiểm tra Settings → Actions → Workflow permissions"; exit 1
