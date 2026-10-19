@@ -74,6 +74,15 @@ jobs:
           key: gia-${{ github.run_id }}
           restore-keys: gia-
 
+      - name: Giải mã trạng thái riêng (cache công khai chỉ giữ bản mã hoá)
+        env:
+          KHOA: ${{ secrets.CACHE_KEY || secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          [ -f cache_ptcp/rieng.enc ] || exit 0
+          openssl enc -d -aes-256-cbc -pbkdf2 -pass env:KHOA -in cache_ptcp/rieng.enc 2>/dev/null | tar -xz 2>/dev/null \
+            || echo "Không giải mã được trạng thái riêng → bắt đầu lại"
+          rm -f cache_ptcp/rieng.enc
+
       - name: Quét & gửi cảnh báo
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -96,6 +105,15 @@ jobs:
           fi
           if [ "$CHI_THU" = "true" ] && [ -d /tmp/ptcp_goc ]; then rm -rf cache_ptcp; cp -a /tmp/ptcp_goc cache_ptcp; fi
           exit $ma_thoat
+
+      - name: Mã hoá trạng thái riêng trước khi lưu cache
+        if: always()
+        env:
+          KHOA: ${{ secrets.CACHE_KEY || secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          ds=$(ls cache_ptcp/trang_thai_ban.json cache_ptcp/lich_su_danh_gia_rieng.csv 2>/dev/null || true)
+          [ -n "$ds" ] || exit 0
+          tar -cz $ds | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:KHOA -out cache_ptcp/rieng.enc && rm -f $ds
 
       - name: Tải file Excel độ chính xác (chế độ lịch sử)
         if: always() && hashFiles('danh_gia_tin_hieu.xlsx') != ''

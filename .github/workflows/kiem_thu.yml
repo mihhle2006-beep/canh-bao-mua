@@ -1,0 +1,82 @@
+# Kiểm thử canh-bao-mua + gia_lap với ptcp MỚI NHẤT của danh-muc – trước phiên mỗi ngày và mỗi lần push.
+# ptcp không ghim phiên bản (dmuc chạy ptcp mới nhất; ghim ở đây sẽ làm 2 bên chạy 2 luật khác nhau) → bắt lỗi sớm:
+# ptcp mới làm hỏng bot → Telegram báo trước 9:00 thay vì bot hỏng giữa phiên.
+name: Kiem thu
+
+on:
+  schedule:
+    - cron: "41 0 * * 1-5"          # 07:41 giờ VN, thứ Hai – thứ Sáu
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kiem-thu-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kiem_thu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+    steps:
+      - name: Bỏ qua khi không có secret (PR từ fork)
+        id: co
+        run: echo "co=$([ -n "$TOKEN" ] && echo 1 || echo 0)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v5
+        if: steps.co.outputs.co == '1'
+
+      - uses: actions/setup-python@v6
+        if: steps.co.outputs.co == '1'
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cài thư viện
+        if: steps.co.outputs.co == '1'
+        run: pip install -q -r requirements.txt > /dev/null
+
+      - name: Lấy ptcp mới nhất (repo danh-muc)
+        if: steps.co.outputs.co == '1'
+        env:
+          REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
+        run: python lay_ptcp.py
+
+      - name: Test canh-bao-mua
+        if: steps.co.outputs.co == '1'
+        run: python -m pytest -q
+
+      - uses: actions/checkout@v5
+        if: steps.co.outputs.co == '1'
+        with:
+          repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: gia_lap
+
+      - name: Test gia_lap (repo kín – log chỉ in dòng tổng kết)
+        if: steps.co.outputs.co == '1'
+        run: |
+          rm -f gia_lap/giao_dich_ao*.json gia_lap/giao_dich_ao*.csv     # không cần trạng thái tài khoản ảo để test
+          ln -s "$GITHUB_WORKSPACE" gia_lap/canh-bao-mua
+          cd gia_lap && pip install -q -r requirements.txt > /dev/null
+          ma=0; python -m pytest -q -p no:cacheprovider > /tmp/gl.txt 2>&1 || ma=$?
+          tail -n 1 /tmp/gl.txt; exit $ma
+
+      - name: Báo Telegram khi hỏng
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -s -o /dev/null -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=⚠️ Kiểm thử hỏng (ptcp mới hoặc code mới) – bot có thể lỗi trong phiên. Xem: ${URL}"
