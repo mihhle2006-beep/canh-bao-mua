@@ -32,7 +32,7 @@ jobs:
       - id: k
         env:
           GH_TOKEN: ${{ github.token }}
-          TOKEN_DM: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          TOKEN_DM: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
           REPO_DM: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
         run: |
           if [ "${{ github.event.schedule }}" != "30 1 * * 1-5" ]; then echo "chay=true" >> "$GITHUB_OUTPUT"; exit 0; fi
@@ -45,7 +45,7 @@ jobs:
                  "https://api.github.com/repos/$REPO_DM/contents/$f" | sed 's/#.*//' | grep -q '[A-Za-z0-9]'; then co=1; fi
           done
           if [ "$co" = 1 ] && [ "$dang" = 0 ]; then echo "chay=true" >> "$GITHUB_OUTPUT"; else echo "chay=false" >> "$GITHUB_OUTPUT"; fi
-          echo "lệnh mới: $co · lần chạy khác đang chạy: $dang"
+          echo "lần chạy khác đang chạy: $dang"          # không in có/không lệnh mới – log công khai
 
   chay:
     needs: kiem
@@ -63,12 +63,14 @@ jobs:
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
           path: danh-muc
 
       - uses: actions/checkout@v5                 # tổng kết tuần (thật + PTĐTTC) trong file HTML – code ở gia_lap
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
           path: gia_lap
 
       - uses: actions/setup-python@v6
@@ -147,9 +149,12 @@ jobs:
 
       - name: Lưu trạng thái về danh-muc
         if: always()
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           for f in danh_muc.csv danh_muc_cu.csv danh_muc_ptdttc.csv trang_thai_ptdttc.json lich_su_ptdttc.csv \
                    tien_mat_chinh.json tien_mat_ptdttc.json trang_thai_vi_the.json gia_tham_chieu_quyen.json \
                    lich_su_danh_muc.csv nhap.txt nhap_ptdttc.txt da_ban.csv da_ban_ptdttc.csv lenh_that.csv lenh_that_ptdttc.csv cache_du_lieu; do
