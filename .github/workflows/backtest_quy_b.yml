@@ -123,6 +123,9 @@ jobs:
           DUNG_LAI: ${{ inputs.dung_lai_ngay || '7' }}
           PHAN: ${{ matrix.phan }}
           SO_NN: ${{ inputs.so_nn }}
+          # chỉ phần chuan gửi 1 tin đối chiếu giả lập (cùng bot giả lập); các phần khác không gửi Telegram
+          TELEGRAM_TOKEN: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN) || '' }}
+          TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần

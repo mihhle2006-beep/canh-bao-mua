@@ -15,7 +15,8 @@ nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
 | 9:07 thứ Bảy | Không gửi tin: chấm lại đúng/sai mọi tín hiệu cũ, kết quả xem trong log |
 
 - Ngày nghỉ lễ bot tự bỏ qua.
-- Backtest (chạy hằng tháng hoặc chạy tay) **không gửi Telegram nữa**. Kết quả xem trong log.
+- Backtest (chạy hằng tháng hoặc chạy tay) **không gửi Telegram**, kết quả xem trong log.
+  Riêng phần `chuan` (ngày 1 hằng tháng) gửi 1 tin: backtest luật hiện tại và đối chiếu với giả lập.
 - File HTML "Bảng tổng hợp" có đủ chi tiết: theo dõi các khuyến nghị đã gửi, danh sách mã từ bộ lọc.
   Tin Telegram chỉ ghi những việc cần làm.
 
