@@ -359,7 +359,7 @@ def test_tin_hieu_manh_suat_du_phong(monkeypatch):
     assert a["manh_b"] and "ngành mạnh" in a["dau_hieu_manh"] and not b["manh_b"]
     assert tong_ket_cl.dong_mua(a).startswith("★ AAA💪 10.00 | MUA MỚI\n") and "💪" not in tong_ket_cl.dong_mua(b)
     assert c["nhom"] == "NGOAI_TOP"
-    assert C.CACH_VAO_15P == "15P+GIO+ATC"
+    assert C.CACH_VAO_15P == "15P+GIO"
 
 
 def test_tin_ghi_ro_cach_vao_tung_ma():
