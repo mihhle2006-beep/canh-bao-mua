@@ -2,13 +2,13 @@
  "ma": {
   "SBT": {
    "ngay_them": "2026-10-08",
-   "het_han": "2026-10-22",
+   "het_han": "2026-10-23",
    "chien_luoc": [
     "quy_b",
     "rieng"
    ],
    "dat_mua": "2026-10-08",
-   "dat_gan_nhat": "2026-10-18",
+   "dat_gan_nhat": "2026-10-19",
    "loc_gan_nhat": "2026-10-18"
   },
   "TLG": {
@@ -24,24 +24,24 @@
   },
   "DBC": {
    "ngay_them": "2026-10-08",
-   "het_han": "2026-10-22",
+   "het_han": "2026-10-23",
    "chien_luoc": [
     "quy_b",
     "rieng"
    ],
    "dat_mua": "2026-10-08",
-   "dat_gan_nhat": "2026-10-18",
+   "dat_gan_nhat": "2026-10-19",
    "loc_gan_nhat": "2026-10-18"
   },
   "PDR": {
    "ngay_them": "2026-10-12",
-   "het_han": "2026-10-22",
+   "het_han": "2026-10-23",
    "chien_luoc": [
     "quy_b",
     "rieng"
    ],
    "dat_mua": "2026-10-12",
-   "dat_gan_nhat": "2026-10-18",
+   "dat_gan_nhat": "2026-10-19",
    "loc_gan_nhat": "2026-10-18"
   },
   "TRC": {
@@ -88,12 +88,12 @@
   },
   "PLX": {
    "ngay_them": "2026-10-16",
-   "het_han": "2026-10-22",
+   "het_han": "2026-10-23",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-10-16",
-   "dat_gan_nhat": "2026-10-18",
+   "dat_gan_nhat": "2026-10-19",
    "loc_gan_nhat": "2026-10-18"
   },
   "PVT": {
@@ -115,12 +115,12 @@
   },
   "TCH": {
    "ngay_them": "2026-10-16",
-   "het_han": "2026-10-22",
+   "het_han": "2026-10-23",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-10-16",
-   "dat_gan_nhat": "2026-10-18",
+   "dat_gan_nhat": "2026-10-19",
    "loc_gan_nhat": "2026-10-18"
   }
  },
