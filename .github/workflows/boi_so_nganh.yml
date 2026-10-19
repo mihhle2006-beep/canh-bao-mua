@@ -44,8 +44,8 @@ jobs:
           persist-credentials: false
           path: danh-muc
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
-        working-directory: danh-muc
-        run: rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
 
       - uses: actions/setup-python@v6
         with:
