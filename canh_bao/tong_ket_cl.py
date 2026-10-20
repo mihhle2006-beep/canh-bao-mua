@@ -4,7 +4,8 @@ TỔNG KẾT 15:20 THEO CHIẾN LƯỢC THỊ TRƯỜNG – tin Telegram GỌN, 
 
   📊 thị trường & CL đang áp dụng
   🟢 MUA MỚI / ✅ VÀO NHƯ LỆNH MỚI / 🟡 VÀO ½   mã | vùng mua | mục tiêu 1R → 3R | cắt lỗ | đạt điểm mua
-                    (Quỹ B 10/2026: ✅ = vào trễ ở giá ≤ giá vào hệ thống + ½R; không còn nhóm 🟡)
+                    (Quỹ B 10/2026: ✅ = vào trễ ở giá ≤ giá vào hệ thống + ½R; không còn nhóm 🟡 · 20/10/2026:
+                     vào trễ chỉ đặt lệnh ATC, huỷ nếu chạm cắt lỗ trong phiên – canh_bao/diem_vao.vao_tre_atc)
   ⏳ CHỜ ĐIỀU CHỈNH   mã + vùng chờ           ⛔ KHÔNG VÀO   hệ thống đang lỗ / sắp bán
   💼 ĐANG GIỮ (danh mục thật – tin riêng tư)  lãi/lỗ theo giá vốn · cắt lỗ hệ thoát · hành động · mốc tiếp ·
                                               ➕ mua thêm khi đủ điều kiện (luật nhồi lệnh đã backtest)
@@ -523,8 +524,10 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
         x = [k for k in ks if k["nhom"] == nhom]
         if not x:
             continue
-        dong += ["", f"{TIEU_DE[nhom]} ({len(x)}) – đặt lệnh phiên {hl:%d/%m}" if hl is not None else
-                 f"{TIEU_DE[nhom]} ({len(x)})"]
+        atc = (" · vào trễ: lệnh ATC, huỷ nếu chạm cắt lỗ"
+               if nhom != "MUA_MOI" and _quy("QUY_VAO_TRE_KHOP", "mo") == "dong" else "")
+        dong += ["", (f"{TIEU_DE[nhom]} ({len(x)}) – đặt lệnh phiên {hl:%d/%m}" if hl is not None else
+                      f"{TIEU_DE[nhom]} ({len(x)})") + atc]
         x = sorted(x, key=lambda k: (k["uu_tien"] if k.get("uu_tien") == k.get("uu_tien") and k.get("uu_tien")
                                      is not None else 999, k["rui_ro"] if k["rui_ro"] == k["rui_ro"] else 99))
         dong += [dong_mua(k, dang_giu, bt) for k in x[:n_max]]

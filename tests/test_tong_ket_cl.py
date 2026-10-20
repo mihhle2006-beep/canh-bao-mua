@@ -445,3 +445,11 @@ def test_ghi_sao(tmp_path, monkeypatch):
     assert len(d) == 4 and d[d.ngay.eq("2026-10-16")].thoi_diem.eq("2026-10-17 08:30").all()
     assert d.set_index(["ngay", "ma"]).loc[("2026-10-19", "AAA"), "sao"] == "1"
     assert d.set_index(["ngay", "ma"]).loc[("2026-10-19", "BBB"), "sao"] == "0"
+
+
+def test_vao_tre_atc_theo_cau_hinh(monkeypatch):
+    from ptcp import cau_hinh as P
+    monkeypatch.setattr(P, "QUY_VAO_TRE_KHOP", "dong", raising=False)
+    assert diem_vao.vao_tre_atc({"nhom": "VAO_NHU_MOI"}) and not diem_vao.vao_tre_atc({"nhom": "MUA_MOI"})
+    monkeypatch.setattr(P, "QUY_VAO_TRE_KHOP", "mo")
+    assert not diem_vao.vao_tre_atc({"nhom": "VAO_NHU_MOI"})
