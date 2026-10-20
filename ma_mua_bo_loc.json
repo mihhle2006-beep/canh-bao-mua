@@ -1,7 +1,7 @@
 {
- "ngay_quet": "2026-10-19",
- "luc": "2026-10-19 15:42",
- "phien": "2026-10-19",
+ "ngay_quet": "2026-10-20",
+ "luc": "2026-10-20 15:36",
+ "phien": "2026-10-20",
  "chien_luoc": [
   "quy_b",
   "xu_huong"
@@ -10,19 +10,16 @@
   "DBC": [
    "quy_b"
   ],
-  "PDR": [
-   "quy_b"
-  ],
   "PLX": [
    "quy_b"
   ],
-  "SBT": [
-   "quy_b"
-  ],
-  "TCB": [
+  "SSI": [
    "quy_b"
   ],
   "TCH": [
+   "quy_b"
+  ],
+  "VPL": [
    "quy_b"
   ]
  },
