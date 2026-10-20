@@ -4,8 +4,9 @@
 # BACKTEST QUỸ B – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von39, chế độ sóng /
 # tổ hợp) đã xoá 20/10/2026 – kết luận ở danh-muc ptcp/cau_hinh.py, code xem lịch sử git:
-#   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
+#   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   von40 – KẾ HOẠCH ĐĂNG KÝ TRƯỚC: nền v2 trung thực với live + T1–T6, luật quyết định C1–C6 in sẵn ĐẠT / KHÔNG ĐẠT
+#   von41 – ĐĂNG KÝ TRƯỚC: vào trễ khớp như live A1–A5 so nền v2, luật C1–C5
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -21,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von40 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von40 / von41 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von40]
+        phan: [chuan, von40, von41]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -124,6 +125,7 @@ jobs:
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
             von40) export CHI_VON40=1; unset SO_NN ;;          # đăng ký trước: nền v2 + T1–T6 (đúng 40 thứ tự ★)
+            von41) export CHI_VON41=1; unset SO_NN ;;          # đăng ký trước: vào trễ A1–A5 (đúng 40 thứ tự ★)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
