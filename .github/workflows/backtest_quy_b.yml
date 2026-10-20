@@ -2,20 +2,9 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # BACKTEST QUỸ B – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
-# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von25, rổ hose riêng)
-# đã xoá 17/10/2026 – xem lịch sử git:
+# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von39, chế độ sóng /
+# tổ hợp) đã xoá 20/10/2026 – kết luận ở danh-muc ptcp/cau_hinh.py, code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
-#   von26 – chỉnh hệ phụ 6 mã: nhịp xoay, vào lại, rổ, điểm chọn, hồi sau sập (từng thứ một)
-#   von29 – định giá mạnh hơn: hệ số KL mã ĐẮT / RẺ, KL tuyến tính, ★ thêm định giá
-#   von30 – định giá: RẺ ×1,25…×3, ngưỡng 10–40%, cập nhật theo giá hiện tại, P/E, EV/EBITDA
-#   von31 – ★ thêm sức mạnh ngành (RS ngành ¼ / ½ / ưu tiên ngành mạnh) so 30 lần ★ ngẫu nhiên
-#   von32 – chẩn đoán luật hiện tại: cỡ lệnh, tín hiệu bị bỏ, thoát, tập trung, cơ chế phụ
-#   von33 – vào trễ cả mã bỏ vì đủ số mã, suất dự phòng 2/3, KL tín hiệu mạnh B ×1,5/×2
-#   von35 – cách thoát kinh điển: chandelier, Donchian, MA50 ngày, MA20/30 tuần, xác nhận 2 tuần, hoà vốn 1,5R, ATR
-#   von36 – giảm rủi ro (trần 15%, ≤ 4/3 mã mới/tuần, rủi ro 0,6%, lô đầu 50%) + vì sao 2022+ yếu (theo trạng thái VNI)
-#   von37 – hai chiến lược: chọn trên 2013–19 / trên 2020+ (xem giai đoạn kia), so trên cùng 20 thứ tự ★ ngẫu nhiên
-#   von38 – tỷ trọng theo yếu tố: điểm 0–100 (biên VNI, MA200, độ rộng, thanh khoản, phong độ hệ…) → hệ số rủi ro theo bậc
-#   von39 – mở rộng von38: 12 yếu tố × 9 cách đổi điểm × 4 thứ được chỉnh + walk-forward (chọn mỗi năm bằng dữ liệu quá khứ)
 #   von40 – KẾ HOẠCH ĐĂNG KÝ TRƯỚC: nền v2 trung thực với live + T1–T6, luật quyết định C1–C6 in sẵn ĐẠT / KHÔNG ĐẠT
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
@@ -32,7 +21,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von26 / von29 / von30 / von31 / von32 / von33 / von35 / von36 / von37 / von38 / von39 / von40 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von40 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -55,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von26, von29, von30, von31, von32, von33, von35, von36, von37, von38, von39, von40]
+        phan: [chuan, von40]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -134,24 +123,13 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
-            von26) export CHI_VON26=1 ;;                       # chỉnh hệ phụ 6 mã
-            von29) export CHI_VON29=1 ;;                       # định giá mạnh hơn
-            von30) export CHI_VON30=1 ;;                       # định giá nhiều mức, cập nhật theo giá
-            von31) export CHI_VON31=1 ;;                       # ★ thêm sức mạnh ngành
-            von32) export CHI_VON32=1 ;;                       # chẩn đoán luật hiện tại
-            von33) export CHI_VON33=1 ;;                       # vào trễ / suất dự phòng / KL tín hiệu mạnh
-            von35) export CHI_VON35=1 ;;                       # cách thoát kinh điển
-            von36) export CHI_VON36=1 ;;                       # giảm rủi ro · theo trạng thái VNI
-            von37) export CHI_VON37=1 ;;                       # hai chiến lược theo giai đoạn (20 thứ tự ★ ngẫu nhiên)
-            von38) export CHI_VON38=1 ;;                       # tỷ trọng (hệ số rủi ro) theo bậc điểm yếu tố
-            von39) export CHI_VON39=1 ;;                       # tỷ trọng theo yếu tố mở rộng + walk-forward
             von40) export CHI_VON40=1; unset SO_NN ;;          # đăng ký trước: nền v2 + T1–T6 (đúng 40 thứ tự ★)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
           if [ -d cache_du_lieu/bctc_moi ]; then cp -n cache_du_lieu/bctc_moi/*.json du_lieu/bctc/ 2>/dev/null || true; fi
           trap 'mkdir -p cache_du_lieu/bctc_moi; git ls-files --others --exclude-standard du_lieu/bctc | xargs -r cp -t cache_du_lieu/bctc_moi/' EXIT
-          python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_${PHAN}.xlsx" --song \
+          python chay_backtest_quy_b.py --tu "$TU" ${MA:+--ma "$MA"} --ra "backtest_quy_b_${PHAN}.xlsx" \
             --dung_lai_ngay "${DUNG_LAI:-0}" \
             $([ "$CO_HUY" = "true" ] && echo --co_huy)
       - uses: actions/upload-artifact@v6
