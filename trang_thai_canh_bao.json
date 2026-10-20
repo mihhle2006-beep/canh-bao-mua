@@ -133,8 +133,10 @@
   },
   "TCB": {
    "ngay": "2026-10-20",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "DGW": {
    "ngay": "2026-10-16",
@@ -169,7 +171,7 @@
     "Mã": "PLX",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "34.85–36.20",
-    "Giá": 35.1,
+    "Giá": 35.2,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -179,11 +181,11 @@
     "Mã": "TCB",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "32.30–33.60",
-    "Giá": 33.15,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 33.55,
+    "Trạng thái": "MUA",
+    "Lý do": "đủ tiêu chí 15': phá đỉnh 20 nến KL 2.8×",
+    "Giờ": "10:30",
+    "Giá mua": 33.45
    },
    {
     "Mã": "TCH",
@@ -209,17 +211,17 @@
     "Mã": "DBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "15.35–16.05",
-    "Giá": 15.95,
+    "Giá": 15.85,
     "Trạng thái": "MUA",
-    "Lý do": "giá 15.95 dưới LO 16.00, còn trong vùng → mua giá hiện tại (đặt LO 15.95, không cần đặt cao hơn)",
+    "Lý do": "giá 15.85 dưới LO 16.00, còn trong vùng → mua giá hiện tại (đặt LO 15.85, không cần đặt cao hơn)",
     "Giờ": "09:30",
-    "Giá mua": 15.95
+    "Giá mua": 15.85
    },
    {
     "Mã": "SBT",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "22.30–23.15",
-    "Giá": 21.1,
+    "Giá": 21.2,
     "Trạng thái": "BỎ",
     "Lý do": "giá rơi 21.45 < 22.30 trước khi mua",
     "Giờ": "",
