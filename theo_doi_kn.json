@@ -38,18 +38,18 @@
   "CHIEN_LUOC|VPB|2026-10-15"
  ],
  "bang": {
-  "luc": "2026-10-20 15:36",
+  "luc": "2026-10-20 15:55",
   "dang_mo": [
-   "⬆ ANV 18.90 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 08/10 giá vốn 17.85 · hiện lãi +5.9% (+0.7R)\n   Cắt lỗ: 17.19 (dời lên từ 17.09)",
-   "⬆ CSV 23.75 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 13/10 giá vốn 22.45 · hiện lãi +5.8% (+1.1R)\n   Cắt lỗ: 22.58 (dời lên từ 21.63)",
-   "⬆ BCM 40.90 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 19/10 giá vốn 39.25 · hiện lãi +4.2% (+0.5R)\n   Cắt lỗ: 37.18 (dời lên từ 36.07)",
-   "⬆ VGC 44.90 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 13/10 giá vốn 43.40 · hiện lãi +3.5% (+1.3R)\n   Cắt lỗ: 43.66 (dời lên từ 42.25)",
-   "⬆ TLG 56.90 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 08/10 giá vốn 55.00 · hiện lãi +3.5% (+0.5R)\n   Cắt lỗ: 53.05 (dời lên từ 51.65)",
-   "⬆ DBC 16.05 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 09/10 giá vốn 15.70 · hiện lãi +2.2% (+0.4R)\n   Cắt lỗ: 14.95 (dời lên từ 14.82)\n   (báo MUA lại 15/10)",
-   "⬆ TCB 33.95 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 14/10 giá vốn 33.25 · hiện lãi +2.1% (+0.4R)\n   Cắt lỗ: 31.70 (dời lên từ 31.27)",
-   "⬆ MSB 15.00 | GIỮ, DỜI cắt lỗ\n   Đã vào lệnh: 08/10 giá vốn 14.70 · hiện lãi +2.0% (+0.3R)\n   Cắt lỗ: 13.94 (dời lên từ 13.80)",
+   "🟢 ANV 18.90 | GIỮ\n   Đã vào lệnh: 08/10 giá vốn 17.85 · hiện lãi +5.9% (+0.7R)\n   Cắt lỗ: 17.19",
+   "🟢 CSV 23.75 | GIỮ\n   Đã vào lệnh: 13/10 giá vốn 22.45 · hiện lãi +5.8% (+1.1R)\n   Cắt lỗ: 22.58",
    "🟢 KDH 14.15 | GIỮ\n   Đã vào lệnh: 08/10 giá vốn 13.50 · hiện lãi +4.8% (+0.9R)\n   Cắt lỗ: 12.95",
+   "🟢 BCM 40.90 | GIỮ\n   Đã vào lệnh: 19/10 giá vốn 39.25 · hiện lãi +4.2% (+0.5R)\n   Cắt lỗ: 37.18",
    "🟢 FRT 149.40 | GIỮ\n   Đã vào lệnh: 14/10 giá vốn 143.80 · hiện lãi +3.9% (+0.7R)\n   Cắt lỗ: 135.57",
+   "🟢 VGC 44.90 | GIỮ\n   Đã vào lệnh: 13/10 giá vốn 43.40 · hiện lãi +3.5% (+1.3R)\n   Cắt lỗ: 43.66",
+   "🟢 TLG 56.90 | GIỮ\n   Đã vào lệnh: 08/10 giá vốn 55.00 · hiện lãi +3.5% (+0.5R)\n   Cắt lỗ: 53.05",
+   "🟢 DBC 16.05 | GIỮ\n   Đã vào lệnh: 09/10 giá vốn 15.70 · hiện lãi +2.2% (+0.4R)\n   Cắt lỗ: 14.95\n   (báo MUA lại 15/10)",
+   "🟢 TCB 33.95 | GIỮ\n   Đã vào lệnh: 14/10 giá vốn 33.25 · hiện lãi +2.1% (+0.4R)\n   Cắt lỗ: 31.70",
+   "🟢 MSB 15.00 | GIỮ\n   Đã vào lệnh: 08/10 giá vốn 14.70 · hiện lãi +2.0% (+0.3R)\n   Cắt lỗ: 13.94",
    "🟢 DIG 9.58 | GIỮ\n   Đã vào lệnh: 13/10 giá vốn 9.45 · hiện lãi +1.4% (+0.2R)\n   Cắt lỗ: 8.80",
    "🟢 PDR 11.35 | GIỮ\n   Đã vào lệnh: 12/10 giá vốn 11.25 · hiện lãi +0.9% (+0.1R)\n   Cắt lỗ: 10.57",
    "🟢 VIB 13.75 | GIỮ\n   Đã vào lệnh: 09/10 giá vốn 13.70 · hiện lãi +0.4% (+0.1R)\n   Cắt lỗ: 13.18",
@@ -60,10 +60,6 @@
    "🟢 HDB 22.10 | GIỮ\n   Đã vào lệnh: 13/10 giá vốn 22.60 · hiện lỗ -2.2% (-0.5R)\n   Cắt lỗ: 21.67",
    "🟢 MWG 74.90 | GIỮ\n   Đã vào lệnh: 08/10 giá vốn 76.90 · hiện lỗ -2.6% (-0.4R)\n   Cắt lỗ: 71.74"
   ],
-  "da_dong": [
-   "❌ SBT – mua 08/10 giá 22.80, đã bán 21.85 ngày 20/10 (-4.8%)",
-   "❌ SBT – mua 09/10 giá 22.75, đã bán 21.85 ngày 20/10 (-4.6%)",
-   "❌ VPB – mua 16/10 giá 24.40, đã bán 24.00 ngày 20/10 (-2.2%)"
-  ]
+  "da_dong": []
  }
 }
