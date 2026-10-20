@@ -2,8 +2,10 @@
  "_15p": {
   "SBT": {
    "ngay": "2026-10-20",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "BỎ",
+   "da_bao": [
+    "BỎ"
+   ]
   },
   "MCH": {
    "ngay": "2026-10-09",
@@ -52,8 +54,10 @@
   },
   "DBC": {
    "ngay": "2026-10-20",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "TDP": {
    "ngay": "2026-10-09",
@@ -165,9 +169,9 @@
     "Mã": "PLX",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "34.85–36.20",
-    "Giá": null,
+    "Giá": 35.25,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Lý do": "chưa có điểm vào",
     "Giờ": "",
     "Giá mua": null
    },
@@ -175,9 +179,9 @@
     "Mã": "TCB",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "32.30–33.60",
-    "Giá": null,
+    "Giá": 33.2,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Lý do": "chưa có điểm vào",
     "Giờ": "",
     "Giá mua": null
    },
@@ -185,9 +189,9 @@
     "Mã": "TCH",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.95–11.40",
-    "Giá": null,
+    "Giá": 11.2,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Lý do": "chưa có điểm vào",
     "Giờ": "",
     "Giá mua": null
    },
@@ -195,9 +199,9 @@
     "Mã": "PDR",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.90–11.30",
-    "Giá": null,
+    "Giá": 11.4,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Lý do": "chưa có điểm vào",
     "Giờ": "",
     "Giá mua": null
    },
@@ -205,19 +209,19 @@
     "Mã": "DBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "15.35–16.05",
-    "Giá": null,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 16.0,
+    "Trạng thái": "MUA",
+    "Lý do": "đủ tiêu chí 15': MACD 15' cắt lên & phá đỉnh 20 nến KL 6.8×",
+    "Giờ": "09:30",
+    "Giá mua": 16.0
    },
    {
     "Mã": "SBT",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "22.30–23.15",
-    "Giá": null,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Giá": 21.25,
+    "Trạng thái": "BỎ",
+    "Lý do": "giá rơi 21.45 < 22.30 trước khi mua",
     "Giờ": "",
     "Giá mua": null
    }
