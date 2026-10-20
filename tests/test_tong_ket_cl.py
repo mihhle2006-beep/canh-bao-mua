@@ -324,12 +324,16 @@ def test_ma_dang_giu_khong_bao_mua_ngay():
     assert diem_vao.tin_mua(kq, "2026-10-12 09:20", "LO").startswith("🟢 MUA NGAY – MSN")
 
 
-def test_gia_duoi_lo_van_trong_vung_mua_gia_hien_tai():
+def test_gia_duoi_lo_van_trong_vung_mua_gia_hien_tai(monkeypatch):
     """Đã chạm LO (19,83) từ trước, lúc báo giá 19,60 < LO nhưng ≥ đáy vùng 19,5 → giá mua = giá hiện tại, không phải LO."""
     hom_nay = _phien("2026-10-08", [20.2, 20.0, 19.8, 19.7, 19.6])
     dp = _nen_15p(hom_nay)
     z = {"ma": "AAA", "nhom": "VAO_NHU_MOI", "tu": 19.5, "den": 20.5, "cl": 18.7, "ly_do": "MACD", "atr": 0.6,
          "uu_tien": 1.0}
+    monkeypatch.setattr(diem_vao, "vao_tre_atc", lambda z_: True)        # vào trễ Quỹ B: trong phiên chỉ chờ ATC
+    k = diem_vao.danh_gia(z, dp, "2026-10-08 10:20", "LO")
+    assert k["trang_thai"] == "CHỜ" and "ATC" in k["ly_do"]
+    monkeypatch.setattr(diem_vao, "vao_tre_atc", lambda z_: False)
     k = diem_vao.danh_gia(z, dp, "2026-10-08 10:20", "LO")
     assert k["trang_thai"] == "MUA" and k["gia_mua"] == 19.6 and "dưới LO" in k["ly_do"]
     assert diem_vao.muc_sau_mua(k)[0] == 19.6
