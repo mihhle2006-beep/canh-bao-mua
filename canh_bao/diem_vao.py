@@ -90,7 +90,10 @@ def danh_gia(z, dp, bay_gio, bien_the):
         return kq
     g = macd_gio(dp)[hom_nay.index]
     het = t >= t.normalize() + pd.Timedelta(C.GIO_ATC + ":00")
-    r = danh_gia_phien(hom_nay, z["tu"], z["den"], bien_the, g, het_phien=het)
+    if vao_tre_atc(z):                      # Quỹ B: vào trễ chỉ đặt lệnh ATC (huỷ nếu chạm cắt lỗ trong phiên)
+        bien_the = "ATC"
+    r = danh_gia_phien(hom_nay, z["tu"], z["den"], bien_the, g, het_phien=het,
+                       **({"cl": z.get("cl")} if bien_the == "ATC" else {}))
     L = hom_nay.iloc[-1]
     tc = r["tieu_chi"] or tieu_chi_nen(L, z["tu"], z["den"], bool(g.iloc[-1]) if "GIO" in bien_the else None)
     kq.update({"trang_thai": r["trang_thai"], "ly_do": r["ly_do"], "gia_nay": float(L.close), "tieu_chi": tc,
@@ -101,10 +104,21 @@ def danh_gia(z, dp, bay_gio, bien_the):
         # chào bán thấp nhất); cắt lỗ % / mục tiêu / khối lượng tính theo giá này, không theo giá LO
         kq.update({"gia_mua": gn, "ly_do": f"giá {gn:,.2f} dưới LO {gm:,.2f}, còn trong vùng → mua giá hiện tại "
                                            f"(đặt LO {gn:,.2f}, không cần đặt cao hơn)"})
-    if kq["trang_thai"] == "MUA" and kq["atc"] and not la_sao(z):      # ATC chỉ cho mã ★ – mã khác chỉ mua khi khớp LO
+    if kq["trang_thai"] == "MUA" and kq["atc"] and not la_sao(z) and bien_the != "ATC":   # ATC chỉ cho mã ★ (trừ vào trễ)
         kq.update({"trang_thai": "BỎ", "ly_do": "không khớp LO, không phải mã ★ → không mua ATC", "gia_mua": np.nan,
                    "atc": False})
     return kq
+
+
+def vao_tre_atc(z):
+    """Nhóm vào trễ (✅ / 🟡) & ptcp.cau_hinh.QUY_VAO_TRE_KHOP = "dong" → chỉ lệnh ATC (backtest Quỹ B von41–42)."""
+    if z.get("nhom") not in ("VAO_NHU_MOI", "VAO_NUA"):
+        return False
+    try:
+        from ptcp import cau_hinh as P
+    except ImportError:
+        return False
+    return getattr(P, "QUY_VAO_TRE_KHOP", "mo") == "dong"
 
 
 def la_sao(z):
