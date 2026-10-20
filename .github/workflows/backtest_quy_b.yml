@@ -6,6 +6,7 @@
 # tổ hợp) đã xoá 20/10/2026 – kết luận ở danh-muc ptcp/cau_hinh.py, code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   von43 – tỷ trọng cổ phiếu: quét 13 cần gạt (~200 cấu hình), giai đoạn 2 xác nhận bằng 40 thứ tự ★ mới (C1/C2)
+#   von44 – tiền nhàn rỗi mua ETF VN30 / VN50 / VN100 (luôn / > MA200) + lô đầu 50% đi ngang ½
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -21,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von43 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von43 / von44 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von43]
+        phan: [chuan, von43, von44]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -123,6 +124,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von44) export CHI_VON44=1; unset SO_NN ;;          # ETF chỉ số cho tiền nhàn rỗi (40 thứ tự ★)
             von43) export CHI_VON43=1; unset SO_NN ;;          # quét tỷ trọng (đúng 8 + 40 thứ tự ★)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
