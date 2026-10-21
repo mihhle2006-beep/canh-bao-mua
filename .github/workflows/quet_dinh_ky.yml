@@ -6,7 +6,8 @@ name: Quet dinh ky
 
 on:
   schedule:
-    - cron: "5 8 * * 1-5"          # 15:05 giờ VN (UTC+7) MỖI PHIÊN T2–T6 – sau khi đóng cửa
+    # Lịch GitHub hay trễ 30–40 phút → hẹn SỚM 14:20 giờ VN rồi bước đầu tự chờ tới 15:02 (sau ATC) mới quét
+    - cron: "20 7 * * 1-5"         # 14:20 giờ VN (UTC+7) MỖI PHIÊN T2–T6 – job chờ tới 15:02
   workflow_dispatch:
     inputs:
       chien_luoc:
@@ -44,6 +45,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
+      - name: Chờ tới 15:02 giờ VN (lịch hẹn sớm để không trễ)
+        if: github.event_name == 'schedule'
+        run: |
+          con=$(( $(TZ=Asia/Ho_Chi_Minh date -d "15:02" +%s) - $(date +%s) ))
+          if [ "$con" -gt 0 ]; then echo "Chờ $con giây"; sleep "$con"; fi
+
       - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v6
@@ -116,12 +123,10 @@ jobs:
           for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
           echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"
 
-      # Quét xong SAU 15:20 (lịch GitHub trễ) → tổng kết 15:20 đã chạy mà chưa có mã mới → kích hoạt lại tổng kết.
-      - name: Kích hoạt lại tổng kết (nếu quét xong trễ)
+      # Quét xong (~15:05–15:10) → chạy NGAY tổng kết (không chờ lịch 15:20 hay trễ). Lịch 15:20 của canh_bao.yml chỉ còn
+      # là dự phòng: tổng kết đã gửi thì nó không gửi lại (chay.ma_moi_tong_ket).
+      - name: Chạy tổng kết ngay sau khi quét
         if: github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gio=$(TZ=Asia/Ho_Chi_Minh date +%H%M)
-          if [ "$gio" -lt 1520 ]; then echo "Quét xong lúc $gio – tổng kết 15:20 sẽ tự nhận mã mới"; exit 0; fi
-          gh workflow run canh_bao.yml --ref main -f che_do=tong_ket -R "$GITHUB_REPOSITORY"
+        run: gh workflow run canh_bao.yml --ref main -f che_do=tong_ket -R "$GITHUB_REPOSITORY"
