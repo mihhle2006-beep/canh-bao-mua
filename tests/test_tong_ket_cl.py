@@ -457,3 +457,13 @@ def test_vao_tre_atc_theo_cau_hinh(monkeypatch):
     assert diem_vao.vao_tre_atc({"nhom": "VAO_NHU_MOI"}) and not diem_vao.vao_tre_atc({"nhom": "MUA_MOI"})
     monkeypatch.setattr(P, "QUY_VAO_TRE_KHOP", "mo")
     assert not diem_vao.vao_tre_atc({"nhom": "VAO_NHU_MOI"})
+
+
+def test_tong_ket_khong_gui_lap(tmp_path, monkeypatch):
+    import chay
+    monkeypatch.delenv("GUI_LAI", raising=False)
+    p, kn = str(tmp_path / "da_gui.json"), [{"ma": "AAA", "nhom": "MUA_MOI"}]
+    assert not chay.da_gui_tong_ket("2026-10-21 15:38", kn, p)          # lần đầu → gửi
+    assert chay.da_gui_tong_ket("2026-10-21 15:56", kn, p)              # cùng phiên, cùng khuyến nghị → bỏ
+    assert not chay.da_gui_tong_ket("2026-10-21 15:56", kn + [{"ma": "BBB", "nhom": "MUA_MOI"}], p)   # có mã mới
+    assert not chay.da_gui_tong_ket("2026-10-22 15:20", kn, p)          # phiên mới

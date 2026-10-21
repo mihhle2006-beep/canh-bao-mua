@@ -16,6 +16,7 @@ Danh mục: danh_muc.csv của repo riêng tư danh-muc (DANH_MUC_TOKEN, DANH_MU
 Repo bot CÔNG KHAI: log chỉ có phần công khai; số CP, giá vốn, cắt lỗ chỉ gửi Telegram.
 """
 import argparse
+import json
 import os
 import sys
 
@@ -90,6 +91,26 @@ def _phien_thuc(bay_gio):
 
 
 # ------------------------------------------------------------------ TỔNG KẾT 15:20
+FILE_DA_GUI = "tong_ket_da_gui.json"
+
+
+def da_gui_tong_ket(bay_gio, ds_kn, path=FILE_DA_GUI):
+    """Tổng kết 15:20 chạy 2 lần (lịch GitHub trễ + quet_dinh_ky kích hoạt lại) → chỉ gửi khi phiên mới hoặc danh sách
+    khuyến nghị (mã, nhóm) đổi. Ghi khoá lần gửi này; True = đã gửi đúng nội dung này rồi."""
+    import hashlib
+    khoa = {"phien": f"{pd.Timestamp(bay_gio):%Y-%m-%d}",
+            "kn": hashlib.sha1(json.dumps(sorted((k["ma"], k["nhom"]) for k in ds_kn)).encode()).hexdigest()}
+    try:
+        cu = json.load(open(path, encoding="utf-8"))
+    except (OSError, ValueError):
+        cu = None
+    if cu == khoa and not os.environ.get("GUI_LAI"):
+        return True
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(khoa, f)
+    return False
+
+
 def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     vn30, nguon_vn30 = ro_vn30.lay_vn30()
     print(f"Rổ VN30: {len(vn30)} mã (nguồn: {nguon_vn30})")
@@ -134,6 +155,9 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         giu.append((v, kb, tong_ket_cl.mua_them(v, dn, kb, bay_gio)))
     if C.GHI_NHAT_KY:
         _nhat_ky(ra, bay_gio)
+    if not khong_gui and da_gui_tong_ket(bay_gio, ds_kn):
+        print("Tổng kết phiên này đã gửi với cùng danh sách khuyến nghị → không gửi lại (GUI_LAI=1 để ép gửi)")
+        return 0
     kq_bt = tong_ket_cl.doc_ket_qua_backtest()
     tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
     td = _an_toan("Theo dõi khuyến nghị", theo_doi_kn.tom_tat, bay_gio, ra.get("gia_ngay"),
