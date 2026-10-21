@@ -149,8 +149,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # chỉ thêm file đang có – thiếu 1 file không được làm hỏng cả lần commit
           for f in trang_thai_canh_bao.json lich_su_tin_hieu.csv lich_su_danh_gia.csv trang_thai_chien_luoc.json tong_ket_da_gui.json \
-                   docs/index.html ma_bo_loc.json theo_doi_kn.json lich_su_sao.csv; do
-            if [ -f "$f" ]; then git add "$f"; fi
+                   docs/index.html ma_bo_loc.json theo_doi_kn.json lich_su_sao.csv lich_su_nen; do
+            if [ -e "$f" ]; then git add "$f"; fi
           done
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0
           git commit -m "Trạng thái cảnh báo $(date -u +%F' '%H:%M) UTC"
