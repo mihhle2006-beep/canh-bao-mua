@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write                  # đẩy bản nén nến 15' lên Release nen-15p (bền, không bị xoá như cache)
 
 concurrency:
   group: backtest
@@ -55,6 +55,16 @@ jobs:
             bt-
             gia-
 
+      # Cache bị GitHub xoá (7 ngày không dùng / quá 10 GB) → lấy lại lịch sử từ Release trước khi tải phần mới
+      - name: Khôi phục nến 15' từ Release (nếu cache mất)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls cache_gia/*_15_lich_su.csv >/dev/null 2>&1 && { echo "Cache còn nến 15'"; exit 0; }
+          gh release download nen-15p -p nen_15p.tar.gz -R "$GITHUB_REPOSITORY" 2>/dev/null \
+            && tar -xzf nen_15p.tar.gz && rm -f nen_15p.tar.gz && echo "Đã lấy lại nến 15' từ Release" \
+            || echo "Chưa có Release nen-15p"
+
       - name: Tải phần nến 15' mới
         timeout-minutes: 100
         run: python chay.py --che_do tai_nen
@@ -68,3 +78,14 @@ jobs:
             cache_ptcp
             cache_du_lieu
           key: bt-${{ github.run_id }}
+
+      - name: Lưu nến 15' lên Release nen-15p (bản bền, ghi đè bản cũ – đã gồm toàn bộ lịch sử)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls cache_gia/*_15_lich_su.csv >/dev/null 2>&1 || { echo "Không có nến 15' – bỏ qua"; exit 0; }
+          tar -czf nen_15p.tar.gz cache_gia/*_15_lich_su.csv
+          ls -lh nen_15p.tar.gz
+          gh release view nen-15p -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create nen-15p -R "$GITHUB_REPOSITORY" \
+            --title "Nến 15' toàn sàn (tự cập nhật hằng tuần)" --notes "Tải nen_15p.tar.gz – giải nén ra cache_gia/<MÃ>_15_lich_su.csv"
+          gh release upload nen-15p nen_15p.tar.gz --clobber -R "$GITHUB_REPOSITORY"
