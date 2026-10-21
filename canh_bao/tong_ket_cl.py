@@ -332,6 +332,9 @@ def luu_ds_mua(ra, bay_gio, path=None):
                     "ma": [{k_: (None if isinstance(v, float) and v != v else
                                  (f"{v:%Y-%m-%d}" if isinstance(v, pd.Timestamp) else v))
                             for k_, v in k.items()} for k in ds]}
+    if cu["ds_mua"]["hieu_luc"]:                  # lưu theo phiên để chạy lại phiên cũ (python chay.py --gio …)
+        ls = {**(cu.get("lich_su_ds_mua") or {}), cu["ds_mua"]["hieu_luc"]: cu["ds_mua"]}
+        cu["lich_su_ds_mua"] = dict(sorted(ls.items())[-30:])
     with open(path, "w", encoding="utf-8") as f:
         json.dump(cu, f, ensure_ascii=False, indent=1)
     return len(ds)

@@ -26,14 +26,16 @@ def _f(x, le=2):
 
 
 def doc_ds_mua(bay_gio, path=None):
-    """Danh sách mua có hiệu lực ĐÚNG phiên hôm nay (list dict) – rỗng nếu tin tổng kết là của phiên khác."""
+    """Danh sách mua có hiệu lực ĐÚNG phiên của bay_gio (list dict) – phiên cũ lấy từ lich_su_ds_mua (chạy lại)."""
     try:
         with open(path or C.FILE_TRANG_THAI_CL, encoding="utf-8") as f:
-            ds = json.load(f).get("ds_mua") or {}
+            tt = json.load(f)
     except (OSError, ValueError):
         return []
-    if ds.get("hieu_luc") != f"{pd.Timestamp(bay_gio):%Y-%m-%d}":
-        return []
+    ngay = f"{pd.Timestamp(bay_gio):%Y-%m-%d}"
+    ds = tt.get("ds_mua") or {}
+    if ds.get("hieu_luc") != ngay:
+        ds = (tt.get("lich_su_ds_mua") or {}).get(ngay) or {}
     return ds.get("ma") or []
 
 

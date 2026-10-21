@@ -25,6 +25,10 @@ on:
         description: "Chỉ thử – KHÔNG gửi Telegram, KHÔNG lưu trạng thái (kết quả xem trong log)"
         default: false
         type: boolean
+      gio:
+        description: "Chạy lại thời điểm cũ, giờ VN (VD 2026-10-22 14:30) – chỉ in log, KHÔNG gửi Telegram / lưu trạng thái"
+        default: ""
+        type: string
       nhanh_ptcp:
         description: "Nhánh danh-muc lấy ptcp (chạy thử code chưa gộp) – bỏ trống = main"
         default: ""
@@ -34,7 +38,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: canh-bao
+  group: canh-bao${{ (inputs.gio != '' || inputs.chi_thu) && '-thu' || '' }}   # chạy thử không huỷ vòng lặp đang chạy
   cancel-in-progress: true
 
 jobs:
@@ -93,7 +97,8 @@ jobs:
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
           MA: ${{ inputs.ma }}
-          CHI_THU: ${{ inputs.chi_thu }}
+          CHI_THU: ${{ inputs.chi_thu || inputs.gio != '' }}
+          GIO: ${{ inputs.gio }}
         # lịch thứ Bảy → lich_su; chạy tay → chế độ đã chọn; còn lại → tu_dong
         # có nhập mã → chỉ xem mã đó · chỉ thử → không gửi Telegram, khôi phục trạng thái riêng (cache_ptcp) sau khi chạy
         run: |
@@ -115,7 +120,7 @@ jobs:
           if [ -n "$MA" ]; then
             python chay.py --chi_ma "$MA" $THEM || ma_thoat=$?
           else
-            python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || github.event.schedule == '20 8 * * 1-5' && 'tong_ket' || inputs.che_do || 'tu_dong' }} $THEM || ma_thoat=$?
+            python chay.py ${GIO:+--gio "$GIO"} --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || github.event.schedule == '20 8 * * 1-5' && 'tong_ket' || inputs.gio != '' && 'tu_dong' || inputs.che_do || 'tu_dong' }} $THEM || ma_thoat=$?
           fi
           if [ "$CHI_THU" = "true" ] && [ -d /tmp/ptcp_goc ]; then rm -rf cache_ptcp; cp -a /tmp/ptcp_goc cache_ptcp; fi
           exit $ma_thoat
@@ -138,7 +143,7 @@ jobs:
           retention-days: 30
 
       - name: Lưu trạng thái, nhật ký tín hiệu & trang tổng hợp (công khai)
-        if: always() && inputs.chi_thu != true        # chỉ thử → không commit gì
+        if: always() && inputs.chi_thu != true && inputs.gio == ''   # chỉ thử / chạy lại → không commit gì
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

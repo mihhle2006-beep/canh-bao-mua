@@ -320,6 +320,9 @@ def bo_nen_chua_dong(df, khung, bay_gio=None):
     if df is None or not len(df) or khung == "D":
         return df
     bay_gio = pd.Timestamp(bay_gio) if bay_gio is not None else gio_viet_nam()
+    df = df[df.index < bay_gio]                   # chạy lại giờ cũ (--gio): bỏ nến sau thời điểm đó (không nhìn trước)
+    if not len(df):
+        return df
     dai = pd.Timedelta(minutes=int(khung))
     t = df.index[-1]
     het = t + dai

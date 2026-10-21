@@ -470,3 +470,17 @@ def test_tong_ket_khong_gui_lap(tmp_path, monkeypatch):
     assert chay.ma_moi_tong_ket("2026-10-22 15:20", [a], p) is None           # phiên mới → gửi đủ
     t = chay.tin_bo_sung("2026-10-21", [a])
     assert "BỔ SUNG" in t and "AAA" in t and "19.50–20.50" in t
+
+
+def test_chay_lai_phien_cu(tmp_path):
+    import pandas as pd
+    from canh_bao.du_lieu import bo_nen_chua_dong
+    p = tmp_path / "tt.json"
+    p.write_text(json.dumps({"ds_mua": {"hieu_luc": "2026-10-23", "ma": [{"ma": "BBB"}]},
+                             "lich_su_ds_mua": {"2026-10-22": {"hieu_luc": "2026-10-22", "ma": [{"ma": "AAA"}]}}}))
+    assert [z["ma"] for z in diem_vao.doc_ds_mua("2026-10-22 14:30", str(p))] == ["AAA"]
+    assert [z["ma"] for z in diem_vao.doc_ds_mua("2026-10-23 10:00", str(p))] == ["BBB"]
+    assert diem_vao.doc_ds_mua("2026-10-20 10:00", str(p)) == []
+    idx = pd.date_range("2026-10-22 14:00", periods=4, freq="15min")             # 14:00 … 14:45
+    df = pd.DataFrame({"close": range(4)}, index=idx)
+    assert list(bo_nen_chua_dong(df, "15", "2026-10-22 14:30").index) == list(idx[:2])   # nến 14:15 đã đóng lúc 14:30
