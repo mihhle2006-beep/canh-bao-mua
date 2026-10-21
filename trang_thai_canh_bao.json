@@ -162,13 +162,17 @@
   },
   "SSI": {
    "ngay": "2026-10-21",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "VPL": {
    "ngay": "2026-10-21",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   }
  },
  "_15p_hom_nay": {
@@ -179,29 +183,29 @@
     "Mã": "SSI",
     "Nhóm": "MUA MỚI",
     "Vùng": "19.60–20.50",
-    "Giá": null,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 20.1,
+    "Trạng thái": "MUA",
+    "Lý do": "đủ tiêu chí 15': phá đỉnh 20 nến KL 2.7×",
+    "Giờ": "09:30",
+    "Giá mua": 20.1
    },
    {
     "Mã": "VPL",
     "Nhóm": "MUA MỚI",
     "Vùng": "78.90–82.90",
-    "Giá": null,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 81.2,
+    "Trạng thái": "MUA",
+    "Lý do": "đủ tiêu chí 15': MACD 15' cắt lên",
+    "Giờ": "09:15",
+    "Giá mua": 80.2
    },
    {
     "Mã": "PLX",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "34.80–36.15",
-    "Giá": null,
+    "Giá": 35.3,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
     "Giá mua": null
    },
@@ -209,9 +213,9 @@
     "Mã": "TCH",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "11.00–11.40",
-    "Giá": null,
+    "Giá": 11.5,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
     "Giá mua": null
    },
@@ -219,9 +223,9 @@
     "Mã": "DBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "15.55–16.05",
-    "Giá": null,
+    "Giá": 16.35,
     "Trạng thái": "CHỜ",
-    "Lý do": "chưa có dữ liệu 15' hôm nay",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
     "Giá mua": null
    }
