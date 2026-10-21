@@ -147,6 +147,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         if tin_bl:
             print(tin_bl)
     doi, cl_cu = chien_luoc_bot.kiem_tra_doi(ra, bay_gio)
+    _an_toan("Lưu nến 15'", luu_nen_phien, bay_gio)            # trước khi danh sách mua đổi sang phiên tới
     n = tong_ket_cl.luu_ds_mua(ra, bay_gio)
     print(f"Danh sách mua phiên tới: {n} mã (lưu {C.FILE_TRANG_THAI_CL} cho cảnh báo 15')")
     ds_kn = tong_ket_cl.ds_khuyen_nghi(ra)
@@ -319,6 +320,35 @@ def _nhat_ky(ra, bay_gio):
 
 
 # ------------------------------------------------------------------ TRONG PHIÊN (mỗi 15 phút)
+THU_MUC_NEN = "lich_su_nen"
+
+
+def luu_nen_phien(bay_gio, thu_muc=THU_MUC_NEN):
+    """Lưu nến 15' phiên bay_gio của các mã trong danh sách mua phiên đó → lich_su_nen/<ngày>.csv (chạy lại sau này)."""
+    ngay = pd.Timestamp(bay_gio).normalize()
+    phan = []
+    for z in diem_vao.doc_ds_mua(bay_gio):
+        dp = tai(z["ma"], C.KHUNG_PHUT)
+        if dp is not None and len(dp):
+            phan.append(dp[dp.index.normalize() == ngay].assign(ma=z["ma"]))
+    if phan:
+        os.makedirs(thu_muc, exist_ok=True)
+        pd.concat(phan).to_csv(os.path.join(thu_muc, f"{ngay:%Y-%m-%d}.csv"), index_label="time")
+    return len(phan)
+
+
+def nen_15p(ma, bay_gio, thu_muc=THU_MUC_NEN):
+    """Nến 15' của mã; nguồn thiếu phiên bay_gio (chạy lại phiên cũ) → bổ sung từ lich_su_nen."""
+    df = tai(ma, C.KHUNG_PHUT)
+    ngay = pd.Timestamp(bay_gio).normalize()
+    f = os.path.join(thu_muc, f"{ngay:%Y-%m-%d}.csv")
+    if os.path.exists(f) and (df is None or not (df.index.normalize() == ngay).any()):
+        luu = pd.read_csv(f, index_col="time", parse_dates=True)
+        luu = luu[luu.pop("ma") == ma]
+        df = luu if df is None else pd.concat([df, luu]).sort_index()
+    return df
+
+
 def trong_phien_15p(bay_gio, vt, khong_gui=False):
     ds = diem_vao.doc_ds_mua(bay_gio)
     bien_the, nguon = tong_ket_cl.cach_vao(tong_ket_cl.doc_ket_qua_backtest())
@@ -327,7 +357,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     luu = tt.setdefault("_15p", {})
     bang, so_bao = [], 0
     for z in ds:
-        dp = bo_nen_chua_dong(tai(z["ma"], C.KHUNG_PHUT), C.KHUNG_PHUT, bay_gio)
+        dp = bo_nen_chua_dong(nen_15p(z["ma"], bay_gio), C.KHUNG_PHUT, bay_gio)
         kq = diem_vao.danh_gia(z, dp, bay_gio, bien_the)
         print(diem_vao.dong_bang(kq))
         bang.append({"Mã": kq["ma"], "Nhóm": diem_vao.TEN_NHOM.get(kq["nhom"], kq["nhom"]),

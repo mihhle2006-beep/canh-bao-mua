@@ -484,3 +484,17 @@ def test_chay_lai_phien_cu(tmp_path):
     idx = pd.date_range("2026-10-22 14:00", periods=4, freq="15min")             # 14:00 … 14:45
     df = pd.DataFrame({"close": range(4)}, index=idx)
     assert list(bo_nen_chua_dong(df, "15", "2026-10-22 14:30").index) == list(idx[:2])   # nến 14:15 đã đóng lúc 14:30
+
+
+def test_luu_va_doc_nen_phien(tmp_path, monkeypatch):
+    import pandas as pd
+    import chay
+    idx = pd.date_range("2026-10-21 09:15", periods=3, freq="15min")
+    df = pd.DataFrame({"open": [1.0, 2, 3], "high": [1.0, 2, 3], "low": [1.0, 2, 3], "close": [1.0, 2, 3],
+                       "volume": [10.0, 20, 30]}, index=idx)
+    monkeypatch.setattr(chay.diem_vao, "doc_ds_mua", lambda bg: [{"ma": "AAA"}])
+    monkeypatch.setattr(chay, "tai", lambda ma, khung: df)
+    assert chay.luu_nen_phien("2026-10-21 15:05", str(tmp_path)) == 1
+    monkeypatch.setattr(chay, "tai", lambda ma, khung: df.iloc[:0])          # nguồn đã mất phiên 21/10
+    d = chay.nen_15p("AAA", "2026-10-21 14:30", str(tmp_path))
+    assert list(d.index) == list(idx) and list(d["close"]) == [1.0, 2, 3]
