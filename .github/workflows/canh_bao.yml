@@ -101,7 +101,7 @@ jobs:
           if [ -n "$MA" ]; then
             python chay.py --chi_ma "$MA" $THEM || ma_thoat=$?
           else
-            python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || inputs.che_do || 'tu_dong' }} $THEM || ma_thoat=$?
+            python chay.py --che_do ${{ github.event.schedule == '7 2 * * 6' && 'lich_su' || github.event.schedule == '20 8 * * 1-5' && 'tong_ket' || inputs.che_do || 'tu_dong' }} $THEM || ma_thoat=$?
           fi
           if [ "$CHI_THU" = "true" ] && [ -d /tmp/ptcp_goc ]; then rm -rf cache_ptcp; cp -a /tmp/ptcp_goc cache_ptcp; fi
           exit $ma_thoat

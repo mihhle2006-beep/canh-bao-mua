@@ -51,9 +51,7 @@ def main(argv=None):
     if che_do == "tu_dong":
         if trong_phien(bay_gio):
             che_do = "trong_phien"
-        elif bay_gio.weekday() < 5 and bay_gio >= bay_gio.normalize() + pd.Timedelta(C.GIO_TONG_KET + ":00"):
-            che_do = "tong_ket"
-        else:
+        else:                        # tổng kết chỉ từ lịch 15:20 / chạy tay (lịch 15' bị GitHub trễ sau 15:00 không gửi lặp)
             print(f"{bay_gio:%H:%M %d/%m} ngoài giờ giao dịch → không làm gì.")
             return 0
     if che_do == "lich_su":

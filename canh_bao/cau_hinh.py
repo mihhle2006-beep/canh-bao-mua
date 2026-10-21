@@ -41,7 +41,7 @@ RR_TOI_THIEU = 2.0                 # R/R tối thiểu để phát "MUA NGAY" (=
 
 # --- Phiên giao dịch (giờ Việt Nam) ---
 PHIEN = [("09:00", "11:30"), ("13:00", "14:45")]
-GIO_TONG_KET = "15:00"             # sau giờ này chế độ tu_dong = gửi bản tổng kết cuối ngày
+GIO_TONG_KET = "15:00"             # (không còn dùng – tổng kết chỉ chạy từ lịch 15:20 / chạy tay, canh_bao.yml)
 
 # --- Thông báo ---
 ANH_MUA_TOI_DA = 0                 # tin tổng kết: gửi tối đa N biểu đồ mốc giá cho các mã nhóm MUA (0 = tắt, 10/2026)
