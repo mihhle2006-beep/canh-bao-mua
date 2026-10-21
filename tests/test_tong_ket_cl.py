@@ -462,8 +462,11 @@ def test_vao_tre_atc_theo_cau_hinh(monkeypatch):
 def test_tong_ket_khong_gui_lap(tmp_path, monkeypatch):
     import chay
     monkeypatch.delenv("GUI_LAI", raising=False)
-    p, kn = str(tmp_path / "da_gui.json"), [{"ma": "AAA", "nhom": "MUA_MOI"}]
-    assert not chay.da_gui_tong_ket("2026-10-21 15:38", kn, p)          # lần đầu → gửi
-    assert chay.da_gui_tong_ket("2026-10-21 15:56", kn, p)              # cùng phiên, cùng khuyến nghị → bỏ
-    assert not chay.da_gui_tong_ket("2026-10-21 15:56", kn + [{"ma": "BBB", "nhom": "MUA_MOI"}], p)   # có mã mới
-    assert not chay.da_gui_tong_ket("2026-10-22 15:20", kn, p)          # phiên mới
+    p = str(tmp_path / "da_gui.json")
+    a, b = {"ma": "AAA", "nhom": "MUA_MOI", "tu": 19.5, "den": 20.5, "cl": 18.7}, {"ma": "BBB", "nhom": "MUA_MOI"}
+    assert chay.ma_moi_tong_ket("2026-10-21 15:38", [a], p) is None           # lần đầu → gửi đủ
+    assert chay.ma_moi_tong_ket("2026-10-21 15:56", [a], p) == []             # cùng nội dung → không gửi
+    assert chay.ma_moi_tong_ket("2026-10-21 16:05", [a, b], p) == [b]         # có mã mới → chỉ bổ sung BBB
+    assert chay.ma_moi_tong_ket("2026-10-22 15:20", [a], p) is None           # phiên mới → gửi đủ
+    t = chay.tin_bo_sung("2026-10-21", [a])
+    assert "BỔ SUNG" in t and "AAA" in t and "19.50–20.50" in t

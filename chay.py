@@ -92,21 +92,31 @@ def _phien_thuc(bay_gio):
 FILE_DA_GUI = "tong_ket_da_gui.json"
 
 
-def da_gui_tong_ket(bay_gio, ds_kn, path=FILE_DA_GUI):
-    """Tổng kết 15:20 chạy 2 lần (lịch GitHub trễ + quet_dinh_ky kích hoạt lại) → chỉ gửi khi phiên mới hoặc danh sách
-    khuyến nghị (mã, nhóm) đổi. Ghi khoá lần gửi này; True = đã gửi đúng nội dung này rồi."""
-    import hashlib
-    khoa = {"phien": f"{pd.Timestamp(bay_gio):%Y-%m-%d}",
-            "kn": hashlib.sha1(json.dumps(sorted((k["ma"], k["nhom"]) for k in ds_kn)).encode()).hexdigest()}
+def ma_moi_tong_ket(bay_gio, ds_kn, path=FILE_DA_GUI):
+    """Tổng kết 15:20 có thể chạy lại (quet_dinh_ky kích hoạt khi quét xong trễ). → None = phiên mới / chưa gửi (gửi
+    đủ) · [] = đã gửi đúng nội dung này (không gửi) · [khuyến nghị] = chỉ các (mã, nhóm) mới so lần gửi trước (gửi bổ
+    sung). Ghi lại danh sách (mã, nhóm) đã gửi – công khai như danh sách mua."""
+    phien, kn = f"{pd.Timestamp(bay_gio):%Y-%m-%d}", sorted({(k["ma"], k["nhom"]) for k in ds_kn})
     try:
         cu = json.load(open(path, encoding="utf-8"))
     except (OSError, ValueError):
-        cu = None
-    if cu == khoa and not os.environ.get("GUI_LAI"):
-        return True
+        cu = {}
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(khoa, f)
-    return False
+        json.dump({"phien": phien, "kn": kn}, f, ensure_ascii=False)
+    if cu.get("phien") != phien or not isinstance(cu.get("kn"), list) or os.environ.get("GUI_LAI"):
+        return None
+    da = {tuple(x) for x in cu["kn"]}
+    return [k for k in ds_kn if (k["ma"], k["nhom"]) not in da]
+
+
+def tin_bo_sung(bay_gio, moi):
+    """Tin ngắn chỉ gồm khuyến nghị mới (sau khi tổng kết đã gửi)."""
+    f = lambda x: f"{x:,.2f}" if x is not None and x == x else "–"   # noqa: E731
+    dong = [f"🔄 BỔ SUNG tổng kết {pd.Timestamp(bay_gio):%d/%m} – {len(moi)} khuyến nghị mới:"]
+    for k in moi:
+        dong.append(f"{tong_ket_cl.TIEU_DE.get(k['nhom'], k['nhom'])}: {k['ma']} · vùng {f(k.get('tu'))}–{f(k.get('den'))}"
+                    f" · cắt lỗ {f(k.get('cl'))}")
+    return "\n".join(dong)
 
 
 def tong_ket(bay_gio, vt, them=(), khong_gui=False):
@@ -153,8 +163,12 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         giu.append((v, kb, tong_ket_cl.mua_them(v, dn, kb, bay_gio)))
     if C.GHI_NHAT_KY:
         _nhat_ky(ra, bay_gio)
-    if not khong_gui and da_gui_tong_ket(bay_gio, ds_kn):
-        print("Tổng kết phiên này đã gửi với cùng danh sách khuyến nghị → không gửi lại (GUI_LAI=1 để ép gửi)")
+    moi = None if khong_gui else ma_moi_tong_ket(bay_gio, ds_kn)
+    if moi is not None:                      # tổng kết phiên này đã gửi → chỉ gửi phần mới (không gửi lại cả bản)
+        if moi:
+            gui(tin_bo_sung(bay_gio, moi))
+        print(f"Tổng kết phiên này đã gửi → {'bổ sung ' + str(len(moi)) + ' khuyến nghị mới' if moi else 'không gửi lại'}"
+              " (GUI_LAI=1 để gửi lại cả bản)")
         return 0
     kq_bt = tong_ket_cl.doc_ket_qua_backtest()
     tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
