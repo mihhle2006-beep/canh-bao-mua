@@ -1,0 +1,98 @@
+# XUẤT CSV GIÁ NGÀY – bấm "Run workflow", nhập mã (VD GMD,MWG,DHC,VNINDEX) → file <mã>.csv (ngày, mở, cao, thấp,
+# đóng, KL) gửi Telegram + artifact. Chỉ giá công khai; không đọc danh mục thật (CONG_KHAI).
+name: Xuat CSV gia
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Mã, phân cách dấu phẩy (VNINDEX / VN30 cũng được)"
+        default: "VNINDEX"
+      tu_ngay:
+        description: "Từ ngày (YYYY-MM-DD)"
+        default: "2015-01-01"
+
+permissions:
+  contents: read
+
+jobs:
+  xuat:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Cache thư viện Python (bỏ bước cài ~30 giây khi requirements không đổi)
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Cài thư viện
+        if: steps.cache_py.outputs.cache-hit != 'true'
+        run: pip install -r requirements.txt
+
+      - name: Tải giá & ghi CSV
+        env:
+          MA: ${{ inputs.ma }}
+          TU: ${{ inputs.tu_ngay }}
+        run: |
+          mkdir -p xuat_csv
+          python - <<'PY'
+          import os
+          import pandas as pd
+          from ptcp import du_lieu as D
+          tu, den = os.environ["TU"], pd.Timestamp.today().strftime("%Y-%m-%d")
+          for ma in [m.strip().upper() for m in os.environ["MA"].split(",") if m.strip()]:
+              if ma.startswith(("VNINDEX", "VN30", "VN100", "HNX", "UPCOM")):
+                  df = D.tai_vnindex(tu, ma=ma)
+              else:
+                  df = None
+                  for ten, f in D.cac_nguon_ngay(ma, tu, den):
+                      try:
+                          df = f()
+                      except Exception as e:
+                          print(f"{ma} {ten}: lỗi {str(e)[:60]}")
+                          continue
+                      if df is not None and len(df):
+                          print(f"{ma}: {ten}")
+                          break
+              if df is None or not len(df):
+                  print(f"{ma}: không lấy được"); continue
+              df.to_csv(f"xuat_csv/{ma}.csv", index_label="ngay")
+              print(f"{ma}: {len(df)} phiên {df.index[0]:%d/%m/%Y} → {df.index[-1]:%d/%m/%Y}")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: csv-gia
+          path: danh-muc/xuat_csv/*.csv
+
+      - name: Gửi Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          for f in xuat_csv/*.csv; do
+            curl -sf -o /dev/null -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$f" \
+              "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendDocument" || echo "không gửi được $f"
+          done
