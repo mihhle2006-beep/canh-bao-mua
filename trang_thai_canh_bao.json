@@ -150,8 +150,10 @@
   },
   "PLX": {
    "ngay": "2026-10-22",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "TCH": {
    "ngay": "2026-10-21",
@@ -160,8 +162,10 @@
   },
   "SSI": {
    "ngay": "2026-10-22",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "VPL": {
    "ngay": "2026-10-21",
@@ -177,8 +181,10 @@
   },
   "HAG": {
    "ngay": "2026-10-22",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   }
  },
  "_15p_hom_nay": {
@@ -189,7 +195,7 @@
     "Mã": "MWG",
     "Nhóm": "MUA MỚI",
     "Vùng": "74.30–78.00",
-    "Giá": 75.3,
+    "Giá": 75.6,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -199,7 +205,7 @@
     "Mã": "DGC",
     "Nhóm": "MUA MỚI",
     "Vùng": "33.60–35.25",
-    "Giá": 34.1,
+    "Giá": 33.7,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -209,31 +215,31 @@
     "Mã": "HAG",
     "Nhóm": "MUA MỚI",
     "Vùng": "14.40–15.05",
-    "Giá": 14.55,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 14.7,
+    "Trạng thái": "MUA",
+    "Lý do": "đủ tiêu chí 15': MACD 15' cắt lên & phá đỉnh 20 nến KL 3.3×",
+    "Giờ": "14:15",
+    "Giá mua": 14.7
    },
    {
     "Mã": "PLX",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "34.85–36.20",
-    "Giá": 35.4,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 35.8,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 35.8
    },
    {
     "Mã": "SSI",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "19.75–20.40",
-    "Giá": 20.35,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 20.2,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 20.2
    }
   ]
  }
