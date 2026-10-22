@@ -36,6 +36,7 @@ on:
 
 permissions:
   contents: write
+  actions: write                   # gọi danh_muc.yml khi nhap*.txt có lệnh mới (GITHUB_TOKEN – cùng repo)
 
 concurrency:
   group: canh-bao${{ (inputs.gio != '' || inputs.chi_thu) && '-thu' || '' }}   # chạy thử không huỷ vòng lặp đang chạy
@@ -96,6 +97,7 @@ jobs:
           DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc (cảnh báo BÁN)
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
+          GH_TOKEN: ${{ github.token }}
           MA: ${{ inputs.ma }}
           CHI_THU: ${{ inputs.chi_thu || inputs.gio != '' }}
           GIO: ${{ inputs.gio }}
@@ -110,9 +112,26 @@ jobs:
             "15 5 * * 1-5") HET=1447 ;;
             *) HET="" ;;
           esac
+          # nhap*.txt ở danh-muc còn lệnh chưa áp → chạy danh mục ngay (không đợi cuối phiên). Không gọi khi danh mục đang
+          # chạy hoặc đã chạy trong 45' (lệnh nhập sai không áp được → không gọi lặp mỗi 15'); log không in nội dung lệnh
+          kiem_nhap() {
+            gan=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/danh_muc.yml/runs?per_page=5" --jq \
+                  '[.workflow_runs[] | select(.status != "completed" or (now - (.created_at | fromdate)) < 2700)] | length' \
+                  2>/dev/null || echo 1)
+            [ "$gan" = 0 ] || return 0
+            for f in nhap.txt nhap_ptdttc.txt; do
+              if curl -sf -H "Authorization: Bearer $DANH_MUC_TOKEN" -H "Accept: application/vnd.github.raw" \
+                   "https://api.github.com/repos/${DANH_MUC_REPO:-mihhle2006-beep/danh-muc}/contents/$f" \
+                   | sed 's/#.*//' | grep -q '[A-Za-z0-9]'; then
+                gh workflow run danh_muc.yml --ref main -R "$GITHUB_REPOSITORY" && echo "có lệnh nhập mới → đã gọi danh mục"
+                return 0
+              fi
+            done
+          }
           if [ -n "$HET" ]; then                       # vòng lặp: chạy mỗi mốc 15 phút (giờ VN) tới HET
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt "$HET" ]; do
               python chay.py --che_do tu_dong || echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"
+              kiem_nhap || true
               bay_gio=$(date +%s); sleep $(( (bay_gio / 900 + 1) * 900 - bay_gio + 5 ))
             done
             exit 0
