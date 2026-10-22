@@ -69,7 +69,7 @@ jobs:
                   df = None
                   for ten, f in D.cac_nguon_ngay(ma, tu, den):
                       try:
-                          df = f()
+                          df = D.chuan_hoa(f())
                       except Exception as e:
                           print(f"{ma} {ten}: lỗi {str(e)[:60]}")
                           continue
