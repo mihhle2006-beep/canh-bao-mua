@@ -5,7 +5,7 @@ name: Tong ket tuan (gia lap)
 
 on:
   schedule:
-    - cron: "17 13 * * 5"           # 20:17 tối thứ Sáu giờ VN (UTC+7) – sau Danh muc 15:45, Gia lap 18:53, Suc khoe 19:55
+    - cron: "17 13 * * 5"           # 20:17 tối thứ Sáu giờ VN (UTC+7) – sau Danh muc ~15:05, Gia lap 18:53, Suc khoe 19:55
   workflow_dispatch:
 
 permissions:
