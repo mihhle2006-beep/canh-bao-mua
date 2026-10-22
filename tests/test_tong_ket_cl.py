@@ -264,7 +264,7 @@ def test_tin_mua_lo_khong_in_tieu_chi_15p():
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", False, "chưa")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 09:58", "LO")
     assert "chưa kích hoạt" not in tin and "👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75" in tin
-    assert "Đạt điểm mua" not in tin and "Khối lượng" not in tin
+    assert "Đạt điểm mua" not in tin
 
 
 def test_von_lenh_nhan_san_moi_he_so():
@@ -385,7 +385,8 @@ def test_tin_15p_ghi_ro_gia_va_cach_vao():
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", True, "MACD 15' cắt lên")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 10:16", "15P+GIO+ATC")
     assert tin.split("\n")[1:] == ["👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75", "Nhóm: MUA MỚI",
-                                   "Vùng mua: 44.50 – 46.75", "Mục tiêu: 1R 46.71 → 3R 49.93", "Cắt lỗ: 43.49 (-3.6%)"]
+                                   "Vùng mua: 44.50 – 46.75", "Mục tiêu: 1R 46.71 → 3R 49.93", "Cắt lỗ: 43.49 (-3.6%)",
+                                   "Khối lượng: 💰 ≤20.0% NAV"]
     tin = diem_vao.tin_mua({**kq, "atc": True}, "2026-10-15 14:26", "15P+GIO+ATC")
     assert tin.startswith("⏰ MUA ATC") and "👉 Đặt lệnh ATC (giá ước tính 45.10). Không mua nếu giá cao hơn 46.75" in tin
 
@@ -498,3 +499,10 @@ def test_luu_va_doc_nen_phien(tmp_path, monkeypatch):
     monkeypatch.setattr(chay, "tai", lambda ma, khung: df.iloc[:0])          # nguồn đã mất phiên 21/10
     d = chay.nen_15p("AAA", "2026-10-21 14:30", str(tmp_path))
     assert list(d.index) == list(idx) and list(d["close"]) == [1.0, 2, 3]
+
+
+def test_tin_mua_co_ty_trong_nav():
+    kq = {"ma": "SSI", "nhom": "VAO_NHU_MOI", "tu": 19.75, "den": 20.40, "gia_mua": 20.2, "gia_nay": 20.2, "cl": 19.0,
+          "atc": True, "he_so_quy": 0.5, "atr": np.nan}
+    dong = diem_vao.tin_mua(kq, "2026-10-22 14:30", "15P+GIO").split("\n")[-1]
+    assert dong.startswith("Khối lượng: 💰 ≤") and "% NAV" in dong and "×0.5" in dong
