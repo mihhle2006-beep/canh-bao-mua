@@ -46,11 +46,9 @@
    ]
   },
   "MWG": {
-   "ngay": "2026-10-14",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-22",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "DBC": {
    "ngay": "2026-10-21",
@@ -151,7 +149,7 @@
    ]
   },
   "PLX": {
-   "ngay": "2026-10-21",
+   "ngay": "2026-10-22",
    "trang_thai": "CHỜ",
    "da_bao": []
   },
@@ -161,11 +159,9 @@
    "da_bao": []
   },
   "SSI": {
-   "ngay": "2026-10-21",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-10-22",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "VPL": {
    "ngay": "2026-10-21",
@@ -173,57 +169,67 @@
    "da_bao": [
     "MUA"
    ]
+  },
+  "DGC": {
+   "ngay": "2026-10-22",
+   "trang_thai": "CHỜ",
+   "da_bao": []
+  },
+  "HAG": {
+   "ngay": "2026-10-22",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   }
  },
  "_15p_hom_nay": {
-  "ngay": "2026-10-21",
+  "ngay": "2026-10-22",
   "cach_vao": "15P+GIO",
   "ds": [
    {
-    "Mã": "SSI",
+    "Mã": "MWG",
     "Nhóm": "MUA MỚI",
-    "Vùng": "19.60–20.50",
-    "Giá": 20.3,
-    "Trạng thái": "MUA",
-    "Lý do": "đủ tiêu chí 15': phá đỉnh 20 nến KL 2.7×",
-    "Giờ": "09:30",
-    "Giá mua": 20.1
+    "Vùng": "74.30–78.00",
+    "Giá": 75.3,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có điểm vào",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
-    "Mã": "VPL",
+    "Mã": "DGC",
     "Nhóm": "MUA MỚI",
-    "Vùng": "78.90–82.90",
-    "Giá": 83.3,
-    "Trạng thái": "MUA",
-    "Lý do": "đủ tiêu chí 15': MACD 15' cắt lên",
-    "Giờ": "09:15",
-    "Giá mua": 80.2
+    "Vùng": "33.60–35.25",
+    "Giá": 34.1,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có điểm vào",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "HAG",
+    "Nhóm": "MUA MỚI",
+    "Vùng": "14.40–15.05",
+    "Giá": 14.55,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có điểm vào",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "PLX",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "34.80–36.15",
-    "Giá": 35.3,
+    "Vùng": "34.85–36.20",
+    "Giá": 35.4,
     "Trạng thái": "CHỜ",
     "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
     "Giá mua": null
    },
    {
-    "Mã": "TCH",
+    "Mã": "SSI",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "11.00–11.40",
-    "Giá": 11.95,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
-   },
-   {
-    "Mã": "DBC",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "15.55–16.05",
-    "Giá": 16.15,
+    "Vùng": "19.75–20.40",
+    "Giá": 20.35,
     "Trạng thái": "CHỜ",
     "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
