@@ -1,5 +1,5 @@
-# XUẤT CSV GIÁ NGÀY – bấm "Run workflow", nhập mã (VD GMD,MWG,DHC,VNINDEX) → file <mã>.csv (ngày, mở, cao, thấp,
-# đóng, KL) gửi Telegram + artifact. Chỉ giá công khai; không đọc danh mục thật (CONG_KHAI).
+# XUẤT CSV GIÁ NGÀY – bấm "Run workflow", nhập mã (VD GMD,MWG,DHC,VNINDEX) → MỘT file gia_<ngày>.csv (mã, ngày, mở,
+# cao, thấp, đóng, KL – các mã nối dọc) gửi Telegram + artifact. Chỉ giá công khai; không đọc danh mục thật (CONG_KHAI).
 name: Xuat CSV gia
 
 on:
@@ -62,6 +62,7 @@ jobs:
           import pandas as pd
           from ptcp import du_lieu as D
           tu, den = os.environ["TU"], pd.Timestamp.today().strftime("%Y-%m-%d")
+          gop = []
           for ma in [m.strip().upper() for m in os.environ["MA"].split(",") if m.strip()]:
               if ma.startswith(("VNINDEX", "VN30", "VN100", "HNX", "UPCOM")):
                   df = D.tai_vnindex(tu, ma=ma)
@@ -78,8 +79,11 @@ jobs:
                           break
               if df is None or not len(df):
                   print(f"{ma}: không lấy được"); continue
-              df.to_csv(f"xuat_csv/{ma}.csv", index_label="ngay")
+              gop.append(df.rename_axis("ngay").reset_index().assign(ma=ma))
               print(f"{ma}: {len(df)} phiên {df.index[0]:%d/%m/%Y} → {df.index[-1]:%d/%m/%Y}")
+          if gop:
+              d = pd.concat(gop)[["ma", "ngay", "open", "high", "low", "close", "volume"]]
+              d.to_csv(f"xuat_csv/gia_{den}.csv", index=False, date_format="%Y-%m-%d")
           PY
 
       - uses: actions/upload-artifact@v4
