@@ -213,17 +213,20 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
          f"Vùng mua: {_f(kq['tu'])} – {_f(kq['den'])}",
          f"Mục tiêu: 1R {_f(mt1)} → 3R {_f(mt3)}",
          f"Cắt lỗ: {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "")]
+    von = _von_nav(kq, gia, cl)
+    d += [von] if von else []
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / cắt lỗ của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")
     return "\n".join(d)
 
 
-def _khoi_luong(kq, gia, cl):
-    from .tong_ket_cl import dong_khoi_luong
-    atr = kq.get("atr")
-    return dong_khoi_luong(gia, cl, atr if atr is not None else np.nan, kq.get("nhom") == "VAO_NUA",
-                           he_so_nhiet=(kq.get("he_so_nhiet") or 1.0) * (kq.get("he_so_quy") or 1.0))   # nhiệt × lọc Quỹ B
+def _von_nav(kq, gia, cl):
+    """'Khối lượng: 💰 ≤5.4% NAV (…)' – cùng công thức tin tổng kết, khoảng cắt lỗ tính theo giá đặt lệnh."""
+    from .tong_ket_cl import chu_von_lenh
+    r = (gia - cl) / gia * 100 if gia == gia and cl == cl and gia > cl > 0 else None
+    s = chu_von_lenh({**kq, "rui_ro": r} if r else kq)
+    return f"Khối lượng: {s}" if s else ""
 
 
 def tin_bo(kq, bay_gio):
