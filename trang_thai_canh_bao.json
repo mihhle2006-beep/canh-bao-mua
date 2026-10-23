@@ -47,12 +47,14 @@
   },
   "MWG": {
    "ngay": "2026-10-23",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "DBC": {
    "ngay": "2026-10-23",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "TDP": {
@@ -148,8 +150,10 @@
   },
   "PLX": {
    "ngay": "2026-10-23",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "TCH": {
    "ngay": "2026-10-21",
@@ -158,8 +162,10 @@
   },
   "SSI": {
    "ngay": "2026-10-23",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "VPL": {
    "ngay": "2026-10-21",
@@ -170,13 +176,17 @@
   },
   "DGC": {
    "ngay": "2026-10-23",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "HAG": {
    "ngay": "2026-10-23",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "REE": {
    "ngay": "2026-10-23",
@@ -185,8 +195,10 @@
   },
   "IDC": {
    "ngay": "2026-10-23",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   }
  },
  "_15p_hom_nay": {
@@ -197,7 +209,7 @@
     "Mã": "REE",
     "Nhóm": "MUA MỚI",
     "Vùng": "45.10–47.35",
-    "Giá": 45.95,
+    "Giá": 45.9,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -207,7 +219,7 @@
     "Mã": "DPR",
     "Nhóm": "MUA MỚI",
     "Vùng": "37.60–39.50",
-    "Giá": 38.15,
+    "Giá": 38.0,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -217,69 +229,69 @@
     "Mã": "IDC",
     "Nhóm": "MUA MỚI",
     "Vùng": "35.10–36.85",
-    "Giá": 35.2,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 35.8,
+    "Trạng thái": "MUA",
+    "Lý do": "đủ tiêu chí 15': MACD 15' cắt lên",
+    "Giờ": "14:15",
+    "Giá mua": 35.8
    },
    {
     "Mã": "DGC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "33.35–34.80",
     "Giá": 33.7,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 33.7
    },
    {
     "Mã": "MWG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "74.40–77.50",
-    "Giá": 74.7,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 75.3,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 75.3
    },
    {
     "Mã": "SSI",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "19.60–20.40",
-    "Giá": 19.95,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 20.0,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 20.0
    },
    {
     "Mã": "PLX",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "35.20–36.90",
-    "Giá": 35.9,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 35.55,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 35.55
    },
    {
     "Mã": "HAG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "14.45–14.90",
-    "Giá": 14.7,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 14.75,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 14.75
    },
    {
     "Mã": "DBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "15.60–16.05",
-    "Giá": 16.3,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 16.5,
+    "Trạng thái": "BỎ",
+    "Lý do": "đóng cửa 16.50 ngoài vùng – không đặt ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    }
