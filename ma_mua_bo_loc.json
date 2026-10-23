@@ -1,25 +1,34 @@
 {
- "ngay_quet": "2026-10-22",
- "luc": "2026-10-22 15:04",
- "phien": "2026-10-22",
+ "ngay_quet": "2026-10-23",
+ "luc": "2026-10-23 15:04",
+ "phien": "2026-10-23",
  "chien_luoc": [
   "quy_b",
   "xu_huong"
  ],
  "ma": {
-  "DBC": [
-   "quy_b"
-  ],
   "DGC": [
    "quy_b"
   ],
   "DPR": [
    "quy_b"
   ],
+  "EIB": [
+   "quy_b"
+  ],
   "HAG": [
    "quy_b"
   ],
+  "HAH": [
+   "quy_b"
+  ],
   "IDC": [
+   "quy_b"
+  ],
+  "MCH": [
+   "quy_b"
+  ],
+  "MSN": [
    "quy_b"
   ],
   "MWG": [
