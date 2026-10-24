@@ -7,6 +7,7 @@
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   von55 – rủi ro 1% / lệnh (giữ / nới trần rủi ro mở 4 → 5,33%), 1,125% tham chiếu; lãi tiền 4% và 0%
 #   von56 – hệ phụ (tiền nhàn rỗi ≤ 15% NAV: xoay mã biến động thấp + hồi sau sập) lúc quỹ B tệ nhất
+#   von57 – mua lại sau lệnh thua cùng mã (≤ 60 phiên): giảm KL tín hiệu mới / tăng KL mua lại
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -22,7 +23,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von55 / von56 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von55 / von56 / von57 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -45,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von55, von56]
+        phan: [chuan, von55, von56, von57]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -124,6 +125,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von57) export CHI_VON57=1; unset SO_NN ;;          # mua lại sau lệnh thua (20 thứ tự ★)
             von56) export CHI_VON56=1; unset SO_NN ;;          # hệ phụ lúc B tệ nhất (20 thứ tự ★)
             von55) export CHI_VON55=1; unset SO_NN ;;          # rủi ro 1% / lệnh (20 thứ tự ★)
           esac
