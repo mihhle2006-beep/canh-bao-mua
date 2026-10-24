@@ -13,6 +13,7 @@
 #   von48 – tương quan tuần (52 tuần) với mã đang giữ ≥ ρ → bỏ tín hiệu / ½ KL
 #   von49 – D2 ngược chiều: XS lịch sử riêng mã chạm 2R trước cắt lỗ cao → ½ KL / bỏ, thấp → ×1,5
 #   von50 – vốn 30tr & lô 100 (tối thiểu 1 lô / bỏ / lô lẻ / ít mã) + KL MẠNH B ×1,5 / RẺ ×1,25 (von51)
+#   von52 – lệnh "nóng" (cách MA20 > 1,35 ATR / tăng 20P > 5% / KL > 1,5× TB20) → ½ KL / bỏ
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -28,7 +29,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von43 / von44 / von45 / von46 / von47 / von48 / von49 / von50 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von43 / von44 / von45 / von46 / von47 / von48 / von49 / von50 / von52 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -51,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von43, von44, von45, von46, von47, von48, von49, von50]
+        phan: [chuan, von43, von44, von45, von46, von47, von48, von49, von50, von52]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -130,6 +131,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von52) export CHI_VON52=1; unset SO_NN ;;          # lệnh nóng → ½ KL (20 thứ tự ★)
             von50) export CHI_VON50=1; unset SO_NN ;;          # vốn nhỏ & lô 100 + KL mạnh / rẻ (20 thứ tự ★)
             von49) export CHI_VON49=1; unset SO_NN ;;          # D2 ngược chiều (20 thứ tự ★)
             von48) export CHI_VON48=1; unset SO_NN ;;          # tương quan tuần với mã đang giữ (20 thứ tự ★)
