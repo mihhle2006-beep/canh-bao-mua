@@ -2,7 +2,7 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # BÁO CÁO ĐẦY ĐỦ MÃ – bấm "Run workflow", nhập mã (VD HPG hoặc HPG,FPT) → phân tích đủ các phần (A–K, J6 dòng tiền)
-# Đầu báo cáo: thẻ doanh nghiệp + khuyến nghị, rồi DỰ BÁO KRONOS 20 phiên (tham khảo – đang chạy song song kiểm chứng).
+# Đầu báo cáo: thẻ doanh nghiệp + khuyến nghị, rồi nón lịch sử (D2 dạng biểu đồ).
 # → gửi Telegram: "Chỉ file HTML" ('<MÃ> báo cáo dd-mm-yyyy.html') hoặc "File HTML + khuyến nghị" (tin tóm tắt
 #   khuyến nghị, vùng mua, cắt lỗ, mục tiêu… rồi file) · luôn lưu ở mục Artifacts của lần chạy (giữ 14 ngày).
 name: Bao cao ma
@@ -25,9 +25,6 @@ on:
 permissions:
   contents: read
 
-env:
-  KRONOS_COMMIT: 67b630e67f6a18c9e9be918d9b4337c960db1e9a
-
 jobs:
   bao_cao:
     runs-on: ubuntu-24.04
@@ -36,8 +33,7 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-      KRONOS_DIR: ${{ github.workspace }}/kronos_src
-    timeout-minutes: 40
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
         with:
@@ -59,24 +55,11 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ env.pythonLocation }}
-          key: py-kronos-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}-v1
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
 
       - name: Cài thư viện
         if: steps.cache_py.outputs.cache-hit != 'true'
-        run: |
-          pip install -r requirements.txt
-          pip install -q --index-url https://download.pytorch.org/whl/cpu torch
-          pip install -q einops==0.8.1 safetensors huggingface_hub
-      - name: Cache mô hình Kronos (Hugging Face)
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/huggingface
-          key: hf-kronos-small-v1
-      - name: Tải mã nguồn Kronos (MIT, cố định commit)
-        working-directory: .
-        run: |
-          git init -q kronos_src && cd kronos_src
-          git fetch -q --depth 1 https://github.com/shiyu-coder/Kronos "$KRONOS_COMMIT" && git checkout -q FETCH_HEAD
+        run: pip install -r requirements.txt
 
       - name: Phân tích & gửi báo cáo
         env:
