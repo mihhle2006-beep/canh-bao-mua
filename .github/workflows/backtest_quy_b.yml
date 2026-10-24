@@ -2,18 +2,11 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # BACKTEST QUỸ B – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
-# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von42, chế độ sóng /
-# tổ hợp) đã xoá 20/10/2026 – kết luận ở danh-muc ptcp/cau_hinh.py, code xem lịch sử git:
+# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von52, chế độ sóng /
+# tổ hợp) đã xoá – kết luận ở danh-muc ptcp/cau_hinh.py, code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
-#   von43 – tỷ trọng cổ phiếu: quét 13 cần gạt (~200 cấu hình), giai đoạn 2 xác nhận bằng 40 thứ tự ★ mới (C1/C2)
-#   von44 – tiền nhàn rỗi mua ETF VN30 / VN50 / VN100 (luôn / > MA200) + lô đầu 50% đi ngang ½
-#   von45 – nhiều cách mua VFMVN30 bằng tiền thừa (x% tiền thừa, lấp tới y% NAV khi nóng / > MA200 …)
-#   von46 – quản lý lệnh thắng (chốt một phần, trailing, khoá lãi…) + RS kiểu IBD ½ KL
-#   von47 – hội đồng góc nhìn: lọc / chỉnh KL theo số góc ủng hộ – phản đối (thị trường, D2, định giá, tài chính, RS)
-#   von48 – tương quan tuần (52 tuần) với mã đang giữ ≥ ρ → bỏ tín hiệu / ½ KL
-#   von49 – D2 ngược chiều: XS lịch sử riêng mã chạm 2R trước cắt lỗ cao → ½ KL / bỏ, thấp → ×1,5
-#   von50 – vốn 30tr & lô 100 (tối thiểu 1 lô / bỏ / lô lẻ / ít mã) + KL MẠNH B ×1,5 / RẺ ×1,25 (von51)
-#   von52 – lệnh "nóng" (cách MA20 > 1,35 ATR / tăng 20P > 5% / KL > 1,5× TB20) → ½ KL / bỏ
+#   von53 – dòng tiền khối ngoại / tự doanh 20 phiên (Vietcap IQ) → ½ KL / bỏ / ×1,25 theo mua – bán ròng
+#   von54 – cầu dao: NAV cách đỉnh ≥ 8 / 12 / 15% → ngừng mua mới · lọc đường vốn MA50 / MA100
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -29,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von43 / von44 / von45 / von46 / von47 / von48 / von49 / von50 / von52 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von53 / von54 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -52,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von43, von44, von45, von46, von47, von48, von49, von50, von52]
+        phan: [chuan, von53, von54]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -131,15 +124,8 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
-            von52) export CHI_VON52=1; unset SO_NN ;;          # lệnh nóng → ½ KL (20 thứ tự ★)
-            von50) export CHI_VON50=1; unset SO_NN ;;          # vốn nhỏ & lô 100 + KL mạnh / rẻ (20 thứ tự ★)
-            von49) export CHI_VON49=1; unset SO_NN ;;          # D2 ngược chiều (20 thứ tự ★)
-            von48) export CHI_VON48=1; unset SO_NN ;;          # tương quan tuần với mã đang giữ (20 thứ tự ★)
-            von47) export CHI_VON47=1; unset SO_NN ;;          # hội đồng góc nhìn (20 thứ tự ★)
-            von46) export CHI_VON46=1; unset SO_NN ;;          # quản lý lệnh thắng + RS IBD (40 thứ tự ★)
-            von45) export CHI_VON45=1; unset SO_NN ;;          # nhiều cách mua VFMVN30 (40 thứ tự ★)
-            von44) export CHI_VON44=1; unset SO_NN ;;          # ETF chỉ số cho tiền nhàn rỗi (40 thứ tự ★)
-            von43) export CHI_VON43=1; unset SO_NN ;;          # quét tỷ trọng (đúng 8 + 40 thứ tự ★)
+            von54) export CHI_VON54=1; unset SO_NN ;;          # cầu dao NAV / đường vốn (20 thứ tự ★)
+            von53) export CHI_VON53=1; unset SO_NN ;;          # dòng tiền khối ngoại / tự doanh (20 thứ tự ★)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
