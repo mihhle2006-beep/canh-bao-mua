@@ -9,6 +9,7 @@
 #   von44 – tiền nhàn rỗi mua ETF VN30 / VN50 / VN100 (luôn / > MA200) + lô đầu 50% đi ngang ½
 #   von45 – nhiều cách mua VFMVN30 bằng tiền thừa (x% tiền thừa, lấp tới y% NAV khi nóng / > MA200 …)
 #   von46 – quản lý lệnh thắng (chốt một phần, trailing, khoá lãi…) + RS kiểu IBD ½ KL
+#   von47 – hội đồng góc nhìn: lọc / chỉnh KL theo số góc ủng hộ – phản đối (thị trường, D2, định giá, tài chính, RS)
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -24,7 +25,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von43 / von44 / von45 / von46 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von43 / von44 / von45 / von46 / von47 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -47,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von43, von44, von45, von46]
+        phan: [chuan, von43, von44, von45, von46, von47]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -126,6 +127,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von47) export CHI_VON47=1; unset SO_NN ;;          # hội đồng góc nhìn (20 thứ tự ★)
             von46) export CHI_VON46=1; unset SO_NN ;;          # quản lý lệnh thắng + RS IBD (40 thứ tự ★)
             von45) export CHI_VON45=1; unset SO_NN ;;          # nhiều cách mua VFMVN30 (40 thứ tự ★)
             von44) export CHI_VON44=1; unset SO_NN ;;          # ETF chỉ số cho tiền nhàn rỗi (40 thứ tự ★)
