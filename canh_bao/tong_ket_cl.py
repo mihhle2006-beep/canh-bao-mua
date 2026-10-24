@@ -670,7 +670,10 @@ def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None, he_so_nhiet=None):
     von = von_trieu if von_trieu is not None else getattr(C, "VON_TRIEU", None)
     if von and gia and cl == cl and cl < gia:
         cp = min(von * 1e6 * rr / 100 * hs / ((gia - cl) * 1000), von * 1e6 * _tran_ma_pct() / 100 / (gia * 1000))
-        cp = int(cp // 100 * 100)
+        cp = int(cp)                                    # không tròn LÊN 1 lô (backtest von50: vượt rủi ro, kém hơn)
         if cp > 0:
-            s += f" ≈ {cp:,.0f} CP (≈ {cp * gia / 1000:,.1f} triệu, mất ≈ {cp * (gia - cl) / 1000:,.1f} triệu nếu chạm cắt lỗ)"
+            chan, le = cp // 100 * 100, cp % 100
+            lo = (f"{chan:,.0f} lô chẵn + {le} lô lẻ" if chan and le else f"{cp} CP LÔ LẺ – 1 lô chẵn vượt rủi ro"
+                  if not chan else f"{chan:,.0f} CP")
+            s += f" ≈ {lo} (≈ {cp * gia / 1000:,.1f} triệu, mất ≈ {cp * (gia - cl) / 1000:,.1f} triệu nếu chạm cắt lỗ)"
     return s

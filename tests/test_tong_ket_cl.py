@@ -211,8 +211,10 @@ def test_khoi_luong_theo_bien_dong(monkeypatch):
     assert tong_ket_cl.he_so_kl(20.0, 0.4)[0] == 1.0                 # ATR 2% → đủ khối lượng
     assert tong_ket_cl.he_so_kl(20.0, 1.4, nua=True)[0] == pytest.approx(0.25)
     s = tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, von_trieu=500)
-    # 500 tr × 1% × 0,5 ÷ 1,4 nghìn/CP = 1.785 CP → làm tròn lô 100 = 1.700 CP
-    assert "rủi ro 0.50%" in s and "ATR 7.0%/ngày > 3.5%" in s and "1,700 CP" in s
+    # 500 tr × 1% × 0,5 ÷ 1,4 nghìn/CP = 1.785 CP → 1.700 lô chẵn + 85 lô lẻ (không tròn lên)
+    assert "rủi ro 0.50%" in s and "ATR 7.0%/ngày > 3.5%" in s and "1,700 lô chẵn + 85 lô lẻ" in s
+    s = tong_ket_cl.dong_khoi_luong(80.0, 70.0, 1.4, von_trieu=30)                # 1 lô = 1 tr rủi ro > 0,15 tr cho phép
+    assert "LÔ LẺ – 1 lô chẵn vượt rủi ro" in s and "100 CP" not in s
     monkeypatch.setattr(C, "KL_THEO_BIEN_DONG", False)
     assert tong_ket_cl.he_so_kl(20.0, 1.4)[0] == 1.0
     assert tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4) == "Khối lượng: mua 14.3% NAV (rủi ro 1.00% ÷ cắt lỗ 7.0%)"
