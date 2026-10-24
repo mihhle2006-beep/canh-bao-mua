@@ -1,6 +1,7 @@
 # CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log công khai) · code & nhật ký ở repo riêng tư danh-muc (secret DANH_MUC_TOKEN_GHI).
 # KRONOS CHẠY SONG SONG – CHỈ GHI NHẬN, KHÔNG ảnh hưởng lệnh (ptcp/kronos_bong.py):
 #   16:20 VN mỗi phiên: Kronos-small dự báo 20 phiên cho top 100 GTGD + mã khuyến nghị MUA → danh-muc/du_lieu/kronos_nhat_ky.csv
+#   Chạy tay, nhập MÃ: xuất HTML dự báo 20 phiên (biểu đồ + bảng) cho mã đó → gửi Telegram + Artifacts (không ghi nhật ký).
 #   Chạy tay "chạy lùi": các phiên từ 10/2025 (sau dữ liệu huấn luyện của mô hình), mỗi 14 ngày, chia 6 máy song song →
 #   du_lieu/kronos_lui_<i>.csv (xem sơ bộ; ít phiên, chưa đủ kết luận).
 # Log chỉ in số lượng & chỉ số chấm điểm, không in mã.
@@ -19,6 +20,9 @@ on:
           - "Chạy lùi từ 10/2025"
           - "Chỉ chấm điểm"
         default: "Phiên mới nhất"
+      ma:
+        description: "Xem dự báo mã (VD HPG hoặc HPG,FPT) – để trống = chạy theo Chế độ"
+        default: ""
 
 permissions:
   contents: read
@@ -34,7 +38,8 @@ jobs:
     steps:
       - id: p
         run: |
-          if [ "${{ inputs.che_do }}" = "Chạy lùi từ 10/2025" ]; then echo 'phan=["0/6","1/6","2/6","3/6","4/6","5/6"]' >> "$GITHUB_OUTPUT";
+          if [ -n "${{ inputs.ma }}" ]; then echo 'phan=["ma"]' >> "$GITHUB_OUTPUT";
+          elif [ "${{ inputs.che_do }}" = "Chạy lùi từ 10/2025" ]; then echo 'phan=["0/6","1/6","2/6","3/6","4/6","5/6"]' >> "$GITHUB_OUTPUT";
           else echo 'phan=["moi"]' >> "$GITHUB_OUTPUT"; fi
 
   kronos:
@@ -84,8 +89,33 @@ jobs:
           git init -q kronos_src && cd kronos_src
           git fetch -q --depth 1 https://github.com/shiyu-coder/Kronos "$KRONOS_COMMIT" && git checkout -q FETCH_HEAD
 
+      - name: Xuất HTML dự báo mã
+        if: matrix.phan == 'ma'
+        env:
+          MA: ${{ inputs.ma }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -m ptcp.kronos_bong --ma "$MA" --html_ra ket_qua_kronos
+          python - <<'PY'
+          import glob, os
+          from datetime import date
+          from ptcp.telegram import gui
+          for f in sorted(glob.glob("ket_qua_kronos/*_kronos.html")):
+              ma = os.path.basename(f).split("_")[0]
+              print(ma, "gửi Telegram:", gui(file=f, ten=f"{ma} Kronos {date.today():%d-%m-%Y}.html"))
+          PY
+      - name: Lưu HTML (Artifacts)
+        if: matrix.phan == 'ma'
+        uses: actions/upload-artifact@v6
+        with:
+          name: kronos-${{ github.run_id }}
+          path: danh-muc/ket_qua_kronos/*.html
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Dự báo
-        if: inputs.che_do != 'Chỉ chấm điểm'
+        if: inputs.che_do != 'Chỉ chấm điểm' && matrix.phan != 'ma'
         env:
           PHAN: ${{ matrix.phan }}
         run: |
@@ -97,7 +127,7 @@ jobs:
         run: python -m ptcp.kronos_bong --danh_gia
 
       - name: Lưu nhật ký về danh-muc
-        if: inputs.che_do != 'Chỉ chấm điểm'
+        if: inputs.che_do != 'Chỉ chấm điểm' && matrix.phan != 'ma'
         env:
           TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
         run: |
