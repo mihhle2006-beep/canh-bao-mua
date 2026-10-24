@@ -9,6 +9,7 @@
 #   von56 – hệ phụ (tiền nhàn rỗi ≤ 15% NAV: xoay mã biến động thấp + hồi sau sập) lúc quỹ B tệ nhất
 #   von57 – mua lại sau lệnh thua cùng mã (≤ 60 phiên): giảm KL tín hiệu mới / tăng KL mua lại
 #   von58 – hệ phụ bắt nhịp hồi ngắn (RSI(2) – mã top 100 / chỉ số) ghép quỹ B bằng tiền nhàn rỗi ≤ 15 / 30%
+#   von59 – phòng hộ bán VN30F (VN-Index < MA200 / MA50, NAV B sụt ≥ 10%), 50 / 100% giá trị cổ phiếu
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -24,7 +25,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -47,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von55, von56, von57, von58]
+        phan: [chuan, von55, von56, von57, von58, von59]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -126,6 +127,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von59) export CHI_VON59=1; unset SO_NN ;;          # phòng hộ bán VN30F (20 thứ tự ★)
             von58) export CHI_VON58=1; unset SO_NN ;;          # hệ phụ bắt nhịp hồi (20 thứ tự ★)
             von57) export CHI_VON57=1; unset SO_NN ;;          # mua lại sau lệnh thua (20 thứ tự ★)
             von56) export CHI_VON56=1; unset SO_NN ;;          # hệ phụ lúc B tệ nhất (20 thứ tự ★)
