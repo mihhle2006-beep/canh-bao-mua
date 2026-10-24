@@ -74,6 +74,15 @@ footer{color:var(--phu);font-size:.88rem;text-align:center;padding:28px 20px;bor
 _MUC_FA = {"Rất tốt": "f5", "Tốt": "f4", "Trung bình": "f3", "Cảnh báo": "f2", "Nguy hiểm": "f1"}
 
 
+def a4(trang):
+    """Khổ A4 ngang (ptcp/kho_a4.py của danh-muc); thiếu ptcp → giữ nguyên trang."""
+    try:
+        from ptcp.kho_a4 import boc
+    except ImportError:
+        return trang
+    return boc(trang)
+
+
 def _e(x):
     return _h.escape(vn_hoa(str(x)))
 
@@ -242,7 +251,7 @@ def xuat_html(path, ten_cl, mo_ta, phien, b, dat, k, bang, anh, tieu_chi=None, t
 </main><footer>Xuất lúc {datetime.now():%d/%m/%Y %H:%M} · Công cụ tham khảo dựa trên dữ liệu quá khứ – không phải khuyến nghị đầu tư.</footer>
 </body></html>"""
     with open(path, "w", encoding="utf-8") as f:
-        f.write(noi_dung)
+        f.write(a4(noi_dung))
     return path
 
 
@@ -335,5 +344,5 @@ cho phiên giao dịch tiếp theo.</p>{_thi_truong_ngoai(thi_truong)}</div></he
 phải lời mời mua bán chứng khoán. Người đọc tự chịu trách nhiệm với quyết định đầu tư của mình.</footer>
 </body></html>"""
     with open(path, "w", encoding="utf-8") as f:
-        f.write(noi_dung)
+        f.write(a4(noi_dung))
     return path

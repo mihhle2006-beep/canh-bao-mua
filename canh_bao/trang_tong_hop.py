@@ -23,6 +23,15 @@ from . import cau_hinh as C
 FILE_RIENG = "trang_tong_hop_rieng.html"
 
 
+def a4(trang):
+    """Khổ A4 ngang (ptcp/kho_a4.py của danh-muc); thiếu ptcp → giữ nguyên trang."""
+    try:
+        from ptcp.kho_a4 import boc
+    except ImportError:
+        return trang
+    return boc(trang)
+
+
 def _f(x, le=2, dau=False):
     try:
         x = float(x)
@@ -327,5 +336,5 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
              f'<footer>Công cụ tham khảo – không phải khuyến nghị đầu tư.</footer></main></body></html>')
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write(trang)
+        f.write(a4(trang))
     return path
