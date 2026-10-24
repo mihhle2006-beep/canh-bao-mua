@@ -4,6 +4,8 @@
 #   Chạy tay, nhập MÃ: xuất HTML dự báo 20 phiên (biểu đồ + bảng) cho mã đó → gửi Telegram + Artifacts (không ghi nhật ký).
 #   Chạy tay "chạy lùi": các phiên từ 10/2025 (sau dữ liệu huấn luyện của mô hình), mỗi 14 ngày, chia 6 máy song song →
 #   du_lieu/kronos_lui_<i>.csv (xem sơ bộ; ít phiên, chưa đủ kết luận).
+#   "Chạy lùi 2020–09/2025 (trong mẫu)": 20 máy → du_lieu/kronos_lui2020_<i>.csv – mô hình có thể đã học giai đoạn này
+#   (kết quả đẹp hơn thật); --danh_gia chấm riêng trong mẫu / ngoài mẫu.
 # Log chỉ in số lượng & chỉ số chấm điểm, không in mã.
 name: Kronos song song
 
@@ -18,6 +20,7 @@ on:
         options:
           - "Phiên mới nhất"
           - "Chạy lùi từ 10/2025"
+          - "Chạy lùi 2020–09/2025 (trong mẫu)"
           - "Chỉ chấm điểm"
         default: "Phiên mới nhất"
       ma:
@@ -39,13 +42,15 @@ jobs:
       - id: p
         run: |
           if [ -n "${{ inputs.ma }}" ]; then echo 'phan=["ma"]' >> "$GITHUB_OUTPUT";
+          elif [ "${{ inputs.che_do }}" = "Chạy lùi 2020–09/2025 (trong mẫu)" ]; then
+            echo "phan=$(python3 -c 'import json;print(json.dumps([f"t{i}/20" for i in range(20)]))')" >> "$GITHUB_OUTPUT";
           elif [ "${{ inputs.che_do }}" = "Chạy lùi từ 10/2025" ]; then echo 'phan=["0/6","1/6","2/6","3/6","4/6","5/6"]' >> "$GITHUB_OUTPUT";
           else echo 'phan=["moi"]' >> "$GITHUB_OUTPUT"; fi
 
   kronos:
     needs: chuan_bi
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
@@ -120,6 +125,8 @@ jobs:
           PHAN: ${{ matrix.phan }}
         run: |
           if [ "$PHAN" = "moi" ]; then python -m ptcp.kronos_bong;
+          elif [ "${PHAN#t}" != "$PHAN" ]; then P="${PHAN#t}"
+            python -m ptcp.kronos_bong --lui_tu 2020-01-01 --lui_den 2025-09-30 --buoc 14 --duong 2 --phan "$P" --ra "du_lieu/kronos_lui2020_${P%%/*}.csv";
           else python -m ptcp.kronos_bong --lui_tu 2025-10-01 --buoc 14 --duong 2 --phan "$PHAN" --ra "du_lieu/kronos_lui_${PHAN%%/*}.csv"; fi
 
       - name: Chấm điểm (dự báo đã đủ 20 phiên)
