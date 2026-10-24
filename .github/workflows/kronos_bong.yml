@@ -6,6 +6,8 @@
 #   du_lieu/kronos_lui_<i>.csv (xem sơ bộ; ít phiên, chưa đủ kết luận).
 #   "Chạy lùi 2020–09/2025 (trong mẫu)": 20 máy → du_lieu/kronos_lui2020_<i>.csv – mô hình có thể đã học giai đoạn này
 #   (kết quả đẹp hơn thật); --danh_gia chấm riêng trong mẫu / ngoài mẫu.
+#   "Thử nến 15' (10/2025+)": ptcp/kronos_15p.py – dự báo 2 phiên từ nến 15', 20 máy → du_lieu/kronos15_<i>.csv
+#   (chấm: python -m ptcp.kronos_15p --danh_gia).
 # Log chỉ in số lượng & chỉ số chấm điểm, không in mã.
 name: Kronos song song
 
@@ -21,6 +23,7 @@ on:
           - "Phiên mới nhất"
           - "Chạy lùi từ 10/2025"
           - "Chạy lùi 2020–09/2025 (trong mẫu)"
+          - "Thử nến 15' (10/2025+)"
           - "Chỉ chấm điểm"
         default: "Phiên mới nhất"
       ma:
@@ -42,6 +45,8 @@ jobs:
       - id: p
         run: |
           if [ -n "${{ inputs.ma }}" ]; then echo 'phan=["ma"]' >> "$GITHUB_OUTPUT";
+          elif [ "${{ inputs.che_do }}" = "Thử nến 15' (10/2025+)" ]; then
+            echo "phan=$(python3 -c 'import json;print(json.dumps([f"p{i}/20" for i in range(20)]))')" >> "$GITHUB_OUTPUT";
           elif [ "${{ inputs.che_do }}" = "Chạy lùi 2020–09/2025 (trong mẫu)" ]; then
             echo "phan=$(python3 -c 'import json;print(json.dumps([f"t{i}/20" for i in range(20)]))')" >> "$GITHUB_OUTPUT";
           elif [ "${{ inputs.che_do }}" = "Chạy lùi từ 10/2025" ]; then echo 'phan=["0/6","1/6","2/6","3/6","4/6","5/6"]' >> "$GITHUB_OUTPUT";
@@ -125,6 +130,8 @@ jobs:
           PHAN: ${{ matrix.phan }}
         run: |
           if [ "$PHAN" = "moi" ]; then python -m ptcp.kronos_bong;
+          elif [ "${PHAN#p}" != "$PHAN" ]; then P="${PHAN#p}"
+            python -m ptcp.kronos_15p --tu 2025-10-01 --buoc 3 --phan "$P" --ra "du_lieu/kronos15_${P%%/*}.csv";
           elif [ "${PHAN#t}" != "$PHAN" ]; then P="${PHAN#t}"
             python -m ptcp.kronos_bong --lui_tu 2020-01-01 --lui_den 2025-09-30 --buoc 14 --duong 2 --phan "$P" --ra "du_lieu/kronos_lui2020_${P%%/*}.csv";
           else python -m ptcp.kronos_bong --lui_tu 2025-10-01 --buoc 14 --duong 2 --phan "$PHAN" --ra "du_lieu/kronos_lui_${PHAN%%/*}.csv"; fi
@@ -141,7 +148,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
-          git add -f du_lieu/kronos_*.csv 2>/dev/null || true
+          for f in du_lieu/kronos_*.csv du_lieu/kronos15_*.csv; do if [ -e "$f" ]; then git add -f "$f"; fi; done
           if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
           git commit -q -m "Kronos song song $(date +%F) ${{ matrix.phan }}" > /dev/null
           for i in 1 2 3 4 5; do
