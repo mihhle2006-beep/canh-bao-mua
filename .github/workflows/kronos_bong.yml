@@ -1,0 +1,114 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log công khai) · code & nhật ký ở repo riêng tư danh-muc (secret DANH_MUC_TOKEN_GHI).
+# KRONOS CHẠY SONG SONG – CHỈ GHI NHẬN, KHÔNG ảnh hưởng lệnh (ptcp/kronos_bong.py):
+#   16:20 VN mỗi phiên: Kronos-small dự báo 20 phiên cho top 100 GTGD + mã khuyến nghị MUA → danh-muc/du_lieu/kronos_nhat_ky.csv
+#   Chạy tay "chạy lùi": các phiên từ 10/2025 (sau dữ liệu huấn luyện của mô hình), mỗi 14 ngày, chia 6 máy song song →
+#   du_lieu/kronos_lui_<i>.csv (xem sơ bộ; ít phiên, chưa đủ kết luận).
+# Log chỉ in số lượng & chỉ số chấm điểm, không in mã.
+name: Kronos song song
+
+on:
+  schedule:
+    - cron: "20 9 * * 1-5"                          # 16:20 giờ VN
+  workflow_dispatch:
+    inputs:
+      che_do:
+        description: "Chế độ"
+        type: choice
+        options:
+          - "Phiên mới nhất"
+          - "Chạy lùi từ 10/2025"
+          - "Chỉ chấm điểm"
+        default: "Phiên mới nhất"
+
+permissions:
+  contents: read
+
+env:
+  KRONOS_COMMIT: 67b630e67f6a18c9e9be918d9b4337c960db1e9a
+
+jobs:
+  chuan_bi:
+    runs-on: ubuntu-24.04
+    outputs:
+      phan: ${{ steps.p.outputs.phan }}
+    steps:
+      - id: p
+        run: |
+          if [ "${{ inputs.che_do }}" = "Chạy lùi từ 10/2025" ]; then echo 'phan=["0/6","1/6","2/6","3/6","4/6","5/6"]' >> "$GITHUB_OUTPUT";
+          else echo 'phan=["moi"]' >> "$GITHUB_OUTPUT"; fi
+
+  kronos:
+    needs: chuan_bi
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        phan: ${{ fromJSON(needs.chuan_bi.outputs.phan) }}
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+      KRONOS_DIR: ${{ github.workspace }}/kronos_src
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          path: danh-muc
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Cache thư viện Python (gồm torch CPU)
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-kronos-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('danh-muc/requirements.txt') }}-v1
+      - name: Cài thư viện
+        if: steps.cache_py.outputs.cache-hit != 'true'
+        run: |
+          pip install -q -r requirements.txt
+          pip install -q --index-url https://download.pytorch.org/whl/cpu torch
+          pip install -q einops==0.8.1 safetensors huggingface_hub
+      - name: Cache mô hình Kronos (Hugging Face)
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/huggingface
+          key: hf-kronos-small-v1
+      - name: Tải mã nguồn Kronos (MIT, cố định commit)
+        working-directory: .
+        run: |
+          git init -q kronos_src && cd kronos_src
+          git fetch -q --depth 1 https://github.com/shiyu-coder/Kronos "$KRONOS_COMMIT" && git checkout -q FETCH_HEAD
+
+      - name: Dự báo
+        if: inputs.che_do != 'Chỉ chấm điểm'
+        env:
+          PHAN: ${{ matrix.phan }}
+        run: |
+          if [ "$PHAN" = "moi" ]; then python -m ptcp.kronos_bong;
+          else python -m ptcp.kronos_bong --lui_tu 2025-10-01 --buoc 14 --duong 2 --phan "$PHAN" --ra "du_lieu/kronos_lui_${PHAN%%/*}.csv"; fi
+
+      - name: Chấm điểm (dự báo đã đủ 20 phiên)
+        if: matrix.phan == 'moi'
+        run: python -m ptcp.kronos_bong --danh_gia
+
+      - name: Lưu nhật ký về danh-muc
+        if: inputs.che_do != 'Chỉ chấm điểm'
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
+          git add -f du_lieu/kronos_*.csv 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
+          git commit -q -m "Kronos song song $(date +%F) ${{ matrix.phan }}" > /dev/null
+          for i in 1 2 3 4 5; do
+            if git pull -q --rebase --autostash > /dev/null 2>&1 && git push -q > /dev/null 2>&1; then echo "Đã lưu"; exit 0; fi
+            sleep $((i * 7))
+          done
+          echo "::error::Không đẩy được về danh-muc"; exit 1
