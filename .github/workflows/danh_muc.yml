@@ -160,7 +160,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           for f in danh_muc.csv danh_muc_cu.csv danh_muc_ptdttc.csv trang_thai_ptdttc.json lich_su_ptdttc.csv \
-                   tien_mat_chinh.json tien_mat_ptdttc.json trang_thai_vi_the.json gia_tham_chieu_quyen.json \
+                   tien_mat_chinh.json tien_mat_ptdttc.json trung_vang_chinh.json trang_thai_vi_the.json gia_tham_chieu_quyen.json \
                    lich_su_danh_muc.csv nhap.txt nhap_ptdttc.txt da_ban.csv da_ban_ptdttc.csv lenh_that.csv lenh_that_ptdttc.csv cache_du_lieu; do
             if [ -e "$f" ]; then git add -f "$f"; fi
           done
