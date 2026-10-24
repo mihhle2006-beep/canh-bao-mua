@@ -11,6 +11,7 @@
 #   von46 – quản lý lệnh thắng (chốt một phần, trailing, khoá lãi…) + RS kiểu IBD ½ KL
 #   von47 – hội đồng góc nhìn: lọc / chỉnh KL theo số góc ủng hộ – phản đối (thị trường, D2, định giá, tài chính, RS)
 #   von48 – tương quan tuần (52 tuần) với mã đang giữ ≥ ρ → bỏ tín hiệu / ½ KL
+#   von49 – D2 ngược chiều: XS lịch sử riêng mã chạm 2R trước cắt lỗ cao → ½ KL / bỏ, thấp → ×1,5
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy B
 
@@ -26,7 +27,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von43 / von44 / von45 / von46 / von47 / von48 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von43 / von44 / von45 / von46 / von47 / von48 / von49 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -49,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von43, von44, von45, von46, von47, von48]
+        phan: [chuan, von43, von44, von45, von46, von47, von48, von49]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -128,6 +129,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von49) export CHI_VON49=1; unset SO_NN ;;          # D2 ngược chiều (20 thứ tự ★)
             von48) export CHI_VON48=1; unset SO_NN ;;          # tương quan tuần với mã đang giữ (20 thứ tự ★)
             von47) export CHI_VON47=1; unset SO_NN ;;          # hội đồng góc nhìn (20 thứ tự ★)
             von46) export CHI_VON46=1; unset SO_NN ;;          # quản lý lệnh thắng + RS IBD (40 thứ tự ★)
