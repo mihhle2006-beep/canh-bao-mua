@@ -180,7 +180,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     if tin_bl:
         tin, cong_khai = f"{tin}\n\n{tin_bl}", f"{cong_khai}\n\n{tin_bl}"
     w_cl = ra.get("ty_trong_cl") or {}
-    if doi and len({str(sorted(v.items())) for v in w_cl.values()}) > 1:   # QUỸ B: CL1 = CL2 → không báo đổi
+    if doi and len({str(sorted(v.items())) for v in w_cl.values()}) > 1:   # QUỸ BỨT PHÁ: CL1 = CL2 → không báo đổi
         nd = chien_luoc_bot.tin_doi(ra, cl_cu)
         gui(nd) if not khong_gui else print(nd)
     if giu and os.environ.get("GITHUB_ACTIONS"):

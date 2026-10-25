@@ -92,7 +92,7 @@ def danh_gia(z, dp, bay_gio, bien_the):
         return kq
     g = macd_gio(dp)[hom_nay.index]
     het = t >= t.normalize() + pd.Timedelta(C.GIO_ATC + ":00")
-    if vao_tre_atc(z):                      # Quỹ B: vào trễ chỉ đặt lệnh ATC (huỷ nếu chạm cắt lỗ trong phiên)
+    if vao_tre_atc(z):                      # Quỹ Bứt Phá: vào trễ chỉ đặt lệnh ATC (huỷ nếu chạm cắt lỗ trong phiên)
         bien_the = "ATC"
     r = danh_gia_phien(hom_nay, z["tu"], z["den"], bien_the, g, het_phien=het,
                        **({"cl": z.get("cl")} if bien_the == "ATC" else {}))
@@ -113,7 +113,7 @@ def danh_gia(z, dp, bay_gio, bien_the):
 
 
 def vao_tre_atc(z):
-    """Nhóm vào trễ (✅ / 🟡) & ptcp.cau_hinh.QUY_VAO_TRE_KHOP = "dong" → chỉ lệnh ATC (backtest Quỹ B von41–42)."""
+    """Nhóm vào trễ (✅ / 🟡) & ptcp.cau_hinh.QUY_VAO_TRE_KHOP = "dong" → chỉ lệnh ATC (backtest Quỹ Bứt Phá von41–42)."""
     if z.get("nhom") not in ("VAO_NHU_MOI", "VAO_NUA"):
         return False
     try:

@@ -23,7 +23,7 @@ theo dõi mỗi mã **4 phiên kế tiếp**: Bo_Loc lọc lại vẫn đạt ho
 
 ## Mới ở beta 1.1 – đồng bộ chiến lược thị trường (cùng bot canh-bao-mua & ptcp)
 
-- **Chiến lược mặc định `quy_b`** – chiến lược đang áp dụng (Quỹ B, giống danh-muc / canh-bao-mua): hệ B (MACD ngày + tuần),
+- **Chiến lược mặc định `quy_b`** – chiến lược đang áp dụng (Quỹ Bứt Phá, giống danh-muc / canh-bao-mua): hệ B (MACD ngày + tuần),
   nhóm MUA (mới / vào trễ ≤ giá vào hệ thống + ½R), chỉ mã top 100 GTGD và hạng RS 3 tháng < 90 (không quá nóng),
   GTGD ≥ 3 tỷ, mã ĐẮT ½ KL, tối đa 5 mã mới/tuần, thoát 2R – MA10 tuần.
 - Nhóm MUA gồm: tín hiệu hệ B hôm nay (MACD ngày cắt lên + MACD tuần > Signal), hoặc hệ thống đang giữ và giá ≤ giá
@@ -159,7 +159,7 @@ Ngân hàng/CK/bảo hiểm bỏ 4 tiêu chí không phù hợp (biên gộp, th
 
 | Chiến lược | Dùng khi |
 |---|---|
-| `quy_b` *(mặc định)* | Chiến lược đang áp dụng – Quỹ B: hệ B, top 100 GTGD, thoát 2R – MA10 tuần – **cùng tiêu chí bot `canh-bao-mua`** |
+| `quy_b` *(mặc định)* | Chiến lược đang áp dụng – Quỹ Bứt Phá: hệ B, top 100 GTGD, thoát 2R – MA10 tuần – **cùng tiêu chí bot `canh-bao-mua`** |
 | `ky_thuat` | Lọc tổng quát: xu hướng + cơ bản tối thiểu (bộ tiêu chí cũ của bot) |
 | `xu_huong` | Mua theo đà: giá > MA50 > MA200, RSI 50–72, mạnh hơn VN-Index, có lãi |
 | `diem_mua` | Điểm vào: MACD ngày vừa cắt lên |

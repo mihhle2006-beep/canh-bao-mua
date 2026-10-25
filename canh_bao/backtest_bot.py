@@ -99,7 +99,7 @@ def _tai_song_song(ham, ds_ma, luong=8):
 
 
 def _bang_top(ct, top):
-    """Bảng cách vào chỉ trên khuyến nghị của mã top GTGD hiện tại (Quỹ B chỉ mua top) – để so, không dùng chọn."""
+    """Bảng cách vào chỉ trên khuyến nghị của mã top GTGD hiện tại (Quỹ Bứt Phá chỉ mua top) – để so, không dùng chọn."""
     from ptcp import loc_quy_b
     from ptcp.diem_vao_15p import tong_hop_15p
     hang = (loc_quy_b.doc(han_ngay=None) or {}).get("hang_gtgd", {})
@@ -237,7 +237,7 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
             ra["15p"]["theo_san"] = ts
             for ten, v in ts.items():
                 print(f"  Sàn {ten} ({v['so_ma']} mã, {v['so_tin_hieu']} khuyến nghị): {v['ket_luan']}")
-        try:                                                        # ptcp mới: mô phỏng cả quỹ B theo từng cách vào
+        try:                                                        # ptcp mới: mô phỏng cả quỹ Bứt Phá theo từng cách vào
             from ptcp.diem_vao_15p import quy_b_theo_cach_vao
             q = quy_b_theo_cach_vao(k15["chi_tiet"], gia, vni, dg=_dinh_gia(k15["chi_tiet"], gia))
         except ImportError:
@@ -246,9 +246,9 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
             q = q.sort_values("Calmar", ascending=False)
             t = q.iloc[0]
             ra["15p"]["quy_b"] = {"bang": _ban_ghi(q), "ket_luan":
-                                  f"quỹ B tốt nhất {t['Biến thể']}: lãi kỳ {t['Lãi kỳ %']:+.1f}%, MDD {t['MDD %']:.1f}%, "
+                                  f"quỹ Bứt Phá tốt nhất {t['Biến thể']}: lãi kỳ {t['Lãi kỳ %']:+.1f}%, MDD {t['MDD %']:.1f}%, "
                                   f"{int(t['Lệnh vào'])} lệnh"}
-            print("\n  Quỹ B (luật vốn thật, top GTGD) theo cách vào:")
+            print("\n  Quỹ Bứt Phá (luật vốn thật, top GTGD) theo cách vào:")
             with pd.option_context("display.width", 250, "display.max_columns", 30):
                 print(q.round(2).to_string(index=False))
 
@@ -279,7 +279,7 @@ def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file, file_ra=None):
             pd.DataFrame(ra["15p"]["bang"]).to_excel(w, sheet_name="BT 15 phut", index=False)
             pd.DataFrame(ra["15p"]["theo_nhom"]).to_excel(w, sheet_name="BT 15 phut theo nhom", index=False)
             if ra["15p"].get("quy_b"):
-                pd.DataFrame(ra["15p"]["quy_b"]["bang"]).to_excel(w, sheet_name="BT 15 phut quy B", index=False)
+                pd.DataFrame(ra["15p"]["quy_b"]["bang"]).to_excel(w, sheet_name="BT 15 phut quy But Pha", index=False)
             if ra["15p"].get("top_gtgd"):
                 pd.DataFrame(ra["15p"]["top_gtgd"]["bang"]).to_excel(w, sheet_name="BT 15 phut top GTGD", index=False)
             for ten, v in (ra["15p"].get("theo_san") or {}).items():

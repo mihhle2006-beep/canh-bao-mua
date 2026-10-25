@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Danh sách mã quét: nhóm hose_hnx (17/10/2026 – Quỹ B mua cả HNX) – không mạng."""
+"""Danh sách mã quét: nhóm hose_hnx (17/10/2026 – Quỹ Bứt Phá mua cả HNX) – không mạng."""
 from bo_loc import danh_sach_ma as D
 
 

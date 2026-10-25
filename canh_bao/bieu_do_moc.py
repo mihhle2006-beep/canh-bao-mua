@@ -35,7 +35,7 @@ def cac_moc(gia, cl, nhom="MUA_MOI"):
         return []
     R = gia - cl
     mua = "Mua 1 phần (½ KL)" if nhom == "VAO_NUA" else "Mua toàn bộ (đủ KL)"
-    n = float(getattr(C, "NGUONG_KHUNG_TUAN_R", 2.0))           # mốc chuyển khung tuần (Quỹ B: 2R), sàn = n − 1 R
+    n = float(getattr(C, "NGUONG_KHUNG_TUAN_R", 2.0))           # mốc chuyển khung tuần (Quỹ Bứt Phá: 2R), sàn = n − 1 R
     san = (f" · sàn khoá lãi: bán hết nếu đã qua {n:g}R rồi rơi về" if n - 1 == 1 else "")
     return [(gia + 3 * R, f"3R {_f(gia + 3 * R)} – mục tiêu theo dõi, GIỮ lại (không chốt)" if n != 3 else
              f"3R {_f(gia + 3 * R)} – GIỮ lại (không chốt 1 phần), bán khi tuần < MA10", "tp1", True),

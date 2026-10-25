@@ -32,7 +32,7 @@ def tim_file(cl, goc=".", che_do="noi_bo"):
     return f, ngay
 
 
-TEN_CL = {"sieu_cp": "Siêu CP tiềm năng", "quy_b": "Quỹ B", "xu_huong": "Xu hướng", "ky_thuat": "Kỹ thuật", "diem_mua": "Điểm mua", "bat_day": "Bắt đáy",
+TEN_CL = {"sieu_cp": "Siêu CP tiềm năng", "quy_b": "Quỹ Bứt Phá", "xu_huong": "Xu hướng", "ky_thuat": "Kỹ thuật", "diem_mua": "Điểm mua", "bat_day": "Bắt đáy",
           "gia_tri": "Giá trị", "tich_luy_vuot": "Tích lũy vượt", "tuy_chinh": "Tùy chỉnh"}
 
 

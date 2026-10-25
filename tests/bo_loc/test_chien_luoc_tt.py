@@ -39,7 +39,7 @@ def test_nhom_vung_cat_lo_dung_nhu_bot(ro, tmp_path, monkeypatch):
         if k["nhom"] in T.NHOM_MUA + ("CHO",):
             if k["nhom"] == "MUA_MOI":
                 assert (k["tu"], k["den"]) == vung_gia(k["nhom"], k["gia"], k["cl"])
-            elif k["tu"] != k["tu"]:                       # Quỹ B: cắt lỗ đã > giá vào + ½R → không vùng vào trễ
+            elif k["tu"] != k["tu"]:                       # Quỹ Bứt Phá: cắt lỗ đã > giá vào + ½R → không vùng vào trễ
                 assert k["nhom"] == "CHO"
                 continue
             assert k["cl"] < k["tu"] <= k["den"]
@@ -78,7 +78,7 @@ def test_dau_cuoi_mac_dinh_la_chien_luoc_quy_b(thu_muc_du_lieu, monkeypatch, cap
     kq = chay(["--thu_muc_csv", "gia", "--vnindex", "vnindex.csv", "--ma", "AAA,BBB,CCC,DDD,EEE",
                "--khong_online_co_ban", "--khong_vnstock", "--khong_bieu_do", "--khong_cache"])
     out = capsys.readouterr().out
-    assert "CHIẾN LƯỢC QUỸ B" in out and "Thị trường:" in out and kq["thi_truong"]["so_chi_bao"] == 8
+    assert "CHIẾN LƯỢC QUỸ BỨT PHÁ" in out and "Thị trường:" in out and kq["thi_truong"]["so_chi_bao"] == 8
     k = kq["ket_luan"]
     assert {"Nhóm chiến lược", "Đạt điểm mua", "Vô hiệu khi", "MT 3R"} <= set(k.columns)
     mua = k[k["Kết luận"] == "[NÊN MUA]"]
@@ -96,7 +96,7 @@ def test_loc_quy_b_ngoai_top(ro, tmp_path, monkeypatch):
 
 
 def test_tham_so_dong_bo_quy_b():
-    """Khối lượng gợi ý của bộ lọc dùng đúng luật Quỹ B của ptcp."""
+    """Khối lượng gợi ý của bộ lọc dùng đúng luật Quỹ Bứt Phá của ptcp."""
     import pytest
     P = pytest.importorskip("ptcp.cau_hinh")
     from bo_loc import cau_hinh as ch

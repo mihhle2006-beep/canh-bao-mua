@@ -147,7 +147,7 @@ def lay_danh_sach_ma(ma=None, file_ma=None, nhom="tat_ca"):
         except Exception as e:
             raise SystemExit(f"Không lấy được danh sách HOSE ({e}). Dùng --nhom khác, --ma, "
                              f"hoặc tạo file {ch.FILE_DS_HOSE} (mỗi dòng 1 mã).")
-    if nhom == "hose_hnx":                  # 17/10/2026: Quỹ B mua cả HNX (rổ HOSE + HNX – ptcp QUY_RO)
+    if nhom == "hose_hnx":                  # 17/10/2026: Quỹ Bứt Phá mua cả HNX (rổ HOSE + HNX – ptcp QUY_RO)
         ds = lay_danh_sach_ma(nhom="hose")
         hnx = lay_danh_sach_hnx()
         print(f"  Danh sách HNX (ptcp/san_niem_yet.json): {len(hnx)} mã")

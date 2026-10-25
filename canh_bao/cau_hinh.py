@@ -58,7 +58,7 @@ KY_HAN_MUA = 63                    # phiên – hạn chấm lệnh mua khi ptcp
 KY_HAN_BAN = 20                    # phiên – sau cảnh báo bán bao lâu thì so giá để chấm
 # T+2, phí + trượt giá, ngưỡng trần/sàn, "ít mẫu": lấy từ ptcp/cau_hinh.py (một bộ máy chấm chung – ptcp/nhat_ky.py)
 
-# --- HỆ THOÁT cho mã đang giữ (ptcp/he_thoat.py – Quỹ B 10/2026: T2-2R-ma10, = ptcp QUY_NGUONG_TUAN) ---
+# --- HỆ THOÁT cho mã đang giữ (ptcp/he_thoat.py – Quỹ Bứt Phá 10/2026: T2-2R-ma10, = ptcp QUY_NGUONG_TUAN) ---
 #   lãi < 1R : cắt lỗ ban đầu (cat_lo_goc; thiếu thì max(giá vốn − 2×ATR, −7%), tối thiểu 1,5×ATR)
 #   lãi ≥ 1R : cắt lỗ động = đóng cửa cao nhất − 3×ATR, không dưới hoà vốn (+ phí)
 #   lãi ≥ 2R : chuyển KHUNG TUẦN – bán khi đóng cửa tuần < MA10 tuần; sàn khoá lãi 1R; KHÔNG chốt lời cố định
@@ -86,7 +86,7 @@ LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị
 
 # --- ĐIỂM VÀO 15 PHÚT – đồng bộ chiến lược (ptcp/diem_vao_15p.py: một bộ tiêu chí cho cảnh báo & backtest) ---
 #   Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, trong đúng phiên hiệu lực; không phủ quyết MACD tuần.
-CACH_VAO_15P = "15P+GIO"           # 19/10/2026: backtest quỹ B theo cách vào khớp luật live (★ ATC, suất dự phòng, lọc biến
+CACH_VAO_15P = "15P+GIO"           # 19/10/2026: backtest quỹ Bứt Phá theo cách vào khớp luật live (★ ATC, suất dự phòng, lọc biến
                                    # động, ĐẮT ½; 687 mã, nến 15' 09/2023–10/2026): 15P+GIO 17,6%/năm MDD −16,7% Sharpe 1,41
                                    # · 15P+GIO+ATC★ 15,4% / −19,0% / 1,13 · LO+ATC★ 7,0%. Mẫu ~3 năm – theo dõi. Trước:
                                    # 15P+GIO+ATC (17/10, số 22,5% đo khi mọi mã được ATC);
@@ -112,7 +112,7 @@ MUA_THEM_TOI_DA = 2
 #     hệ số = min(1, ATR_MUC_TIEU_PCT ÷ ATR% của mã) – mã biến động mạnh mua ít đi; nhóm 🟡 thêm × ½.
 KL_THEO_BIEN_DONG = False         # TẮT theo yêu cầu – KL = 1% vốn ÷ (giá mua − cắt lỗ), nhóm 🟡 ½
 ATR_MUC_TIEU_PCT = 3.5             # % / ngày; 2,5 = an toàn hơn (sụt giảm ~−15%, lãi ~8,9%/năm)
-RUI_RO_MOI_LENH_PCT = 0.75         # % vốn chấp nhận mất nếu chạm cắt lỗ – QUỸ B 10/2026 (trước: 1%)
+RUI_RO_MOI_LENH_PCT = 0.75         # % vốn chấp nhận mất nếu chạm cắt lỗ – QUỸ BỨT PHÁ 10/2026 (trước: 1%)
 SO_MA_MOI_TUAN = 5                 # ★ đánh dấu bấy nhiêu mã ưu tiên trong tin (= QUY_MOI_TUAN_TOI_DA của ptcp)
 VON_TRIEU = None                   # tổng vốn (triệu đồng) – điền để tin ghi luôn số CP; None = chỉ ghi công thức
 

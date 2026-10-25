@@ -6,7 +6,7 @@
 #   commit về repo danh-muc bằng secret DANH_MUC_TOKEN_GHI (Contents: Read and write). Lỗi → chỉ in mã thoát.
 #   Secret cần: DANH_MUC_TOKEN_GHI; tuỳ chọn TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC (trống → bot chung),
 #   TONG_VON_CHINH / TONG_VON_PTDTTC (triệu đồng, chỉ khi đổi tổng tài sản), VNSTOCK_API_KEY. Giữ tiền mặt & cách chia
-#   vốn theo luật Quỹ B trong code (không còn tham số GIU_TIEN_MAT / CHON).
+#   vốn theo luật Quỹ Bứt Phá trong code (không còn tham số GIU_TIEN_MAT / CHON).
 #   Nhập lệnh: ghi dòng ngắn vào nhap.txt / nhap_ptdttc.txt ở repo danh-muc (VD "20/10 HPG 1000") → lần chạy kế tiếp
 #   tự áp vào danh_muc.csv / da_ban.csv.
 name: Danh muc hang ngay
