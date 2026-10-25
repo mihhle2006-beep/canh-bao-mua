@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-CHIẾN LƯỢC QUỸ B (mặc định) – chiến lược đang áp dụng 10/2026, cùng luật với danh-muc, canh-bao-mua, gia_lap:
+CHIẾN LƯỢC QUỸ BỨT PHÁ (mặc định) – chiến lược đang áp dụng 10/2026, cùng luật với danh-muc, canh-bao-mua, gia_lap:
   · tín hiệu hệ B: MACD ngày cắt lên có lọc MACD tuần + nhồi lệnh (chien_luoc_tt → ptcp, mọi trạng thái thị trường)
   · nhóm MUA: 🟢 mua mới · ✅ vào trễ (giá ≤ giá vào hệ thống + ½R, cắt lỗ ≤ 7%, đủ KL – quỹ chỉ vào mã đã bỏ vì
     hết suất 5 mã mới/tuần); không còn nhóm ½ KL (phân nhóm lấy từ ptcp)
@@ -13,8 +13,8 @@ CHIẾN LƯỢC QUỸ B (mặc định) – chiến lược đang áp dụng 10/
 Điểm cộng chỉ để xếp hạng trong danh sách lọc.
 """
 CHIEN_LUOC = {
-    "ten": "Quỹ B",
-    "mo_ta": "Chiến lược đang áp dụng – Quỹ B: hệ B (MACD ngày + tuần), HOSE + HNX, top 100 GTGD, bỏ RS 3T quá nóng "
+    "ten": "Quỹ Bứt Phá",
+    "mo_ta": "Chiến lược đang áp dụng – Quỹ Bứt Phá: hệ B (MACD ngày + tuần), HOSE + HNX, top 100 GTGD, bỏ RS 3T quá nóng "
              "và 30% mã biến động nhất, ≤ 5 mã mới/tuần, 8 mã + 1 suất dự phòng cho tín hiệu mạnh, vào trễ ≤ giá vào "
              "+ ½R, thoát 2R – MA10 tuần; "
              "cùng luật với danh-muc / canh-bao-mua",

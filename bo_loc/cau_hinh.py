@@ -57,8 +57,8 @@ MAX_TC_THIEU_DL = 2                  # thiếu dữ liệu quá số tiêu chí 
 # Đánh giá sau lọc (B2–B6)
 # --------------------------------------------------------------------------
 VON_DANH_MUC = 1_000                 # triệu đồng (NAV)
-RUI_RO_MOI_LENH = 0.75               # % NAV chấp nhận mất nếu chạm cắt lỗ – = ptcp QUY_RUI_RO_LENH_PCT (Quỹ B; trước: 1)
-TY_TRONG_MAX = 20                    # % NAV tối đa cho 1 mã – = ptcp QUY_TRAN_MA_PCT (Quỹ B 16/10/2026)
+RUI_RO_MOI_LENH = 0.75               # % NAV chấp nhận mất nếu chạm cắt lỗ – = ptcp QUY_RUI_RO_LENH_PCT (Quỹ Bứt Phá; trước: 1)
+TY_TRONG_MAX = 20                    # % NAV tối đa cho 1 mã – = ptcp QUY_TRAN_MA_PCT (Quỹ Bứt Phá 16/10/2026)
 TY_LE_THANH_KHOAN = 10               # mua tối đa 10% KLGD TB20 mỗi phiên
 SO_ATR_CAT_LO = 2.0                  # cắt lỗ = giá − k × ATR(14)
 TRONG_SO = {"Xu hướng": 0.30, "Động lượng": 0.20, "Định giá": 0.15, "Chất lượng": 0.20, "Rủi ro": 0.15}

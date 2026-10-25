@@ -31,7 +31,7 @@ def test_ve(tmp_path):
 
 
 def test_nguong_khung_tuan_dong_bo_ptcp():
-    """Ngưỡng chuyển khung tuần của bot (vị thế đang giữ, mua thêm, biểu đồ) phải = luật Quỹ B của ptcp."""
+    """Ngưỡng chuyển khung tuần của bot (vị thế đang giữ, mua thêm, biểu đồ) phải = luật Quỹ Bứt Phá của ptcp."""
     import pytest
     P = pytest.importorskip("ptcp.cau_hinh")
     from canh_bao import cau_hinh as C

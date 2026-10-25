@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-VỊ THẾ ĐANG GIỮ & CẢNH BÁO BÁN – theo HỆ THOÁT (ptcp/he_thoat.py, Quỹ B: T2-2R-ma10).
+VỊ THẾ ĐANG GIỮ & CẢNH BÁO BÁN – theo HỆ THOÁT (ptcp/he_thoat.py, Quỹ Bứt Phá: T2-2R-ma10).
 
 Nguồn vị thế: đọc danh_muc.csv từ repo RIÊNG TƯ `danh-muc` qua GitHub API bằng token CHỈ ĐỌC.
   Biến môi trường (GitHub Actions): DANH_MUC_TOKEN (= secret DANH_MUC_TOKEN_GHI), DANH_MUC_REPO (variable, VD "ten-ban/danh-muc"),
@@ -81,7 +81,7 @@ def _tai_tu_github(duong_dan=None):
 
 def doc_danh_muc(path_cuc_bo="danh_muc.csv", path_phu="danh_muc_ptdttc.csv"):
     """→ ({MÃ: vị thế}, mô tả nguồn). Chỉ giữ mã có so_cp > 0. Gộp thêm danh mục PHỤ (danh_muc_ptdttc.csv – quản lý
-    riêng, không áp trần quỹ B; DANH_MUC_PHU_PATH, để "-" = bỏ) để cảnh báo bán / đánh dấu đang giữ đủ mọi mã."""
+    riêng, không áp trần quỹ Bứt Phá; DANH_MUC_PHU_PATH, để "-" = bỏ) để cảnh báo bán / đánh dấu đang giữ đủ mọi mã."""
     noi_dung, nguon = _tai_tu_github()
     if noi_dung is None and os.path.exists(path_cuc_bo):
         with open(path_cuc_bo, encoding="utf-8-sig") as f:

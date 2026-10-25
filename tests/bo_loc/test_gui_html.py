@@ -20,7 +20,7 @@ def test_main_gui(tmp_path, monkeypatch):
     gui = []
     monkeypatch.setattr(G, "gui_file", lambda p, ten: gui.append(ten) or True)
     assert G.main(["--chien_luoc", "quy_b,xu_huong", "--che_do", "noi_bo"]) == 0
-    assert gui == ["Bộ lọc Quỹ B 09-10-2026.html"]
+    assert gui == ["Bộ lọc Quỹ Bứt Phá 09-10-2026.html"]
 
 
 def test_hai_che_do(tmp_path, monkeypatch):
@@ -34,9 +34,9 @@ def test_hai_che_do(tmp_path, monkeypatch):
     monkeypatch.setattr(G, "gui_file", lambda p, ten: gui.append(ten) or True)
     monkeypatch.setattr(G, "gui_tin", lambda t: tin.append(t) or True)
     G.main(["--chien_luoc", "quy_b", "--chi_html", "--che_do", "noi_bo"])
-    assert gui == ["Bộ lọc Quỹ B 09-10-2026.html"] and tin == []
+    assert gui == ["Bộ lọc Quỹ Bứt Phá 09-10-2026.html"] and tin == []
     G.main(["--chien_luoc", "quy_b", "--che_do", "noi_bo"])
-    assert len(gui) == 2 and tin[0].startswith("🔎 Bộ lọc Quỹ B – phiên 09/10/2026") and "MUA (2): SBT, MCH (½)" in tin[0]
+    assert len(gui) == 2 and tin[0].startswith("🔎 Bộ lọc Quỹ Bứt Phá – phiên 09/10/2026") and "MUA (2): SBT, MCH (½)" in tin[0]
 
 
 def test_mac_dinh_gui_ban_ngoai(tmp_path, monkeypatch):
@@ -48,7 +48,7 @@ def test_mac_dinh_gui_ban_ngoai(tmp_path, monkeypatch):
     gui = []
     monkeypatch.setattr(G, "gui_file", lambda p, ten: gui.append((p, ten)) or True)
     G.main(["--chien_luoc", "quy_b", "--chi_html"])
-    assert gui[0][0].endswith("chien_luoc_quy_b_ngoai.html") and gui[0][1] == "Cổ phiếu đáng chú ý Quỹ B 09-10-2026.html"
+    assert gui[0][0].endswith("chien_luoc_quy_b_ngoai.html") and gui[0][1] == "Cổ phiếu đáng chú ý Quỹ Bứt Phá 09-10-2026.html"
 
 
 def test_ban_ngoai_khong_lo_noi_bo(tmp_path):
@@ -90,7 +90,7 @@ def test_tin_ptdttc_moi_chien_luoc_mot_dong(tmp_path):
     f = tmp_path / "pt.json"
     f.write_text('{"ma": {"AAA": {"quy_b": {"hanh_dong": "MUA"}, "xu_huong": {"hanh_dong": "THEO DÕI"}}}}',
                  encoding="utf-8")
-    assert G.tin_ptdttc(str(f)).splitlines()[1:] == ["AAA", "   Quỹ B: MUA", "   Xu hướng: THEO DÕI"]
+    assert G.tin_ptdttc(str(f)).splitlines()[1:] == ["AAA", "   Quỹ Bứt Phá: MUA", "   Xu hướng: THEO DÕI"]
 
 
 def test_ten_anh_khong_gach_duoi(tmp_path):

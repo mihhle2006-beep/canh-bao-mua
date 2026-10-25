@@ -193,7 +193,7 @@ def test_nhom_hanh_dong_cho_nguoi_chua_mua():
                        "Cắt lỗ dự kiến": 94}])
     hd = hanh_dong({"A0": a0, "B": b}, {"A0": 0.7, "B": 0.0, "VNI": 0.3})       # CL2: B không tính
     nhom = dict(zip(hd["Mã"], hd["Nhóm"]))
-    # Quỹ B 10/2026: vào trễ chỉ khi ≤ +½R → VUA (1–2R) chờ giá hồi, không còn nhóm ½
+    # Quỹ Bứt Phá 10/2026: vào trễ chỉ khi ≤ +½R → VUA (1–2R) chờ giá hồi, không còn nhóm ½
     assert nhom == {"MOI": "MUA_MOI", "SOM": "VAO_NHU_MOI", "VUA": "CHO", "XA": "CHO", "RONG": "CHO", "BAN": "BAN"}
     r = hd.set_index("Mã")
     assert r.loc["SOM", "Mua tối đa"] == pytest.approx(min(103, 96 / 0.93))

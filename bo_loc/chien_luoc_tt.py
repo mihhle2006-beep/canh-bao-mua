@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 CHIẾN LƯỢC THEO THỊ TRƯỜNG – cùng logic với ptcp (theo_chien_luoc / chien_luoc) và bot canh-bao-mua. Đang áp dụng
-QUỸ B (ptcp CHIEN_LUOC_AP_DUNG = "quy_b"): chỉ hệ B ở mọi trạng thái thị trường (tỷ trọng ptcp.chien_luoc.TY_TRONG).
+QUỸ BỨT PHÁ (ptcp CHIEN_LUOC_AP_DUNG = "quy_b"): chỉ hệ B ở mọi trạng thái thị trường (tỷ trọng ptcp.chien_luoc.TY_TRONG).
 
-  Thị trường : 8 chỉ báo VN-Index → điểm X/8 → CL1 / CL2 (chỉ để theo dõi khi Quỹ B), đổi ở phiên cuối tháng.
+  Thị trường : 8 chỉ báo VN-Index → điểm X/8 → CL1 / CL2 (chỉ để theo dõi khi Quỹ Bứt Phá), đổi ở phiên cuối tháng.
                Độ rộng tính trên các mã quét, hoặc thi_truong_cl.json của ptcp (rổ top 100 GTGD chốt thứ Sáu tuần trước).
   Từng mã    : mô phỏng A0 (MACD ngày cắt lên) & B (lọc tuần + nhồi) với hệ thoát T2-2R-ma10 (ptcp QUY_NGUONG_TUAN) → nhóm hành động
                🟢 MUA MỚI · ✅ VÀO NHƯ LỆNH MỚI · 🟡 VÀO ½ · ⏳ CHỜ ĐIỀU CHỈNH · ⛔ hệ thống lỗ / sắp bán · chưa có tín hiệu,
@@ -155,7 +155,7 @@ def danh_gia(gia, vni, tt=None):
                         "khoi_luong": r.get("Khối lượng", "–"), "lai_ht": r.get("Lãi HT (R)"),
                         "rui_ro_pct": r.get("Rủi ro %")}
         lq = _loc_quy(r["Mã"], vni) if nhom in NHOM_MUA else None
-        if lq:                                         # Quỹ B 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · nhiệt dài hạn ½
+        if lq:                                         # Quỹ Bứt Phá 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · nhiệt dài hạn ½
             k = out[r["Mã"]]
             k["he_so_quy"], k["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
             if lq["bo"]:

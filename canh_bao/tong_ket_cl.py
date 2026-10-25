@@ -4,7 +4,7 @@ TỔNG KẾT 15:20 THEO CHIẾN LƯỢC THỊ TRƯỜNG – tin Telegram GỌN, 
 
   📊 thị trường & CL đang áp dụng
   🟢 MUA MỚI / ✅ VÀO NHƯ LỆNH MỚI / 🟡 VÀO ½   mã | vùng mua | mục tiêu 1R → 3R | cắt lỗ | đạt điểm mua
-                    (Quỹ B 10/2026: ✅ = vào trễ ở giá ≤ giá vào hệ thống + ½R; không còn nhóm 🟡 · 20/10/2026:
+                    (Quỹ Bứt Phá 10/2026: ✅ = vào trễ ở giá ≤ giá vào hệ thống + ½R; không còn nhóm 🟡 · 20/10/2026:
                      vào trễ chỉ đặt lệnh ATC, huỷ nếu chạm cắt lỗ trong phiên – canh_bao/diem_vao.vao_tre_atc)
   ⏳ CHỜ ĐIỀU CHỈNH   mã + vùng chờ           ⛔ KHÔNG VÀO   hệ thống đang lỗ / sắp bán
   💼 ĐANG GIỮ (danh mục thật – tin riêng tư)  lãi/lỗ theo giá vốn · cắt lỗ hệ thoát · hành động · mốc tiếp ·
@@ -95,7 +95,7 @@ def ds_khuyen_nghi(ra):
         nh = ra.get("nhiet") or {}
         k_["nhiet"], k_["he_so_nhiet"] = nh.get("diem"), float(nh.get("he_so", 1.0))
         lq = _loc_quy(k_["ma"], ra.get("vni_df")) if k_["nhom"] in NHOM_MUA else None
-        if lq:                  # Quỹ B: top 100 GTGD · RS 3T nóng · biến động top 30% · ĐẮT ½ · nhiệt dài hạn ½
+        if lq:                  # Quỹ Bứt Phá: top 100 GTGD · RS 3T nóng · biến động top 30% · ĐẮT ½ · nhiệt dài hạn ½
             k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
             k_["manh_b"] = bool(lq.get("manh_b"))            # tín hiệu MẠNH B → được dùng suất dự phòng (mã thứ 9)
             k_["dau_hieu_manh"] = ", ".join(lq.get("dau_hieu_manh") or [])
@@ -134,7 +134,7 @@ def xep_sao_theo_nganh(mua, so_sao=None, toi_da=None):
 
 
 def _quy(ten, mac_dinh):
-    """Tham số Quỹ B của ptcp/cau_hinh.py (ptcp cũ → mặc định)."""
+    """Tham số Quỹ Bứt Phá của ptcp/cau_hinh.py (ptcp cũ → mặc định)."""
     try:
         from ptcp import cau_hinh as P
         return getattr(P, ten, mac_dinh)
@@ -199,7 +199,7 @@ def _hs(x):
 
 def von_lenh(k):
     """VỐN CHO LỆNH đã nhân sẵn mọi hệ số (người đọc không phải tự tính): rủi ro % NAV = RUI_RO_MOI_LENH_PCT × nhiệt ngắn
-    hạn × lọc Quỹ B (nhiệt dài hạn VN-Index · ĐẮT …) × khối lượng (nhóm 🟡 ½ / ATR) → tỷ trọng mua = rủi ro % ÷ khoảng
+    hạn × lọc Quỹ Bứt Phá (nhiệt dài hạn VN-Index · ĐẮT …) × khối lượng (nhóm 🟡 ½ / ATR) → tỷ trọng mua = rủi ro % ÷ khoảng
     cách cắt lỗ %, ≤ trần %/mã. → {"rr", "ty_trong", "he_so": [(nhãn, hệ số)]} (ty_trong NaN khi thiếu cắt lỗ)."""
     rr0 = float(getattr(C, "RUI_RO_MOI_LENH_PCT", 0.75))
     hn, hq, hk = _hs(k.get("he_so_nhiet")), _hs(k.get("he_so_quy")), _hs(k.get("he_so_kl"))
@@ -344,7 +344,7 @@ def luu_ds_mua(ra, bay_gio, path=None):
 def mua_them(vt, dn, kb, bay_gio=None):
     """
     → {"du": bool, "ly_do", "tu", "den", "so_cp", "cl", "gia_von_moi"} cho 1 vị thế thật.
-    Đủ khi: lãi ≥ NGUONG_KHUNG_TUAN_R (tầng tuần, Quỹ B 2R) · đóng cửa hôm nay lập đỉnh đóng cửa mới kể từ ngày mua · cách lần mua gần nhất
+    Đủ khi: lãi ≥ NGUONG_KHUNG_TUAN_R (tầng tuần, Quỹ Bứt Phá 2R) · đóng cửa hôm nay lập đỉnh đóng cửa mới kể từ ngày mua · cách lần mua gần nhất
     ≥ MUA_THEM_GIAN_CACH phiên · số lần mua thêm < MUA_THEM_TOI_DA · cắt lỗ hiện tại ≥ giá vốn BQ mới + phí.
     """
     from .vi_the import _ngay as ngay_vt, _phien_da_dong
@@ -554,7 +554,7 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                                 for k in ngoai))
     if sum(k["nhom"] in NHOM_MUA for k in ks) > getattr(C, "SO_MA_MOI_TUAN", 2):
         dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: cắt lỗ sát · lịch sử mã · "
-                     f"lập đỉnh 52T; ≤ 2 mã/ngành) – quỹ B chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
+                     f"lập đỉnh 52T; ≤ 2 mã/ngành) – quỹ Bứt Phá chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
     if any(k["nhom"] in NHOM_MUA and k.get("manh_b") for k in ks):
         dong.append(f"💪 = tín hiệu mạnh (≥ 3/4: sát đỉnh 52T · RS 3T cao · thanh khoản tăng · ngành mạnh) – đã đủ "
                     f"{_quy('QUY_SO_MA', 8)} mã vẫn được mua thêm {_quy('QUY_SUAT_DU_PHONG', 1)} mã (suất dự phòng)")
@@ -572,7 +572,7 @@ def cach_vao(kq_bt=None):
         return C.CACH_VAO_15P, "cấu hình"
     b15 = (kq_bt or {}).get("15p") or {}
     top = b15.get("top_gtgd") or {}
-    if top.get("tot_nhat") in BIEN_THE:                       # Quỹ B chỉ mua top GTGD → chọn theo đúng rổ đó
+    if top.get("tot_nhat") in BIEN_THE:                       # Quỹ Bứt Phá chỉ mua top GTGD → chọn theo đúng rổ đó
         return top["tot_nhat"], f"tốt nhất theo backtest top {top.get('top', 100)} GTGD"
     tot = b15.get("tot_nhat")
     if tot in BIEN_THE:
@@ -648,7 +648,7 @@ def dong_khoi_luong(gia, cl, atr, nua=False, von_trieu=None, he_so_nhiet=None):
     he_so_nhiet: hệ số nhiệt thị trường của tin tổng kết (< 1 → rủi ro/lệnh nhân theo)."""
     hs, atr_pct = he_so_kl(gia, atr, nua)
     rr = getattr(C, "RUI_RO_MOI_LENH_PCT", 1.0)
-    if he_so_nhiet is not None and he_so_nhiet == he_so_nhiet and he_so_nhiet != 1:   # nhiệt × lọc Quỹ B (kể cả ×1,5)
+    if he_so_nhiet is not None and he_so_nhiet == he_so_nhiet and he_so_nhiet != 1:   # nhiệt × lọc Quỹ Bứt Phá (kể cả ×1,5)
         rr = round(rr * he_so_nhiet, 4)
     ly = []
     if getattr(C, "KL_THEO_BIEN_DONG", False) and atr_pct == atr_pct:

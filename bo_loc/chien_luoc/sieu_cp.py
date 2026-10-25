@@ -3,7 +3,7 @@
 SIÊU CỔ PHIẾU TIỀM NĂNG – theo thống kê danh-muc/phan_tich_sieu_cp.py (mã × quý 2013–2025, nền 8% mã tăng ≥ 100%
 trong 12 tháng): vốn hoá ≤ 10 nghìn tỷ + GTGD TB20 ≥ 1,3× TB120 → 13% (bắt 44% siêu CP); thêm nền tích luỹ (cách
 đỉnh 52T ≤ 15% + biến động co ≤ 0,8) → ~14%. Lợi nhuận tăng mạnh (CANSLIM C/A) KHÔNG làm tỷ lệ cao hơn nền.
-Chỉ là danh sách THEO DÕI – mua theo điểm mua của Quỹ B.
+Chỉ là danh sách THEO DÕI – mua theo điểm mua của Quỹ Bứt Phá.
 """
 CHIEN_LUOC = {
     "ten": "Siêu cổ phiếu tiềm năng",

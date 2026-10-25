@@ -135,7 +135,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
         return None, f"quá ít mã có dữ liệu ({len(gia)}/{len(ds_ma)})"
     F, diem, muc = bang_chi_bao(vni, pd.DataFrame(gia))
     nhiet = None
-    try:                                                   # QUỸ B: nhiệt thị trường → hệ số khối lượng lệnh mới
+    try:                                                   # QUỸ BỨT PHÁ: nhiệt thị trường → hệ số khối lượng lệnh mới
         from ptcp.chien_luoc import doc_nhiet
         nhiet = doc_nhiet(vni, pd.DataFrame(gia))
     except Exception:                                      # noqa: BLE001 – ptcp cũ / thiếu dữ liệu → hệ số 1

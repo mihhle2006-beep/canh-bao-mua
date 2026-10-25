@@ -332,7 +332,7 @@ def test_gia_duoi_lo_van_trong_vung_mua_gia_hien_tai(monkeypatch):
     dp = _nen_15p(hom_nay)
     z = {"ma": "AAA", "nhom": "VAO_NHU_MOI", "tu": 19.5, "den": 20.5, "cl": 18.7, "ly_do": "MACD", "atr": 0.6,
          "uu_tien": 1.0}
-    monkeypatch.setattr(diem_vao, "vao_tre_atc", lambda z_: True)        # vào trễ Quỹ B: trong phiên chỉ chờ ATC
+    monkeypatch.setattr(diem_vao, "vao_tre_atc", lambda z_: True)        # vào trễ Quỹ Bứt Phá: trong phiên chỉ chờ ATC
     k = diem_vao.danh_gia(z, dp, "2026-10-08 10:20", "LO")
     assert k["trang_thai"] == "CHỜ" and "ATC" in k["ly_do"]
     monkeypatch.setattr(diem_vao, "vao_tre_atc", lambda z_: False)
