@@ -1,0 +1,22 @@
+# ĐỌC TRANG CÔNG KHAI – bấm "Run workflow", nhập URL (VD trang hướng dẫn DNSE) → in nội dung ra log (đối chiếu luật sản
+# phẩm khi máy dev không vào được trang). Chỉ dùng cho trang công khai.
+name: Doc trang
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL trang công khai"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  doc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          URL: ${{ inputs.url }}
+        run: curl -sSL -m 60 -A "Mozilla/5.0" "$URL" | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | head -c 60000
