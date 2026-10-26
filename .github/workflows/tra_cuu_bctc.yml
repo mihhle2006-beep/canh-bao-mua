@@ -15,6 +15,9 @@ on:
       nganh:
         description: "Hoặc tên ngành (VD logistics, thép, ngân hàng) – có ngành thì bỏ qua ô mã"
         default: ""
+      san:
+        description: "Hoặc sàn (VD HOSE,HNX) → toàn bộ DN phi tài chính, mỗi file 80 mã – có sàn thì bỏ qua mã & ngành"
+        default: ""
 
 permissions:
   contents: read
@@ -27,7 +30,7 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-    timeout-minutes: 30
+    timeout-minutes: 240                   # cả 2 sàn ~650 mã
     steps:
       - uses: actions/checkout@v5
         with:
@@ -61,8 +64,11 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           MA: ${{ inputs.ma }}
           NGANH: ${{ inputs.nganh }}
+          SAN: ${{ inputs.san }}
         run: |
-          if [ -n "$NGANH" ]; then
+          if [ -n "$SAN" ]; then
+            python -m ptcp.xuat_bctc --san "$SAN" --lo 80 --gui
+          elif [ -n "$NGANH" ]; then
             python -m ptcp.xuat_bctc --nganh "$NGANH" --gui
           elif [ -n "$MA" ]; then
             python -m ptcp.xuat_bctc --ma "$MA" --gui
