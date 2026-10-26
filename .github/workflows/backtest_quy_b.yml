@@ -128,6 +128,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von61) export CHI_VON61=1; unset SO_NN ;;          # Trứng vàng nhiều mức lãi × kỳ hạn (20 thứ tự ★)
             von60) export CHI_VON60=1; unset SO_NN ;;          # tiền nhàn rỗi Không ngủ + Trứng vàng (20 thứ tự ★)
             von59) export CHI_VON59=1; unset SO_NN ;;          # phòng hộ bán VN30F (20 thứ tự ★)
             von58) export CHI_VON58=1; unset SO_NN ;;          # hệ phụ bắt nhịp hồi (20 thứ tự ★)
