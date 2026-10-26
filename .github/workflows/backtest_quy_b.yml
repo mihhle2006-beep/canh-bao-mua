@@ -26,7 +26,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von55, von56, von57, von58, von59, von60]
+        phan: [chuan, von55, von56, von57, von58, von59, von60, von61]
     runs-on: ubuntu-24.04
     defaults:
       run:
