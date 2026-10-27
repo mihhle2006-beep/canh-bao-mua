@@ -1,16 +1,16 @@
 {
- "ngay_quet": "2026-10-26",
- "luc": "2026-10-26 15:11",
- "phien": "2026-10-26",
+ "ngay_quet": "2026-10-27",
+ "luc": "2026-10-27 15:05",
+ "phien": "2026-10-27",
  "chien_luoc": [
   "quy_b",
   "xu_huong"
  ],
  "ma": {
-  "DPR": [
+  "DIG": [
    "quy_b"
   ],
-  "EIB": [
+  "DPR": [
    "quy_b"
   ],
   "HAG": [
@@ -22,16 +22,25 @@
   "HDC": [
    "quy_b"
   ],
+  "IDC": [
+   "quy_b"
+  ],
   "KDH": [
    "quy_b"
   ],
   "MCH": [
    "quy_b"
   ],
+  "MSN": [
+   "quy_b"
+  ],
   "MWG": [
    "quy_b"
   ],
   "NAB": [
+   "quy_b"
+  ],
+  "PDR": [
    "quy_b"
   ],
   "PLX": [
@@ -44,9 +53,6 @@
    "quy_b"
   ],
   "VJC": [
-   "quy_b"
-  ],
-  "VSC": [
    "quy_b"
   ]
  },
