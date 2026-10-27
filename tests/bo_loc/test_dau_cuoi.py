@@ -34,7 +34,7 @@ def test_chay_day_du_xuat_excel(thu_muc_du_lieu, monkeypatch):
     assert a["nguon_gia"] == "CSV" and "file" in a["nguon_co_ban"]
     assert os.path.exists(os.path.join(kq["thu_muc"], "tong_quan_loc.png"))
     assert os.path.exists(ch.FILE_LICH_SU)
-    assert os.path.basename(kq["file_chien_luoc"]) == "chien_luoc_ky_thuat.xlsx"
+    assert os.path.basename(kq["file_chien_luoc"]) == "chien_luoc_xu_huong.xlsx"
     with pd.ExcelFile(kq["file_chien_luoc"]) as x:
         assert x.sheet_names[0] == "TỔNG QUAN CHUNG" and {"TỔNG QUAN", "KỸ THUẬT", "BIẾN ĐỘNG"} <= set(x.sheet_names)
     assert set(kq["bang_ket_qua"]["BIẾN ĐỘNG"]["MÃ"]) <= {"AAA", "BBB", "CCC", "DDD", "EEE"}
