@@ -61,6 +61,12 @@ jobs:
         if: steps.cache_py.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
 
+      - name: Cài OCR tiếng Việt (đọc PDF scan / ký số trong tài liệu gốc – ptcp/ocr.py)
+        run: |
+          sudo apt-get update -q > /dev/null
+          sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
+          tesseract --list-langs 2>&1 | grep -q '^vie$' && echo 'OCR tiếng Việt: sẵn sàng'
+
       - name: Phân tích & gửi báo cáo
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
