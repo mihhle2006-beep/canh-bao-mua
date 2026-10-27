@@ -113,11 +113,19 @@ jobs:
           BAN_HTML: ${{ (inputs.ban_html == 'Nội bộ' || (github.event_name == 'schedule' && vars.BO_LOC_HTML == 'noi_bo')) && 'noi_bo' || 'ngoai' }}
         run: python -m bo_loc.gui_html --chien_luoc "${{ inputs.chien_luoc || 'quy_b,xu_huong' }}" $CHE_DO --che_do "$BAN_HTML" || true
 
+      - name: Báo cáo hiệu quả bộ lọc (1 lần / tháng – mã MUA sau 20 & 60 phiên so VN-Index)
+        if: github.event_name == 'schedule'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m bo_loc.hieu_qua --gui || true
+
       - name: Commit danh sách mã MUA
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add ma_mua_bo_loc.json
+          for f in lich_su_ma_mua_bo_loc.csv hieu_qua_bo_loc.json; do [ -f "$f" ] && git add "$f"; done
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0
           git commit -m "Quét định kỳ $(date -u +%F) – mã MUA cho canh-bao-mua"
           for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done

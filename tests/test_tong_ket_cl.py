@@ -524,3 +524,15 @@ def test_hang_uu_tien_trong_tin():
     k = {"ma": "FPT", "nhom": "MUA_MOI", "gia": 100.0, "tu": 98.0, "den": 101.0, "mt1": 107.0, "mt3": 121.0, "cl": 93.0,
          "ly_do": "MACD", "uu_tien": 2.0, "gia_mua": 100.0}
     assert diem_vao.tin_mua(k, "2026-10-27 10:15", "LO").split("\n")[0] == "🟢 MUA NGAY – FPT 100.00 (10:15 27/10) · ưu tiên ★2"
+
+
+def test_tin_tong_hop_mua():
+    """27/10/2026: ≥ 2 mã MUA cùng lần quét → 1 tin thứ tự theo ★, có hạn chót ATC."""
+    k = {"nhom": "VAO_NHU_MOI", "tu": 14.4, "den": 15.05, "cl": 14.11, "mt1": 14.79, "mt3": 15.48}
+    a = {**k, "ma": "HAG", "gia_mua": 14.45, "atc": True, "uu_tien": 2.0}
+    b = {**k, "ma": "VSC", "gia_mua": 14.35, "atc": True, "uu_tien": 1.0}
+    assert diem_vao.tin_tong_hop_mua([a], "2026-10-27 14:30") is None
+    t = diem_vao.tin_tong_hop_mua([a, b], "2026-10-27 14:30").split("\n")
+    assert t[0].startswith("📋 2 MÃ BÁO MUA CÙNG LÚC (14:30 27/10)")
+    assert t[1].startswith("   1. ★1 VSC 14.35 – ATC") and t[2].startswith("   2. ★2 HAG")
+    assert any("TRƯỚC 14:45" in x for x in t)

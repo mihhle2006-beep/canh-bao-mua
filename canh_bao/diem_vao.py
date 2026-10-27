@@ -231,6 +231,25 @@ def _von_nav(kq, gia, cl):
     return f"Khối lượng: {s}" if s else ""
 
 
+def tin_tong_hop_mua(ds, bay_gio):
+    """≥ 2 mã báo MUA trong cùng 1 lần quét 15' (người dùng 27/10/2026: HAG + VSC cùng lúc 14:30) → 1 tin thứ tự mua
+    theo ★ (★1 trước) để biết đặt mã nào trước khi thiếu tiền / suất; 0–1 mã → None. Tin chi tiết từng mã vẫn gửi riêng."""
+    if len(ds) < 2:
+        return None
+    from .tong_ket_cl import nhan_uu_tien
+    x = sorted(ds, key=lambda k: (k.get("uu_tien") if k.get("uu_tien") == k.get("uu_tien") and k.get("uu_tien")
+                                  is not None else 999))
+    d = [f"📋 {len(x)} MÃ BÁO MUA CÙNG LÚC ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – thứ tự đặt lệnh:"]
+    for i, k in enumerate(x, 1):
+        gia = muc_sau_mua(k)[0]
+        d.append(f"   {i}. {(nhan_uu_tien(k.get('uu_tien')) + ' ').lstrip()}{k['ma']} {_f(gia)} – "
+                 + ("ATC" if k.get("atc") else "mua ngay") + f" (vùng {_f(k['tu'])}–{_f(k['den'])})")
+    d.append("Đặt lần lượt từ trên xuống tới khi hết tiền / hết suất mã mới tuần này")
+    if any(k.get("atc") for k in x):
+        d.append("⏰ Lệnh ATC phải đặt TRƯỚC 14:45 (sau 14:45 sàn không nhận)")
+    return "\n".join(d)
+
+
 def tin_bo(kq, bay_gio):
     return (f"🚫 BỎ {kq['ma']} phiên {pd.Timestamp(bay_gio):%d/%m} – {kq['ly_do']}\n"
             f"(vùng mua {_f(kq['tu'])}–{_f(kq['den'])}; chờ bản tin tổng kết mới)")
