@@ -5,6 +5,8 @@
 # 6 nhóm song song (≤ 320 phút / nhóm). CONG_KHAI=1: log chỉ in số mã. Kết quả chỉ gửi Telegram (artifact giữ 1 ngày).
 # ĐỆM CHỮ TÀI LIỆU (cache_du_lieu/tai_lieu – chữ từng trang đã OCR, theo URL): mỗi nhóm khôi phục bản đệm chung (actions/cache),
 # đọc thêm tài liệu mới, gửi phần đệm lên artifact; job gop gộp lại lưu bản đệm mới → lần sau không tải / OCR lại.
+# KẾT QUẢ theo mã commit vào danh-muc du_lieu/bat_thuong_giai_thich/ → lần sau bỏ qua mã đã đọc tới năm mới nhất của kho
+# (Excel vẫn gồm đủ mã từ kết quả lưu).
 name: Bat thuong BCTC
 
 on:
@@ -87,7 +89,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
       - uses: actions/setup-python@v6
@@ -116,10 +118,23 @@ jobs:
         with:
           path: danh-muc/cache_du_lieu/tai_lieu
           key: tai-lieu-bt-${{ github.run_id }}
+      - name: Lưu kết quả theo mã vào danh-muc (lần sau bỏ qua mã đã đọc)
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          pip install -q -r requirements.txt > /dev/null
+          ls ../ra/*.json > /dev/null 2>&1 || { echo "Không có kết quả nhóm"; exit 0; }
+          python -m ptcp.giai_thich_bat_thuong --luu ../ra/*.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
+          git add du_lieu/bat_thuong_giai_thich
+          git commit -q -m "Bất thường BCTC – kết quả đọc giải thích $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
+          for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; sleep $((i * 5)); done
+          exit 1
       - name: Gộp Excel & gửi Telegram
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: |
-          pip install -q -r requirements.txt > /dev/null
           python -m ptcp.giai_thich_bat_thuong --gop ../ra/*.json --ra Bat_thuong_BCTC_giai_thich.xlsx --gui
