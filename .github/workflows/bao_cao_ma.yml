@@ -5,6 +5,7 @@
 # Đầu báo cáo: thẻ doanh nghiệp + khuyến nghị, rồi nón lịch sử (D2 dạng biểu đồ).
 # → gửi Telegram: "Chỉ file HTML" ('<MÃ> báo cáo dd-mm-yyyy.html') hoặc "File HTML + khuyến nghị" (tin tóm tắt
 #   khuyến nghị, vùng mua, cắt lỗ, mục tiêu… rồi file) · luôn lưu ở mục Artifacts của lần chạy (giữ 14 ngày).
+# → kèm BẢN GHI NHỚ (ptcp.ghi_nho: dữ kiện + BCTN / NQ HĐQT / BC quản trị trên CafeF, PDF scan đọc bằng OCR) gửi Telegram.
 name: Bao cao ma
 
 on:
@@ -33,7 +34,7 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-    timeout-minutes: 30
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v5
         with:
@@ -75,6 +76,16 @@ jobs:
           MA: ${{ inputs.ma }}
           GUI: ${{ inputs.noi_dung == 'Chỉ file HTML' && '--chi_html' || (inputs.noi_dung == 'File HTML + khuyến nghị' && ' ' || '--khong_gui') }}
         run: python bao_cao_ma.py "$MA" $GUI
+
+      - name: Bản ghi nhớ (dữ kiện + tài liệu CafeF đọc OCR – chiến lược, cổ đông lớn, phát hành…)
+        if: inputs.noi_dung != 'Không gửi (chỉ lưu Artifacts)'
+        continue-on-error: true
+        timeout-minutes: 20
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          MA: ${{ inputs.ma }}
+        run: python -m ptcp.ghi_nho --ma "$MA" --gui
 
       - name: Lưu file báo cáo (Artifacts)
         if: always()
