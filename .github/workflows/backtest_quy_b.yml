@@ -10,6 +10,7 @@
 #   von57 – mua lại sau lệnh thua cùng mã (≤ 60 phiên): giảm KL tín hiệu mới / tăng KL mua lại
 #   von58 – hệ phụ bắt nhịp hồi ngắn (RSI(2) – mã top 100 / chỉ số) ghép quỹ Bứt Phá bằng tiền nhàn rỗi ≤ 15 / 30%
 #   von59 – phòng hộ bán VN30F (VN-Index < MA200 / MA50, NAV B sụt ≥ 10%), 50 / 100% giá trị cổ phiếu
+#   von66 – gộp tiêu chí có ích thành 1–3 chiến lược (theo trạng thái VN-Index) + ghép vào Quỹ Bứt Phá
 #   von65du / von65 – bộ lọc lần 2 đủ tiêu chí (tính & lưu cache bo_loc_mo_rong/ → chấm)
 #   von64 – backtest bộ lọc bo_loc (xu_huong, ky_thuat, diem_mua, bat_day, sieu_cp) point-in-time
 #   von63 – ★ còn thắng ngẫu nhiên? bỏ / chỉ 1 yếu tố ★ (cắt lỗ sát · lịch sử mã · đỉnh 52T)
@@ -30,7 +31,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 / von62 / von63 / von64 / von65du / von65 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 / von62 / von63 / von64 / von65du / von65 / von66 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -53,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von55, von56, von57, von58, von59, von60, von61, von62, von63, von64, von65du, von65]
+        phan: [chuan, von55, von56, von57, von58, von59, von60, von61, von62, von63, von64, von65du, von65, von66]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -82,7 +83,7 @@ jobs:
         working-directory: .
         run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
       - uses: actions/checkout@v5                 # phần von64: bộ lọc bo_loc của chính repo này
-        if: steps.chon.outputs.chay && (matrix.phan == 'von64' || matrix.phan == 'von65du' || matrix.phan == 'von65')
+        if: steps.chon.outputs.chay && (matrix.phan == 'von64' || matrix.phan == 'von65du' || matrix.phan == 'von65' || matrix.phan == 'von66')
         with:
           path: cbm
           sparse-checkout: bo_loc
@@ -122,7 +123,7 @@ jobs:
             gia-san-
             gia-ngay-
       - name: Cache dữ liệu bộ lọc lần 2 (von65du lưu · von65 đọc)
-        if: steps.chon.outputs.chay && (matrix.phan == 'von65du' || matrix.phan == 'von65')
+        if: steps.chon.outputs.chay && (matrix.phan == 'von65du' || matrix.phan == 'von65' || matrix.phan == 'von66')
         uses: actions/cache@v5
         with:
           path: danh-muc/bo_loc_mo_rong
@@ -147,6 +148,7 @@ jobs:
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
             von65du) export CHI_VON65DU=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # bộ lọc lần 2: tính & lưu cache
+            von66) export CHI_VON66=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # gộp 1–3 chiến lược
             von65) export CHI_VON65=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # bộ lọc lần 2: chấm từ cache
             von64) export CHI_VON64=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # backtest bộ lọc bo_loc
             von63) export CHI_VON63=1; unset SO_NN ;;          # ★ so 50 ngẫu nhiên, tách 3 yếu tố
