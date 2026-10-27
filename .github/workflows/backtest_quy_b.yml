@@ -13,6 +13,7 @@
 #   von67 – mua bán theo Động lượng (thoát như Quỹ Bứt Phá) vs Quỹ Bứt Phá, gộp lệnh, chia vốn 50/50
 #   von68 – bộ lọc bù dùng tiền Quỹ Bứt Phá để không (LN bất ngờ, dẫn dắt lúc chỉnh, chất lượng tăng trưởng)
 #   von69 – bù: rổ phòng thủ cổ tức khi thị trường xấu · B + Trứng vàng + bán VN30F khi NAV −10%
+#   von70 – lãi vay thực tế của DN tăng mạnh mà DN vẫn tốt (thay lợi suất trái phiếu DN)
 #   von66 – gộp tiêu chí có ích thành 1–3 chiến lược (theo trạng thái VN-Index) + ghép vào Quỹ Bứt Phá
 #   von65du / von65 – bộ lọc lần 2 đủ tiêu chí (tính & lưu cache bo_loc_mo_rong/ → chấm)
 #   von64 – backtest bộ lọc bo_loc (xu_huong, ky_thuat, diem_mua, bat_day, sieu_cp) point-in-time
@@ -34,7 +35,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 / von62 / von63 / von64 / von65du / von65 / von66 / von67 / von68 / von69 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 / von62 / von63 / von64 / von65du / von65 / von66 / von67 / von68 / von69 / von70 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -57,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von55, von56, von57, von58, von59, von60, von61, von62, von63, von64, von65du, von65, von66, von67, von68, von69]
+        phan: [chuan, von55, von56, von57, von58, von59, von60, von61, von62, von63, von64, von65du, von65, von66, von67, von68, von69, von70]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -154,6 +155,7 @@ jobs:
             von67) export CHI_VON67=1; unset SO_NN ;;          # mua bán theo động lượng vs Quỹ Bứt Phá
             von68) export CHI_VON68=1; unset SO_NN ;;          # bộ lọc bù dùng tiền B để không
             von69) export CHI_VON69=1; unset SO_NN ;;          # bù: phòng thủ cổ tức · Trứng + VN30F
+            von70) export CHI_VON70=1; unset SO_NN ;;          # lãi vay thực tế tăng mà DN tốt
             von66) export CHI_VON66=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # gộp 1–3 chiến lược
             von65) export CHI_VON65=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # bộ lọc lần 2: chấm từ cache
             von64) export CHI_VON64=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # backtest bộ lọc bo_loc
