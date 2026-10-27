@@ -3,6 +3,8 @@
 # tiền, biên gộp… + riêng theo ngành) → bước 2–3 đọc báo cáo thường niên + BCTC kiểm toán năm đó tìm lời giải thích, đối
 # chiếu kế hoạch đầu tư với chi đầu tư / tài sản dở dang (ptcp/giai_thich_bat_thuong.py) → Excel gửi Telegram.
 # 6 nhóm song song (≤ 320 phút / nhóm). CONG_KHAI=1: log chỉ in số mã. Kết quả chỉ gửi Telegram (artifact giữ 1 ngày).
+# ĐỆM CHỮ TÀI LIỆU (cache_du_lieu/tai_lieu – chữ từng trang đã OCR, theo URL): mỗi nhóm khôi phục bản đệm chung (actions/cache),
+# đọc thêm tài liệu mới, gửi phần đệm lên artifact; job gop gộp lại lưu bản đệm mới → lần sau không tải / OCR lại.
 name: Bat thuong BCTC
 
 on:
@@ -49,6 +51,12 @@ jobs:
           pip install -q -r requirements.txt > /dev/null
           sudo apt-get update -q > /dev/null
           sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
+      - name: Khôi phục đệm chữ tài liệu (lần chạy trước)
+        uses: actions/cache/restore@v4
+        with:
+          path: danh-muc/cache_du_lieu/tai_lieu
+          key: tai-lieu-bt-${{ github.run_id }}
+          restore-keys: tai-lieu-bt-
       - name: Đọc tài liệu tìm giải thích (nhóm ${{ matrix.nhom }}/6)
         env:
           MA: ${{ inputs.ma }}
@@ -58,6 +66,13 @@ jobs:
         with:
           name: bt-${{ matrix.nhom }}
           path: ra/*.json
+          retention-days: 1
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: tl-${{ matrix.nhom }}
+          path: danh-muc/cache_du_lieu/tai_lieu
           retention-days: 1
           if-no-files-found: ignore
 
@@ -85,6 +100,22 @@ jobs:
           pattern: bt-*
           merge-multiple: true
           path: ra
+      - name: Khôi phục đệm chữ cũ
+        uses: actions/cache/restore@v4
+        with:
+          path: danh-muc/cache_du_lieu/tai_lieu
+          key: tai-lieu-bt-${{ github.run_id }}
+          restore-keys: tai-lieu-bt-
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: tl-*
+          merge-multiple: true
+          path: danh-muc/cache_du_lieu/tai_lieu
+      - name: Lưu đệm chữ tài liệu (cũ + mới) cho lần sau
+        uses: actions/cache/save@v4
+        with:
+          path: danh-muc/cache_du_lieu/tai_lieu
+          key: tai-lieu-bt-${{ github.run_id }}
       - name: Gộp Excel & gửi Telegram
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
