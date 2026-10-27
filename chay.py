@@ -355,7 +355,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     print(f"Điểm vào 15': {len(ds)} mã trong danh sách mua phiên {bay_gio:%d/%m} · cách vào {bien_the} ({nguon})")
     tt = doc_trang_thai()
     luu = tt.setdefault("_15p", {})
-    bang, so_bao = [], 0
+    bang, so_bao, moi_mua = [], 0, []
     for z in ds:
         dp = bo_nen_chua_dong(nen_15p(z["ma"], bay_gio), C.KHUNG_PHUT, bay_gio)
         kq = diem_vao.danh_gia(z, dp, bay_gio, bien_the)
@@ -369,10 +369,15 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                 diem_vao.tin_bo(kq, bay_gio)
             anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
             gui(nd, rieng_tu=kq["ma"] in vt, anh=anh) if not khong_gui else _in(nd, rieng_tu=kq["ma"] in vt)
+            if kq["trang_thai"] == "MUA" and kq["ma"] not in vt:
+                moi_mua.append(kq)
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
             so_bao += 1
+    th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio)        # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự đặt lệnh
+    if th:
+        gui(th) if not khong_gui else _in(th)
     tt["_15p_hom_nay"] = {"ngay": f"{bay_gio:%Y-%m-%d}", "cach_vao": bien_the,
                           "ds": [{k: (None if isinstance(v, float) and v != v else v) for k, v in r.items()}
                                  for r in bang]}

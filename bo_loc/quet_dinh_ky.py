@@ -146,7 +146,9 @@ def main(argv=None):
             print(f"  ⚠ {cl}: {l}")
         return 1
     if not a.chi_ptdttc:
-        ghi(gop, loi, phien, a.file, ds_cl=ds_cl)
+        du_lieu = ghi(gop, loi, phien, a.file, ds_cl=ds_cl)
+        from .hieu_qua import ghi_lich_su
+        ghi_lich_su(du_lieu)                               # lịch sử mã MUA → đo hiệu quả bộ lọc (bo_loc.hieu_qua)
     if ptdttc:
         with open(FILE_PTDTTC_KQ, "w", encoding="utf-8") as f:
             json.dump({"phien": phien, "ma": quet.ptdttc_kq}, f, ensure_ascii=False, indent=1)
