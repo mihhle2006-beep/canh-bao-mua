@@ -207,7 +207,9 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     dau = "⏰ MUA ATC" if kq.get("atc") else "🟢 MUA NGAY"
     # tin gọn (người dùng 17/10/2026): giá đặt + nhóm / vùng / cắt lỗ / mục tiêu – bỏ dòng tiêu chí & khối lượng;
     # 19/10/2026: mỗi mục 1 dòng, ghi đủ chữ (đọc trên điện thoại)
-    d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
+    from .tong_ket_cl import nhan_uu_tien
+    ut = nhan_uu_tien(kq.get("uu_tien"))                 # nhiều tin cùng lúc → thấy mã nào ưu tiên (★1 cao nhất)
+    d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})" + (f" · ưu tiên {ut}" if ut else ""),
          dong_dat_lenh(kq, bien_the, gia),
          f"Nhóm: {TEN_NHOM.get(kq['nhom'], kq['nhom'])}",
          f"Vùng mua: {_f(kq['tu'])} – {_f(kq['den'])}",
