@@ -1,0 +1,87 @@
+# TRA CỨU TỶ LỆ SỞ HỮU (chạy tay) – công cụ riêng cong_cu/so_huu/so_huu.py, KHÔNG thuộc bot:
+# báo cáo thường niên (CafeF) → tải, OCR tiếng Việt bản scan / trang cơ cấu cổ đông → dò % Nhà nước · nước ngoài ·
+# tổ chức · HĐQT theo năm (kèm đoạn trích để kiểm tay) + Vietcap (nước ngoài cuối năm, cơ cấu hiện tại) → Excel gửi
+# Telegram. Mỗi nhóm mã 1 job song song (OCR chậm).
+name: Tra cứu sở hữu
+
+on:
+  workflow_dispatch:
+    inputs:
+      nhom1:
+        description: "Nhóm mã 1"
+        default: "GMD,VSC,PHP,CDN,MVN,DXP,PDN,SGP,ILB,TCL,DVP"
+      nhom2:
+        description: "Nhóm mã 2"
+        default: "HAH,VOS,VTO,PVT,GSP,VIP,VNA"
+      nhom3:
+        description: "Nhóm mã 3 (bỏ trống nếu không cần)"
+        default: "TMS,STG,VNL,SFI,PJT,HTV,SCS,NCT,SAS,VTP"
+      tu:
+        description: "Từ năm"
+        default: "2018"
+      den:
+        description: "Đến năm"
+        default: "2025"
+
+permissions:
+  contents: read
+
+jobs:
+  tai:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        nhom: [nhom1, nhom2, nhom3]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: cong_cu/so_huu
+      - name: Cài OCR tiếng Việt
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ocrmypdf tesseract-ocr-vie poppler-utils > /dev/null
+          pip install -q requests
+      - name: Tải & dò BCTN
+        if: inputs[matrix.nhom] != ''
+        env:
+          MA: ${{ inputs[matrix.nhom] }}
+        run: python cong_cu/so_huu/so_huu.py tai --ma "$MA" --tu ${{ inputs.tu }} --den ${{ inputs.den }} --ra phan_${{ matrix.nhom }}.json
+      - uses: actions/upload-artifact@v6
+        if: always() && hashFiles('phan_*.json') != ''
+        with:
+          name: phan-${{ matrix.nhom }}
+          path: phan_${{ matrix.nhom }}.json
+          retention-days: 7
+
+  gop:
+    needs: tai
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: cong_cu/so_huu
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: phan-*
+          merge-multiple: true
+      - name: Gộp Excel & gửi Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          pip install -q pandas openpyxl requests
+          python cong_cu/so_huu/so_huu.py gop phan_*.json --tu ${{ inputs.tu }} --den ${{ inputs.den }} --ra So_huu_${{ inputs.tu }}_${{ inputs.den }}.xlsx
+          f=So_huu_${{ inputs.tu }}_${{ inputs.den }}.xlsx
+          if [ -n "$TELEGRAM_TOKEN" ]; then
+            curl -sS -o /dev/null -w "Telegram %{http_code}\n" -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$f" \
+              -F caption="Tỷ lệ sở hữu ${{ inputs.tu }}–${{ inputs.den }} (BCTN CafeF + Vietcap) – số dò tự động, cột trích để kiểm" \
+              "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendDocument"
+          fi
+      - uses: actions/upload-artifact@v6
+        with:
+          name: so-huu
+          path: So_huu_*.xlsx
+          retention-days: 14
