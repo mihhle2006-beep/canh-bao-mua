@@ -4,9 +4,13 @@
 # Cache: danh-muc du_lieu/chien_luoc_dn/<MÃ>.json (mã đã đủ năm không đọc lại). Mỗi lượt: chia mã chưa xong thành tối đa
 # 14 nhóm chạy song song (≤ 320 phút / nhóm) → gộp cache, commit vào danh-muc → còn mã chưa xong thì TỰ CHẠY LƯỢT SAU
 # (tối đa vong_toi_da lượt) → đủ mã: Excel tổng hợp gửi Telegram. CONG_KHAI=1: log chỉ in số mã.
+# CHỈ CHẠY BAN ĐÊM: lịch 22:17 giờ VN mỗi ngày; lượt sau chỉ tự gọi khi đang trong 21:00–03:59 giờ VN (sáng ra dừng, đêm sau
+# lịch chạy tiếp phần còn lại). Đã đủ mã → lịch không đọc gì, không gửi lại Telegram.
 name: Doc bao cao thuong nien
 
 on:
+  schedule:
+    - cron: "17 15 * * *"               # 22:17 giờ VN
   workflow_dispatch:
     inputs:
       ma:
@@ -60,7 +64,7 @@ jobs:
           MA: ${{ inputs.ma }}
         run: |
           pip install -q -r requirements.txt > /dev/null
-          ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu }} --den ${{ inputs.den }} | tail -1)
+          ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} | tail -1)
           nhom=$(DS="$ds" python -c "
           import json, os
           ds = [m for m in os.environ['DS'].split(',') if m]
@@ -102,10 +106,16 @@ jobs:
           pip install -q -r requirements.txt > /dev/null
           sudo apt-get update -q > /dev/null
           sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
-      - name: Đọc BCTN (dừng nhận việc mới sau 320 phút)
+      - name: Đọc BCTN (dừng nhận việc mới trước 06:30 giờ VN)
         env:
           NHOM: ${{ matrix.nhom }}
-        run: python -m ptcp.chien_luoc_dn doc --ma "$NHOM" --tu ${{ inputs.tu }} --den ${{ inputs.den }} --han_phut 320
+        run: |
+          # dừng nhận việc mới trước 06:30 giờ VN (tối đa 320 phút) – chỉ chạy ban đêm
+          con=$(( ( $(TZ=Asia/Ho_Chi_Minh date -d 'today 06:30' +%s) - $(date +%s) ) / 60 ))
+          [ "$con" -lt 0 ] && con=$(( con + 1440 ))
+          han=$(( con < 320 ? con : 320 )); [ "$han" -lt 20 ] && han=20
+          echo "Đọc tối đa $han phút"
+          python -m ptcp.chien_luoc_dn doc --ma "$NHOM" --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} --han_phut $han
       - name: Gom cache nhóm này
         if: always()
         env:
@@ -154,7 +164,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           git add du_lieu/chien_luoc_dn
-          git commit -q -m "Chiến lược DN từ BCTN – lượt ${{ inputs.vong }} $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
+          git commit -q -m "Chiến lược DN từ BCTN – lượt ${{ inputs.vong || '1' }} $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
           for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; sleep $((i * 5)); done
           exit 1
       - name: Còn mã chưa xong → chạy lượt sau · xong → tổng hợp gửi Telegram
@@ -165,12 +175,15 @@ jobs:
           MA: ${{ inputs.ma }}
         run: |
           pip install -q -r requirements.txt > /dev/null
-          con=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu }} --den ${{ inputs.den }} | tail -1 | tr ',' '\n' | grep -c . || true)
-          echo "Còn $con mã chưa xong sau lượt ${{ inputs.vong }}"
-          if [ "$con" -gt 0 ] && [ "${{ inputs.vong }}" -lt "${{ inputs.vong_toi_da }}" ]; then
-            gh workflow run doc_bctn.yml -R "${{ github.repository }}" -f ma="$MA" -f tu=${{ inputs.tu }} -f den=${{ inputs.den }} \
-              -f vong=$(( ${{ inputs.vong }} + 1 )) -f vong_toi_da=${{ inputs.vong_toi_da }}
-            echo "→ đã gọi lượt $(( ${{ inputs.vong }} + 1 ))"
-          else
+          con=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} | tail -1 | tr ',' '\n' | grep -c . || true)
+          echo "Còn $con mã chưa xong sau lượt ${{ inputs.vong || '1' }}"
+          gio=$(TZ=Asia/Ho_Chi_Minh date +%H)
+          if [ "$con" -gt 0 ] && { [ "$gio" -ge 21 ] || [ "$gio" -lt 4 ]; } && [ "${{ inputs.vong || '1' }}" -lt "${{ inputs.vong_toi_da || '8' }}" ]; then
+            gh workflow run doc_bctn.yml -R "${{ github.repository }}" -f ma="$MA" -f tu=${{ inputs.tu || '2020' }} -f den=${{ inputs.den || '2025' }} \
+              -f vong=$(( ${{ inputs.vong || '1' }} + 1 )) -f vong_toi_da=${{ inputs.vong_toi_da || '8' }}
+            echo "→ đã gọi lượt $(( ${{ inputs.vong || '1' }} + 1 ))"
+          elif [ "$con" -gt 0 ]; then
+            echo "→ ngoài giờ đêm – dừng, đêm sau lịch chạy tiếp $con mã"
+          elif [ "${{ needs.doc.result }}" != "skipped" ]; then
             python -m ptcp.chien_luoc_dn tong_hop --gui
           fi
