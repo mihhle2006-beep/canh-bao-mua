@@ -1,0 +1,48 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log CÔNG KHAI); code ở repo riêng tư danh-muc (checkout vào danh-muc/).
+# TỔ CHỨC PHÁT HÀNH TRÁI PHIẾU TIN CẬY (chạy tay): tin công bố về trái phiếu (Vietcap) từ 2020 – phát hành, thanh toán, mua lại
+# trước hạn, SỰ CỐ (chậm trả, gia hạn, tái cấu trúc…) + tài chính kho BCTC → TIN CẬY / THEO DÕI / CẢNH BÁO → Excel Telegram.
+# CONG_KHAI=1: log chỉ in số mã. Không có giá trái phiếu – tra trên app CTCK khi cần mua.
+name: To chuc phat hanh trai phieu
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Mã, phân cách dấu phẩy – bỏ trống = toàn bộ HOSE + HNX"
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  loc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Lọc & gửi Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          MA: ${{ inputs.ma }}
+        run: |
+          pip install -q -r requirements.txt > /dev/null
+          python -m ptcp.to_chuc_phat_hanh ${MA:+--ma "$MA"} --gui
