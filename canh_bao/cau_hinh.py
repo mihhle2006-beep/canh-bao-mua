@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 CẤU HÌNH – sửa tại đây. Giá theo NGHÌN ĐỒNG.
-Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược "ky_thuat" & "diem_mua"), sắp theo 4 khung:
+Tiêu chí lấy từ bộ lọc cổ phiếu (chiến lược cũ "ky_thuat" & "diem_mua" – đã bỏ khỏi bo_loc 27/10/2026, bot giữ bản riêng ở đây), sắp theo 4 khung:
   TUẦN  – định hướng, có QUYỀN PHỦ QUYẾT
   NGÀY  – xu hướng & sức khoẻ (các tiêu chí BẮT BUỘC của chiến lược ky_thuat + cộng điểm)
   GIỜ   – động lượng trong phiên xác nhận

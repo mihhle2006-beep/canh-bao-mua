@@ -9,10 +9,10 @@ from bo_loc import chien_luoc as clm
 from bo_loc.loc import bang_ket_qua, danh_gia, gan_dat, nhan_dat
 from bo_loc.tieu_chi import TIEU_CHI, kiem_tra, ten_tieu_chi
 
-CHIEN_LUOC_GOC = ["quy_b", "ky_thuat", "xu_huong", "diem_mua", "bat_day", "gia_tri", "tich_luy_vuot", "tuy_chinh", "sieu_cp"]
+CHIEN_LUOC_GOC = ["quy_b", "xu_huong", "tuy_chinh"]          # 27/10/2026 bỏ chiến lược backtest không hiệu quả
 
 
-def test_du_9_chien_luoc_va_deu_hop_le():
+def test_du_chien_luoc_va_deu_hop_le():
     ds = clm.tai_tat_ca(thu_muc_rieng=None)
     assert set(ds) == set(CHIEN_LUOC_GOC)                                 # đã gộp, bỏ bản *_goc
     for ten, cl in ds.items():
@@ -40,9 +40,9 @@ def test_khoa_sai_bao_loi(tmp_path):
 
 
 def test_ap_nguong_khong_lam_hong_ban_goc():
-    cl = clm.lay("ky_thuat", thu_muc_rieng=None)
+    cl = clm.lay("xu_huong", thu_muc_rieng=None)
     c2 = clm.ap_nguong(cl, {"gtgd_min": 1, "khong_co": 9})
-    assert c2["bat_buoc"]["gtgd_min"] == 1 and cl["bat_buoc"]["gtgd_min"] == 5
+    assert c2["bat_buoc"]["gtgd_min"] == 1 and cl["bat_buoc"]["gtgd_min"] == 10
     assert "khong_co" not in c2["bat_buoc"]
 
 
@@ -110,17 +110,18 @@ def test_ds_hose_bao_loi_ro_nguon(tmp_path, monkeypatch):
 
 
 def test_ten_cu_tu_chuyen_sang_chien_luoc_moi():
-    cl = clm.lay("rui_ro_cao", thu_muc_rieng=None)
-    assert cl["bat_buoc"]["beta_min"] == 1.2 and "tin_hieu_dao_chieu" in cl["bat_buoc"]
-    assert "roe_min" in clm.lay("tieu_chuan", thu_muc_rieng=None)["bat_buoc"]          # → gia_tri
+    cl = clm.lay("rui_ro_cao_xu_huong", thu_muc_rieng=None)
+    assert cl["bat_buoc"]["beta_min"] == 1.2 and "tren_ma50" in cl["bat_buoc"]
+    for cu in ("bat_day", "gia_tri", "ky_thuat", "sieu_cp", "tieu_chuan"):                 # đã bỏ → xu_huong
+        assert clm.lay(cu, thu_muc_rieng=None)["ten"] == "Xu hướng"
 
 
 def test_them_bo_tieu_chi_luc_chay():
-    cl = clm.lay("gia_tri", thu_muc_rieng=None)
-    c2 = clm.them_bot(cl, "von_hoa_min=300,gtgd_min=2,rsi_trong=30:60,pe_duoi_tv_nganh=", "tren_ma200")
+    cl = clm.lay("xu_huong", thu_muc_rieng=None)
+    c2 = clm.them_bot(cl, "von_hoa_min=300,gtgd_min=2,rsi_trong=30:60,pe_max=", "tren_ma50")
     assert c2["bat_buoc"]["von_hoa_min"] == 300 and c2["bat_buoc"]["rsi_trong"] == (30, 60)
-    assert c2["bat_buoc"]["pe_duoi_tv_nganh"] is None and "pe_duoi_tv_nganh" not in c2["cong_diem"]   # chuyển sang bắt buộc
-    assert "tren_ma200" not in c2["bat_buoc"] and cl["bat_buoc"]["von_hoa_min"] == 1000              # bản gốc không đổi
+    assert c2["bat_buoc"]["pe_max"] is None and "pe_max" not in c2["cong_diem"]                    # chuyển sang bắt buộc
+    assert "tren_ma50" not in c2["bat_buoc"] and "von_hoa_min" not in cl["bat_buoc"]               # bản gốc không đổi
     with pytest.raises(SystemExit, match="khong_co"):
         clm.them_bot(cl, "khong_co=1")
     with pytest.raises(SystemExit, match="rsi_duoi"):

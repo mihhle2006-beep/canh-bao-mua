@@ -10,7 +10,7 @@ from bo_loc.cli import chay
 from tests.bo_loc.test_chien_luoc_loc import CHIEN_LUOC_GOC
 
 
-def _tham_so(d, chien_luoc="ky_thuat", them=()):
+def _tham_so(d, chien_luoc="xu_huong", them=()):
     return ["--ma", "AAA,BBB,CCC,DDD,EEE", "--thu_muc_csv", str(d / "gia"), "--vnindex", str(d / "vnindex.csv"),
             "--co_ban", str(d / "co_ban.csv"), "--khong_online_co_ban", "--khong_cache",
             "--thu_muc_ket_qua", str(d), "--chien_luoc", chien_luoc, "--gtgd_min", "0", "--klgd_min", "0", *them]
@@ -49,7 +49,7 @@ def test_moi_chien_luoc_deu_chay(thu_muc_du_lieu, monkeypatch, ten):
 
 def test_lan_chay_thu_hai_bao_thay_doi(thu_muc_du_lieu, monkeypatch, capsys):
     monkeypatch.chdir(thu_muc_du_lieu)
-    pd.DataFrame({"ngay": ["2000-01-03"], "chien_luoc": ["ky_thuat"], "ma": ["ZZZ"], "diem": ["50"],
+    pd.DataFrame({"ngay": ["2000-01-03"], "chien_luoc": ["xu_huong"], "ma": ["ZZZ"], "diem": ["50"],
                   "trang_thai": ["✔"]}).to_csv(ch.FILE_LICH_SU, index=False)
     chay(_tham_so(thu_muc_du_lieu, them=["--khong_bieu_do", "--khong_danh_gia"]))
     out = capsys.readouterr().out
@@ -76,7 +76,7 @@ def test_chay_co_phan_tich_tai_chinh_10_tieu_chi(thu_muc_du_lieu, monkeypatch):
     monkeypatch.setattr(cli, "_cai_tuy_chon", lambda: None)
     monkeypatch.setattr(cli.nguon_cb, "lay_online", lambda *a, **k: {})
     monkeypatch.setattr(cli.nguon_bctc, "lay_bctc_nam", lambda ma, *a, **k: dict(bc(), nguon="Yahoo"))
-    ts = [x for x in _tham_so(thu_muc_du_lieu, "gia_tri", ["--khong_bieu_do"]) if x != "--khong_online_co_ban"]
+    ts = [x for x in _tham_so(thu_muc_du_lieu, "xu_huong", ["--khong_bieu_do"]) if x != "--khong_online_co_ban"]
     kq = chay(ts)
     fa_bang = kq["bang_ket_qua"]["PHÂN TÍCH TÀI CHÍNH"]
     assert not fa_bang.empty and fa_bang.iloc[8, 1] == "Rất tốt"                   # ROE

@@ -66,10 +66,12 @@ def tai_tat_ca(thu_muc_rieng=THU_MUC_RIENG):
     return ds
 
 
-# Tên cũ (trước khi gộp) → (tên mới, tiêu chí thêm)
-TEN_CU = {"rui_ro_cao": ("bat_day", {"beta_min": 1.2}), "rui_ro_cao_goc": ("bat_day", {"beta_min": 1.2}),
-          "rui_ro_cao_xu_huong": ("xu_huong", {"beta_min": 1.2}), "co_ban": ("gia_tri", {}),
-          "tieu_chuan": ("gia_tri", {}), "gia_tri_goc": ("gia_tri", {})}
+# Tên cũ (trước khi gộp) → (tên mới, tiêu chí thêm). 27/10/2026: bỏ các chiến lược backtest không hiệu quả (von64–66:
+# bat_day, diem_mua, gia_tri, tich_luy_vuot, sieu_cp không vượt rổ cả 2 giai đoạn; ky_thuat trùng xu_huong) → còn
+# quy_b (giao dịch), xu_huong (theo dõi) và tuy_chinh; tên cũ chuyển sang xu_huong.
+_BO = ("bat_day", "diem_mua", "gia_tri", "tich_luy_vuot", "sieu_cp", "ky_thuat", "rui_ro_cao", "rui_ro_cao_goc", "co_ban",
+       "tieu_chuan", "gia_tri_goc")
+TEN_CU = {**{k: ("xu_huong", {}) for k in _BO}, "rui_ro_cao_xu_huong": ("xu_huong", {"beta_min": 1.2})}
 
 
 def doc_gia_tri(chuoi):

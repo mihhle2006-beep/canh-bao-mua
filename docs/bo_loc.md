@@ -57,7 +57,7 @@ theo dõi mỗi mã **4 phiên kế tiếp**: Bo_Loc lọc lại vẫn đạt ho
   Không còn dùng cắt lỗ thống nhất cũ hay mục tiêu kỹ thuật (đỉnh cũ, Fibo…). Các tiêu chí `upside_min`, `rr_min`
   đã bỏ khỏi mọi chiến lược (vẫn dùng được qua `--them` nếu muốn).
 - Muốn cách đánh giá cũ: `THEO_CHIEN_LUOC_TT = False` trong `bo_loc/cau_hinh.py`. Chiến lược cũ vẫn chạy được, VD
-  `--chien_luoc ky_thuat`.
+  `--chien_luoc xu_huong`.
 - Lõi `bo_loc/loi` **dùng thẳng ptcp** (không còn bản sao) – xem *Đồng bộ với ptcp*.
 
 ## Chạy nhanh trên Colab
@@ -82,7 +82,7 @@ print("Đã nạp", ZIP, "| phiên bản", bo_loc.__version__)
 ```
 
 ```python
-kq = chay(["--nhom", "hose", "--chien_luoc", "diem_mua"])
+kq = chay(["--nhom", "hose", "--chien_luoc", "xu_huong"])
 display(kq["ket_luan"])
 ```
 
@@ -153,28 +153,27 @@ Ngân hàng/CK/bảo hiểm bỏ 4 tiêu chí không phù hợp (biên gộp, th
 
 - Bảng thứ 5 **PHÂN TÍCH TÀI CHÍNH** trong `chien_luoc_<tên chiến lược>.xlsx` (tô màu theo 5 mức, rê chuột xem giải thích).
 - Điểm 0–100 (`fa_diem`) đưa vào trụ cột *Chất lượng*; ≥ 2 tiêu chí Nguy hiểm → **cờ đỏ**.
-- Tiêu chí lọc mới: `fa_khong_nguy_hiem` (bắt buộc trong `gia_tri`, cộng điểm ở `xu_huong`, `bat_day`), `fa_diem_min`.
+- Tiêu chí lọc mới: `fa_khong_nguy_hiem` (cộng điểm ở `xu_huong`), `fa_diem_min`.
 
-## Chiến lược (đã gộp – 5 phong cách + tự đặt)
+## Chiến lược (27/10/2026: chỉ giữ chiến lược backtest còn tác dụng)
 
 | Chiến lược | Dùng khi |
 |---|---|
-| `quy_b` *(mặc định)* | Chiến lược đang áp dụng – Quỹ Bứt Phá: hệ B, top 100 GTGD, thoát 2R – MA10 tuần – **cùng tiêu chí bot `canh-bao-mua`** |
-| `ky_thuat` | Lọc tổng quát: xu hướng + cơ bản tối thiểu (bộ tiêu chí cũ của bot) |
-| `xu_huong` | Mua theo đà: giá > MA50 > MA200, RSI 50–72, mạnh hơn VN-Index, có lãi |
-| `diem_mua` | Điểm vào: MACD ngày vừa cắt lên |
-| `bat_day` | Hồi phục có xác nhận: RSI 25–45 + tín hiệu đảo chiều, có lãi, P/E ≤ 20 |
-| `gia_tri` | Rẻ mà tốt: ROE ≥ 15%, P/E ≤ 10, P/B ≤ 2, LN quý ≥ cùng kỳ, giá > MA200 (+ cộng điểm cổ tức, nợ, FCF…) |
-| `tich_luy_vuot` | Tín hiệu "Tích lũy và Vượt": nền > 20 phiên (biên độ ≤ 15%), KL > 5× TB nền, giá tăng > 5%, vượt đỉnh nền. Đổi ngưỡng: `--them tich_luy_vuot=40:3:3` |
+| `quy_b` *(mặc định)* | Chiến lược GIAO DỊCH – Quỹ Bứt Phá: hệ B, top 100 GTGD, thoát 2R – MA10 tuần – **cùng tiêu chí bot `canh-bao-mua`** |
+| `xu_huong` | Danh sách THEO DÕI (không đặt lệnh): giá > MA50 > MA200, RSI 50–72, mạnh hơn VN-Index, có lãi |
 | `tuy_chinh` | Tự đặt (sửa file `bo_loc/chien_luoc/tuy_chinh.py` hoặc JSON trong `chien_luoc_rieng/`) |
+
+Đã bỏ (backtest von64–67, 2014–2026, point-in-time): `bat_day` (thua rổ), `diem_mua` (sát rổ), `gia_tri` (chỉ tốt trước
+2020), `tich_luy_vuot` (quá ít tín hiệu), `sieu_cp` (âm sau 2020), `ky_thuat` (trùng `xu_huong`) – tên cũ tự chuyển sang
+`xu_huong`. Mua bán theo động lượng (von67) CAGR 3,1% so với Quỹ Bứt Phá 19,8% → chỉ dùng để theo dõi.
 
 **Ghép tiêu chí lúc chạy** thay cho các bản biến thể:
 
 ```python
 chay(["--chien_luoc", "xu_huong", "--them", "beta_min=1.2"])                # xu hướng rủi ro cao
-chay(["--chien_luoc", "bat_day", "--them", "beta_min=1.2", "--rui_ro", "0.5"])  # bắt đáy rủi ro cao
-chay(["--chien_luoc", "gia_tri", "--them", "von_hoa_min=300,gtgd_min=2"])   # nới điều kiện
-chay(["--chien_luoc", "gia_tri", "--bo", "tren_ma200"])                     # bỏ 1 tiêu chí
+chay(["--chien_luoc", "xu_huong", "--them", "beta_min=1.2", "--rui_ro", "0.5"])  # theo đà, rủi ro cao
+chay(["--chien_luoc", "xu_huong", "--them", "von_hoa_min=300,gtgd_min=2"])  # thêm điều kiện
+chay(["--chien_luoc", "xu_huong", "--bo", "rs_3t"])                           # bỏ 1 tiêu chí
 ```
 
 `--them khoa=gia_tri` đưa tiêu chí vào nhóm BẮT BUỘC (khoảng dùng `a:b`, VD `rsi_trong=25:45`; tiêu chí không cần ngưỡng
@@ -204,7 +203,7 @@ bo_loc/
   cau_hinh.py            mọi ngưỡng, hằng số, thứ tự nguồn
   danh_sach_ma.py        nhóm mã (đã tách cang_bien / van_tai_bien), ngưỡng riêng
   tieu_chi.py            danh mục tiêu chí (khoá → hàm kiểm tra)
-  chien_luoc/            MỖI CHIẾN LƯỢC 1 FILE: ky_thuat, xu_huong, diem_mua, bat_day, gia_tri, tuy_chinh
+  chien_luoc/            MỖI CHIẾN LƯỢC 1 FILE: quy_b, xu_huong, tuy_chinh
   nguon/gia.py           7 nguồn giá + chuẩn hoá đơn vị + cache
   nguon/co_ban.py        nhiều nguồn cơ bản + gộp theo chỉ tiêu + đối chiếu chéo + cache 24h
   nguon/http.py          phiên kết nối có thử lại, nhật ký nguồn
