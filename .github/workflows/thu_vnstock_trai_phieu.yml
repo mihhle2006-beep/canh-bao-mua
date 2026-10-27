@@ -56,4 +56,24 @@ jobs:
                       print(nguon, "lỗi:", str(e)[:120])
           except Exception as e:
               print("Listing lỗi:", e)
+          # chi tiết: Market.bond, lịch sử giá 1 mã trái phiếu
+          try:
+              from vnstock.ui.market import Market
+              print("Market.bond:", inspect.signature(Market.bond), (Market.bond.__doc__ or "")[:400])
+          except Exception as e:
+              print("Market.bond lỗi:", str(e)[:200])
+          try:
+              from vnstock import Listing, Quote
+              ds = list(Listing(source="VCI").all_bonds())
+              print("Mẫu mã TP:", ds[:30])
+              for ma in ds[:3]:
+                  for nguon in ("VCI", "KBS"):
+                      try:
+                          q = Quote(symbol=ma, source=nguon).history(start="2023-01-01", end="2026-10-27", interval="1D")
+                          print(f"Quote({ma},{nguon}).history →", getattr(q, "shape", ""), list(getattr(q, "columns", []))[:10])
+                          print(q.tail(3).to_string() if hasattr(q, "tail") else str(q)[:200])
+                      except Exception as e:
+                          print(f"Quote({ma},{nguon}) lỗi:", str(e)[:150])
+          except Exception as e:
+              print("Quote lỗi:", str(e)[:200])
           PY
