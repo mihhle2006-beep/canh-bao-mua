@@ -84,9 +84,9 @@ def ocr_trang(p, trang, dpi=200):
             return ""
         try:                                         # 1 luồng / tiến trình: nhiều luồng OpenMP × 4 tiến trình → treo trang
             r = subprocess.run(["tesseract", png + ".png", "-", "-l", "vie", "--psm", "6"], capture_output=True, text=True,
-                               timeout=90, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
+                               timeout=30, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
         except subprocess.TimeoutExpired:
-            print(f"    tesseract quá 90 giây trang {i + 1} – bỏ trang", flush=True)
+            print(f"    tesseract quá 30 giây trang {i + 1} – bỏ trang", flush=True)
             return ""
         finally:
             os.remove(png + ".png")
