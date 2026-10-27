@@ -1,0 +1,176 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log CÔNG KHAI); code & cache ở repo riêng tư danh-muc (checkout vào danh-muc/).
+# ĐỌC BÁO CÁO THƯỜNG NIÊN – chiến lược doanh nghiệp từng năm (ptcp/chien_luoc_dn.py): BCTN CafeF (thiếu → Vietcap),
+# pdftotext + OCR tiếng Việt → trang "định hướng / chiến lược phát triển", chủ đề, cờ CÓ THỂ ĐỔI CHIẾN LƯỢC.
+# Cache: danh-muc du_lieu/chien_luoc_dn/<MÃ>.json (mã đã đủ năm không đọc lại). Mỗi lượt: chia mã chưa xong thành tối đa
+# 20 nhóm chạy song song (≤ 320 phút / nhóm) → gộp cache, commit vào danh-muc → còn mã chưa xong thì TỰ CHẠY LƯỢT SAU
+# (tối đa vong_toi_da lượt) → đủ mã: Excel tổng hợp gửi Telegram. CONG_KHAI=1: log chỉ in số mã.
+name: Doc bao cao thuong nien
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Mã, phân cách dấu phẩy – bỏ trống = toàn bộ HOSE + HNX"
+        default: ""
+      tu:
+        description: "Từ năm báo cáo"
+        default: "2020"
+      den:
+        description: "Đến năm báo cáo"
+        default: "2025"
+      vong:
+        description: "Lượt hiện tại (tự tăng khi workflow tự chạy lại)"
+        default: "1"
+      vong_toi_da:
+        description: "Số lượt tối đa"
+        default: "8"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: doc-bctn
+  cancel-in-progress: false
+
+env:
+  CONG_KHAI: "1"
+
+jobs:
+  chuan_bi:
+    runs-on: ubuntu-24.04
+    outputs:
+      nhom: ${{ steps.chia.outputs.nhom }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Chia mã chưa xong thành nhóm
+        id: chia
+        working-directory: danh-muc
+        env:
+          MA: ${{ inputs.ma }}
+        run: |
+          pip install -q -r requirements.txt > /dev/null
+          ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu }} --den ${{ inputs.den }} | tail -1)
+          nhom=$(DS="$ds" python -c "
+          import json, os
+          ds = [m for m in os.environ['DS'].split(',') if m]
+          n = min(20, len(ds))
+          print(json.dumps([','.join(ds[i::n]) for i in range(n)]))")
+          echo "Còn $(echo "$ds" | tr ',' '\n' | grep -c .) mã chưa xong"
+          echo "nhom=$nhom" >> "$GITHUB_OUTPUT"
+
+  doc:
+    needs: chuan_bi
+    if: needs.chuan_bi.outputs.nhom != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        nhom: ${{ fromJSON(needs.chuan_bi.outputs.nhom) }}
+    defaults:
+      run:
+        working-directory: danh-muc
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Cài thư viện + OCR tiếng Việt
+        run: |
+          pip install -q -r requirements.txt > /dev/null
+          sudo apt-get update -q > /dev/null
+          sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
+      - name: Đọc BCTN (dừng nhận việc mới sau 320 phút)
+        env:
+          NHOM: ${{ matrix.nhom }}
+        run: python -m ptcp.chien_luoc_dn doc --ma "$NHOM" --tu ${{ inputs.tu }} --den ${{ inputs.den }} --han_phut 320
+      - name: Gom cache nhóm này
+        if: always()
+        env:
+          NHOM: ${{ matrix.nhom }}
+        run: |
+          mkdir -p ../ra
+          for m in ${NHOM//,/ }; do [ -f du_lieu/chien_luoc_dn/$m.json ] && cp du_lieu/chien_luoc_dn/$m.json ../ra/; done
+          echo "id=$(echo "$NHOM" | md5sum | cut -c1-8)" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: bctn-${{ env.id }}
+          path: ra/*.json
+          retention-days: 2
+          if-no-files-found: ignore
+
+  gop:
+    needs: [chuan_bi, doc]
+    if: always() && needs.chuan_bi.result == 'success'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: danh-muc
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: bctn-*
+          merge-multiple: true
+          path: danh-muc/du_lieu/chien_luoc_dn
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Commit cache vào danh-muc
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
+          git add du_lieu/chien_luoc_dn
+          git commit -q -m "Chiến lược DN từ BCTN – lượt ${{ inputs.vong }} $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
+          for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; sleep $((i * 5)); done
+          exit 1
+      - name: Còn mã chưa xong → chạy lượt sau · xong → tổng hợp gửi Telegram
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          MA: ${{ inputs.ma }}
+        run: |
+          pip install -q -r requirements.txt > /dev/null
+          con=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu }} --den ${{ inputs.den }} | tail -1 | tr ',' '\n' | grep -c . || true)
+          echo "Còn $con mã chưa xong sau lượt ${{ inputs.vong }}"
+          if [ "$con" -gt 0 ] && [ "${{ inputs.vong }}" -lt "${{ inputs.vong_toi_da }}" ]; then
+            gh workflow run doc_bctn.yml -R "${{ github.repository }}" -f ma="$MA" -f tu=${{ inputs.tu }} -f den=${{ inputs.den }} \
+              -f vong=$(( ${{ inputs.vong }} + 1 )) -f vong_toi_da=${{ inputs.vong_toi_da }}
+            echo "→ đã gọi lượt $(( ${{ inputs.vong }} + 1 ))"
+          else
+            python -m ptcp.chien_luoc_dn tong_hop --gui
+          fi
