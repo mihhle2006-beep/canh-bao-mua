@@ -1,0 +1,26 @@
+# THỬ NGUỒN DỮ LIỆU TRÁI PHIẾU HNX (chạy tay, chỉ kiểm tra truy cập – không lưu dữ liệu): máy phát triển không vào được
+# HNX; kiểm tra từ máy GitHub các trang công khai (cổng TPDN riêng lẻ, trang trái phiếu HNX) → mã HTTP, kích thước, đường
+# dẫn / tiêu đề bảng tìm thấy để chọn cách lấy dữ liệu hợp lệ.
+name: Thu nguon HNX
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  thu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Kiểm tra truy cập
+        run: |
+          for u in https://cbonds.hnx.vn/ https://cbonds.hnx.vn/thong-tin-giao-dich https://www.hnx.vn/ \
+                   https://www.hnx.vn/trai-phieu/thong-tin-giao-dich.html https://www.hnx.vn/vi-vn/trai-phieu-doanh-nghiep.html; do
+            code=$(curl -s -L -m 30 -A "Mozilla/5.0" -o /tmp/p.html -w "%{http_code}" "$u" || echo 000)
+            echo "== $u → HTTP $code, $(wc -c < /tmp/p.html 2>/dev/null || echo 0) byte"
+            grep -oiE '<title>[^<]*' /tmp/p.html | head -1
+            grep -oE 'href="[^"#]*(trai-phieu|bond|giao-dich|tpdn|thong-tin)[^"]*"' /tmp/p.html | sort -u | head -25
+            grep -oiE '\.(xlsx|xls|csv)[^"]{0,40}' /tmp/p.html | sort -u | head -5
+          done
