@@ -39,7 +39,7 @@ def test_main_chay_that_offline(thu_muc_du_lieu, monkeypatch):
     """Chạy bộ lọc thật (CSV giả lập) với quy_b + xu_huong → ghi được file JSON đúng khuôn."""
     from tests.bo_loc.test_dau_cuoi import _tham_so
     monkeypatch.chdir(thu_muc_du_lieu)
-    them = [x for x in _tham_so(thu_muc_du_lieu) if x not in ("--chien_luoc", "ky_thuat")]
+    them = [x for x in _tham_so(thu_muc_du_lieu) if x not in ("--chien_luoc", "xu_huong")]
     assert q.main(["--file", "ma.json", *them]) == 0
     d = json.loads((thu_muc_du_lieu / "ma.json").read_text(encoding="utf-8"))
     assert d["chien_luoc"] == ["quy_b", "xu_huong"] and d["phien"] and d["loi"] == {}
