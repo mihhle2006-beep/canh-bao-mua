@@ -229,9 +229,9 @@ def lenh_gop(a):
                          **{f"trích {k}": b.get(f"trích {k}") for k in ("Nhà nước %", "Nước ngoài %", "Tổ chức %", "HĐQT %")},
                          "Link BCTN": b.get("link"), "Đoạn 'cơ cấu cổ đông' (kiểm tay)": b.get("đoạn cơ cấu")})
     with pd.ExcelWriter(a.ra) as w:
-        pd.DataFrame(rows).to_excel(w, "Theo năm (BCTN)", index=False)
-        nn.to_excel(w, "Nước ngoài cuối năm", index=False)
-        pd.DataFrame(cc).to_excel(w, "Cơ cấu hiện tại", index=False)
+        pd.DataFrame(rows).to_excel(w, sheet_name="Theo năm (BCTN)", index=False)
+        nn.to_excel(w, sheet_name="Nước ngoài cuối năm", index=False)
+        pd.DataFrame(cc).to_excel(w, sheet_name="Cơ cấu hiện tại", index=False)
         pd.DataFrame({"Ghi chú": [
             "Theo năm (BCTN): số dò TỰ ĐỘNG từ báo cáo thường niên năm đó (CafeF) – cột 'trích' là dòng gốc, cần kiểm tay; "
             "ô trống = không dò được (bảng dạng ảnh mờ / cách trình bày khác) → mở Link BCTN.",
@@ -239,7 +239,7 @@ def lenh_gop(a):
             "Nước ngoài cuối năm: Vietcap IQ price-history (tỷ lệ NĐTNN nắm giữ cuối năm; năm cuối = hiện tại).",
             "Cơ cấu hiện tại: Vietcap IQ shareholder-structure (thời điểm chạy).",
             f"Tạo {time.strftime('%d/%m/%Y')} – workflow tra_cuu_so_huu (canh-bao-mua), công cụ cong_cu/so_huu/so_huu.py."]}
-        ).to_excel(w, "Ghi chú", index=False)
+        ).to_excel(w, sheet_name="Ghi chú", index=False)
     print("✔", a.ra)
 
 
