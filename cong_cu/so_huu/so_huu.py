@@ -79,11 +79,17 @@ def ocr_trang(p, trang, dpi=200):
     def mot(i):
         png = f"{p}.{i}"
         subprocess.run(["pdftoppm", "-r", str(dpi), "-gray", "-png", "-f", str(i + 1), "-l", str(i + 1), "-singlefile",
-                        p, png], capture_output=True)
+                        p, png], capture_output=True, timeout=120)
         if not os.path.exists(png + ".png"):
             return ""
-        r = subprocess.run(["tesseract", png + ".png", "-", "-l", "vie", "--psm", "6"], capture_output=True, text=True)
-        os.remove(png + ".png")
+        try:                                         # 1 luồng / tiến trình: nhiều luồng OpenMP × 4 tiến trình → treo trang
+            r = subprocess.run(["tesseract", png + ".png", "-", "-l", "vie", "--psm", "6"], capture_output=True, text=True,
+                               timeout=90, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
+        except subprocess.TimeoutExpired:
+            print(f"    tesseract quá 90 giây trang {i + 1} – bỏ trang", flush=True)
+            return ""
+        finally:
+            os.remove(png + ".png")
         if r.returncode:
             print(f"    tesseract lỗi trang {i + 1}: {r.stderr.strip()[-120:]}", flush=True)
         return r.stdout
