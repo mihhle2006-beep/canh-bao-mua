@@ -256,7 +256,7 @@ def test_loc_quy_b_ngoai_top_va_he_so(monkeypatch):
     a, b = tong_ket_cl.ds_khuyen_nghi(ra)
     assert a["nhom"] == "VAO_NHU_MOI" and a["he_so_quy"] == 0.5 and a["he_so_vni"] == 0.5
     assert "VN-Index Tăng" in tong_ket_cl.dong_mua(a)
-    assert a["uu_tien"] == 1 and tong_ket_cl.dong_mua(a).startswith("★ ")   # BBB (hạng 1) bị loại → AAA lên ★
+    assert a["uu_tien"] == 1 and tong_ket_cl.dong_mua(a).startswith("★1 ")  # BBB (hạng 1) bị loại → AAA lên ★1
     assert b["nhom"] == "NGOAI_TOP" and b["nhom"] not in tong_ket_cl.NHOM_MUA
 
 
@@ -363,7 +363,7 @@ def test_tin_hieu_manh_suat_du_phong(monkeypatch):
     monkeypatch.setattr(tong_ket_cl, "_loc_quy", lambda ma, vni: loc[ma])
     a, b, c = tong_ket_cl.ds_khuyen_nghi(ra)
     assert a["manh_b"] and "ngành mạnh" in a["dau_hieu_manh"] and not b["manh_b"]
-    assert tong_ket_cl.dong_mua(a).startswith("★ AAA💪 10.00 | MUA MỚI\n") and "💪" not in tong_ket_cl.dong_mua(b)
+    assert tong_ket_cl.dong_mua(a).startswith("★1 AAA💪 10.00 | MUA MỚI\n") and "💪" not in tong_ket_cl.dong_mua(b)
     assert c["nhom"] == "NGOAI_TOP"
     assert C.CACH_VAO_15P == "15P+GIO"
 
@@ -410,7 +410,7 @@ def test_tin_moi_muc_1_dong():
     k = {"ma": "FPT", "nhom": "MUA_MOI", "gia": 100.0, "tu": 98.0, "den": 101.0, "mt1": 107.0, "mt3": 121.0, "cl": 93.0,
          "ly_do": "MACD ngày cắt lên", "uu_tien": 1.0}
     d = tong_ket_cl.dong_mua(k, bien_the="LO").split("\n")
-    assert d[:6] == ["★ FPT 100.00 | MUA MỚI", "   Vùng mua: 98.00 – 101.00", "   Đặt LO: 99.00",
+    assert d[:6] == ["★1 FPT 100.00 | MUA MỚI", "   Vùng mua: 98.00 – 101.00", "   Đặt LO: 99.00",
                      "   Bỏ nếu: mở cửa > 101.00", "   Mục tiêu: 1R 107.00 → 3R 121.00", "   Cắt lỗ: 93.00 (-7.0%)"]
     assert d[6].startswith("   Khối lượng: 💰 ≤") and d[-1] == "   Lý do: MACD ngày cắt lên"
     vt = {"ma": "MSN", "gia_von": 70.0, "ngay_mua": "12/10/2026"}
@@ -431,7 +431,7 @@ def test_dong_suat_con_lai_tuan(monkeypatch):
     giu = [({"ma": "X1", "ngay_mua": "19/10/2026"}, None, None), ({"ma": "X2", "ngay_mua": "20/10/2026"}, None, None),
            ({"ma": "X3", "ngay_mua": "10/10/2026"}, None, None)]
     s = tong_ket_cl.dong_suat({}, giu)
-    assert "đã mua 2/5 mã mới tuần này → còn 3 suất" in s and "đang giữ 3/8 mã" in s and "mua tối đa 3 mã" in s
+    assert "đã mua 2/5 mã mới tuần này → còn 3 suất" in s and "đang giữ 3/8 mã" in s and "mua tối đa 3 mã theo thứ tự ★1 → ★3" in s
     assert tong_ket_cl.dong_suat({}, None) is None
     giu8 = giu + [({"ma": f"Y{i}", "ngay_mua": "01/10/2026"}, None, None) for i in range(5)]
     assert "chỉ mã 💪 được mua" in tong_ket_cl.dong_suat({}, giu8)
@@ -508,3 +508,19 @@ def test_tin_mua_co_ty_trong_nav():
           "atc": True, "he_so_quy": 0.5, "atr": np.nan}
     dong = diem_vao.tin_mua(kq, "2026-10-22 14:30", "15P+GIO").split("\n")[-1]
     assert dong.startswith("Khối lượng: 💰 ≤") and "% NAV" in dong and "×0.5" in dong
+
+
+def test_hang_uu_tien_trong_tin():
+    """27/10/2026: nhiều tin mua cùng lúc → ★1 … ★<SO_MA_MOI_TUAN> (★1 cao nhất), #6… sau; dòng thứ tự mua; tin 15'."""
+    n = C.SO_MA_MOI_TUAN
+    assert tong_ket_cl.nhan_uu_tien(1.0) == "★1" and tong_ket_cl.nhan_uu_tien(float(n)) == f"★{n}"
+    assert tong_ket_cl.nhan_uu_tien(n + 1.0) == f"#{n + 1}" and tong_ket_cl.nhan_uu_tien(float("nan")) == ""
+    ks = [{"ma": m, "nhom": "MUA_MOI" if i % 2 else "VAO_NHU_MOI", "uu_tien": float(i)}
+          for i, m in enumerate(["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG"], 1)] + [{"ma": "ZZZ", "nhom": "CHO"}]
+    assert tong_ket_cl.dong_thu_tu(ks) == ("👉 THỨ TỰ MUA: " + " → ".join(f"★{i} {m}" for i, m in
+                                                                         enumerate(["AAA", "BBB", "CCC", "DDD", "EEE"][:n], 1))
+                                         + f" (+{7 - n} mã sau)")
+    assert tong_ket_cl.dong_thu_tu(ks[:1]) is None
+    k = {"ma": "FPT", "nhom": "MUA_MOI", "gia": 100.0, "tu": 98.0, "den": 101.0, "mt1": 107.0, "mt3": 121.0, "cl": 93.0,
+         "ly_do": "MACD", "uu_tien": 2.0, "gia_mua": 100.0}
+    assert diem_vao.tin_mua(k, "2026-10-27 10:15", "LO").split("\n")[0] == "🟢 MUA NGAY – FPT 100.00 (10:15 27/10) · ưu tiên ★2"

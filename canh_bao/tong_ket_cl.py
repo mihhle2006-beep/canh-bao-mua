@@ -293,11 +293,18 @@ def canh_bao_nganh(ma, dang_giu):
     return f"⚠ đã giữ {len(cung)} mã ngành {ng} ({', '.join(cung)}) – không mua thêm (tối đa {toi_da}/ngành)"
 
 
+def nhan_uu_tien(ut):
+    """Hạng ưu tiên → "★1" … "★<SO_MA_MOI_TUAN>" (nên mua trước, ★1 cao nhất) · "#6" … (sau các mã ★) · "" nếu không có hạng
+    (người dùng 27/10/2026: nhiều tin mua cùng lúc phải thấy mã nào ưu tiên cao nhất)."""
+    if ut is None or ut != ut:
+        return ""
+    return f"★{int(ut)}" if ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else f"#{int(ut)}"
+
+
 def dong_mua(k, dang_giu=(), bien_the=None):
     """Mã trong nhóm mua – mỗi mục 1 dòng (người dùng 19/10/2026: đọc trên điện thoại):
-    ★ FPT 100.00 | MUA MỚI / Vùng mua / Đặt LO (cách vào) / Mục tiêu 1R → 3R / Cắt lỗ (% so giá) / Khối lượng / Lý do."""
-    ut = k.get("uu_tien")
-    sao = "★ " if ut == ut and ut is not None and ut <= getattr(C, "SO_MA_MOI_TUAN", 2) else ""
+    ★1 FPT 100.00 | MUA MỚI / Vùng mua / Đặt LO (cách vào) / Mục tiêu 1R → 3R / Cắt lỗ (% so giá) / Khối lượng / Lý do."""
+    sao = (nhan_uu_tien(k.get("uu_tien")) + " ").lstrip()
     manh = "💪" if k.get("manh_b") else ""
     g, cl = _so(k.get("gia")), _so(k.get("cl"))
     nhom = TIEU_DE.get(k.get("nhom"), str(k.get("nhom") or "")).split(" ", 1)[-1]     # "🟢 MUA MỚI" → "MUA MỚI"
@@ -487,11 +494,22 @@ def dong_suat(ra, giu):
               and pd.Timestamp(_ngay(vt.get("ngay_mua"))).isocalendar()[:2] == tuan)
     td, so_ma, dp = _quy("QUY_MOI_TUAN_TOI_DA", 5), _quy("QUY_SO_MA", 8), _quy("QUY_SUAT_DU_PHONG", 1)
     con, con_ma = max(td - moi, 0), max(so_ma - len(giu), 0)
-    goi_y = (f"mua tối đa {min(con, con_ma)} mã theo thứ tự ★" if min(con, con_ma) else
+    goi_y = (f"mua tối đa {min(con, con_ma)} mã theo thứ tự ★1 → ★{min(con, con_ma)}" if min(con, con_ma) else
              ("hết suất tuần – chỉ chờ ✅ vào trễ tuần sau" if not con else
               f"đủ {so_ma} mã – chỉ mã 💪 được mua (suất dự phòng)"))
     return (f"🗓 Phiên {pd.Timestamp(hl):%d/%m} (tuần {tuan[1]}): đã mua {moi}/{td} mã mới tuần này → còn {con} suất · "
             f"đang giữ {len(giu)}/{so_ma} mã" + (f" (+{dp} cho 💪)" if dp else "") + f"\n   → {goi_y}")
+
+
+def dong_thu_tu(ks):
+    """'👉 THỨ TỰ MUA: ★1 FPT → ★2 HPG → ★3 VNM (+2 mã sau)' khi có ≥ 2 mã nhóm mua (mọi nhóm, theo hạng ưu tiên);
+    1 mã hoặc không có hạng → None."""
+    x = sorted((k for k in ks if k["nhom"] in NHOM_MUA and nhan_uu_tien(k.get("uu_tien"))), key=lambda k: k["uu_tien"])
+    if len(x) < 2:
+        return None
+    sao = [k for k in x if nhan_uu_tien(k["uu_tien"]).startswith("★")]
+    return ("👉 THỨ TỰ MUA: " + " → ".join(f"{nhan_uu_tien(k['uu_tien'])} {k['ma']}" for k in sao)
+            + (f" (+{len(x) - len(sao)} mã sau)" if len(x) > len(sao) else ""))
 
 
 def _tin(ra, bay_gio, kq_bt, dang_giu):
@@ -523,6 +541,9 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     n_max = C.SO_MA_MOI_NHOM
     if any(k["nhom"] in NHOM_MUA for k in ks) and mo_ta_cach_vao(bt):
         dong.append(mo_ta_cach_vao(bt))
+    tt = dong_thu_tu(ks)
+    if tt:
+        dong += ["", tt]
     for nhom in NHOM_MUA:
         x = [k for k in ks if k["nhom"] == nhom]
         if not x:
@@ -552,9 +573,11 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                     + ", ".join(k["ma"] + (" (RS nóng)" if "RS 3T" in str(k.get("loc_quy", "")) else "")
                                 + (" (biến động)" if "biến động mạnh" in str(k.get("loc_quy", "")) else "")
                                 for k in ngoai))
-    if sum(k["nhom"] in NHOM_MUA for k in ks) > getattr(C, "SO_MA_MOI_TUAN", 2):
-        dong += ["", f"★ = {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã nên mua trước (điểm ưu tiên: cắt lỗ sát · lịch sử mã · "
-                     f"lập đỉnh 52T; ≤ 2 mã/ngành) – quỹ Bứt Phá chỉ mua tối đa {getattr(C, 'SO_MA_MOI_TUAN', 2)} mã mới/tuần"]
+    if sum(k["nhom"] in NHOM_MUA for k in ks) >= 2:
+        n_sao = getattr(C, "SO_MA_MOI_TUAN", 2)
+        dong += ["", f"★1 → ★{n_sao} = thứ tự nên mua, ★1 ưu tiên cao nhất (điểm ưu tiên: cắt lỗ sát · lịch sử mã · "
+                     f"lập đỉnh 52T; ≤ 2 mã/ngành) – quỹ Bứt Phá chỉ mua tối đa {n_sao} mã mới/tuần; #{n_sao + 1} trở đi "
+                     "chỉ mua khi mã ★ không vào được"]
     if any(k["nhom"] in NHOM_MUA and k.get("manh_b") for k in ks):
         dong.append(f"💪 = tín hiệu mạnh (≥ 3/4: sát đỉnh 52T · RS 3T cao · thanh khoản tăng · ngành mạnh) – đã đủ "
                     f"{_quy('QUY_SO_MA', 8)} mã vẫn được mua thêm {_quy('QUY_SUAT_DU_PHONG', 1)} mã (suất dự phòng)")
