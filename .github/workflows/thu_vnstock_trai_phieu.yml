@@ -1,0 +1,59 @@
+# THỬ vnstock CÓ DỮ LIỆU TRÁI PHIẾU KHÔNG (chạy tay, chỉ liệt kê hàm / thử gọi – không lưu dữ liệu). Key: secret
+# VNSTOCK_API_KEY (không in ra log).
+name: Thu vnstock trai phieu
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  thu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Cài vnstock
+        run: pip install -q --extra-index-url https://vnstocks.com/api/simple "vnstock>=4.0.9" > /dev/null
+      - name: Liệt kê hàm trái phiếu & thử gọi
+        env:
+          VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
+        run: |
+          python - <<'PY'
+          import importlib, inspect, os, pkgutil, re
+          import vnstock
+          print("vnstock", getattr(vnstock, "__version__", "?"), "· key:", "có" if os.environ.get("VNSTOCK_API_KEY") else "KHÔNG")
+          ten = set()
+          for m in pkgutil.walk_packages(vnstock.__path__, "vnstock."):
+              try:
+                  mod = importlib.import_module(m.name)
+              except Exception:
+                  continue
+              for n, o in inspect.getmembers(mod):
+                  if re.search(r"bond|trai_phieu|fixed", n, re.I):
+                      ten.add(f"{m.name}.{n}")
+                  if inspect.isclass(o) and o.__module__ == mod.__name__:
+                      for f, _ in inspect.getmembers(o, inspect.isfunction):
+                          if re.search(r"bond|trai_phieu|fixed", f, re.I):
+                              ten.add(f"{m.name}.{n}.{f}")
+          print("\n".join(sorted(ten)) or "không thấy hàm trái phiếu")
+          try:
+              from vnstock import Listing
+              for nguon in ("VCI", "TCBS", "MSN", "KBS"):
+                  try:
+                      l = Listing(source=nguon)
+                      for f in [f for f in dir(l) if re.search(r"bond", f, re.I)]:
+                          try:
+                              x = getattr(l, f)()
+                              print(f"Listing({nguon}).{f}() →", type(x).__name__, getattr(x, "shape", ""), list(getattr(x, "columns", []))[:12])
+                              print(x.head(5).to_string() if hasattr(x, "head") else str(x)[:300])
+                          except Exception as e:
+                              print(f"Listing({nguon}).{f}() lỗi:", str(e)[:150])
+                  except Exception as e:
+                      print(nguon, "lỗi:", str(e)[:120])
+          except Exception as e:
+              print("Listing lỗi:", e)
+          PY
