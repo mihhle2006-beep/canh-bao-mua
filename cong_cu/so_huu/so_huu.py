@@ -2,7 +2,7 @@
 """
 TRA CỨU TỶ LỆ SỞ HỮU (công cụ riêng – không thuộc bot; workflow tra_cuu_so_huu.yml chạy tay, 27/10/2026)
   • Báo cáo thường niên (BCTN) năm từ CafeF (danh sách loại 3) → tải PDF (cafefnew, link cũ thử cafef1.mediacdn.vn) →
-    chữ (pdftotext; bản scan → OCR tiếng Việt ocrmypdf) → dò tỷ lệ sở hữu Nhà nước · nước ngoài · tổ chức · HĐQT kèm
+    chữ (pdftotext; bản scan → OCR tiếng Việt pdftoppm + tesseract (PDF ký số vẫn đọc được)) → dò tỷ lệ sở hữu Nhà nước · nước ngoài · tổ chức · HĐQT kèm
     ĐOẠN TRÍCH (dòng gốc) để kiểm tay.
   • Vietcap IQ: sở hữu nước ngoài cuối mỗi năm (price-history ONE_YEAR) + cơ cấu hiện tại (Nhà nước / nước ngoài /
     HĐQT / tổ chức).
@@ -19,6 +19,8 @@ import subprocess
 import tempfile
 import time
 import unicodedata
+import zipfile
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -50,39 +52,64 @@ def ds_bctn(ma, tu, den):
 
 
 def tai_pdf(url, p):
+    """Tải BCTN về p (link cũ thử cafef1); file .zip → lấy PDF lớn nhất bên trong. → True / False."""
+    import io
     for u in (url, url.replace("cafefnew.mediacdn.vn", "cafef1.mediacdn.vn")):
         r = _get(u, headers=UA)
-        if r is not None and r.content[:4] == b"%PDF":
+        if r is None:
+            continue
+        if r.content[:4] == b"%PDF":
             open(p, "wb").write(r.content)
             return True
+        if r.content[:2] == b"PK":
+            try:
+                z = zipfile.ZipFile(io.BytesIO(r.content))
+                ds = [i for i in z.infolist() if i.filename.lower().endswith(".pdf")]
+                if ds:
+                    open(p, "wb").write(z.read(max(ds, key=lambda i: i.file_size)))
+                    return True
+            except zipfile.BadZipFile:
+                pass
     return False
+
+
+def ocr_trang(p, trang, dpi=200):
+    """OCR tiếng Việt các trang (đánh số từ 0) bằng pdftoppm + tesseract, 4 luồng – KHÔNG qua ocrmypdf (ocrmypdf từ chối
+    PDF có CHỮ KÝ SỐ – hầu hết BCTN ở VN). → chữ các trang nối bằng \\f."""
+    def mot(i):
+        png = f"{p}.{i}"
+        subprocess.run(["pdftoppm", "-r", str(dpi), "-gray", "-png", "-f", str(i + 1), "-l", str(i + 1), "-singlefile",
+                        p, png], capture_output=True)
+        if not os.path.exists(png + ".png"):
+            return ""
+        r = subprocess.run(["tesseract", png + ".png", "-", "-l", "vie", "--psm", "6"], capture_output=True, text=True)
+        os.remove(png + ".png")
+        if r.returncode:
+            print(f"    tesseract lỗi trang {i + 1}: {r.stderr.strip()[-120:]}", flush=True)
+        return r.stdout
+    with ThreadPoolExecutor(4) as ex:
+        return "\n\f".join(ex.map(mot, trang))
+
+
+def so_trang(p):
+    m = re.search(r"Pages:\s+(\d+)", subprocess.run(["pdfinfo", p], capture_output=True, text=True).stdout)
+    return int(m[1]) if m else 0
 
 
 def chu_pdf(p):
     """Chữ theo trang (\\f) – bản scan (ít chữ) → OCR tiếng Việt cả file; bản chữ → OCR thêm các trang có 'cơ cấu cổ
     đông' / 'sở hữu' (bảng & biểu đồ thường là ảnh). → (chữ, cách đọc)."""
     t = subprocess.run(["pdftotext", "-layout", p, "-"], capture_output=True, text=True).stdout
-    if len(t.strip()) <= 3000:
-        o = p + ".ocr.pdf"
-        subprocess.run(["ocrmypdf", "-q", "-l", "vie", "--force-ocr", "-j", "4", "--output-type", "pdf",
-                        "--optimize", "0", p, o], capture_output=True)
-        if not os.path.exists(o):
-            return t, "không đọc được"
-        t = subprocess.run(["pdftotext", "-layout", o, "-"], capture_output=True, text=True).stdout
-        os.remove(o)
-        return t, "OCR"
+    if len(t.strip()) <= 3000:                       # bản scan → OCR cả file (tối đa 250 trang)
+        n = so_trang(p)
+        if not n:
+            return t, "không đọc được (PDF hỏng)"
+        t = ocr_trang(p, range(min(n, 250)))
+        return t, "OCR" if len(t.strip()) > 1000 else "không đọc được (OCR rỗng)"
     trang = t.split("\f")
     can = [i for i, x in enumerate(trang) if any(w in kd(x) for w in ("co cau co dong", "co cau so huu", "ty le so huu"))][:6]
-    them = []
-    for i in can:
-        png = f"{p}.{i}"
-        subprocess.run(["pdftoppm", "-r", "200", "-gray", "-png", "-f", str(i + 1), "-l", str(i + 1), "-singlefile", p, png],
-                       capture_output=True)
-        if os.path.exists(png + ".png"):
-            them.append(subprocess.run(["tesseract", png + ".png", "-", "-l", "vie", "--psm", "6"], capture_output=True,
-                                       text=True).stdout)
-            os.remove(png + ".png")
-    return t + "\n\f" + "\n\f".join(them), "chữ + OCR trang cơ cấu" if them else "chữ"
+    them = ocr_trang(p, can) if can else ""
+    return t + "\n\f" + them, "chữ + OCR trang cơ cấu" if can else "chữ"
 
 
 NHA_NUOC = ("hang hai viet nam", "vimc", "vinalines", "dau khi viet nam", "pvn", "tan cang sai gon", "scic",
@@ -175,12 +202,23 @@ def vietcap(ma):
             "ten": (ten.json()["data"] or {}).get("viOrganName") if ten is not None else None}
 
 
+LAM_LAI = ("không đọc được", "không tải được")
+
+
 def lenh_tai(a):
-    out = {}
+    """Tải & dò từng mã. --lam_lai <json lần trước>: giữ năm đã đọc được, chỉ làm lại năm lỗi (không đọc / không tải)."""
+    out, cu = {}, {}
+    if getattr(a, "lam_lai", None) and os.path.exists(a.lam_lai):
+        cu = json.load(open(a.lam_lai))
     with tempfile.TemporaryDirectory() as tm:
         for ma in [m.strip().upper() for m in a.ma.split(",") if m.strip()]:
-            r = {"vietcap": vietcap(ma), "bctn": {}}
+            r = {"vietcap": (cu.get(ma) or {}).get("vietcap") or vietcap(ma), "bctn": {}}
+            giu = {int(n): b for n, b in ((cu.get(ma) or {}).get("bctn") or {}).items()
+                   if not str(b.get("cach", "")).startswith(LAM_LAI)}
             for nam, url in sorted(ds_bctn(ma, a.tu, a.den).items()):
+                if nam in giu:
+                    r["bctn"][nam] = giu[nam]
+                    continue
                 p = os.path.join(tm, f"{ma}_{nam}.pdf")
                 if not tai_pdf(url, p):
                     r["bctn"][nam] = {"link": url, "cach": "không tải được"}
@@ -248,6 +286,7 @@ if __name__ == "__main__":
     s = p.add_subparsers(dest="lenh", required=True)
     t = s.add_parser("tai")
     t.add_argument("--ma", required=True)
+    t.add_argument("--lam_lai", help="json kết quả lần trước – chỉ làm lại năm lỗi")
     g = s.add_parser("gop")
     g.add_argument("phan", nargs="+")
     for x in (t, g):
