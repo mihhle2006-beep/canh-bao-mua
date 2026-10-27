@@ -10,6 +10,7 @@
 #   von57 – mua lại sau lệnh thua cùng mã (≤ 60 phiên): giảm KL tín hiệu mới / tăng KL mua lại
 #   von58 – hệ phụ bắt nhịp hồi ngắn (RSI(2) – mã top 100 / chỉ số) ghép quỹ Bứt Phá bằng tiền nhàn rỗi ≤ 15 / 30%
 #   von59 – phòng hộ bán VN30F (VN-Index < MA200 / MA50, NAV B sụt ≥ 10%), 50 / 100% giá trị cổ phiếu
+#   von64 – backtest bộ lọc bo_loc (xu_huong, ky_thuat, diem_mua, bat_day, sieu_cp) point-in-time
 #   von63 – ★ còn thắng ngẫu nhiên? bỏ / chỉ 1 yếu tố ★ (cắt lỗ sát · lịch sử mã · đỉnh 52T)
 #   von62 – xếp hạng S/A/B/C cho tin mua: R theo hạng trong ngày & hạng tuyệt đối
 #   von60 – tiền nhàn rỗi: Không ngủ + Trứng vàng theo luật dmuc (nóng → không ấp, thu sớm)
@@ -28,7 +29,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 / von62 / von63 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 / von62 / von63 / von64 (phân cách dấu phẩy; all = tất cả)"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -51,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von55, von56, von57, von58, von59, von60, von61, von62, von63]
+        phan: [chuan, von55, von56, von57, von58, von59, von60, von61, von62, von63, von64]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -79,6 +80,12 @@ jobs:
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
         working-directory: .
         run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+      - uses: actions/checkout@v5                 # phần von64: bộ lọc bo_loc của chính repo này
+        if: steps.chon.outputs.chay && matrix.phan == 'von64'
+        with:
+          path: cbm
+          sparse-checkout: bo_loc
+          persist-credentials: false
       - uses: actions/checkout@v5                 # phần chuan: đối chiếu giả lập (repo kín – chỉ gửi Telegram)
         if: steps.chon.outputs.chay && matrix.phan == 'chuan'
         continue-on-error: true
@@ -130,6 +137,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von64) export CHI_VON64=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # backtest bộ lọc bo_loc
             von63) export CHI_VON63=1; unset SO_NN ;;          # ★ so 50 ngẫu nhiên, tách 3 yếu tố
             von62) export CHI_VON62=1; unset SO_NN ;;          # xếp hạng S/A/B/C cho tin mua (bảng R)
             von61) export CHI_VON61=1; unset SO_NN ;;          # Trứng vàng nhiều mức lãi × kỳ hạn (20 thứ tự ★)
