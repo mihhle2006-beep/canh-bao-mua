@@ -1,5 +1,5 @@
 # TRA CỨU TỶ LỆ SỞ HỮU (chạy tay) – công cụ riêng cong_cu/so_huu/so_huu.py, KHÔNG thuộc bot:
-# báo cáo thường niên (CafeF) → tải, OCR tiếng Việt bản scan / trang cơ cấu cổ đông → dò % Nhà nước · nước ngoài ·
+# báo cáo thường niên (CafeF) → tải, OCR tiếng Việt (pdftoppm + tesseract – đọc được PDF ký số) bản scan / trang cơ cấu cổ đông → dò % Nhà nước · nước ngoài ·
 # tổ chức · HĐQT theo năm (kèm đoạn trích để kiểm tay) + Vietcap (nước ngoài cuối năm, cơ cấu hiện tại) → Excel gửi
 # Telegram. Mỗi nhóm mã 1 job song song (OCR chậm).
 name: Tra cứu sở hữu
@@ -22,9 +22,13 @@ on:
       den:
         description: "Đến năm"
         default: "2025"
+      lam_lai_tu_run:
+        description: "ID lần chạy trước – chỉ làm lại năm lỗi (bỏ trống = chạy hết)"
+        default: ""
 
 permissions:
   contents: read
+  actions: read                      # tải kết quả lần chạy trước (lam_lai_tu_run)
 
 jobs:
   tai:
@@ -41,13 +45,24 @@ jobs:
       - name: Cài OCR tiếng Việt
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q ocrmypdf tesseract-ocr-vie poppler-utils > /dev/null
+          sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
           pip install -q requests
+      - name: Lấy kết quả lần trước (chỉ làm lại năm lỗi)
+        if: inputs.lam_lai_tu_run != '' && inputs[matrix.nhom] != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          name: phan-${{ matrix.nhom }}
+          path: truoc
+          run-id: ${{ inputs.lam_lai_tu_run }}
+          github-token: ${{ github.token }}
       - name: Tải & dò BCTN
         if: inputs[matrix.nhom] != ''
         env:
           MA: ${{ inputs[matrix.nhom] }}
-        run: python cong_cu/so_huu/so_huu.py tai --ma "$MA" --tu ${{ inputs.tu }} --den ${{ inputs.den }} --ra phan_${{ matrix.nhom }}.json
+        run: |
+          LL=""; [ -f truoc/phan_${{ matrix.nhom }}.json ] && LL="--lam_lai truoc/phan_${{ matrix.nhom }}.json"
+          python cong_cu/so_huu/so_huu.py tai --ma "$MA" --tu ${{ inputs.tu }} --den ${{ inputs.den }} --ra phan_${{ matrix.nhom }}.json $LL
       - uses: actions/upload-artifact@v6
         if: always() && hashFiles('phan_*.json') != ''
         with:
