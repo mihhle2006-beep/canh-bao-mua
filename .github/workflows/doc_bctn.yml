@@ -2,7 +2,7 @@
 # ĐỌC BÁO CÁO THƯỜNG NIÊN – chiến lược doanh nghiệp từng năm (ptcp/chien_luoc_dn.py): BCTN CafeF (thiếu → Vietcap),
 # pdftotext + OCR tiếng Việt → trang "định hướng / chiến lược phát triển", chủ đề, cờ CÓ THỂ ĐỔI CHIẾN LƯỢC.
 # Cache: danh-muc du_lieu/chien_luoc_dn/<MÃ>.json (mã đã đủ năm không đọc lại). Mỗi lượt: chia mã chưa xong thành tối đa
-# 20 nhóm chạy song song (≤ 320 phút / nhóm) → gộp cache, commit vào danh-muc → còn mã chưa xong thì TỰ CHẠY LƯỢT SAU
+# 14 nhóm chạy song song (≤ 320 phút / nhóm) → gộp cache, commit vào danh-muc → còn mã chưa xong thì TỰ CHẠY LƯỢT SAU
 # (tối đa vong_toi_da lượt) → đủ mã: Excel tổng hợp gửi Telegram. CONG_KHAI=1: log chỉ in số mã.
 name: Doc bao cao thuong nien
 
@@ -64,7 +64,7 @@ jobs:
           nhom=$(DS="$ds" python -c "
           import json, os
           ds = [m for m in os.environ['DS'].split(',') if m]
-          n = min(20, len(ds))
+          n = min(14, len(ds))
           print(json.dumps([','.join(ds[i::n]) for i in range(n)]))")
           echo "Còn $(echo "$ds" | tr ',' '\n' | grep -c .) mã chưa xong"
           echo "nhom=$nhom" >> "$GITHUB_OUTPUT"
@@ -76,7 +76,7 @@ jobs:
     timeout-minutes: 350
     strategy:
       fail-fast: false
-      max-parallel: 20
+      max-parallel: 14                      # chừa runner cho backtest / workflow khác (giới hạn 20 job cùng lúc)
       matrix:
         nhom: ${{ fromJSON(needs.chuan_bi.outputs.nhom) }}
     defaults:
