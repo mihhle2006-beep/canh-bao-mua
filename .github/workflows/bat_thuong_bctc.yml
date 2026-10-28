@@ -1,12 +1,16 @@
 # CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log CÔNG KHAI); code ở repo riêng tư danh-muc (checkout vào danh-muc/).
-# BẤT THƯỜNG BCTC (chạy tay): bước 1 dò bất thường số liệu (ptcp/bat_thuong_bctc.py – phải thu, dự phòng, tồn kho, dòng
-# tiền, biên gộp… + riêng theo ngành) → bước 2–3 đọc báo cáo thường niên + BCTC kiểm toán năm đó tìm lời giải thích, đối
-# chiếu kế hoạch đầu tư với chi đầu tư / tài sản dở dang (ptcp/giai_thich_bat_thuong.py) → Excel gửi Telegram.
-# 6 nhóm song song (≤ 320 phút / nhóm). CONG_KHAI=1: log chỉ in số mã. Kết quả chỉ gửi Telegram (artifact giữ 1 ngày).
+# BẤT THƯỜNG BCTC: bước 1 dò bất thường số liệu (ptcp/bat_thuong_bctc.py – phải thu, dự phòng, tồn kho, dòng tiền, biên
+# gộp… + riêng theo ngành; năm tài chính + 4 QUÝ GẦN NHẤT khi BCTC quý mới hơn năm) → bước 2–3 đọc báo cáo thường niên +
+# BCTC kiểm toán năm đó tìm lời giải thích, đối chiếu kế hoạch đầu tư với chi đầu tư / tài sản dở dang
+# (ptcp/giai_thich_bat_thuong.py) → Excel gửi Telegram.
+# TỰ CHẠY HẰNG NGÀY sau "Loc quy But Pha" (bước đó tải BCTC quý / năm vừa công bố – kho_bctc --moi): job chon chỉ lấy mã
+# có BCTC MỚI (kỳ mới nhất của kho khác lần đọc trước) hoặc có năm đang "chờ báo cáo thường niên" mà BCTN vừa ra
+# (BCTN giải thích → ĐÃ GIẢI THÍCH). Không có mã nào → dừng, không chạy nhóm đọc. Tin Telegram: thay đổi (🆕 bất thường
+# mới · ✅ đã giải thích · 🔁 đổi mức) + Excel các mã lần này. Chạy tay: Excel đủ mã như cũ.
+# Nhóm song song: ≤ 12 mã → 1 nhóm, nhiều hơn → 6 nhóm (≤ 320 phút / nhóm). CONG_KHAI=1: log chỉ in số mã.
 # ĐỆM CHỮ TÀI LIỆU (cache_du_lieu/tai_lieu – chữ từng trang đã OCR, theo URL): mỗi nhóm khôi phục bản đệm chung (actions/cache),
 # đọc thêm tài liệu mới, gửi phần đệm lên artifact; job gop gộp lại lưu bản đệm mới → lần sau không tải / OCR lại.
-# KẾT QUẢ theo mã commit vào danh-muc du_lieu/bat_thuong_giai_thich/ → lần sau bỏ qua mã đã đọc tới năm mới nhất của kho
-# (Excel vẫn gồm đủ mã từ kết quả lưu).
+# KẾT QUẢ theo mã commit vào danh-muc du_lieu/bat_thuong_giai_thich/ (kèm kỳ BCTC đã đọc & năm chờ BCTN).
 name: Bat thuong BCTC
 
 on:
@@ -19,21 +23,76 @@ on:
         description: "Đọc lại cả mã đã có kết quả lưu (chấm lại sau khi đổi cách đọc; chữ tài liệu lấy từ đệm)"
         type: boolean
         default: false
+  workflow_run:                    # hằng ngày: sau khi "Loc quy But Pha" tải BCTC mới công bố
+    workflows: ["Loc quy But Pha"]
+    types: [completed]
 
 permissions:
   contents: read
+  actions: read                    # tải artifact danh sách mã giữa các job
+
+concurrency:
+  group: bat-thuong-bctc
+  cancel-in-progress: false
 
 env:
   CONG_KHAI: "1"
 
 jobs:
+  chon:                            # mã cần đọc: có BCTC / BCTN mới (chạy tay: theo ô mã, hoặc tất cả khi lam_moi)
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      n: ${{ steps.chon.outputs.n }}
+      nhom: ${{ steps.chon.outputs.nhom }}
+      so_nhom: ${{ steps.chon.outputs.so_nhom }}
+    defaults:
+      run:
+        working-directory: danh-muc
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Chọn mã có báo cáo mới
+        id: chon
+        env:
+          MA: ${{ inputs.ma }}
+          LAM_MOI: ${{ inputs.lam_moi && '--lam_moi' || '' }}
+        run: |
+          pip install -q -r requirements.txt > /dev/null
+          python -m ptcp.giai_thich_bat_thuong ${MA:+--ma "$MA"} $LAM_MOI --ds_ra ../ds_ma.txt
+          n=$(tr ',' '\n' < ../ds_ma.txt | grep -c . || true)
+          if [ "$n" -eq 0 ]; then nhom='[]'; so=0; elif [ "$n" -le 12 ]; then nhom='[1]'; so=1; else nhom='[1,2,3,4,5,6]'; so=6; fi
+          echo "n=$n" >> "$GITHUB_OUTPUT"; echo "nhom=$nhom" >> "$GITHUB_OUTPUT"; echo "so_nhom=$so" >> "$GITHUB_OUTPUT"
+          [ "$n" -gt 0 ] || echo "Không có BCTC / BCTN mới → không đọc"
+      - uses: actions/upload-artifact@v6
+        if: steps.chon.outputs.n != '0'
+        with:
+          name: ds-ma
+          path: ds_ma.txt
+          retention-days: 1
+
   doc:
+    needs: chon
+    if: needs.chon.outputs.n != '0'
     runs-on: ubuntu-24.04
     timeout-minutes: 350
     strategy:
       fail-fast: false
       matrix:
-        nhom: [1, 2, 3, 4, 5, 6]
+        nhom: ${{ fromJSON(needs.chon.outputs.nhom) }}
     defaults:
       run:
         working-directory: danh-muc
@@ -63,10 +122,13 @@ jobs:
           path: danh-muc/cache_du_lieu/tai_lieu
           key: tai-lieu-bt-${{ github.run_id }}
           restore-keys: tai-lieu-bt-
-      - name: Đọc tài liệu tìm giải thích (nhóm ${{ matrix.nhom }}/6)
-        env:
-          MA: ${{ inputs.ma }}
-        run: python -m ptcp.giai_thich_bat_thuong ${MA:+--ma "$MA"} ${{ inputs.lam_moi && '--lam_moi' || '' }} --chia ${{ matrix.nhom }}/6 --han_phut 320 --ra ../ra/nhom_${{ matrix.nhom }}.json
+      - uses: actions/download-artifact@v7
+        with:
+          name: ds-ma
+          path: .
+      - name: Đọc tài liệu tìm giải thích (nhóm ${{ matrix.nhom }}/${{ needs.chon.outputs.so_nhom }})
+        # danh sách đã chọn ở job chon → --lam_moi để không lọc lại
+        run: python -m ptcp.giai_thich_bat_thuong --ma "$(cat ../ds_ma.txt)" --lam_moi --chia ${{ matrix.nhom }}/${{ needs.chon.outputs.so_nhom }} --han_phut 320 --ra ../ra/nhom_${{ matrix.nhom }}.json
       - uses: actions/upload-artifact@v6
         if: always()
         with:
@@ -83,8 +145,8 @@ jobs:
           if-no-files-found: ignore
 
   gop:
-    needs: doc
-    if: always()
+    needs: [chon, doc]
+    if: always() && needs.chon.result == 'success' && needs.chon.outputs.n != '0'
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -128,7 +190,7 @@ jobs:
         run: |
           pip install -q -r requirements.txt > /dev/null
           ls ../ra/*.json > /dev/null 2>&1 || { echo "Không có kết quả nhóm"; exit 0; }
-          python -m ptcp.giai_thich_bat_thuong --luu ../ra/*.json
+          python -m ptcp.giai_thich_bat_thuong --luu ../ra/*.json --thay_doi ../thay_doi.txt
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
@@ -140,5 +202,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          HANG_NGAY: ${{ github.event_name == 'workflow_run' && '--chi_lan_nay' || '' }}
         run: |
-          python -m ptcp.giai_thich_bat_thuong --gop ../ra/*.json --ra Bat_thuong_BCTC_giai_thich.xlsx --gui
+          ls ../ra/*.json > /dev/null 2>&1 || { echo "Không có kết quả nhóm"; exit 0; }
+          python -m ptcp.giai_thich_bat_thuong --gop ../ra/*.json --ra Bat_thuong_BCTC_giai_thich.xlsx --gui $HANG_NGAY --thay_doi ../thay_doi.txt
