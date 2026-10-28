@@ -6,6 +6,7 @@
 # ở danh-muc ptcp/cau_hinh.py) và von55–von72 (28/10/2026 – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md); code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
 #   von73 – hệ bắt đáy (giảm sâu – hồi mạnh, cổng đáy thị trường) ghép tiền nhàn rỗi của Quỹ Bứt Phá
+#   von74 – hệ bắt đáy v2: chỉ khi thị trường giảm, 13 chỉ báo × 6 bộ lọc mã (chấm lọc trước) → 6 kiểu thoát riêng
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -21,7 +22,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von73 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von72 đã xoá 28/10/2026, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von73 / von74 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von72 đã xoá 28/10/2026, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -44,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von73]
+        phan: [chuan, von73, von74]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -124,6 +125,7 @@ jobs:
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
             von73) export CHI_VON73=1; unset SO_NN ;;          # hệ bắt đáy dùng tiền nhàn rỗi (20 thứ tự ★)
+            von74) export CHI_VON74=1; unset SO_NN ;;          # hệ bắt đáy v2: lọc mã trước, thoát sau (20 thứ tự ★)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
