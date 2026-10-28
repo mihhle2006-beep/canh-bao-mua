@@ -4,9 +4,6 @@
 name: Bao cao CTCK
 
 on:
-  push:                            # tạm: chạy thử trên nhánh làm việc trước khi gộp (workflow mới chưa có trên main)
-    branches: [claude/optimistic-curie-lqnqpr]
-    paths: [.github/workflows/bao_cao_ctck.yml]
   workflow_dispatch:
     inputs:
       ma:
@@ -36,7 +33,7 @@ jobs:
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
-          ref: ${{ inputs.nhanh_danh_muc || (github.event_name == 'push' && github.ref_name) || '' }}
+          ref: ${{ inputs.nhanh_danh_muc || '' }}
           persist-credentials: false
           path: danh-muc
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
