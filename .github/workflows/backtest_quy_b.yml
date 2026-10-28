@@ -2,26 +2,10 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
-# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận (von3–von54, chế độ sóng /
-# tổ hợp) đã xoá – kết luận ở danh-muc ptcp/cau_hinh.py, code xem lịch sử git:
+# niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
+# ở danh-muc ptcp/cau_hinh.py) và von55–von72 (28/10/2026 – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md); code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
-#   von55 – rủi ro 1% / lệnh (giữ / nới trần rủi ro mở 4 → 5,33%), 1,125% tham chiếu; lãi tiền 4% và 0%
-#   von56 – hệ phụ (tiền nhàn rỗi ≤ 15% NAV: xoay mã biến động thấp + hồi sau sập) lúc quỹ Bứt Phá tệ nhất
-#   von57 – mua lại sau lệnh thua cùng mã (≤ 60 phiên): giảm KL tín hiệu mới / tăng KL mua lại
-#   von58 – hệ phụ bắt nhịp hồi ngắn (RSI(2) – mã top 100 / chỉ số) ghép quỹ Bứt Phá bằng tiền nhàn rỗi ≤ 15 / 30%
-#   von59 – phòng hộ bán VN30F (VN-Index < MA200 / MA50, NAV B sụt ≥ 10%), 50 / 100% giá trị cổ phiếu
-#   von67 – mua bán theo Động lượng (thoát như Quỹ Bứt Phá) vs Quỹ Bứt Phá, gộp lệnh, chia vốn 50/50
-#   von68 – bộ lọc bù dùng tiền Quỹ Bứt Phá để không (LN bất ngờ, dẫn dắt lúc chỉnh, chất lượng tăng trưởng)
-#   von69 – bù: rổ phòng thủ cổ tức khi thị trường xấu · B + Trứng vàng + bán VN30F khi NAV −10%
-#   von70 – lãi vay thực tế của DN tăng mạnh mà DN vẫn tốt (thay lợi suất trái phiếu DN)
-#   von71 – mua trái phiếu thay cổ phiếu khi thị trường xấu (giả lập lợi suất × vỡ nợ)
-#   von72 – quỹ trái phiếu thật (NAV VFF / DCBF – Fmarket) thay Trứng vàng
-#   von66 – gộp tiêu chí có ích thành 1–3 chiến lược (theo trạng thái VN-Index) + ghép vào Quỹ Bứt Phá
-#   von65du / von65 – bộ lọc lần 2 đủ tiêu chí (tính & lưu cache bo_loc_mo_rong/ → chấm)
-#   von64 – backtest bộ lọc bo_loc (xu_huong, ky_thuat, diem_mua, bat_day, sieu_cp) point-in-time
-#   von63 – ★ còn thắng ngẫu nhiên? bỏ / chỉ 1 yếu tố ★ (cắt lỗ sát · lịch sử mã · đỉnh 52T)
-#   von62 – xếp hạng S/A/B/C cho tin mua: R theo hạng trong ngày & hạng tuyệt đối
-#   von60 – tiền nhàn rỗi: Không ngủ + Trứng vàng theo luật dmuc (nóng → không ấp, thu sớm)
+#   von73 – hệ bắt đáy (giảm sâu – hồi mạnh, cổng đáy thị trường) ghép tiền nhàn rỗi của Quỹ Bứt Phá
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -37,7 +21,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von55 / von56 / von57 / von58 / von59 / von60 / von61 / von62 / von63 / von64 / von65du / von65 / von66 / von67 / von68 / von69 / von70 / von71 / von72 / von73 (phân cách dấu phẩy; all = tất cả)"
+        description: "Phần chạy: chuan / von73 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von72 đã xoá 28/10/2026, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -60,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von55, von56, von57, von58, von59, von60, von61, von62, von63, von64, von65du, von65, von66, von67, von68, von69, von70, von71, von72, von73]
+        phan: [chuan, von73]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -88,12 +72,6 @@ jobs:
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
         working-directory: .
         run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
-      - uses: actions/checkout@v5                 # phần von64: bộ lọc bo_loc của chính repo này
-        if: steps.chon.outputs.chay && (matrix.phan == 'von64' || matrix.phan == 'von65du' || matrix.phan == 'von65' || matrix.phan == 'von66')
-        with:
-          path: cbm
-          sparse-checkout: bo_loc
-          persist-credentials: false
       - uses: actions/checkout@v5                 # phần chuan: đối chiếu giả lập (repo kín – chỉ gửi Telegram)
         if: steps.chon.outputs.chay && matrix.phan == 'chuan'
         continue-on-error: true
@@ -128,14 +106,6 @@ jobs:
           restore-keys: |
             gia-san-
             gia-ngay-
-      - name: Cache dữ liệu bộ lọc lần 2 (von65du lưu · von65 đọc)
-        if: steps.chon.outputs.chay && (matrix.phan == 'von65du' || matrix.phan == 'von65' || matrix.phan == 'von66')
-        uses: actions/cache@v5
-        with:
-          path: danh-muc/bo_loc_mo_rong
-          key: bo-loc-mr-${{ matrix.phan }}-${{ github.run_id }}
-          restore-keys: |
-            bo-loc-mr-von65du-
       - name: Backtest (${{ matrix.phan }})
         if: steps.chon.outputs.chay
         env:
@@ -153,25 +123,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
-            von65du) export CHI_VON65DU=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # bộ lọc lần 2: tính & lưu cache
-            von67) export CHI_VON67=1; unset SO_NN ;;          # mua bán theo động lượng vs Quỹ Bứt Phá
-            von68) export CHI_VON68=1; unset SO_NN ;;          # bộ lọc bù dùng tiền B để không
-            von69) export CHI_VON69=1; unset SO_NN ;;          # bù: phòng thủ cổ tức · Trứng + VN30F
-            von70) export CHI_VON70=1; unset SO_NN ;;          # lãi vay thực tế tăng mà DN tốt
-            von71) export CHI_VON71=1; unset SO_NN ;;          # trái phiếu khi thị trường sập
-            von72) export CHI_VON72=1; unset SO_NN ;;          # quỹ trái phiếu thật thay Trứng
-            von66) export CHI_VON66=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # gộp 1–3 chiến lược
-            von65) export CHI_VON65=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # bộ lọc lần 2: chấm từ cache
-            von64) export CHI_VON64=1; export BO_LOC_DIR="$GITHUB_WORKSPACE/cbm"; unset SO_NN ;;   # backtest bộ lọc bo_loc
-            von63) export CHI_VON63=1; unset SO_NN ;;          # ★ so 50 ngẫu nhiên, tách 3 yếu tố
-            von62) export CHI_VON62=1; unset SO_NN ;;          # xếp hạng S/A/B/C cho tin mua (bảng R)
-            von61) export CHI_VON61=1; unset SO_NN ;;          # Trứng vàng nhiều mức lãi × kỳ hạn (20 thứ tự ★)
-            von60) export CHI_VON60=1; unset SO_NN ;;          # tiền nhàn rỗi Không ngủ + Trứng vàng (20 thứ tự ★)
-            von59) export CHI_VON59=1; unset SO_NN ;;          # phòng hộ bán VN30F (20 thứ tự ★)
-            von58) export CHI_VON58=1; unset SO_NN ;;          # hệ phụ bắt nhịp hồi (20 thứ tự ★)
-            von57) export CHI_VON57=1; unset SO_NN ;;          # mua lại sau lệnh thua (20 thứ tự ★)
-            von56) export CHI_VON56=1; unset SO_NN ;;          # hệ phụ lúc B tệ nhất (20 thứ tự ★)
-            von55) export CHI_VON55=1; unset SO_NN ;;          # rủi ro 1% / lệnh (20 thứ tự ★)
+            von73) export CHI_VON73=1; unset SO_NN ;;          # hệ bắt đáy dùng tiền nhàn rỗi (20 thứ tự ★)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
