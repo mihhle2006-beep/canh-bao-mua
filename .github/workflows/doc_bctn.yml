@@ -4,6 +4,8 @@
 # Cache: danh-muc du_lieu/chien_luoc_dn/<MÃ>.json (mã đã đủ năm không đọc lại). Mỗi lượt: chia mã chưa xong thành tối đa
 # 14 nhóm chạy song song (≤ 320 phút / nhóm) → gộp cache, commit vào danh-muc → còn mã chưa xong thì TỰ CHẠY LƯỢT SAU
 # (tối đa vong_toi_da lượt) → đủ mã: Excel tổng hợp gửi Telegram. CONG_KHAI=1: log chỉ in số mã.
+# NHANH (28/10/2026): OCR theo đợt 8 trang, dừng khi đã đọc qua phần chiến lược (không OCR đủ 40 trang ảnh); thư viện Python
+# lấy từ cache; tesseract cài thẳng (chỉ apt-get update khi lỗi).
 # CHỈ CHẠY BAN ĐÊM: lịch 22:17 giờ VN mỗi ngày; lượt sau chỉ tự gọi khi đang trong 21:00–03:59 giờ VN (sáng ra dừng, đêm sau
 # lịch chạy tiếp phần còn lại). Đã đủ mã → lịch không đọc gì, không gửi lại Telegram.
 name: Doc bao cao thuong nien
@@ -57,13 +59,19 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: danh-muc/requirements.txt
+      - name: Cache thư viện Python (bỏ bước cài ~30 giây khi requirements không đổi)
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
       - name: Chia mã chưa xong thành nhóm
         id: chia
         working-directory: danh-muc
         env:
           MA: ${{ inputs.ma }}
         run: |
-          pip install -q -r requirements.txt > /dev/null
+          [ "${{ steps.cache_py.outputs.cache-hit }}" = "true" ] || pip install -q -r requirements.txt > /dev/null
           ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} | tail -1)
           nhom=$(DS="$ds" python -c "
           import json, os
@@ -101,11 +109,19 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: danh-muc/requirements.txt
+      - name: Cache thư viện Python (bỏ bước cài ~30 giây khi requirements không đổi)
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
       - name: Cài thư viện + OCR tiếng Việt
         run: |
-          pip install -q -r requirements.txt > /dev/null
-          sudo apt-get update -q > /dev/null
-          sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
+          [ "${{ steps.cache_py.outputs.cache-hit }}" = "true" ] || pip install -q -r requirements.txt > /dev/null
+          # danh sách gói của máy GitHub thường còn mới → cài thẳng; lỗi mới apt-get update (đỡ ~30–60 giây / nhóm)
+          P="tesseract-ocr tesseract-ocr-vie poppler-utils"
+          sudo apt-get install -y -q --no-install-recommends $P > /dev/null 2>&1 \
+            || { sudo apt-get update -q > /dev/null && sudo apt-get install -y -q --no-install-recommends $P > /dev/null; }
       - name: Đọc BCTN (dừng nhận việc mới trước 06:30 giờ VN)
         env:
           NHOM: ${{ matrix.nhom }}
@@ -156,6 +172,12 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: danh-muc/requirements.txt
+      - name: Cache thư viện Python (bỏ bước cài ~30 giây khi requirements không đổi)
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
       - name: Commit cache vào danh-muc
         env:
           TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
@@ -174,7 +196,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           MA: ${{ inputs.ma }}
         run: |
-          pip install -q -r requirements.txt > /dev/null
+          [ "${{ steps.cache_py.outputs.cache-hit }}" = "true" ] || pip install -q -r requirements.txt > /dev/null
           con=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} | tail -1 | tr ',' '\n' | grep -c . || true)
           echo "Còn $con mã chưa xong sau lượt ${{ inputs.vong || '1' }}"
           gio=$(TZ=Asia/Ho_Chi_Minh date +%H)
