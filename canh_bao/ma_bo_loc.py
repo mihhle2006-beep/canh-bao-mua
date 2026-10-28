@@ -44,7 +44,7 @@ def ghi(tt, path=None):
 def lay_nguon():
     """
     File kết quả quét của Bo_Loc → dict | None.
-    Thứ tự: biến BO_LOC_FILE (đường dẫn trên máy) → GitHub API repo BO_LOC_REPO (token BO_LOC_TOKEN nếu repo riêng tư).
+    Thứ tự: biến BO_LOC_FILE (đường dẫn trên máy) → GitHub API repo BO_LOC_REPO (token BO_LOC_TOKEN, không có thì GH_TOKEN/GITHUB_TOKEN của workflow).
     """
     tep = os.environ.get("BO_LOC_FILE") or C.BO_LOC_FILE
     if tep:
@@ -59,7 +59,7 @@ def lay_nguon():
     if not repo:
         return None
     url = f"https://api.github.com/repos/{repo}/contents/{duong_dan}"
-    token = os.environ.get("BO_LOC_TOKEN")
+    token = os.environ.get("BO_LOC_TOKEN") or os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
     loi = []
     for tk in ([token] if token else []) + [None]:            # token lỗi → thử không token (repo công khai)
         req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.raw+json",
@@ -78,7 +78,7 @@ def lay_nguon():
         except Exception as e:
             loi.append(f"{'có token' if tk else 'không token'}: {type(e).__name__}: {str(e)[:100]}")
     print(f"⚠ Không lấy được {duong_dan} từ {repo} – " + " | ".join(loi)
-          + (" → kiểm tra BO_LOC_TOKEN: chọn repo Bo_Loc, quyền Contents: Read-only" if token else ""))
+          + (" → kiểm tra BO_LOC_TOKEN: chọn repo Bo_Loc, quyền Contents: Read-only" if os.environ.get("BO_LOC_TOKEN") else ""))
     return None
 
 
