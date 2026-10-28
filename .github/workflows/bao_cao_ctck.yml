@@ -1,0 +1,63 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log & artifact công khai); code ở repo riêng tư danh-muc (checkout vào danh-muc/).
+# BÁO CÁO CTCK: N báo cáo phân tích mới nhất của các công ty chứng khoán về 1 / vài mã (Simplize – link PDF, VNDirect –
+# giá mục tiêu, CafeF – tiêu đề) + giá ngày từ 2010 → Excel + zip PDF (ptcp/bao_cao_ctck.py) → Telegram + artifact 3 ngày.
+name: Bao cao CTCK
+
+on:
+  workflow_dispatch:
+    inputs:
+      ma:
+        description: "Mã, phân cách dấu phẩy (VD GMD)"
+        default: "GMD"
+      so:
+        description: "Số báo cáo mới nhất"
+        default: "20"
+      nhanh_danh_muc:
+        description: "Nhánh repo danh-muc (trống = main)"
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  bao_cao:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          ref: ${{ inputs.nhanh_danh_muc || '' }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Cài thư viện
+        run: pip install -q -r requirements.txt > /dev/null
+      - name: Lấy báo cáo CTCK & giá, gửi Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          MA: ${{ inputs.ma }}
+          SO: ${{ inputs.so }}
+        run: python -m ptcp.bao_cao_ctck --ma "$MA" --so "${SO:-20}" --gui
+      - uses: actions/upload-artifact@v6
+        with:
+          name: bao-cao-ctck
+          path: |
+            danh-muc/*_bao_cao_ctck_va_gia.xlsx
+            danh-muc/*_bao_cao_ctck_pdf.zip
+          retention-days: 3
+          if-no-files-found: warn
