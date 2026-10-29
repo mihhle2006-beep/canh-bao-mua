@@ -6,6 +6,7 @@
 # ở danh-muc ptcp/cau_hinh.py), von55–von72 (28/10/2026) và von73–von80 (29/10/2026) – kết luận ở danh-muc
 # KET_LUAN_BACKTEST_CU.md; code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
+#   von83 – breakout hỏng dùng ngược chiều (hỏng × 1,25 / 1,5, nóng × ½) + đối chứng đòn bẩy
 #   von82 – năm 2026 với đề xuất (mã mua, lệnh giảm ½) + thử lọc "breakout hỏng" cho kiểu năm 2024
 #   von81 – độ nhạy đề xuất von80: "tăng giả|hẹp" × hệ số ⅓ / ½ / ⅔ × ngưỡng hẹp 5 / 10 / 15 · hệ bắt đáy trần 20–40%
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
@@ -23,7 +24,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von81 / von82 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von80 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von81 / von82 / von83 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von80 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -46,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von81, von82]
+        phan: [chuan, von81, von82, von83]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -125,6 +126,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            von83) export CHI_VON83=1; unset SO_NN ;;          # breakout hỏng ngược chiều (7 biến thể × 20 thứ tự ★)
             von82) export CHI_VON82=1; unset SO_NN ;;          # năm 2026 với đề xuất + breakout hỏng (7 biến thể × 20 thứ tự ★)
             von81) export CHI_VON81=1; unset SO_NN ;;          # độ nhạy đề xuất (11 biến thể × 20 thứ tự ★ + hệ bắt đáy)
           esac
