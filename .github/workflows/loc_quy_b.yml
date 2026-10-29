@@ -7,6 +7,7 @@
 # nên canh-bao-mua / gia_lap nhận qua lay_ptcp.py). Chạy 06:07 giờ VN mỗi ngày giao dịch (xong trước phiên 09:00 & tin tổng kết 15:20).
 # Trước khi định giá: tải BCTC quý / năm vừa công bố (mã thiếu đúng kỳ mới nhất đã tới hạn – kho_bctc --moi) và lấy lại
 # số CP của mã có sự kiện quyền mới (cổ tức, chia / thưởng, phát hành – cache_du_lieu/so_cp.json).
+# Mùa BCTC: "BCTC moi hang dem" (22:13) đã tải MỌI mã có kỳ mới; bước sáng (--moi 80) lấy nốt mã công bố sau đó.
 name: Loc quy But Pha
 
 on:

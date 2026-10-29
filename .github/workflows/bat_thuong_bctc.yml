@@ -3,10 +3,12 @@
 # gộp… + riêng theo ngành; năm tài chính + 4 QUÝ GẦN NHẤT khi BCTC quý mới hơn năm) → bước 2–3 đọc báo cáo thường niên +
 # BCTC kiểm toán năm đó tìm lời giải thích, đối chiếu kế hoạch đầu tư với chi đầu tư / tài sản dở dang
 # (ptcp/giai_thich_bat_thuong.py) → Excel gửi Telegram.
-# TỰ CHẠY HẰNG NGÀY sau "Loc quy But Pha" (bước đó tải BCTC quý / năm vừa công bố – kho_bctc --moi): job chon chỉ lấy mã
+# TỰ CHẠY sau "Loc quy But Pha" (sáng, kho_bctc --moi 80) và "BCTC moi hang dem" (đêm, mọi mã – kho_bctc --moi_het)
+# – 2 bước đó tải BCTC quý / năm vừa công bố: job chon chỉ lấy mã
 # có BCTC MỚI (kỳ mới nhất của kho khác lần đọc trước) hoặc có năm đang "chờ báo cáo thường niên" mà BCTN vừa ra
 # (BCTN giải thích → ĐÃ GIẢI THÍCH). Không có mã nào → dừng, không chạy nhóm đọc. Tin Telegram: thay đổi (🆕 bất thường
-# mới · ✅ đã giải thích · 🔁 đổi mức) + Excel các mã lần này. Chạy tay: Excel đủ mã như cũ.
+# mới · ✅ đã giải thích · 🔁 đổi mức) + Excel các mã lần này; 🆕 của mã top 100 GTGD
+# bỏ khỏi tin (đã gộp trong tin "BCTC mới"). Chạy tay: Excel đủ mã như cũ.
 # Nhóm song song: ≤ 12 mã → 1 nhóm, nhiều hơn → 6 nhóm (≤ 320 phút / nhóm). CONG_KHAI=1: log chỉ in số mã.
 # ĐỆM CHỮ TÀI LIỆU (cache_du_lieu/tai_lieu – chữ từng trang đã OCR, theo URL): mỗi nhóm khôi phục bản đệm chung (actions/cache),
 # đọc thêm tài liệu mới, gửi phần đệm lên artifact; job gop gộp lại lưu bản đệm mới → lần sau không tải / OCR lại.
@@ -23,8 +25,8 @@ on:
         description: "Đọc lại cả mã đã có kết quả lưu (chấm lại sau khi đổi cách đọc; chữ tài liệu lấy từ đệm)"
         type: boolean
         default: false
-  workflow_run:                    # hằng ngày: sau khi "Loc quy But Pha" tải BCTC mới công bố
-    workflows: ["Loc quy But Pha"]
+  workflow_run:                    # sau khi "Loc quy But Pha" (sáng) / "BCTC moi hang dem" (đêm) tải BCTC mới công bố
+    workflows: ["Loc quy But Pha", "BCTC moi hang dem"]
     types: [completed]
 
 permissions:
