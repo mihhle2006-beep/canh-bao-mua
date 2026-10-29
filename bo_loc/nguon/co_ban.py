@@ -14,6 +14,7 @@ NGUỒN DỮ LIỆU CƠ BẢN (P/E, P/B, ROE, EPS, nợ, cổ tức...) – NHI�
 Các API dưới đây là API công khai KHÔNG chính thức, chưa kiểm chứng lâu dài → luôn xem sheet "Nguon du lieu".
 Muốn chắc chắn (VD số liệu đưa vào báo cáo): tạo file mẫu (--tao_mau_co_ban), điền từ BCTC/CafeF/Vietstock.
 """
+import importlib.util
 import json
 import os
 import time
@@ -294,6 +295,7 @@ def tu_vnstock(ma):
     return vnstock_nguon.co_ban(ma)
 
 
+tu_vnstock.thu_vien, tu_yahoo.thu_vien = "vnstock", "yfinance"
 NGUON_CO_BAN = {"VNDirect": tu_vndirect, "vnstock": tu_vnstock, "TCBS": tu_tcbs, "Yahoo": tu_yahoo}
 
 
@@ -322,6 +324,12 @@ def _co_lnst(du_lieu):
     return any(isinstance(d, dict) and d.get("ln_4q_ty") is not None for d in (du_lieu or {}).values())
 
 
+def _thieu_thu_vien(ham):
+    """Nguồn cần thư viện chưa cài (bot GitHub không cài vnstock / yfinance) → bỏ qua, khỏi ghi 'Lỗi' cả trăm lần mỗi lượt."""
+    tv = getattr(ham, "thu_vien", None)
+    return tv is not None and importlib.util.find_spec(tv) is None
+
+
 def bo_sung_lnst(ma, du_lieu, thu_tu=NGUON_LNST):
     """
     Dữ liệu chưa có LNST 4 quý (VD lưu đệm lúc vnstock hết lượt / TCBS chặn) → thử lại RIÊNG các nguồn có LNST quý
@@ -329,12 +337,14 @@ def bo_sung_lnst(ma, du_lieu, thu_tu=NGUON_LNST):
     """
     if _co_lnst(du_lieu):
         return False
+    da_thu = False
     for ten in thu_tu:
-        if ten not in ch.THU_TU_NGUON_CO_BAN or CAU_DAO_CO_BAN.bo_qua(ten):
-            continue
         ham = NGUON_CO_BAN.get(ten)
+        if ten not in ch.THU_TU_NGUON_CO_BAN or not ham or _thieu_thu_vien(ham) or CAU_DAO_CO_BAN.bo_qua(ten):
+            continue
+        da_thu = True
         try:
-            d = ham(ma) if ham else None
+            d = ham(ma)
         except (Exception, SystemExit) as e:
             NHAT_KY.ghi(f"LNST 4 quý {ma}", ten, "Lỗi", str(e)[:80])
             continue
@@ -342,7 +352,8 @@ def bo_sung_lnst(ma, du_lieu, thu_tu=NGUON_LNST):
             du_lieu[ten] = {**(du_lieu.get(ten) or {}), **d}
             NHAT_KY.ghi(f"LNST 4 quý {ma}", ten, "OK", f"{d['ln_4q_ty']:,.1f} tỷ ({d.get('ky_lnst', '')})")
             return True
-    NHAT_KY.ghi(f"LNST 4 quý {ma}", "—", "Lỗi", "không nguồn nào có LNST 4 quý → dùng EPS nguồn công bố")
+    if da_thu:
+        NHAT_KY.ghi(f"LNST 4 quý {ma}", "—", "Lỗi", "không nguồn nào có LNST 4 quý → dùng EPS nguồn công bố")
     return False
 
 
@@ -359,7 +370,7 @@ def lay_online(ma, dung_cache=True, thu_muc_cache=None, thu_tu=None):
     kq = {}
     for ten in (thu_tu or ch.THU_TU_NGUON_CO_BAN):
         ham = NGUON_CO_BAN.get(ten)
-        if not ham or CAU_DAO_CO_BAN.bo_qua(ten):
+        if not ham or _thieu_thu_vien(ham) or CAU_DAO_CO_BAN.bo_qua(ten):
             continue
         try:
             d = ham(ma)

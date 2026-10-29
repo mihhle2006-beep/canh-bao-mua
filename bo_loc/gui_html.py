@@ -50,7 +50,8 @@ def tin_ma_mua(cl, ngay, ds_ma):
 
 
 def tin_ptdttc(path="ptdttc_bo_loc.json"):
-    """Tin mã PTĐTTC theo dõi riêng (quet_dinh_ky --chi_ptdttc ghi) – None nếu không có."""
+    """Tin mã PTĐTTC theo dõi riêng (quet_dinh_ky --chi_ptdttc ghi) – None nếu không có. Tin gọn 29/10/2026: gom mã cùng
+    kết luận các chiến lược vào 1 dòng (trước: mỗi mã 3 dòng), nhóm có MUA lên đầu."""
     try:
         with open(path, encoding="utf-8") as f:
             d = json.load(f)
@@ -59,9 +60,12 @@ def tin_ptdttc(path="ptdttc_bo_loc.json"):
     ma = d.get("ma") or {}
     if not ma:
         return None
-    return ("📌 PTĐTTC – theo dõi riêng (không vào danh sách MUA)\n"
-            + "\n".join("\n".join([m] + [f"   {ten_cl(cl)}: {v['hanh_dong']}" for cl, v in kq.items()])
-                        for m, kq in ma.items()))
+    nhom = {}
+    for m, kq in ma.items():
+        nhom.setdefault(" · ".join(f"{ten_cl(cl)} {v.get('hanh_dong', '–')}" for cl, v in kq.items()) or "–", []).append(m)
+    thu_tu = sorted(nhom, key=lambda k: ("MUA" not in k, k))
+    return (f"📌 PTĐTTC – theo dõi riêng ({len(ma)} mã, không vào danh sách MUA)\n"
+            + "\n".join(f"• {k}: {', '.join(nhom[k])}" for k in thu_tu))
 
 
 def _tg():

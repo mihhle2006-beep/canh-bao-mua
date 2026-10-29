@@ -200,6 +200,24 @@ def test_canh_bao_so_cp_lech_tren_1pct():
     assert co_ban.gop({"TCBS": {"so_cp": 414e6}, "Yahoo": {"so_cp": 415e6}})["canh_bao_du_lieu"] == ""
 
 
+def test_nguon_thieu_thu_vien_bo_qua_khong_ghi_loi(monkeypatch, tmp_path):
+    """Bot không cài vnstock / yfinance → không gọi 2 nguồn đó, nhật ký không đầy 'Lỗi' (vnstock 0/103, — 0/98)."""
+    from bo_loc.nguon.http import NHAT_KY
+    co_ban._ghi_cache("VPB", str(tmp_path), {"VNDirect": {"pe": 6.1, "eps_ttm": 3758.0}})
+    goi = []
+    that = co_ban.importlib.util.find_spec
+    monkeypatch.setattr(co_ban.importlib.util, "find_spec",
+                        lambda ten, *a: None if ten in ("vnstock", "yfinance") else that(ten, *a))
+    for ten, tv in (("vnstock", "vnstock"), ("Yahoo", "yfinance")):
+        ham = lambda ma, t=ten: goi.append(t)                                # noqa: E731
+        ham.thu_vien = tv
+        monkeypatch.setitem(co_ban.NGUON_CO_BAN, ten, ham)
+    NHAT_KY.xoa()
+    assert co_ban.lay_online("VPB", dung_cache=True, thu_muc_cache=str(tmp_path)) == {"VNDirect": {"pe": 6.1,
+                                                                                                    "eps_ttm": 3758.0}}
+    assert not goi and set(NHAT_KY.bang()["Nguồn"]) == {"cache"}
+
+
 def test_cache_thieu_lnst_tu_bo_sung_va_pe_theo_lnst(monkeypatch, tmp_path):
     """Lưu đệm chỉ có VNDirect + Yahoo (thiếu LNST 4 quý) → tự lấy thêm LNST → P/E = giá ÷ (LNST 4Q ÷ CP)."""
     co_ban._ghi_cache("VPB", str(tmp_path), {"VNDirect": {"pe": 6.1, "pb": 1.28, "eps_ttm": 3758.0},

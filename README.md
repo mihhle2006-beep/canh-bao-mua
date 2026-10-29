@@ -20,19 +20,26 @@ nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
 - File HTML "Bảng tổng hợp" có đủ chi tiết: theo dõi các khuyến nghị đã gửi, danh sách mã từ bộ lọc.
   Tin Telegram chỉ ghi những việc cần làm.
 
-## Cách đọc một dòng mua
+## Cách đọc một mã mua
 
-Ví dụ (giá tính bằng nghìn đồng):
-`★ ABC | 20.00–21.00 | MT 22.00 → 26.00 | CL 19.50 | đặt LO 20.30 | 💰 ≤7.0% NAV`
+Ví dụ (giá tính bằng nghìn đồng), mỗi mã 3 dòng:
 
-- **★**: mã ưu tiên trong tuần (tối đa 5 mã).
-- **20.00–21.00**: vùng mua. Chỉ mua khi giá nằm trong vùng. Mở cửa cao hơn vùng thì không đuổi.
-- **MT**: mục tiêu 1R → 3R. Đây là mốc để dời cắt lỗ lên, không phải lệnh bán.
-- **CL**: giá cắt lỗ. Giá chạm mức này thì bán.
-- **đặt LO**: giá đặt lệnh LO trước giờ mở cửa (ở ⅓ dưới của vùng mua).
-  Không khớp: mã ★ mua ATC nếu giá còn trong vùng; mã không ★ thì bỏ.
+```
+★1 ABC 20.50 | MUA MỚI · MACD ngày cắt lên
+   Vùng mua 20.00 – 21.00 · Đặt LO 20.30 · Cắt lỗ 19.50 (-4.9%)
+   Mục tiêu 1R 21.50 → 3R 23.50 · 💰 ≤7.0% NAV
+```
+
+- **★1**: thứ tự nên mua trong tuần (tối đa 5 mã mới/tuần).
+- **Vùng mua**: chỉ mua khi giá nằm trong vùng. Mở cửa cao hơn vùng thì không đuổi.
+- **Đặt LO**: giá đặt lệnh LO trước giờ mở cửa (ở ⅓ dưới của vùng mua), chỉ có khi cách vào là LO.
+  Cách vào chung (chờ tin 🟢 15', ATC cuối phiên, khi nào bỏ) ghi 1 lần ở dòng 🎯 đầu tin.
+- **Cắt lỗ**: giá chạm mức này thì bán.
+- **Mục tiêu 1R → 3R**: mốc để dời cắt lỗ lên, không phải lệnh bán.
 - **💰 ≤ X% NAV**: mua tối đa X% tài sản cho mã này (đã nhân sẵn mọi hệ số).
   Số cổ = NAV × X% ÷ (giá × 1.000). VD NAV 10 tr, ≤5.4%, giá 11.15 → 540.000 ÷ 11.150 ≈ 48 cổ.
+- Mục 💼 **Đang giữ** (tin riêng): mỗi mã 1 dòng (giá, lãi/lỗ, việc cần làm, cắt lỗ). Ngày mua, giá vốn, mục tiêu tiếp
+  nằm ở tin 📊 DANH MỤC – không lặp lại.
 
 ## Dòng 🌡 nhiệt thị trường
 

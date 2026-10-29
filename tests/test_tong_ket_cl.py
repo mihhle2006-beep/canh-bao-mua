@@ -71,8 +71,8 @@ def test_tong_ket_gon_cong_khai_va_luu_ds_mua(moi_truong):
     assert ds["hieu_luc"] == "2026-10-05"                                    # thứ Sáu → phiên thứ Hai
     for z in ds["ma"]:
         assert z["nhom"] in tong_ket_cl.NHOM_MUA and z["cl"] < z["tu"] <= z["den"]
-        assert f"   Vùng mua: {z['tu']:,.2f} – {z['den']:,.2f}\n" in t                 # mỗi mục 1 dòng
-        assert f"   Mục tiêu: 1R {z['mt1']:,.2f} → 3R {z['mt3']:,.2f}\n   Cắt lỗ: {z['cl']:,.2f} (" in t
+        assert f"   Vùng mua {z['tu']:,.2f} – {z['den']:,.2f} · Cắt lỗ {z['cl']:,.2f} (" in t   # tin gọn 29/10/2026
+        assert f"   Mục tiêu 1R {z['mt1']:,.2f} → 3R {z['mt3']:,.2f}" in t
         assert z["mt1"] == pytest.approx(z["gia"] + (z["gia"] - z["cl"]))
     assert gf.call_count == 1 and os.path.exists(C.FILE_EXCEL)
     xl = pd.ExcelFile(C.FILE_EXCEL)
@@ -98,7 +98,7 @@ def test_tong_ket_co_danh_muc_rieng_tu(moi_truong, monkeypatch, capsys):
     log = capsys.readouterr().out
     tin = next((nd, rt) for nd, rt in gui if nd.startswith("📊 TỔNG KẾT"))
     assert tin[1] is True and "💼 ĐANG GIỮ (2)" in tin[0] and "XYZ" in tin[0]
-    assert "Mua thêm" in tin[0] or "MUA THÊM" in tin[0]
+    assert "· Cắt lỗ" in tin[0] or "dời cắt lỗ lên" in tin[0]                  # 1 dòng / mã đang giữ
     assert "XYZ" not in log and f"{gv:,.2f}" not in log and "💼" not in log     # log công khai sạch
     assert gf.call_args[1]["rieng_tu"] is True and not os.path.exists(C.FILE_EXCEL)   # Actions: xoá file riêng
     assert "XYZ" not in open("lich_su_danh_gia.csv", encoding="utf-8").read()
@@ -240,7 +240,7 @@ def test_dong_su_kien_bao_truoc_gdkhq(monkeypatch):
 def test_dong_nhiet_va_khoi_luong_theo_nhiet():
     nh = {"diem": 5, "so_chi_bao": 6, "he_so": 0.5, "chi_bao": [{"ten": "RSI14 VN-Index > 50", "dat": True}]}
     s = tong_ket_cl.dong_nhiet(nh, rr=0.75)
-    assert "5/6 (NÓNG)" in s and "= 0.38% vốn" in s and "RSI14" in s
+    assert "5/6 (NÓNG)" in s and "= 0.38% vốn" in s and "1 chỉ báo bật" in s and s.count("\n") == 1   # 2 dòng
     assert tong_ket_cl.dong_nhiet(None) is None
     assert "mua 5.4% NAV (rủi ro 0.38%" in tong_ket_cl.dong_khoi_luong(20.0, 18.6, 1.4, he_so_nhiet=0.5)
 
@@ -284,7 +284,7 @@ def test_von_lenh_nhan_san_moi_he_so():
 
 def test_dong_mua_ghi_gia_lo():
     k = {"ma": "DGW", "tu": 44.5, "den": 46.75, "mt1": 47.0, "mt3": 49.9, "cl": 43.49, "ly_do": "MACD", "nhom": "VAO_NHU_MOI"}
-    assert "\n   Đặt LO: 45.25\n" in tong_ket_cl.dong_mua(k, bien_the="LO")
+    assert "\n   Vùng mua 44.50 – 46.75 · Đặt LO 45.25 · Cắt lỗ 43.49\n" in tong_ket_cl.dong_mua(k, bien_the="LO")
     assert "LO" not in tong_ket_cl.dong_mua(k, bien_the="15P+ATC")
     assert tong_ket_cl.gia_lo(10.0, 10.5) == 10.15                   # 10,1667 → làm tròn xuống bước 0,05
 
@@ -320,7 +320,7 @@ def test_ma_dang_giu_khong_bao_mua_ngay():
           "tieu_chi": [], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-12 09:20", "LO", dang_giu=True)
     assert tin.startswith("💼 GIỮ THEO HỆ THỐNG – MSN") and "MUA NGAY" not in tin and "KHÔNG mua trùng" in tin
-    assert "\n   Cắt lỗ: 70.92 (" in tin and "CP" not in tin and "Đã vào lệnh" not in tin   # không có vị thế thật
+    assert "\nGiữ theo lệnh hệ thống: Cắt lỗ 70.92 (" in tin and "CP" not in tin and "Đã vào lệnh" not in tin
     tin = diem_vao.tin_mua(kq, "2026-10-12 09:20", "LO", dang_giu={"gia_von": 70.0, "ngay_mua": "12/10/2026"})
     assert "\nĐã vào lệnh: 12/10 giá vốn 70.00 · hiện lãi +5.4%\n" in tin and "CP" not in tin
     assert diem_vao.tin_mua(kq, "2026-10-12 09:20", "LO").startswith("🟢 MUA NGAY – MSN")
@@ -363,22 +363,21 @@ def test_tin_hieu_manh_suat_du_phong(monkeypatch):
     monkeypatch.setattr(tong_ket_cl, "_loc_quy", lambda ma, vni: loc[ma])
     a, b, c = tong_ket_cl.ds_khuyen_nghi(ra)
     assert a["manh_b"] and "ngành mạnh" in a["dau_hieu_manh"] and not b["manh_b"]
-    assert tong_ket_cl.dong_mua(a).startswith("★1 AAA💪 10.00 | MUA MỚI\n") and "💪" not in tong_ket_cl.dong_mua(b)
+    assert tong_ket_cl.dong_mua(a).startswith("★1 AAA💪 10.00 | MUA MỚI · ") and "💪" not in tong_ket_cl.dong_mua(b)
     assert c["nhom"] == "NGOAI_TOP"
     assert C.CACH_VAO_15P == "15P+GIO"
 
 
-def test_tin_ghi_ro_cach_vao_tung_ma():
+def test_cach_vao_chung_mot_dong_tung_ma_chi_gia_lo():
+    """29/10/2026: cách vào 15' / ATC / bỏ khi vượt vùng ghi 1 lần (dòng 🎯), từng mã chỉ thêm giá LO khi cách vào LO."""
     k = {"ma": "DGW", "tu": 44.5, "den": 46.75, "mt1": 47.0, "mt3": 49.9, "cl": 43.49, "ly_do": "MACD", "nhom": "MUA_MOI"}
     s = tong_ket_cl.dong_mua(k, bien_the="15P+GIO+ATC")
-    assert "\n   Cách vào: chờ 🟢 15' khi giá 44.50–46.75\n" in s
-    assert f"\n   ATC: {C.GIO_ATC} chưa mua → ATC nếu 44.50–46.75" in s and "\n   Bỏ nếu: mở cửa > 46.75" in s
+    assert "Cách vào" not in s and "ATC" not in s and "Bỏ nếu" not in s and s.count("\n") == 2
     m = tong_ket_cl.mo_ta_cach_vao("15P+GIO+ATC")
-    assert "MACD giờ > Signal" in m and "ATC" in m and "không đuổi" in m
+    assert "MACD giờ > Signal" in m and f"{C.GIO_ATC} chưa mua → ATC" in m and "không đuổi" in m and "\n" not in m
     assert "MACD giờ" not in tong_ket_cl.mo_ta_cach_vao("15P+ATC")
-    assert "Đặt LO: 45.25" in tong_ket_cl.dong_mua(k, bien_the="LO+ATC_VWAP") and \
-        "VWAP" in tong_ket_cl.cach_vao_ma(k, "LO+ATC_VWAP")
-    assert "ATO nếu mở cửa" in tong_ket_cl.cach_vao_ma(k, "ATO") and tong_ket_cl.cach_vao_ma(k, None) == ""
+    assert "Đặt LO 45.25" in tong_ket_cl.dong_mua(k, bien_the="LO+ATC_VWAP")
+    assert "VWAP" in tong_ket_cl.mo_ta_cach_vao("LO+ATC_VWAP") and "ATO" in tong_ket_cl.mo_ta_cach_vao("ATO")
 
 
 def test_tin_15p_ghi_ro_gia_va_cach_vao():
@@ -386,9 +385,9 @@ def test_tin_15p_ghi_ro_gia_va_cach_vao():
           "thoi_diem": pd.Timestamp("2026-10-15 10:15"), "ly_do": "đủ tiêu chí 15'", "ly_do_ngay": "MACD",
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", True, "MACD 15' cắt lên")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 10:16", "15P+GIO+ATC")
-    assert tin.split("\n")[1:] == ["👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75", "Nhóm: MUA MỚI",
-                                   "Vùng mua: 44.50 – 46.75", "Mục tiêu: 1R 46.71 → 3R 49.93", "Cắt lỗ: 43.49 (-3.6%)",
-                                   "Khối lượng: 💰 ≤20.0% NAV"]
+    assert tin.split("\n")[1:] == ["👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75",                 # tin gọn 29/10/2026
+                                   "MUA MỚI · Vùng mua 44.50 – 46.75 · Cắt lỗ 43.49 (-3.6%)",
+                                   "Mục tiêu 1R 46.71 → 3R 49.93 · 💰 ≤20.0% NAV"]
     tin = diem_vao.tin_mua({**kq, "atc": True}, "2026-10-15 14:26", "15P+GIO+ATC")
     assert tin.startswith("⏰ MUA ATC") and "👉 Đặt lệnh ATC (giá ước tính 45.10). Không mua nếu giá cao hơn 46.75" in tin
 
@@ -405,20 +404,18 @@ def test_canh_bao_da_giu_2_ma_cung_nganh():
     assert "⚠" not in tong_ket_cl.dong_mua(k, {a}) and "⚠" not in tong_ket_cl.dong_mua(k, set())   # bản công khai
 
 
-def test_tin_moi_muc_1_dong():
-    """19/10/2026: tin đọc trên điện thoại – mỗi mục 1 dòng, ghi đủ chữ (Mục tiêu / Cắt lỗ / Khối lượng)."""
+def test_tin_gon_ghi_du_chu():
+    """19/10/2026: tin đọc trên điện thoại, ghi đủ chữ (Mục tiêu / Cắt lỗ) · 29/10/2026: gọn – mã mua 3 dòng, mã giữ 1 dòng."""
     k = {"ma": "FPT", "nhom": "MUA_MOI", "gia": 100.0, "tu": 98.0, "den": 101.0, "mt1": 107.0, "mt3": 121.0, "cl": 93.0,
          "ly_do": "MACD ngày cắt lên", "uu_tien": 1.0}
     d = tong_ket_cl.dong_mua(k, bien_the="LO").split("\n")
-    assert d[:6] == ["★1 FPT 100.00 | MUA MỚI", "   Vùng mua: 98.00 – 101.00", "   Đặt LO: 99.00",
-                     "   Bỏ nếu: mở cửa > 101.00", "   Mục tiêu: 1R 107.00 → 3R 121.00", "   Cắt lỗ: 93.00 (-7.0%)"]
-    assert d[6].startswith("   Khối lượng: 💰 ≤") and d[-1] == "   Lý do: MACD ngày cắt lên"
+    assert d[:2] == ["★1 FPT 100.00 | MUA MỚI · MACD ngày cắt lên",
+                     "   Vùng mua 98.00 – 101.00 · Đặt LO 99.00 · Cắt lỗ 93.00 (-7.0%)"]
+    assert d[2].startswith("   Mục tiêu 1R 107.00 → 3R 121.00 · 💰 ≤") and len(d) == 3
     vt = {"ma": "MSN", "gia_von": 70.0, "ngay_mua": "12/10/2026"}
     kb = {"muc": "GIU", "gia": 72.0, "lai_lo_pct": (72 / 70 - 1) * 100, "lai_R": 0.4, "cat_lo": 69.48, "he_thoat": True,
           "tang": 0, "muc_tieu": 76.72, "ghi_chu": []}
-    assert tong_ket_cl.dong_giu(vt, kb, None) == [
-        "MSN 72.00 | GIỮ", "   Đã vào lệnh: 12/10 giá vốn 70.00 · hiện lãi +2.9% (+0.4R)", "   Cắt lỗ: 69.48 (-3.5%)",
-        "   Mục tiêu tiếp: 76.72 → dời cắt lỗ lên hoà vốn"]
+    assert tong_ket_cl.dong_giu(vt, kb, None) == ["MSN 72.00 +2.9% (+0.4R) · GIỮ · Cắt lỗ 69.48 (-3.5%)"]
     assert vi_the.dong_da_vao(None, 70.0, -1.2) == "Đã vào lệnh: giá vốn 70.00 · hiện lỗ -1.2%"   # không R → bỏ
     tin = "\n".join([tong_ket_cl.dong_mua(k, bien_the="15P+GIO+ATC")] + tong_ket_cl.dong_giu(vt, kb, None))
     assert not any(x in tin for x in ("MT ", " CL ", "| CL", " KL", " | Mục", " | Cắt"))
@@ -507,7 +504,7 @@ def test_tin_mua_co_ty_trong_nav():
     kq = {"ma": "SSI", "nhom": "VAO_NHU_MOI", "tu": 19.75, "den": 20.40, "gia_mua": 20.2, "gia_nay": 20.2, "cl": 19.0,
           "atc": True, "he_so_quy": 0.5, "atr": np.nan}
     dong = diem_vao.tin_mua(kq, "2026-10-22 14:30", "15P+GIO").split("\n")[-1]
-    assert dong.startswith("Khối lượng: 💰 ≤") and "% NAV" in dong and "×0.5" in dong
+    assert dong.startswith("Mục tiêu 1R") and " · 💰 ≤" in dong and "% NAV" in dong and "×0.5" in dong
 
 
 def test_hang_uu_tien_trong_tin():
@@ -587,4 +584,4 @@ def test_vi_the_he_bat_day_khong_dung_he_thoat_b(monkeypatch):
     assert kb2["muc"] == "BD_BAN" and "hệ đã bán mở cửa 27/10" in kb2["ly_do"][0]
     assert vi_the.bat_day_cua({"ma": "DIG", "ngay_mua": "01/09/2026"}) is None     # mua đợt khác → mã B thường
     d = tong_ket_cl.dong_giu({"ma": "DIG", "ngay_mua": "20/10/2026", "gia_von": 20.0}, kb, None)
-    assert d[0].startswith("DIG 15.00 | 🎣 BÁN ATO") and len(d) == 3
+    assert d == ["🎣 DIG 15.00 -25.0% · 🔻 BÁN ATO phiên tới – hệ bắt đáy (−10% từ giá mua)"]

@@ -409,42 +409,36 @@ def _f(x, le=2):
 
 def _dong_he_thoat(kb):
     if kb.get("bat_day"):
-        return ["Hệ bắt đáy (tiền B để không) – không dùng cắt lỗ của hệ B"]
+        return "hệ bắt đáy (tiền B để không) – không dùng cắt lỗ của hệ B"
     if not kb.get("he_thoat"):
-        return [f"Cắt lỗ đã đặt: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)",
-                f"Mục tiêu đã đặt: {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)"]
-    d = [f"Hệ thoát: {TEN_TANG[kb['tang']]}, 1R = {_f(kb['R'])}",
-         f"Cắt lỗ hiệu lực: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)"]
+        return (f"Cắt lỗ đã đặt {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%) · Mục tiêu đã đặt "
+                f"{_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)")
+    d = f"Hệ thoát {TEN_TANG[kb['tang']]} · 1R = {_f(kb['R'])} · Cắt lỗ {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)"
     if kb.get("cat_lo_dat") is not None and abs(kb["cat_lo_he_thong"] - kb["cat_lo_dat"]) > 1e-9:
-        d.append(f"  hệ thống {_f(kb['cat_lo_he_thong'])} · đã đặt {_f(kb['cat_lo_dat'])}")
+        d += f" (hệ thống {_f(kb['cat_lo_he_thong'])} · đã đặt {_f(kb['cat_lo_dat'])})"
     return d
 
 
 def tin_ban(vt, kb, kq, bay_gio):
+    """Tin cảnh báo bán trong phiên (riêng tư) – 4 dòng: nhãn · việc cần làm · đã vào lệnh + hệ thoát · lý do.
+    Tin gọn 29/10/2026: bỏ dòng ptcp tham khảo & dòng nhắc chung (T+2 nằm trong ghi chú khi có)."""
     g = kb["gia"]
     hanh_dong = {"CAT_LO": f"Bán toàn bộ {vt['so_cp']:,.0f} CP theo kỷ luật cắt lỗ",
                  "BAN_TUAN": f"Bán {vt['so_cp']:,.0f} CP đầu phiên tới – hệ thoát khung tuần (không chờ mục tiêu)",
                  "HET_HAN": f"Bán {vt['so_cp']:,.0f} CP – lệnh không chạy, giải phóng vốn cho tín hiệu mới",
                  "CHOT_LOI": f"Chốt lời (toàn bộ hoặc ½ = {vt['so_cp'] / 2:,.0f} CP), phần còn lại dời cắt lỗ lên",
                  "CAN_NHAC_BAN": "Xem xét giảm tỷ trọng / siết cắt lỗ – xu hướng đang yếu đi",
-                 "GAN_CAT_LO": f"Chuẩn bị lệnh bán: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ (hệ thoát)",
+                 "GAN_CAT_LO": f"Chuẩn bị lệnh bán {vt['so_cp']:,.0f} CP: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ",
                  "DOI_CAT_LO": f"Đặt lệnh cắt lỗ mới {_f(kb.get('cat_lo_he_thong'))} & cập nhật cat_lo_dat trong "
                                f"danh_muc.csv (repo danh-muc)",
                  "BD_BAN": f"Bán {vt['so_cp']:,.0f} CP lệnh ATO phiên "
                            + (f"{pd.Timestamp(kb['ngay_lenh']):%d/%m}" if kb.get("ngay_lenh") is not None else "tới")
-                           + " (đã qua giờ ATO thì bán ngay)"}.get(kb["muc"], "")
+                           + " (đã qua giờ ATO thì bán ngay)"}.get(kb["muc"], f"Đang giữ {vt['so_cp']:,.0f} CP")
     d = [f"{NHAN[kb['muc']]} – {vt['ma']} @ {_f(g)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
-         f"Đang giữ: {vt['so_cp']:,.0f} CP",
-         dong_da_vao(vt.get("ngay_mua"), vt.get("gia_von"), kb["lai_lo_pct"], kb.get("lai_R")),
-         *_dong_he_thoat(kb),
-         "Lý do: " + "; ".join(kb["ly_do"])]
-    d += [f"  • {x}" for x in kb.get("ghi_chu", [])]
-    if hanh_dong:
-        d.append(f"➜ {hanh_dong}")
-    pt = kq.get("ptcp") or {}
-    if pt:
-        d.append(f"ptcp ({pt.get('ngay_du_lieu', '')}): {pt.get('khuyen_nghi', '')} (tham khảo – hệ thoát quyết định)")
-    d.append("(Tham khảo – tự kiểm tra trước khi đặt lệnh; lưu ý T+2 với CP mới mua)")
+         f"➜ {hanh_dong}",
+         dong_da_vao(vt.get("ngay_mua"), vt.get("gia_von"), kb["lai_lo_pct"], kb.get("lai_R")) + " · "
+         + _dong_he_thoat(kb),
+         "Lý do: " + "; ".join(kb["ly_do"] + kb.get("ghi_chu", []))]
     return "\n".join(d)
 
 
