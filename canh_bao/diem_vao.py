@@ -180,13 +180,11 @@ def tin_giu_theo_he_thong(kq, bay_gio, vt=None):
     gv = vt.get("gia_von") if isinstance(vt, dict) else None
     return "\n".join([
         f"💼 GIỮ THEO HỆ THỐNG – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
-        f"Mã đang có trong danh mục, hệ thống vừa có điểm mua ({TEN_NHOM.get(kq['nhom'], kq['nhom'])}) → "
-        "KHÔNG mua trùng, KHÔNG cắt lỗ theo mức cũ"]
+        f"Đang giữ, hệ thống vừa có điểm mua ({TEN_NHOM.get(kq['nhom'], kq['nhom'])}) → KHÔNG mua trùng; mua thêm chỉ "
+        "khi tin tổng kết ghi MUA THÊM"]
         + ([dong_da_vao(vt.get("ngay_mua"), gv, (gia / gv - 1) * 100 if gia == gia else None)] if gv else [])
-        + ["Giữ theo lệnh hệ thống:",
-           f"   Cắt lỗ: {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
-           f"   Mục tiêu: 1R {_f(mt1)} → 3R {_f(mt3)}",
-           "Mua thêm chỉ khi tin tổng kết ghi MUA THÊM."])
+        + [f"Giữ theo lệnh hệ thống: Cắt lỗ {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "")
+           + f" · Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}"])
 
 
 def dong_dat_lenh(kq, bien_the, gia):
@@ -206,17 +204,15 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
     dau = "⏰ MUA ATC" if kq.get("atc") else "🟢 MUA NGAY"
     # tin gọn (người dùng 17/10/2026): giá đặt + nhóm / vùng / cắt lỗ / mục tiêu – bỏ dòng tiêu chí & khối lượng;
-    # 19/10/2026: mỗi mục 1 dòng, ghi đủ chữ (đọc trên điện thoại)
+    # 19/10/2026: ghi đủ chữ (đọc trên điện thoại) · 29/10/2026: 4 dòng (gộp nhóm · vùng · cắt lỗ, mục tiêu · khối lượng)
     from .tong_ket_cl import nhan_uu_tien
     ut = nhan_uu_tien(kq.get("uu_tien"))                 # nhiều tin cùng lúc → thấy mã nào ưu tiên (★1 cao nhất)
+    von = _von_nav(kq, gia, cl)
     d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})" + (f" · ưu tiên {ut}" if ut else ""),
          dong_dat_lenh(kq, bien_the, gia),
-         f"Nhóm: {TEN_NHOM.get(kq['nhom'], kq['nhom'])}",
-         f"Vùng mua: {_f(kq['tu'])} – {_f(kq['den'])}",
-         f"Mục tiêu: 1R {_f(mt1)} → 3R {_f(mt3)}",
-         f"Cắt lỗ: {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else "")]
-    von = _von_nav(kq, gia, cl)
-    d += [von] if von else []
+         f"{TEN_NHOM.get(kq['nhom'], kq['nhom'])} · Vùng mua {_f(kq['tu'])} – {_f(kq['den'])} · Cắt lỗ {_f(cl)}"
+         + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
+         f"Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}" + (f" · {von}" if von else "")]
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / cắt lỗ của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")
@@ -228,7 +224,7 @@ def _von_nav(kq, gia, cl):
     from .tong_ket_cl import chu_von_lenh
     r = (gia - cl) / gia * 100 if gia == gia and cl == cl and gia > cl > 0 else None
     s = chu_von_lenh({**kq, "rui_ro": r} if r else kq)
-    return f"Khối lượng: {s}" if s else ""
+    return s or ""
 
 
 def tin_tong_hop_mua(ds, bay_gio):
@@ -244,9 +240,8 @@ def tin_tong_hop_mua(ds, bay_gio):
         gia = muc_sau_mua(k)[0]
         d.append(f"   {i}. {(nhan_uu_tien(k.get('uu_tien')) + ' ').lstrip()}{k['ma']} {_f(gia)} – "
                  + ("ATC" if k.get("atc") else "mua ngay") + f" (vùng {_f(k['tu'])}–{_f(k['den'])})")
-    d.append("Đặt lần lượt từ trên xuống tới khi hết tiền / hết suất mã mới tuần này")
-    if any(k.get("atc") for k in x):
-        d.append("⏰ Lệnh ATC phải đặt TRƯỚC 14:45 (sau 14:45 sàn không nhận)")
+    d.append("Đặt lần lượt từ trên xuống tới khi hết tiền / hết suất mã mới tuần này"
+             + (" · ⏰ ATC phải đặt TRƯỚC 14:45" if any(k.get("atc") for k in x) else ""))
     return "\n".join(d)
 
 

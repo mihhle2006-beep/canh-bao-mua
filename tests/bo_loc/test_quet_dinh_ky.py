@@ -106,7 +106,7 @@ def test_gui_chi_ptdttc(tmp_path, monkeypatch):
     tin = []
     monkeypatch.setattr(G, "gui_tin", lambda t: tin.append(t) or True)
     monkeypatch.setattr(G, "gui_file", lambda *a: (_ for _ in ()).throw(AssertionError("không gửi file")))
-    assert G.main(["--chi_ptdttc"]) == 0 and len(tin) == 1 and "MWG\n   Quỹ Bứt Phá: MUA" in tin[0]
+    assert G.main(["--chi_ptdttc"]) == 0 and len(tin) == 1 and "• Quỹ Bứt Phá MUA: MWG" in tin[0]
 
 
 def test_quet_thuong_khong_doc_ma_ptdttc(tmp_path, monkeypatch):

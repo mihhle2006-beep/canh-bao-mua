@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 from bo_loc import gui_html as G
 
 
@@ -86,11 +88,15 @@ def test_khong_gui_ptdttc_o_repo_cong_khai(tmp_path, monkeypatch):
     assert tin and not any("PTĐTTC" in t for t in tin)
 
 
-def test_tin_ptdttc_moi_chien_luoc_mot_dong(tmp_path):
+def test_tin_ptdttc_gom_ma_cung_ket_luan(tmp_path):
+    """29/10/2026: mã cùng kết luận các chiến lược chung 1 dòng (trước: mỗi mã 3 dòng), nhóm có MUA lên đầu."""
     f = tmp_path / "pt.json"
-    f.write_text('{"ma": {"AAA": {"quy_b": {"hanh_dong": "MUA"}, "xu_huong": {"hanh_dong": "THEO DÕI"}}}}',
-                 encoding="utf-8")
-    assert G.tin_ptdttc(str(f)).splitlines()[1:] == ["AAA", "   Quỹ Bứt Phá: MUA", "   Xu hướng: THEO DÕI"]
+    td = {"quy_b": {"hanh_dong": "THEO DÕI"}, "xu_huong": {"hanh_dong": "THEO DÕI"}}
+    f.write_text(json.dumps({"ma": {"BBB": td, "AAA": {"quy_b": {"hanh_dong": "MUA"}, "xu_huong": {"hanh_dong": "THEO DÕI"}},
+                                    "CCC": td}}, ensure_ascii=False), encoding="utf-8")
+    assert G.tin_ptdttc(str(f)).splitlines() == ["📌 PTĐTTC – theo dõi riêng (3 mã, không vào danh sách MUA)",
+                                                 "• Quỹ Bứt Phá MUA · Xu hướng THEO DÕI: AAA",
+                                                 "• Quỹ Bứt Phá THEO DÕI · Xu hướng THEO DÕI: BBB, CCC"]
 
 
 def test_ten_anh_khong_gach_duoi(tmp_path):
