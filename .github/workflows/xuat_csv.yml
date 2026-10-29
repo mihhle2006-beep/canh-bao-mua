@@ -1,5 +1,6 @@
 # XUẤT CSV GIÁ NGÀY – bấm "Run workflow", nhập mã (VD GMD,MWG,DHC,VNINDEX) → MỘT file gia_<ngày>.csv (mã, ngày, mở,
-# cao, thấp, đóng, KL – các mã nối dọc) gửi Telegram + artifact. Chỉ giá công khai; không đọc danh mục thật (CONG_KHAI).
+# cao, thấp, đóng, KL – các mã nối dọc) gửi Telegram + artifact. Nguồn đầu thiếu lịch sử cũ → nối từ nguồn khác.
+# Chỉ giá công khai; không đọc danh mục thật (CONG_KHAI).
 name: Xuat CSV gia
 
 on:
@@ -76,6 +77,9 @@ jobs:
                           continue
                       if df is not None and len(df):
                           print(f"{ma}: {ten}")
+                          # nguồn đầu thiếu lịch sử cũ (VD VNDirect chỉ ~từ 2013) → nối phần cũ hơn từ nguồn khác (khớp ≤ 1%)
+                          df = D._noi_lich_su(df, tu, [x for x in D.cac_nguon_ngay(ma, tu, den) if x[0] != ten],
+                                              f"{ma}_ngay")
                           break
               if df is None or not len(df):
                   print(f"{ma}: không lấy được"); continue
