@@ -7,6 +7,7 @@
 # KET_LUAN_BACKTEST_CU.md; code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
+#   von86 – tài khoản thật: B + Trứng vàng + hệ bắt đáy CHUNG DÒNG TIỀN – số lần thiếu tiền, lệnh mua trễ, hệ vào / bỏ
 #   von85 – luật mới 29/10/2026 (độ rộng × ½ + hệ bắt đáy bán mở cửa như bot) so với luật cũ + breakout nóng có điều kiện
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
@@ -23,7 +24,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von85 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von85 / von86 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -46,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von85]
+        phan: [chuan, von85, von86]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -123,6 +124,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
+            von86) export CHI_VON86=1; unset SO_NN ;;          # tài khoản thật: B + Trứng + bắt đáy chung tiền (2 luật × 20 thứ tự ★)
             von85) export CHI_VON85=1; unset SO_NN ;;          # luật mới khớp như bot + BO nóng có điều kiện (5 biến thể × 20 thứ tự ★)
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
