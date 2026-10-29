@@ -3,14 +3,9 @@
 # thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
-# ở danh-muc ptcp/cau_hinh.py) và von55–von72 (28/10/2026 – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md); code xem lịch sử git:
+# ở danh-muc ptcp/cau_hinh.py), von55–von72 (28/10/2026) và von73–von78 (29/10/2026) – kết luận ở danh-muc
+# KET_LUAN_BACKTEST_CU.md; code xem lịch sử git:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2) + ★ ngẫu nhiên + đối chiếu giả lập (lịch hằng tháng)
-#   von73 – hệ bắt đáy (giảm sâu – hồi mạnh, cổng đáy thị trường) ghép tiền nhàn rỗi của Quỹ Bứt Phá
-#   von74 – hệ bắt đáy v2: chỉ khi thị trường giảm, 13 chỉ báo × 6 bộ lọc mã (chấm lọc trước) → 6 kiểu thoát riêng
-#   von75 – ghép hệ bắt đáy (#1 / #3 ∪ G3) lãi từng năm + chẩn đoán năm B lỗ (thị trường hẹp? B có mua mã dẫn dắt?)
-#   von76 – độ rộng thật (số mã thắng, chỉ số đồng tỷ trọng rổ) điều chỉnh rủi ro / dừng mua của Quỹ B
-#   von77 – cổng bắt đáy theo độ rộng (EW cách đỉnh, % mã trên MA50…) + ghép B + Trứng
-#   von78 – bắt mã dẫn dắt: phễu 10 mã tăng mạnh nhất / năm, nới lọc RS nóng / biến động, hệ dẫn dắt thoát rộng
 #   von79 – chỗ cho mã dẫn dắt: thêm suất / suất dự phòng / đổi mã yếu khi quỹ đủ số mã
 #   von80 – ghép các ứng viên: độ rộng (tăng giả|hẹp, A/D) × rủi ro × hệ bắt đáy von75 (× chỗ trống von79)
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
@@ -28,7 +23,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von73 / von74 / von75 / von76 / von77 / von78 / von79 / von80 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von72 đã xoá 28/10/2026, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von79 / von80 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von78 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -51,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von73, von74, von75, von76, von77, von78, von79, von80]
+        phan: [chuan, von79, von80]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -130,12 +125,6 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
-            von73) export CHI_VON73=1; unset SO_NN ;;          # hệ bắt đáy dùng tiền nhàn rỗi (20 thứ tự ★)
-            von74) export CHI_VON74=1; unset SO_NN ;;          # hệ bắt đáy v2: lọc mã trước, thoát sau (20 thứ tự ★)
-            von75) export CHI_VON75=1; unset SO_NN ;;          # ghép hệ bắt đáy theo năm + chẩn đoán năm B lỗ (20 thứ tự ★)
-            von76) export CHI_VON76=1; unset SO_NN ;;          # độ rộng thật cho Quỹ B (11 biến thể × 20 thứ tự ★)
-            von77) export CHI_VON77=1; unset SO_NN ;;          # cổng bắt đáy theo độ rộng (20 thứ tự ★)
-            von78) export CHI_VON78=1; unset SO_NN ;;          # bắt mã dẫn dắt (6 biến thể lọc × 20 thứ tự ★ + hệ dẫn dắt)
             von79) export CHI_VON79=1; unset SO_NN ;;          # chỗ cho mã dẫn dắt (8 biến thể × 20 thứ tự ★)
             von80) export CHI_VON80=1; unset SO_NN ;;          # ghép ứng viên (6–8 biến thể × 20 thứ tự ★ + hệ bắt đáy)
           esac
