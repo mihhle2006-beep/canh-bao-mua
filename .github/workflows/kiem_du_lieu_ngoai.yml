@@ -1,0 +1,65 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log CÔNG KHAI); code ở repo riêng tư danh-muc (checkout vào danh-muc/).
+# KIỂM ĐỦ DỮ LIỆU THỊ TRƯỜNG MỚI NỔI (Yahoo Finance – ptcp/du_lieu_ngoai.py) trước khi chạy thử Quỹ Bứt Phá ở thị trường
+# tương đương Việt Nam: số mã niêm yết, số mã có giá từ ≤ 2013 / ≤ 2018, ngày đầu chỉ số, phiên thiếu, thanh khoản (GTGD
+# mã thứ 100, số mã ≥ 1 triệu USD/phiên), biên độ ngày. Chỉ giá thị trường công khai – không đọc danh mục.
+name: Kiem du lieu thi truong moi noi
+
+on:
+  workflow_dispatch:
+    inputs:
+      tt:
+        description: "Thị trường (TH,ID,MY,PH,IN,TW,KR,BR,VN) – bỏ trống = tất cả"
+        default: ""
+      so:
+        description: "Số mã vốn hoá lớn nhất tải giá / thị trường"
+        default: "300"
+      tu:
+        description: "Giá từ ngày"
+        default: "2012-01-01"
+      nhanh_danh_muc:
+        description: "Nhánh danh-muc (bỏ trống = main)"
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  kiem:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          ref: ${{ inputs.nhanh_danh_muc || '' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - name: Cache thư viện Python
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
+      - name: Cài thư viện
+        if: steps.cache_py.outputs.cache-hit != 'true'
+        run: pip install -r requirements.txt
+      - name: Kiểm dữ liệu
+        env:
+          TT: ${{ inputs.tt }}
+          SO: ${{ inputs.so }}
+          TU: ${{ inputs.tu }}
+        run: python -m ptcp.du_lieu_ngoai --kiem --tt "$TT" --so "${SO:-300}" --tu "${TU:-2012-01-01}"
