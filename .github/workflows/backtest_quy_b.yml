@@ -12,6 +12,7 @@
 #   von77 – cổng bắt đáy theo độ rộng (EW cách đỉnh, % mã trên MA50…) + ghép B + Trứng
 #   von78 – bắt mã dẫn dắt: phễu 10 mã tăng mạnh nhất / năm, nới lọc RS nóng / biến động, hệ dẫn dắt thoát rộng
 #   von79 – chỗ cho mã dẫn dắt: thêm suất / suất dự phòng / đổi mã yếu khi quỹ đủ số mã
+#   von80 – ghép các ứng viên: độ rộng (tăng giả|hẹp, A/D) × rủi ro × hệ bắt đáy von75 (× chỗ trống von79)
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -27,7 +28,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von73 / von74 / von75 / von76 / von77 / von78 / von79 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von72 đã xoá 28/10/2026, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von73 / von74 / von75 / von76 / von77 / von78 / von79 / von80 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von72 đã xoá 28/10/2026, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -50,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von73, von74, von75, von76, von77, von78, von79]
+        phan: [chuan, von73, von74, von75, von76, von77, von78, von79, von80]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -136,6 +137,7 @@ jobs:
             von77) export CHI_VON77=1; unset SO_NN ;;          # cổng bắt đáy theo độ rộng (20 thứ tự ★)
             von78) export CHI_VON78=1; unset SO_NN ;;          # bắt mã dẫn dắt (6 biến thể lọc × 20 thứ tự ★ + hệ dẫn dắt)
             von79) export CHI_VON79=1; unset SO_NN ;;          # chỗ cho mã dẫn dắt (8 biến thể × 20 thứ tự ★)
+            von80) export CHI_VON80=1; unset SO_NN ;;          # ghép ứng viên (6–8 biến thể × 20 thứ tự ★ + hệ bắt đáy)
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
           # cuối bước (kể cả khi lỗi) chép BCTC mới tải vào cache_du_lieu/bctc_moi (được lưu cùng cache giá)
