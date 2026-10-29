@@ -152,6 +152,9 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     print(f"Danh sách mua phiên tới: {n} mã (lưu {C.FILE_TRANG_THAI_CL} cho cảnh báo 15')")
     ds_kn = tong_ket_cl.ds_khuyen_nghi(ra)
     _an_toan("Lưu thị trường", trang_tong_hop.luu_thi_truong, ra, bay_gio, ds_kn)
+    bd = ra.get("bat_day")
+    if bd and not bd.get("loi"):                               # mã hệ bắt đáy trong danh mục thật: theo lệnh hệ mới nhất
+        vi_the.HE_BAT_DAY["tt"] = bd
     giu = []
     for ma, v in vt.items():                                   # danh mục thật: KHÔNG in chi tiết ra log
         dn = ra["gia_ngay"].get(ma)

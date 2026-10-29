@@ -536,3 +536,55 @@ def test_tin_tong_hop_mua():
     assert t[0].startswith("📋 2 MÃ BÁO MUA CÙNG LÚC (14:30 27/10)")
     assert t[1].startswith("   1. ★1 VSC 14.35 – ATC") and t[2].startswith("   2. ★2 HAG")
     assert any("TRƯỚC 14:45" in x for x in t)
+
+
+def test_dong_nhiet_do_rong_va_von_lenh_tach_he_so():
+    """Độ rộng top 100 (29/10/2026): dòng 🌡 có lý do, 💰 tách "VNI" và "độ rộng" (đã nằm trong he_so_vni)."""
+    rong = {"ngay": "2026-10-29", "tang_gia": True, "hep": False, "vni_60p": 4.0, "tv_60p": -6.0, "he_so": 0.5, "tre": 0}
+    nh = {"diem": 1, "so_chi_bao": 6, "he_so": 1.0, "chi_bao": [],
+          "dai_han": {"trang_thai": "Tăng", "he_so": 0.25, "he_so_tt": 0.5, "nong": True, "cach_ma200": 6.0,
+                      "lai_3t": 9.0, "do_rong": rong}}
+    s = tong_ket_cl.dong_nhiet(nh, rr=0.75)
+    assert "Độ rộng: tăng giả" in s and "×0.5" in s and "× 0.25 ×" in s
+    k = {"he_so_nhiet": 1.0, "he_so_quy": 0.25, "he_so_kl": 1.0, "he_so_vni": 0.25, "he_so_rong": 0.5, "he_so_quy_ma": 1.0,
+         "loc_quy_ma": "", "rui_ro": 5.0, "nhom": "MUA_MOI"}
+    v = tong_ket_cl.von_lenh(k)
+    assert ("VNI", 0.5) in v["he_so"] and ("độ rộng", 0.5) in v["he_so"] and abs(v["rr"] - 0.75 * 0.25) < 1e-9
+
+
+def test_dong_bat_day(monkeypatch):
+    monkeypatch.setattr(tong_ket_cl, "_quy", lambda ten, md: {"QUY_BD_TRAN_PCT": 30.0, "QUY_BD_SO_SUAT": 6}.get(ten, md))
+    assert tong_ket_cl.dong_bat_day(None) == []
+    rong = tong_ket_cl.dong_bat_day({"ngay": "2026-10-29", "giu": {}, "cho_ban": {}, "cho_mua": []})
+    assert len(rong) == 2 and rong[1].startswith("🎣 Hệ bắt đáy: chưa có tín hiệu")
+    bd = {"ngay": "2026-10-29", "cho_mua": ["DIG"], "giam_60p": {"DIG": -24.3}, "cho_ban": {"HSG": "Stochastic quay đầu từ > 80"},
+          "giu": {"HSG": {"ngay_mua": "2026-10-10", "gia_mua": 20.0, "gia": 21.0, "phien": 13},
+                  "VND": {"ngay_mua": "2026-10-27", "gia_mua": 10.0, "gia": 9.8, "phien": 2}},
+          "mua_moi": ["VND"], "lenh_moi": []}
+    d = tong_ket_cl.dong_bat_day(bd)
+    t = "\n".join(d)
+    assert "lệnh phiên 30/10" in t and "BÁN ATO: HSG (Stochastic quay đầu từ > 80, +5.0%)" in t
+    assert "MUA ATO: DIG (−24% từ đỉnh 60p)" in t and "≤ 5% NAV" in t
+    assert "Đang giữ (1/6): VND 27/10 -2.0% (phiên 3/30)" in t and "Mở cửa hôm nay (hệ): mua VND" in t
+    assert "chưa tính được" in tong_ket_cl.dong_bat_day({"loi": "x"})[1]
+
+
+def test_vi_the_he_bat_day_khong_dung_he_thoat_b(monkeypatch):
+    """Mã hệ bắt đáy trong danh mục thật: giữ / BÁN ATO theo lệnh hệ, không cắt lỗ B, không chiếm suất B."""
+    from canh_bao import vi_the
+    bd = {"ngay": "2026-10-29", "giu": {"DIG": {"ngay_mua": "2026-10-20", "gia_mua": 20.0, "phien": 6}},
+          "cho_ban": {}, "lenh_gan": [{"ma": "HSG", "ngay_mua": "2026-10-01", "ngay_ban": "2026-10-27", "lai_pct": 5.0,
+                                       "phien": 18, "ly_do": "Stochastic quay đầu từ > 80"}]}
+    monkeypatch.setitem(vi_the.HE_BAT_DAY, "tt", bd)
+    kb = vi_the.danh_gia_ban({"ma": "DIG", "ngay_mua": "20/10/2026", "gia_von": 20.0, "so_cp": 100}, {"gia": 15.0})
+    assert kb["bat_day"] and kb["muc"] == "GIU"                       # −25% nhưng hệ chưa báo bán → không cắt lỗ B
+    assert not vi_the.can_bao_ban("DIG", kb["muc"], "2026-10-30 09:00", {})
+    bd["cho_ban"] = {"DIG": "−10% từ giá mua"}
+    kb = vi_the.danh_gia_ban({"ma": "DIG", "ngay_mua": "20/10/2026", "gia_von": 20.0, "so_cp": 100}, {"gia": 15.0})
+    assert kb["muc"] == "BD_BAN" and "ATO phiên 30/10" in vi_the.tin_ban({"ma": "DIG", "so_cp": 100, "gia_von": 20.0},
+                                                                           kb, {}, "2026-10-29 15:20")
+    kb2 = vi_the.danh_gia_ban({"ma": "HSG", "ngay_mua": "02/10/2026", "gia_von": 10.0, "so_cp": 100}, {"gia": 11.0})
+    assert kb2["muc"] == "BD_BAN" and "hệ đã bán mở cửa 27/10" in kb2["ly_do"][0]
+    assert vi_the.bat_day_cua({"ma": "DIG", "ngay_mua": "01/09/2026"}) is None     # mua đợt khác → mã B thường
+    d = tong_ket_cl.dong_giu({"ma": "DIG", "ngay_mua": "20/10/2026", "gia_von": 20.0}, kb, None)
+    assert d[0].startswith("DIG 15.00 | 🎣 BÁN ATO") and len(d) == 3

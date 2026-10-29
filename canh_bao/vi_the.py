@@ -39,10 +39,12 @@ from .chi_bao import supertrend
 
 NHAN = {"CAT_LO": "🔴 CẮT LỖ", "BAN_TUAN": "🔴 BÁN – GÃY XU HƯỚNG TUẦN", "HET_HAN": "🟠 BÁN – LỆNH KHÔNG CHẠY",
         "CHOT_LOI": "🟢 CHỐT LỜI", "CAN_NHAC_BAN": "🟠 CÂN NHẮC BÁN", "GAN_CAT_LO": "🟠 SÁT CẮT LỖ",
-        "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ"}
+        "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ", "BD_BAN": "🔻 BÁN – HỆ BẮT ĐÁY"}
 TEN_TANG = {0: "tầng 0 (< 1R)", 1: "tầng 1 (≥ 1R – cắt lỗ động)",
             2: f"tầng tuần (≥ {C.NGUONG_KHUNG_TUAN_R:g}R – MA10 tuần)"}
 FILE_TRANG_THAI_BAN = os.path.join("cache_ptcp", "trang_thai_ban.json")
+HE_BAT_DAY = {}            # trạng thái hệ bắt đáy mới nhất (tổng kết gán ra["bat_day"] vào "tt"); rỗng → loc_quy_b.json
+CUA_SO_BAT_DAY = 7         # ngày: vị thế mua lệch ngày mua của hệ ≤ N ngày → coi là mã hệ bắt đáy
 
 
 def _so(x):
@@ -251,12 +253,44 @@ def _he_thoat(vt, dn, bay_gio):
 
 
 # ------------------------------------------------------------------ đánh giá bán
+def bat_day_cua(vt):
+    """Vị thế thật là mã HỆ BẮT ĐÁY (29/10/2026 – ptcp/bat_day.vi_the_he: hệ đang giữ / vừa bán đúng mã, ngày mua lệch
+    ≤ CUA_SO_BAT_DAY ngày) → {"giu", "ban", "ngay_lenh"}; không phải / ptcp cũ → None. Trạng thái hệ: HE_BAT_DAY["tt"]
+    (tổng kết) hoặc ptcp/loc_quy_b.json (lọc sáng)."""
+    try:
+        from ptcp.bat_day import vi_the_he
+        from ptcp.loc_quy_b import doc
+    except ImportError:
+        return None
+    bd = HE_BAT_DAY.get("tt")
+    if bd is None:
+        bd = (doc(han_ngay=None) or {}).get("bat_day")
+    return vi_the_he(bd, vt.get("ma", ""), _ngay(vt.get("ngay_mua")), CUA_SO_BAT_DAY)
+
+
+def _danh_gia_bat_day(vt, gia, bd):
+    """Mã hệ bắt đáy: KHÔNG dùng hệ thoát B – giữ tới khi hệ báo bán (−10% · 30 phiên · Stochastic quay đầu > 80)."""
+    gv = vt.get("gia_von") or np.nan
+    g = bd.get("giu") or {}
+    ghi = [f"hệ bắt đáy: phiên {int(g['phien']) + 1}/30, bán khi đóng cửa ≤ giá mua −10% · đủ 30 phiên · Stochastic "
+           "quay đầu từ > 80 (bán ATO phiên sau)"] if g else []
+    ban = bd.get("ban")
+    return {"muc": "BD_BAN" if ban else "GIU", "ly_do": [ban] if ban else ["hệ bắt đáy đang giữ"], "ghi_chu": ghi,
+            "gia": gia, "lai_lo_pct": (gia / gv - 1) * 100 if gv == gv and gv else np.nan, "cat_lo": None,
+            "muc_tieu": None, "cach_cat_lo_pct": np.nan, "cach_muc_tieu_pct": np.nan, "bat_day": True,
+            "ngay_lenh": bd.get("ngay_lenh"), "he_thoat": False}
+
+
 def danh_gia_ban(vt, kq, dn=None, bay_gio=None):
-    """vt: vị thế; kq: kết quả phan_tich_ma của mã (giá, khung, ptcp); dn: giá ngày. → dict mức, lý do, số liệu."""
+    """vt: vị thế; kq: kết quả phan_tich_ma của mã (giá, khung, ptcp); dn: giá ngày. → dict mức, lý do, số liệu.
+    Mã hệ bắt đáy (bat_day_cua) → theo lệnh của hệ, không theo hệ thoát B."""
     gia = kq.get("gia")
     if gia is None or gia != gia:
         return {"muc": "GIU", "ly_do": ["không có giá"], "gia": np.nan, "lai_lo_pct": np.nan, "cat_lo": None,
                 "muc_tieu": None, "cach_cat_lo_pct": np.nan, "cach_muc_tieu_pct": np.nan, "ghi_chu": []}
+    bd = bat_day_cua(vt)
+    if bd:
+        return _danh_gia_bat_day(vt, gia, bd)
     ht = _he_thoat(vt, dn, bay_gio)
     if ht is None:
         return _danh_gia_ban_cu(vt, kq, dn)
@@ -374,6 +408,8 @@ def _f(x, le=2):
 
 
 def _dong_he_thoat(kb):
+    if kb.get("bat_day"):
+        return ["Hệ bắt đáy (tiền B để không) – không dùng cắt lỗ của hệ B"]
     if not kb.get("he_thoat"):
         return [f"Cắt lỗ đã đặt: {_f(kb['cat_lo'])} ({_f(kb['cach_cat_lo_pct'], 1)}%)",
                 f"Mục tiêu đã đặt: {_f(kb['muc_tieu'])} ({_f(kb['cach_muc_tieu_pct'], 1)}%)"]
@@ -393,7 +429,10 @@ def tin_ban(vt, kb, kq, bay_gio):
                  "CAN_NHAC_BAN": "Xem xét giảm tỷ trọng / siết cắt lỗ – xu hướng đang yếu đi",
                  "GAN_CAT_LO": f"Chuẩn bị lệnh bán: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ (hệ thoát)",
                  "DOI_CAT_LO": f"Đặt lệnh cắt lỗ mới {_f(kb.get('cat_lo_he_thong'))} & cập nhật cat_lo_dat trong "
-                               f"danh_muc.csv (repo danh-muc)"}.get(kb["muc"], "")
+                               f"danh_muc.csv (repo danh-muc)",
+                 "BD_BAN": f"Bán {vt['so_cp']:,.0f} CP lệnh ATO phiên "
+                           + (f"{pd.Timestamp(kb['ngay_lenh']):%d/%m}" if kb.get("ngay_lenh") is not None else "tới")
+                           + " (đã qua giờ ATO thì bán ngay)"}.get(kb["muc"], "")
     d = [f"{NHAN[kb['muc']]} – {vt['ma']} @ {_f(g)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
          f"Đang giữ: {vt['so_cp']:,.0f} CP",
          dong_da_vao(vt.get("ngay_mua"), vt.get("gia_von"), kb["lai_lo_pct"], kb.get("lai_R")),

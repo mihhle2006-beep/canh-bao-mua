@@ -9,7 +9,8 @@ QUỸ BỨT PHÁ (ptcp CHIEN_LUOC_AP_DUNG = "quy_b"): chỉ hệ B ở mọi tr�
                🟢 MUA MỚI · ✅ VÀO NHƯ LỆNH MỚI · 🟡 VÀO ½ · ⏳ CHỜ ĐIỀU CHỈNH · ⛔ hệ thống lỗ / sắp bán · chưa có tín hiệu,
                vùng mua (1 phiên hiệu lực), cắt lỗ (chuẩn hệ thoát), mục tiêu tạm thời 1R → 3R (mốc dời cắt lỗ,
                KHÔNG phải lệnh bán), lý do đạt điểm mua, điều kiện vô hiệu.
-Lõi bo_loc/loi trỏ thẳng tới ptcp. Nhóm mua lọc thêm theo ptcp.loc_quy_b (top 100 GTGD · ĐẮT ½ · nhiệt dài hạn – VN-Index Tăng ½).
+Lõi bo_loc/loi trỏ thẳng tới ptcp. Nhóm mua lọc thêm theo ptcp.loc_quy_b (top 100 GTGD · ĐẮT ½ · nhiệt dài hạn – VN-Index Tăng ½ ·
+độ rộng top 100 "tăng giả" / "hẹp" ½ – 29/10/2026).
 """
 import numpy as np
 import pandas as pd
@@ -64,6 +65,12 @@ def thi_truong(vni, gia=None, file_cache=None):
         return None
     g = pd.DataFrame({m: d.close for m, d in (gia or {}).items() if d is not None and len(d)})
     that = len(g.columns) >= SO_MA_DO_RONG
+    if that:                    # độ rộng rổ top 100 (ptcp/do_rong.py) tới đúng phiên cuối → loc_quy_b.he_so dùng lại
+        try:
+            from ptcp.do_rong import cap_nhat
+            cap_nhat(vni, gia=g)
+        except Exception:                                  # noqa: BLE001 – ptcp cũ / thiếu giá rổ → cờ của lọc sáng
+            pass
     F, diem, muc = bang_chi_bao(vni, g if that else None)
     if not that:
         cot = list(F.columns)
@@ -155,7 +162,7 @@ def danh_gia(gia, vni, tt=None):
                         "khoi_luong": r.get("Khối lượng", "–"), "lai_ht": r.get("Lãi HT (R)"),
                         "rui_ro_pct": r.get("Rủi ro %")}
         lq = _loc_quy(r["Mã"], vni) if nhom in NHOM_MUA else None
-        if lq:                                         # Quỹ Bứt Phá 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · nhiệt dài hạn ½
+        if lq:                                         # Quỹ Bứt Phá 10/2026: top 100 GTGD · RS 3T nóng · ĐẮT ½ · nhiệt dài hạn ½ · độ rộng ½
             k = out[r["Mã"]]
             k["he_so_quy"], k["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
             if lq["bo"]:

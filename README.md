@@ -36,8 +36,29 @@ Ví dụ (giá tính bằng nghìn đồng):
 
 ## Dòng 🌡 nhiệt thị trường
 
-- Cho biết mức rủi ro mỗi lệnh mới: 0,75% × hệ số dài hạn (xu hướng VN-Index) × hệ số ngắn hạn (6 chỉ báo).
+- Cho biết mức rủi ro mỗi lệnh mới: 0,75% × hệ số dài hạn (xu hướng VN-Index, độ rộng) × hệ số ngắn hạn (6 chỉ báo).
 - Thị trường càng nóng, hệ số càng nhỏ → mua ít đi. Danh mục sụt từ đỉnh cũng tự giảm thêm.
+- **Độ rộng** (từ 29/10/2026): xét 100 mã thanh khoản nhất (chốt thứ Sáu tuần trước). Nếu VN-Index không giảm nhưng
+  phần lớn mã đang giảm (**tăng giả**), hoặc VN-Index lãi 60 phiên hơn trung vị các mã trên 10 điểm trong khi trung vị
+  đang âm (**hẹp**), thì rủi ro lệnh mới và trần tổng rủi ro mở cùng nhân ½. Trong dòng 💰, phần này ghi là "độ rộng ×0.5".
+
+## Mục 🎣 Hệ bắt đáy (từ 29/10/2026)
+
+- Hệ chỉ dùng **tiền B đang để không**: tổng tối đa 30% NAV, chia 6 mã, mỗi mã tối đa 5% NAV. B luôn được ưu tiên tiền.
+  Thiếu tiền cho lệnh B thì bán bớt mã bắt đáy.
+- Hệ chỉ mua khi thị trường rơi sâu. Cần một trong hai điều kiện:
+  - VN-Index cách đỉnh 1 năm ≥ 15% và Stochastic VN-Index vừa cắt lên;
+  - RSI tuần của VN-Index < 35 và VN-Index trên MA20.
+- Mã được chọn: trong top 100 thanh khoản, đã giảm ≥ 20% từ đỉnh 60 phiên, và vừa đóng cửa vượt lên MA10.
+  Mã giảm sâu hơn được ưu tiên.
+- 🟢 **MUA ATO** và 🔻 **BÁN ATO**: đặt lệnh ATO phiên tới. Hệ bán khi có một trong ba điều kiện:
+  - đóng cửa ≤ giá mua −10%;
+  - đã giữ đủ 30 phiên;
+  - Stochastic đã lên ≥ 80 rồi %K cắt xuống %D.
+- Bot tự theo dõi danh mục của hệ (mục "Đang giữ"). Bạn chỉ cần làm theo lệnh ATO. Mã nào không mua được vì thiếu tiền
+  thì bỏ qua.
+- Backtest 2013–2026 (B + Trứng vàng, khớp như bot): thêm độ rộng ×½ và hệ bắt đáy nâng Calmar từ 1,18 lên 1,29,
+  MDD từ −16,1% còn −15,1%.
 
 ## Cài đặt
 
