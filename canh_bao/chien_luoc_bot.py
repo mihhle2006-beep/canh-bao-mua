@@ -28,8 +28,41 @@ def ro_do_rong():
         ro, mo_ta = ro_thi_truong()
     except (ImportError, AttributeError):
         ro, mo_ta = list(C.MA_CHIEN_LUOC), f"{len(C.MA_CHIEN_LUOC)} mã cố định"
-    print(f"Độ rộng thị trường: rổ {mo_ta}")
-    return ro
+    them = [m for m in ma_bat_day() if m not in ro]          # hệ bắt đáy: mã đang giữ / lệnh chờ ngoài rổ tuần này
+    print(f"Độ rộng thị trường: rổ {mo_ta}" + (f" (+ {len(them)} mã hệ bắt đáy)" if them else ""))
+    return ro + them
+
+
+def ma_bat_day():
+    """Mã hệ bắt đáy đang giữ / chờ mua / chờ bán theo lọc (ptcp/loc_quy_b.json "bat_day"); ptcp cũ → []."""
+    try:
+        from ptcp.loc_quy_b import doc
+        bd = (doc(han_ngay=None) or {}).get("bat_day") or {}
+    except (ImportError, AttributeError):
+        return []
+    return list(dict.fromkeys(list(bd.get("giu") or {}) + list(bd.get("cho_mua") or []) + list(bd.get("cho_ban") or {})))
+
+
+def he_bat_day(gia_ngay, vni):
+    """Hệ bắt đáy (ptcp/bat_day.py) tới phiên cuối đã đóng: trạng thái lọc sáng nay (loc_quy_b.json "bat_day") + phiên
+    hôm nay bằng giá đã tải (rổ top 100 tuần này + mã hệ đang giữ). → dict trạng thái (giu, cho_ban, cho_mua …),
+    {"loi": …} nếu lỗi, None nếu ptcp cũ / chưa bật."""
+    try:
+        from ptcp import bat_day as BD
+        from ptcp import cau_hinh as P
+        from ptcp.loc_quy_b import doc
+    except ImportError:
+        return None
+    if not getattr(P, "QUY_BD_TRAN_PCT", 0):
+        return None
+    loc = doc(han_ngay=None) or {}
+    if not loc.get("bat_day"):
+        return {"loi": "chưa có trạng thái hệ bắt đáy trong loc_quy_b.json"}
+    try:
+        out = BD.buoc_tiep(loc["bat_day"], gia_ngay, vni, (loc.get("ro_tuan") or {}).get("ma") or [])
+    except Exception as e:                                  # noqa: BLE001 – không làm hỏng tin tổng kết
+        return {"loi": f"{type(e).__name__}: {str(e)[:120]}"}
+    return out or {"loi": "thiếu giá các mã hệ bắt đáy"}
 
 def _phien_da_dong(df, bay_gio):
     from .vi_the import _phien_da_dong as f
@@ -101,7 +134,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
     thanh_phan = {"A0": (bts["A0"], False), "B": (bts["B"], True)}
     chi_do_rong = [m for m in dict.fromkeys(x.strip().upper() for x in (ds_do_rong or []) if x.strip())
                    if m not in ds_ma]
-    gia, diem_mua, thieu, gia_ngay, atr = {}, {k: [] for k in thanh_phan}, [], {}, {}
+    gia, diem_mua, thieu, gia_ngay, atr, ohlc = {}, {k: [] for k in thanh_phan}, [], {}, {}, {}
     from .du_lieu import tai_nhieu
     can = [m for m in ds_ma + chi_do_rong if not _dung_duoc((du_lieu_san or {}).get(m), tu)]
     da_tai = tai_nhieu(lambda m: tai(m, tu), can)                 # tải song song trước (mạng chậm, tính nhanh)
@@ -115,6 +148,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
                 thieu.append(ma)
             continue
         df = df[["open", "high", "low", "close", "volume"]]
+        ohlc[ma] = df                                      # hệ bắt đáy: cần mở / cao / thấp cả rổ
         if ma in chi_do_rong:                              # chỉ cần giá đóng cửa cho độ rộng
             gia[ma] = df.close
             continue
@@ -140,6 +174,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
         nhiet = doc_nhiet(vni, pd.DataFrame(gia))
     except Exception:                                      # noqa: BLE001 – ptcp cũ / thiếu dữ liệu → hệ số 1
         pass
+    bat_day = he_bat_day(ohlc, vni)                       # sau nhiệt (độ rộng rổ đã tính tới phiên cuối)
     lich, _, cl_hien = lich_chien_luoc(diem)
     doc = doc_thi_truong(F, diem, muc, cl_hien)
     dm = {k: pd.DataFrame(v) for k, v in diem_mua.items()}
@@ -157,7 +192,7 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
     return {"doc": doc, "cl": cl_hien, "ten_cl": TEN_CL, "ty_trong": ty, "ty_trong_cl": TY_TRONG,
             "nguong": (NGUONG_LEN, NGUONG_XUONG), "lich": lich, "diem_mua": dm,
             "phan_bo": phan_bo_muc_tieu(dm, ty, len(gia)), "hanh_dong": _hanh_dong(dm, ty, doc["ngay"]),
-            "so_ma": len(gia), "thieu": thieu, "gia_ngay": gia_ngay, "di_ngang": ngang, "atr": atr, "vni_df": vni, "nhiet": nhiet,
+            "so_ma": len(gia), "thieu": thieu, "gia_ngay": gia_ngay, "di_ngang": ngang, "atr": atr, "vni_df": vni, "nhiet": nhiet, "bat_day": bat_day,
             "vni": float(vni.close.iloc[-1])}, None
 
 

@@ -9,6 +9,9 @@ CHIẾN LƯỢC QUỸ BỨT PHÁ (mặc định) – chiến lược đang áp d
     không mua mới); đủ 8 mã vẫn mua thêm 1 mã nếu tín hiệu MẠNH B (suất dự phòng),
     GTGD ≥ 3 tỷ
   · mã ĐẮT (định giá ≤ −20%) ½ khối lượng · nhiệt dài hạn (VN-Index Tăng) ½ rủi ro
+  · 29/10/2026 độ rộng rổ top 100: "tăng giả" (VN-Index không Giảm, phần lớn mã Giảm) | "hẹp" (VN-Index lãi 60 phiên hơn
+    trung vị rổ > 10 điểm, trung vị < 0) → ½ rủi ro lệnh mới & trần rủi ro mở (ptcp/do_rong.py); hệ bắt đáy bằng tiền B để
+    không ≤ 30% NAV chạy riêng (ptcp/bat_day.py – tin tổng kết canh-bao-mua, không qua bộ lọc này)
   · thoát theo hệ thoát 2R – MA10 tuần
 Điểm cộng chỉ để xếp hạng trong danh sách lọc.
 """
@@ -16,7 +19,7 @@ CHIEN_LUOC = {
     "ten": "Quỹ Bứt Phá",
     "mo_ta": "Chiến lược đang áp dụng – Quỹ Bứt Phá: hệ B (MACD ngày + tuần), HOSE + HNX, top 100 GTGD, bỏ RS 3T quá nóng "
              "và 30% mã biến động nhất, ≤ 5 mã mới/tuần, 8 mã + 1 suất dự phòng cho tín hiệu mạnh, vào trễ ≤ giá vào "
-             "+ ½R, thoát 2R – MA10 tuần; "
+             "+ ½R, thoát 2R – MA10 tuần; độ rộng top 100 yếu (tăng giả / hẹp) ½ rủi ro; "
              "cùng luật với danh-muc / canh-bao-mua",
     "bat_buoc": {"gtgd_min": 3, "cl_tt_mua": None},
     "cong_diem": {"tren_ma200": None, "ma50_tren_ma200": None, "rs_3t": 0, "vol_dot_bien": 1.5, "gan_dinh52": 15},
