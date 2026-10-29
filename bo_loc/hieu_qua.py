@@ -2,7 +2,7 @@
 """
 HIỆU QUẢ BỘ LỌC (27/10/2026) – mã MUA của quét định kỳ (ma_mua_bo_loc.json) sau 20 / 60 phiên có hơn VN-Index không.
   • Mỗi lần quét định kỳ: ghi_lich_su → lich_su_ma_mua_bo_loc.csv (phiên, mã, chiến lược · "quy_b" / "xu_huong ½" …),
-    chạy lại cùng phiên thì ghi đè. Danh sách này vốn đã công khai (ma_mua_bo_loc.json) – không có mã PTĐTTC.
+    chạy lại cùng phiên thì ghi đè. Danh sách này vốn đã công khai (ma_mua_bo_loc.json).
   • Đo: mua giá đóng cửa phiên lọc (lọc sau giờ đóng cửa → thực tế khớp phiên sau, sai lệch nhỏ), lãi sau N phiên so với
     VN-Index cùng khoảng (vượt = lãi mã − lãi VN-Index). Mã chưa đủ N phiên → chưa tính.
   • Báo cáo Telegram mỗi tháng 1 lần (phiên quét đầu tiên của tháng – trạng thái hieu_qua_bo_loc.json).

@@ -39,7 +39,8 @@ from .chi_bao import supertrend
 
 NHAN = {"CAT_LO": "🔴 CẮT LỖ", "BAN_TUAN": "🔴 BÁN – GÃY XU HƯỚNG TUẦN", "HET_HAN": "🟠 BÁN – LỆNH KHÔNG CHẠY",
         "CHOT_LOI": "🟢 CHỐT LỜI", "CAN_NHAC_BAN": "🟠 CÂN NHẮC BÁN", "GAN_CAT_LO": "🟠 SÁT CẮT LỖ",
-        "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ", "BD_BAN": "🔻 BÁN – HỆ BẮT ĐÁY"}
+        "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ", "BD_BAN": "🔻 BÁN – HỆ BẮT ĐÁY",
+        "BAN_YEU_CAU": "🔴 BÁN – THEO YÊU CẦU"}
 TEN_TANG = {0: "tầng 0 (< 1R)", 1: "tầng 1 (≥ 1R – cắt lỗ động)",
             2: f"tầng tuần (≥ {C.NGUONG_KHUNG_TUAN_R:g}R – MA10 tuần)"}
 FILE_TRANG_THAI_BAN = os.path.join("cache_ptcp", "trang_thai_ban.json")
@@ -81,31 +82,15 @@ def _tai_tu_github(duong_dan=None):
     return r.content.decode("utf-8-sig"), "repo danh-muc"
 
 
-def doc_danh_muc(path_cuc_bo="danh_muc.csv", path_phu="danh_muc_ptdttc.csv"):
-    """→ ({MÃ: vị thế}, mô tả nguồn). Chỉ giữ mã có so_cp > 0. Gộp thêm danh mục PHỤ (danh_muc_ptdttc.csv – quản lý
-    riêng, không áp trần quỹ Bứt Phá; DANH_MUC_PHU_PATH, để "-" = bỏ) để cảnh báo bán / đánh dấu đang giữ đủ mọi mã."""
+def doc_danh_muc(path_cuc_bo="danh_muc.csv"):
+    """→ ({MÃ: vị thế}, mô tả nguồn). Chỉ giữ mã có so_cp > 0."""
     noi_dung, nguon = _tai_tu_github()
     if noi_dung is None and os.path.exists(path_cuc_bo):
         with open(path_cuc_bo, encoding="utf-8-sig") as f:
             noi_dung, nguon = f.read(), f"file {path_cuc_bo}"
     if noi_dung is None:
         return {}, nguon
-    vt = phan_tich_csv(noi_dung)
-    phu = os.environ.get("DANH_MUC_PHU_PATH", "").strip() or path_phu
-    if phu != "-":
-        nd2, _ = _tai_tu_github(phu)
-        if nd2 is None and os.path.exists(phu):
-            with open(phu, encoding="utf-8-sig") as f:
-                nd2 = f.read()
-        if nd2:
-            try:
-                them = {m: v for m, v in phan_tich_csv(nd2).items() if m not in vt}
-            except Exception:                                   # noqa: BLE001 – file phụ lỗi không chặn danh mục chính
-                them = {}
-            if them:
-                vt.update(them)
-                nguon += f" + {phu}"
-    return vt, nguon
+    return phan_tich_csv(noi_dung), nguon
 
 
 # ------------------------------------------------------------------ danh mục CŨ (mã mua trước khi có bot)
@@ -199,7 +184,8 @@ def phan_tich_csv(noi_dung):
                    "muc_tieu": _so(r.get("muc_tieu_dat")) or _so(r.get("gia_muc_tieu")),
                    "ngay_mua": str(r.get("ngay_mua", "")).strip(),
                    "ngay_mua_them": str(r.get("ngay_mua_them", "")).strip(),          # tuỳ chọn
-                   "so_lan_mua_them": _so(r.get("so_lan_mua_them")) or 0}
+                   "so_lan_mua_them": _so(r.get("so_lan_mua_them")) or 0,
+                   "ban_ato": _ngay(r.get("ban_ato"))}                               # tuỳ chọn: bán ATO phiên này
     return out
 
 
@@ -283,7 +269,16 @@ def _danh_gia_bat_day(vt, gia, bd):
 
 def danh_gia_ban(vt, kq, dn=None, bay_gio=None):
     """vt: vị thế; kq: kết quả phan_tich_ma của mã (giá, khung, ptcp); dn: giá ngày. → dict mức, lý do, số liệu.
-    Mã hệ bắt đáy (bat_day_cua) → theo lệnh của hệ, không theo hệ thoát B."""
+    Mã hệ bắt đáy (bat_day_cua) → theo lệnh của hệ, không theo hệ thoát B. Cột ban_ato của danh_muc.csv (người dùng
+    muốn bán) → BAN_YEU_CAU: bán ATO phiên đó, chưa bán được thì bán ngay – số liệu hệ thoát giữ nguyên."""
+    kb = _danh_gia_ban(vt, kq, dn, bay_gio)
+    ngay = vt.get("ban_ato")
+    if ngay is None or kb.get("gia") is None or kb["gia"] != kb["gia"]:
+        return kb
+    return {**kb, "muc": "BAN_YEU_CAU", "ngay_lenh": ngay, "ly_do": [f"bạn yêu cầu bán – lệnh ATO phiên {ngay:%d/%m}"]}
+
+
+def _danh_gia_ban(vt, kq, dn=None, bay_gio=None):
     gia = kq.get("gia")
     if gia is None or gia != gia:
         return {"muc": "GIU", "ly_do": ["không có giá"], "gia": np.nan, "lai_lo_pct": np.nan, "cat_lo": None,
@@ -434,6 +429,9 @@ def tin_ban(vt, kb, kq, bay_gio):
                  "BD_BAN": f"Bán {vt['so_cp']:,.0f} CP lệnh ATO phiên "
                            + (f"{pd.Timestamp(kb['ngay_lenh']):%d/%m}" if kb.get("ngay_lenh") is not None else "tới")
                            + " (đã qua giờ ATO thì bán ngay)"}.get(kb["muc"], f"Đang giữ {vt['so_cp']:,.0f} CP")
+    if kb["muc"] == "BAN_YEU_CAU":
+        hanh_dong = (f"Bán {vt['so_cp']:,.0f} CP lệnh ATO phiên {pd.Timestamp(kb['ngay_lenh']):%d/%m} (đã qua giờ ATO thì "
+                     f"bán ngay) – bán xong ghi \"BAN {vt['ma']} HET giá\" vào nhap.txt")
     d = [f"{NHAN[kb['muc']]} – {vt['ma']} @ {_f(g)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
          f"➜ {hanh_dong}",
          dong_da_vao(vt.get("ngay_mua"), vt.get("gia_von"), kb["lai_lo_pct"], kb.get("lai_R")) + " · "

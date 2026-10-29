@@ -1,7 +1,7 @@
 # CHẠY Ở canh-bao-mua (repo CÔNG KHAI – phút Actions miễn phí, log & artifact CÔNG KHAI) từ 10/2026; code & dữ
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI (token có quyền
 # GHI Contents repo danh-muc – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục
-# thật hay mã PTĐTTC (ptcp.cau_hinh.CONG_KHAI).
+# thật (ptcp.cau_hinh.CONG_KHAI).
 # KHO BCTC – tải BCTC năm + quý (≥ 5 năm, ≥ 10 quý) từ Vietcap IQ cho mã trong danh mục + bản đồ ngành + mã HOSE/HNX gần top GTGD
 # → du_lieu/bctc/<MÃ>.json (gộp với kho cũ: kỳ cũ giữ, kỳ mới / điều chỉnh ghi đè). Chạy tối thứ Bảy, trước
 # "Boi so nganh" (đọc BCTC từ kho → không tốn lượt vnstock).
@@ -41,7 +41,7 @@ jobs:
           path: danh-muc
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
         working-directory: .
-        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json trang_thai_ptdttc.json lich_su_danh_muc.csv lich_su_ptdttc.csv nhap*.txt
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv nhap*.txt
 
       - uses: actions/setup-python@v6
         with:

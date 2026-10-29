@@ -1,7 +1,6 @@
 # Bộ lọc cổ phiếu (bo_loc/) – bản beta 1.1
 
-> Từ 10/2026 bộ lọc nằm trong repo canh-bao-mua (công khai). Repo riêng tư **Bo_Loc** chỉ còn quét & báo riêng
-> các mã PTĐTTC.
+> Từ 10/2026 bộ lọc nằm trong repo canh-bao-mua (công khai).
 
 Quét một nhóm mã, tính chỉ tiêu kỹ thuật và cơ bản, lọc theo chiến lược, xếp hạng, đánh giá sau lọc rồi xuất Excel và biểu đồ.
 Đơn vị giá: **nghìn đồng**. Đây là công cụ tham khảo, không phải khuyến nghị đầu tư.
