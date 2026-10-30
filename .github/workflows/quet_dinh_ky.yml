@@ -128,7 +128,7 @@ jobs:
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0
           git commit -m "Quét định kỳ $(date -u +%F) – mã MUA cho canh-bao-mua"
           for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
-          echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"
+          echo "::error::Không đẩy được danh sách mã MUA – Settings → Actions → General → Workflow permissions: Read and write"; exit 1
 
       # Quét xong (~15:05–15:10) → chạy NGAY tổng kết (không chờ lịch 15:20 hay trễ). Lịch 15:20 của canh_bao.yml chỉ còn
       # là dự phòng: tổng kết đã gửi thì nó không gửi lại (chay.ma_moi_tong_ket).
