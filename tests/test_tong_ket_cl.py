@@ -585,3 +585,19 @@ def test_vi_the_he_bat_day_khong_dung_he_thoat_b(monkeypatch):
     assert vi_the.bat_day_cua({"ma": "DIG", "ngay_mua": "01/09/2026"}) is None     # mua đợt khác → mã B thường
     d = tong_ket_cl.dong_giu({"ma": "DIG", "ngay_mua": "20/10/2026", "gia_von": 20.0}, kb, None)
     assert d == ["🎣 DIG 15.00 -25.0% · 🔻 BÁN ATO phiên tới – hệ bắt đáy (−10% từ giá mua)"]
+
+
+def test_ban_theo_yeu_cau_cot_ban_ato(monkeypatch):
+    """Cột ban_ato của danh_muc.csv (người dùng muốn bán) → BÁN ATO phiên đó: tin bán trong phiên + dòng 💼 tổng kết."""
+    vt = vi_the.phan_tich_csv("ma,so_cp,gia_von,ngay_mua,cat_lo_dat,ban_ato\nAAA,300,50.0,01/09/2026,48.5,30/10/2026\n"
+                              "BBB,100,20.0,05/10/2026,19.0,\n")
+    assert vt["AAA"]["ban_ato"] == pd.Timestamp("2026-10-30") and vt["BBB"]["ban_ato"] is None
+    kb = {"muc": "GIU", "gia": 51.0, "lai_lo_pct": 2.0, "lai_R": 0.7, "cat_lo": 48.5, "cach_cat_lo_pct": -4.9,
+          "he_thoat": True, "tang": 0, "R": 1.5, "cat_lo_he_thong": 48.5, "cat_lo_dat": 48.5, "ly_do": [], "ghi_chu": []}
+    monkeypatch.setattr(vi_the, "_danh_gia_ban", lambda *a, **k: dict(kb))
+    k = vi_the.danh_gia_ban(vt["AAA"], {"gia": 51.0})
+    assert k["muc"] == "BAN_YEU_CAU" and vi_the.can_bao_ban("AAA", k["muc"], "2026-10-30 09:15", {})
+    t = vi_the.tin_ban(vt["AAA"], k, {}, "2026-10-30 09:15")
+    assert t.startswith("🔴 BÁN – THEO YÊU CẦU – AAA") and "Bán 300 CP lệnh ATO phiên 30/10" in t and "BAN AAA HET" in t
+    assert tong_ket_cl.dong_giu(vt["AAA"], k, None)[0].startswith("AAA 51.00 +2.0% (+0.7R) · 🔴 BÁN ATO phiên 30/10")
+    assert vi_the.danh_gia_ban(vt["BBB"], {"gia": 20.5})["muc"] == "GIU"

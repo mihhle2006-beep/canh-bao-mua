@@ -408,6 +408,8 @@ def dong_giu(vt, kb, mt):
             "HET_HAN": "🟠 BÁN – lệnh không chạy", "DOI_CAT_LO": "GIỮ · dời cắt lỗ lên",
             "GAN_CAT_LO": "🟠 GIỮ – sát cắt lỗ, chuẩn bị bán", "GIU": "GIỮ",
             "BD_BAN": "🔻 BÁN ATO phiên tới – hệ bắt đáy"}.get(kb["muc"], NHAN.get(kb["muc"], ""))
+    if kb["muc"] == "BAN_YEU_CAU":                # cột ban_ato của danh_muc.csv
+        hanh = f"🔴 BÁN ATO phiên {pd.Timestamp(kb['ngay_lenh']):%d/%m} – theo yêu cầu"
     g, lo = _so(kb.get("gia")), _so(kb.get("cat_lo"))
     lai = kb.get("lai_lo_pct")
     lai = (f" {lai:+.1f}%" + (f" ({kb['lai_R']:+.1f}R)" if kb.get("lai_R") is not None and kb["lai_R"] == kb["lai_R"]

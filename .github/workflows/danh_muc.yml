@@ -1,13 +1,13 @@
 # DANH MỤC THẬT HẰNG NGÀY – chuyển từ repo riêng tư danh-muc (hết phút Actions) sang đây 10/2026, CHẠY KÍN:
 #   repo này CÔNG KHAI (log ai cũng xem được) nên KHÔNG bước nào in nội dung danh mục: mọi đầu ra của chương trình
 #   ghi vào file trong máy chạy rồi gửi Telegram (tóm tắt + dashboard + Excel); KHÔNG tải artifact; tổng vốn để ở
-#   repo danh-muc (tien_mat_chinh.json / tien_mat_ptdttc.json – "tong_von_trieu" lần nhập gần nhất, giữ nguyên như
-#   cũ); muốn đổi thì đặt SECRET TONG_VON_CHINH / TONG_VON_PTDTTC (bị che trong log) – không ghi số ở file này. Trạng thái cắt lỗ / lịch sử / tiền mặt / danh_muc.csv
+#   repo danh-muc (tien_mat_chinh.json – "tong_von_trieu" lần nhập gần nhất, giữ nguyên như
+#   cũ); muốn đổi thì đặt SECRET TONG_VON_CHINH (bị che trong log) – không ghi số ở file này. Trạng thái cắt lỗ / lịch sử / tiền mặt / danh_muc.csv
 #   commit về repo danh-muc bằng secret DANH_MUC_TOKEN_GHI (Contents: Read and write). Lỗi → chỉ in mã thoát.
 #   Secret cần: DANH_MUC_TOKEN_GHI; tuỳ chọn TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC (trống → bot chung),
-#   TONG_VON_CHINH / TONG_VON_PTDTTC (triệu đồng, chỉ khi đổi tổng tài sản), VNSTOCK_API_KEY. Giữ tiền mặt & cách chia
+#   TONG_VON_CHINH (triệu đồng, chỉ khi đổi tổng tài sản), VNSTOCK_API_KEY. Giữ tiền mặt & cách chia
 #   vốn theo luật Quỹ Bứt Phá trong code (không còn tham số GIU_TIEN_MAT / CHON).
-#   Nhập lệnh: ghi dòng ngắn vào nhap.txt / nhap_ptdttc.txt ở repo danh-muc (VD "20/10 HPG 1000") → lần chạy kế tiếp
+#   Nhập lệnh: ghi dòng ngắn vào nhap.txt ở repo danh-muc (VD "20/10 HPG 1000") → lần chạy kế tiếp
 #   tự áp vào danh_muc.csv / da_ban.csv.
 name: Danh muc hang ngay
 
@@ -15,7 +15,7 @@ on:
   schedule:
     - cron: "50 7 * * 1-5"        # 07:50 UTC = 14:50 giờ VN, chờ tới 15:02 (có giá đóng cửa) rồi chạy – lịch GitHub hay
                                   # trễ 30–40', đặt sớm để vẫn xong khoảng 15:05–15:40; trong phiên canh_bao.yml tự gọi khi có lệnh nhập
-    - cron: "30 1 * * 1-5"        # 01:30 UTC = 8:30 giờ VN (đầu phiên): CHỈ chạy nếu nhap.txt / nhap_ptdttc.txt ở danh-muc
+    - cron: "30 1 * * 1-5"        # 01:30 UTC = 8:30 giờ VN (đầu phiên): CHỈ chạy nếu nhap.txt ở danh-muc
                                   # có lệnh chưa áp (cuối phiên: lần 15:02 ở trên luôn chạy và áp lệnh)
   workflow_dispatch:
 
@@ -44,7 +44,7 @@ jobs:
                  --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.status != \"completed\")] | length" \
                  2>/dev/null || echo 0)
           co=0
-          for f in nhap.txt nhap_ptdttc.txt; do
+          for f in nhap.txt; do
             if curl -sf -H "Authorization: Bearer $TOKEN_DM" -H "Accept: application/vnd.github.raw" \
                  "https://api.github.com/repos/$REPO_DM/contents/$f" | sed 's/#.*//' | grep -q '[A-Za-z0-9]'; then co=1; fi
           done
@@ -70,7 +70,7 @@ jobs:
           persist-credentials: false
           path: danh-muc
 
-      - uses: actions/checkout@v5                 # tổng kết tuần (thật + PTĐTTC) trong file HTML – code ở gia_lap
+      - uses: actions/checkout@v5                 # tổng kết tuần (danh mục thật) trong file HTML – code ở gia_lap
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
@@ -99,7 +99,7 @@ jobs:
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
-          DM_CHI_LOI: "1"                  # tin hằng ngày: bước "Tóm tắt Telegram" (gộp thật + PTĐTTC)
+          DM_CHI_LOI: "1"                  # tin hằng ngày: bước "Tóm tắt Telegram"
         run: |
           # tổng vốn: secret nếu có, không thì giữ như cũ (lần nhập gần nhất lưu trong danh-muc) – không in ra log
           TONG_VON="${TONG_VON:-$(python -c 'import json; print(json.load(open("tien_mat_chinh.json"))["tong_von_trieu"])' 2>/dev/null)}"
@@ -110,27 +110,7 @@ jobs:
           gui=0; python gui_telegram.py > /tmp/gui_chinh.txt 2>&1 || gui=$?
           echo "Gửi Telegram: mã thoát $gui"
 
-      - name: Danh mục PTĐTTC (kín)
-        if: always() && hashFiles('danh-muc/danh_muc_ptdttc.csv') != ''
-        env:
-          TONG_VON: ${{ secrets.TONG_VON_PTDTTC }}
-          VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
-          DM_TEN: ptdttc
-          DM_LOG: ket_qua_log_ptdttc.txt
-          DM_CHI_LOI: "1"
-        run: |
-          TONG_VON="${TONG_VON:-$(python -c 'import json; print(json.load(open("tien_mat_ptdttc.json"))["tong_von_trieu"])' 2>/dev/null)}"
-          if [ -z "$TONG_VON" ]; then echo "::error::Chưa có tổng vốn PTĐTTC – đặt secret TONG_VON_PTDTTC"; exit 1; fi
-          ma=0; python -c "from dmuc.chuong_trinh import main; main()" --khong_ve --khong_tran --ten ptdttc \
-            --file danh_muc_ptdttc.csv --trang_thai trang_thai_ptdttc.json --lich_su lich_su_ptdttc.csv \
-            --tong_von "$TONG_VON" --giu_tien_mat 0 > ket_qua_log_ptdttc.txt 2>&1 || ma=$?
-          echo "Danh mục PTĐTTC: mã thoát $ma"
-          gui=0; python gui_telegram.py > /tmp/gui_ptdttc.txt 2>&1 || gui=$?
-          echo "Gửi Telegram: mã thoát $gui"
-
-      - name: Tóm tắt Telegram (kín – gộp thật + PTĐTTC, 1 tin ngắn + trang HTML)
+      - name: Tóm tắt Telegram (kín – 1 tin ngắn + trang HTML)
         if: always()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
@@ -159,9 +139,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
-          for f in danh_muc.csv danh_muc_cu.csv danh_muc_ptdttc.csv trang_thai_ptdttc.json lich_su_ptdttc.csv \
-                   tien_mat_chinh.json tien_mat_ptdttc.json trung_vang_chinh.json trang_thai_vi_the.json gia_tham_chieu_quyen.json \
-                   lich_su_danh_muc.csv nhap.txt nhap_ptdttc.txt da_ban.csv da_ban_ptdttc.csv lenh_that.csv lenh_that_ptdttc.csv cache_du_lieu; do
+          for f in danh_muc.csv danh_muc_cu.csv \
+                   tien_mat_chinh.json trung_vang_chinh.json trang_thai_vi_the.json gia_tham_chieu_quyen.json \
+                   lich_su_danh_muc.csv nhap.txt da_ban.csv lenh_that.csv cache_du_lieu; do
             if [ -e "$f" ]; then git add -f "$f"; fi
           done
           if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi

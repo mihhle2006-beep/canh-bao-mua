@@ -112,14 +112,14 @@ jobs:
             "15 5 * * 1-5") HET=1447 ;;
             *) HET="" ;;
           esac
-          # nhap*.txt ở danh-muc còn lệnh chưa áp → chạy danh mục ngay (không đợi cuối phiên). Không gọi khi danh mục đang
+          # nhap.txt ở danh-muc còn lệnh chưa áp → chạy danh mục ngay (không đợi cuối phiên). Không gọi khi danh mục đang
           # chạy hoặc đã chạy trong 45' (lệnh nhập sai không áp được → không gọi lặp mỗi 15'); log không in nội dung lệnh
           kiem_nhap() {
             gan=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/danh_muc.yml/runs?per_page=5" --jq \
                   '[.workflow_runs[] | select(.status != "completed" or (now - (.created_at | fromdate)) < 2700)] | length' \
                   2>/dev/null || echo 1)
             [ "$gan" = 0 ] || return 0
-            for f in nhap.txt nhap_ptdttc.txt; do
+            for f in nhap.txt; do
               if curl -sf -H "Authorization: Bearer $DANH_MUC_TOKEN" -H "Accept: application/vnd.github.raw" \
                    "https://api.github.com/repos/${DANH_MUC_REPO:-mihhle2006-beep/danh-muc}/contents/$f" \
                    | sed 's/#.*//' | grep -q '[A-Za-z0-9]'; then

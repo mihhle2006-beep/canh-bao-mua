@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
-
 from bo_loc import gui_html as G
 
 
@@ -72,31 +70,6 @@ def test_ban_ngoai_khong_lo_noi_bo(tmp_path):
     assert "FPT" in s and "HPG" in s and "99" in s and "sức khoẻ 6/8" in s
     for lo in ("NAV", "1.200", "Số CP", "81", "/100", "A0", "CL2", "mô tả nội bộ", "Riêng", "Tiêu chí", "MACD"):
         assert lo not in s, lo
-
-
-def test_khong_gui_ptdttc_o_repo_cong_khai(tmp_path, monkeypatch):
-    d = tmp_path / "ket_qua_loc_quy_b_20261009"
-    d.mkdir()
-    for f in ("chien_luoc_quy_b.html", "chien_luoc_quy_b_ngoai.html"):
-        (d / f).write_text("<html></html>", encoding="utf-8")
-    (tmp_path / "ptdttc_bo_loc.json").write_text('{"phien": "2026-10-09", "ma": {"MWG": {}}}', encoding="utf-8")
-    monkeypatch.chdir(tmp_path)
-    tin = []
-    monkeypatch.setattr(G, "gui_file", lambda p, ten: True)
-    monkeypatch.setattr(G, "gui_tin", lambda t: tin.append(t) or True)
-    G.main(["--chien_luoc", "quy_b", "--che_do", "noi_bo"])
-    assert tin and not any("PTĐTTC" in t for t in tin)
-
-
-def test_tin_ptdttc_gom_ma_cung_ket_luan(tmp_path):
-    """29/10/2026: mã cùng kết luận các chiến lược chung 1 dòng (trước: mỗi mã 3 dòng), nhóm có MUA lên đầu."""
-    f = tmp_path / "pt.json"
-    td = {"quy_b": {"hanh_dong": "THEO DÕI"}, "xu_huong": {"hanh_dong": "THEO DÕI"}}
-    f.write_text(json.dumps({"ma": {"BBB": td, "AAA": {"quy_b": {"hanh_dong": "MUA"}, "xu_huong": {"hanh_dong": "THEO DÕI"}},
-                                    "CCC": td}}, ensure_ascii=False), encoding="utf-8")
-    assert G.tin_ptdttc(str(f)).splitlines() == ["📌 PTĐTTC – theo dõi riêng (3 mã, không vào danh sách MUA)",
-                                                 "• Quỹ Bứt Phá MUA · Xu hướng THEO DÕI: AAA",
-                                                 "• Quỹ Bứt Phá THEO DÕI · Xu hướng THEO DÕI: BBB, CCC"]
 
 
 def test_ten_anh_khong_gach_duoi(tmp_path):

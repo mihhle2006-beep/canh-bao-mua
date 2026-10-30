@@ -49,25 +49,6 @@ def tin_ma_mua(cl, ngay, ds_ma):
                else "Không có mã MUA"))
 
 
-def tin_ptdttc(path="ptdttc_bo_loc.json"):
-    """Tin mã PTĐTTC theo dõi riêng (quet_dinh_ky --chi_ptdttc ghi) – None nếu không có. Tin gọn 29/10/2026: gom mã cùng
-    kết luận các chiến lược vào 1 dòng (trước: mỗi mã 3 dòng), nhóm có MUA lên đầu."""
-    try:
-        with open(path, encoding="utf-8") as f:
-            d = json.load(f)
-    except (OSError, ValueError):
-        return None
-    ma = d.get("ma") or {}
-    if not ma:
-        return None
-    nhom = {}
-    for m, kq in ma.items():
-        nhom.setdefault(" · ".join(f"{ten_cl(cl)} {v.get('hanh_dong', '–')}" for cl, v in kq.items()) or "–", []).append(m)
-    thu_tu = sorted(nhom, key=lambda k: ("MUA" not in k, k))
-    return (f"📌 PTĐTTC – theo dõi riêng ({len(ma)} mã, không vào danh sách MUA)\n"
-            + "\n".join(f"• {k}: {', '.join(nhom[k])}" for k in thu_tu))
-
-
 def _tg():
     token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not (token and chat):
@@ -106,13 +87,7 @@ def main(argv=None):
     p.add_argument("--che_do", default="ngoai", choices=["ngoai", "noi_bo"],
                    help="ngoai: bản gửi người ngoài (không khối lượng/NAV, điểm, tiêu chí) · noi_bo: đủ chi tiết")
     p.add_argument("--khong_gui", action="store_true")
-    p.add_argument("--chi_ptdttc", action="store_true", help="chỉ gửi tin 📌 PTĐTTC (workflow kín ptdttc.yml)")
     a = p.parse_args(argv)
-    if a.chi_ptdttc:
-        t = tin_ptdttc()
-        if t and not a.khong_gui:
-            gui_tin(t)
-        return 0
     try:
         with open(a.file_ma, encoding="utf-8") as f:
             ds_ma = json.load(f).get("ma") or {}

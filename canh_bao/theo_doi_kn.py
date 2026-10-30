@@ -96,27 +96,27 @@ def danh_gia(mo, gia_ngay, tai, bay_gio, tt):
         if not kb.get("he_thoat"):
             continue
         muc, cl = kb["muc"], kb["cat_lo"]
-        dau = f"{ma} {_f(kb['gia'])}"                 # mỗi mục 1 dòng (đọc trên điện thoại)
-        vao = "\n   " + vi_the.dong_da_vao(r["ngay_vao"], float(r["gia_vao"]), kb["lai_lo_pct"], kb["lai_R"])
+        dau = f"{ma} {_f(kb['gia'])}"                 # 1 dòng / lệnh (tin gọn 29/10/2026)
+        vao = " · " + vi_the.dong_da_vao(r["ngay_vao"], float(r["gia_vao"]), kb["lai_lo_pct"], kb["lai_R"])
         if muc in ("CAT_LO", "BAN_TUAN", "HET_HAN"):
             ly = {"CAT_LO": f"chạm cắt lỗ {_f(cl)}", "BAN_TUAN": "đóng cửa tuần < MA10 tuần",
                   "HET_HAN": f"{kb.get('so_phien')} phiên chưa đạt 1R"}[muc]
-            dong = f"🔴 {dau} | BÁN đầu phiên tới{vao}\n   Lý do: {ly}"
+            dong = f"🔴 {dau} | BÁN đầu phiên tới – {ly}{vao}"
         elif muc == "DOI_CAT_LO" and khoa not in da_bao:           # lần đầu: cắt lỗ theo giá khớp thật, không gọi là "dời"
             cl = kb["cat_lo_he_thong"]
             da_bao[khoa] = round(float(cl), 2)
-            dong, muc = f"🟢 {dau} | GIỮ{vao}\n   Cắt lỗ: {_f(cl)}", "GIU"
+            dong, muc = f"🟢 {dau} | GIỮ · Cắt lỗ {_f(cl)}{vao}", "GIU"
         elif muc == "DOI_CAT_LO":
             cl = kb["cat_lo_he_thong"]
-            dong, muc = f"⬆ {dau} | GIỮ, DỜI cắt lỗ{vao}\n   Cắt lỗ: {_f(cl)} (dời lên từ {_f(cl_bao)})", "DOI"
+            dong, muc = f"⬆ {dau} | GIỮ, DỜI cắt lỗ {_f(cl_bao)} → {_f(cl)}{vao}", "DOI"
             da_bao[khoa] = round(float(cl), 2)
         elif muc == "GAN_CAT_LO":
-            dong = f"⚠ {dau} | GIỮ, sát cắt lỗ{vao}\n   Cắt lỗ: {_f(cl)} – thủng là bán"
+            dong = f"⚠ {dau} | GIỮ, sát cắt lỗ {_f(cl)} – thủng là bán{vao}"
         else:
-            dong = f"🟢 {dau} | GIỮ{vao}\n   Cắt lỗ: {_f(cl)}"
+            dong = f"🟢 {dau} | GIỮ · Cắt lỗ {_f(cl)}{vao}"
             da_bao.setdefault(khoa, round(float(cl), 2))
         if r["them"]:
-            dong += f"\n   (báo MUA lại {', '.join(pd.Timestamp(t).strftime('%d/%m') for t in r['them'])})"
+            dong += f" · báo MUA lại {', '.join(pd.Timestamp(t).strftime('%d/%m') for t in r['them'])}"
         ra.append((THU_TU.get(muc, 3), kb["lai_lo_pct"], dong))
     con = {f"{m}|{r['ngay_vao']}" for m, r in mo.items()}
     tt["cat_lo"] = {k: v for k, v in da_bao.items() if k in con}          # bỏ lệnh đã đóng

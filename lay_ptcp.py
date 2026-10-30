@@ -27,22 +27,8 @@ def chep(nguon):
     shutil.copytree(nguon, DICH, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
 
 
-FILE_PTDTTC = "danh_muc_ptdttc.csv"
-
-
-def chep_ptdttc(goc):
-    """Chép danh_muc_ptdttc.csv (mã PTĐTTC – repo danh-muc) cạnh lay_ptcp.py cho quet_dinh_ky --chi_ptdttc. CHỈ khi
-    CHEP_PTDTTC=1 (workflow kín ptdttc.yml) – repo công khai: các workflow khác không có file này. KHÔNG commit."""
-    if os.environ.get("CHEP_PTDTTC") != "1":
-        return
-    nguon = os.path.join(goc, FILE_PTDTTC)
-    if os.path.isfile(nguon):
-        shutil.copy(nguon, os.path.join(os.path.dirname(DICH), FILE_PTDTTC))
-        print(f"✔ {FILE_PTDTTC}")
-
-
 def clone_ptcp(url, tmp, duong_dan, nhanh="", chay=subprocess.run):
-    """Clone NÔNG + THƯA: chỉ thư mục ptcp và các file ở gốc repo (danh_muc_ptdttc.csv…) – bỏ du_lieu/bctc (~155 MB),
+    """Clone NÔNG + THƯA: chỉ thư mục ptcp và các file ở gốc repo – bỏ du_lieu/bctc (~155 MB),
     cache… mà bot không dùng → vài giây thay vì tải cả repo mỗi lần chạy. → mã thoát git (0 = được)."""
     r = chay(["git", "clone", "--depth", "1", "--filter=blob:none", "--sparse", "--quiet",
               *(["--branch", nhanh] if nhanh else []), url, tmp], capture_output=True, text=True)
@@ -96,7 +82,6 @@ def main():
             if not _la_goi_ptcp(os.path.join(tmp, duong_dan)):   # ptcp không ở DUONG_DAN → lấy đủ repo để tự tìm
                 subprocess.run(["git", "-C", tmp, "sparse-checkout", "disable"], capture_output=True, text=True)
             chep(tim_ptcp(tmp, duong_dan, repo))
-            chep_ptdttc(tmp)
     sys.path.insert(0, os.path.dirname(DICH))
     import ptcp
     print(f"✔ ptcp {ptcp.__version__} – {len([f for f in os.listdir(DICH) if f.endswith('.py')])} module")

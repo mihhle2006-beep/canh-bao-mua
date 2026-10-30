@@ -42,7 +42,7 @@ def test_theo_doi(tmp_path):
     assert "📌 Theo dõi khuyến nghị: 2 lệnh mở · 1 GIỮ · cần làm:" in txt
     assert "🔴 BBB" in txt and "BÁN đầu phiên tới" in txt and "AAA" not in txt and "DDD" not in txt   # GIỮ → chỉ ở HTML
     bang = T.doc_tt(tt)["bang"]["dang_mo"]
-    assert bang[0].startswith("🔴 BBB") and any("báo MUA lại 20/09)" in d and "02/09," not in d for d in bang)
+    assert bang[0].startswith("🔴 BBB") and any(d.endswith("báo MUA lại 20/09") and "02/09," not in d and "\n" not in d for d in bang)
     assert "CCC" not in txt                                                    # lần đầu: không báo lệnh đóng cũ
     p2 = _nk(tmp_path, [_r("AAA", "2026-09-01", "2026-09-02", 55.0, 52.0),
                         _r("EEE", "2026-08-01", "2026-08-04", 50.0, 47.0, ket_qua="SAI", ngay_ket_thuc="2026-10-07",
