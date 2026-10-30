@@ -8,6 +8,7 @@
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
 #   von86 – tài khoản thật: B + Trứng vàng + hệ bắt đáy CHUNG DÒNG TIỀN – số lần thiếu tiền, lệnh mua trễ, hệ vào / bỏ
+#   von90 – 16 chỉ báo đỉnh thị trường (Ichimoku, Stochastic, độ rộng, Hindenburg…): nghiên cứu sự kiện + thử trên quỹ
 #   von89 – khoá lãi cả danh mục sau sóng lớn (NAV rơi từ đỉnh → bán ½ / hết)
 #   von88 – chẩn đoán năm 2026: lãi theo tháng, lệnh 2026, phễu lọc tín hiệu, tắt từng phần luật
 #   von87 – thoát ngắn kiểu "người 3" (cắt lỗ −2 %, chốt +3…6 %, giữ ≤ 5 phiên) trên chính điểm vào Quỹ B
@@ -27,7 +28,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 / von90 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -50,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von85, von86, von87, von88, von89]
+        phan: [chuan, von85, von86, von87, von88, von89, von90]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -127,6 +128,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
+            von90) export CHI_VON90=1; unset SO_NN ;;          # chỉ báo đỉnh thị trường
             von89) export CHI_VON89=1; unset SO_NN ;;          # khoá lãi cả danh mục (13 cấu hình)
             von88) export CHI_VON88=1; unset SO_NN ;;          # chẩn đoán năm 2026 (5 cấu hình)
             von87) export CHI_VON87=1; unset SO_NN ;;          # thoát ngắn kiểu người 3 trên điểm vào B (8 cấu hình)
