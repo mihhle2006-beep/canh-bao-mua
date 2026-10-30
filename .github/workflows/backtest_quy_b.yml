@@ -8,6 +8,7 @@
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
 #   von86 – tài khoản thật: B + Trứng vàng + hệ bắt đáy CHUNG DÒNG TIỀN – số lần thiếu tiền, lệnh mua trễ, hệ vào / bỏ
+#   von92 – độ bền luật "dự báo học dần → ½ rủi ro": lưới λ / ngưỡng / hệ số + 30 giả dược xoay vòng thời gian
 #   von91 – điểm thị trường tổng hợp 19 chỉ số: dự báo đỉnh / đáy + rủi ro / thoát theo điểm trên quỹ
 #   von90 – 16 chỉ báo đỉnh thị trường (Ichimoku, Stochastic, độ rộng, Hindenburg…): nghiên cứu sự kiện + thử trên quỹ
 #   von89 – khoá lãi cả danh mục sau sóng lớn (NAV rơi từ đỉnh → bán ½ / hết)
@@ -29,7 +30,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 / von90 / von91 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 / von90 / von91 / von92 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -52,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von85, von86, von87, von88, von89, von90, von91]
+        phan: [chuan, von85, von86, von87, von88, von89, von90, von91, von92]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -129,6 +130,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
+            von92) export CHI_VON92=1; unset SO_NN ;;          # độ bền luật dự báo học dần (lưới + giả dược)
             von91) export CHI_VON91=1; unset SO_NN ;;          # điểm thị trường tổng hợp
             von90) export CHI_VON90=1; unset SO_NN ;;          # chỉ báo đỉnh thị trường
             von89) export CHI_VON89=1; unset SO_NN ;;          # khoá lãi cả danh mục (13 cấu hình)
