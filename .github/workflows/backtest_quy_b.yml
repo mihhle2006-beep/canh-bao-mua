@@ -8,6 +8,7 @@
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
 #   von86 – tài khoản thật: B + Trứng vàng + hệ bắt đáy CHUNG DÒNG TIỀN – số lần thiếu tiền, lệnh mua trễ, hệ vào / bỏ
+#   von88 – chẩn đoán năm 2026: lãi theo tháng, lệnh 2026, phễu lọc tín hiệu, tắt từng phần luật
 #   von87 – thoát ngắn kiểu "người 3" (cắt lỗ −2 %, chốt +3…6 %, giữ ≤ 5 phiên) trên chính điểm vào Quỹ B
 #   von85 – luật mới 29/10/2026 (độ rộng × ½ + hệ bắt đáy bán mở cửa như bot) so với luật cũ + breakout nóng có điều kiện
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
@@ -25,7 +26,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von85 / von86 / von87 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -48,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von85, von86, von87]
+        phan: [chuan, von85, von86, von87, von88]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -125,6 +126,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
+            von88) export CHI_VON88=1; unset SO_NN ;;          # chẩn đoán năm 2026 (5 cấu hình)
             von87) export CHI_VON87=1; unset SO_NN ;;          # thoát ngắn kiểu người 3 trên điểm vào B (8 cấu hình)
             von86) export CHI_VON86=1; unset SO_NN ;;          # tài khoản thật: B + Trứng + bắt đáy chung tiền (2 luật × 20 thứ tự ★)
             von85) export CHI_VON85=1; unset SO_NN ;;          # luật mới khớp như bot + BO nóng có điều kiện (5 biến thể × 20 thứ tự ★)
