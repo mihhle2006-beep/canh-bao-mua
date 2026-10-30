@@ -39,9 +39,11 @@ permissions:
   contents: write
   actions: write                   # gọi danh_muc.yml khi nhap*.txt có lệnh mới (GITHUB_TOKEN – cùng repo)
 
+# Lần chạy tay (tổng kết…) trong phiên CHỜ vòng lặp xong, không huỷ nó (cancel-in-progress cũ = true: bấm Run giữa phiên là
+# mất cảnh báo 15' tới hết buổi). Chạy thử / chạy lại giờ cũ / xem mã: nhóm riêng, chạy ngay, không ghi trạng thái / cache.
 concurrency:
-  group: canh-bao${{ (inputs.gio != '' || inputs.chi_thu) && '-thu' || '' }}   # chạy thử không huỷ vòng lặp đang chạy
-  cancel-in-progress: true
+  group: canh-bao${{ (inputs.gio != '' || inputs.chi_thu || inputs.ma != '') && '-thu' || '' }}
+  cancel-in-progress: false
 
 jobs:
   chay:
@@ -74,7 +76,7 @@ jobs:
         run: python lay_ptcp.py
 
       - name: Khôi phục cache giá, phân tích ngày & nhật ký riêng
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5      # lưu ở bước "Lưu cache" (cả khi lần chạy đỏ; chạy thử / xem mã không lưu)
         with:
           path: |
             cache_gia
@@ -158,6 +160,17 @@ jobs:
           [ -n "$ds" ] || exit 0
           tar -cz $ds | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:KHOA -out cache_ptcp/rieng.enc && rm -f $ds
 
+      # lưu cả khi lần chạy đỏ (vòng lặp ≥ 2 lượt lỗi): trạng thái bán đã báo phải sang buổi sau, không báo lặp. Chạy thử /
+      # chạy lại giờ cũ / xem mã không lưu – cache của chúng (trạng thái lúc bắt đầu) không được đè cache mới của vòng lặp
+      - name: Lưu cache
+        if: always() && inputs.chi_thu != true && inputs.gio == '' && inputs.ma == ''
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            cache_gia
+            cache_ptcp
+          key: gia-${{ github.run_id }}
+
       - name: Tải file Excel độ chính xác (chế độ lịch sử)
         if: always() && hashFiles('danh_gia_tin_hieu.xlsx') != ''
         uses: actions/upload-artifact@v6
@@ -167,7 +180,7 @@ jobs:
           retention-days: 30
 
       - name: Lưu trạng thái, nhật ký tín hiệu & trang tổng hợp (công khai)
-        if: always() && inputs.chi_thu != true && inputs.gio == ''   # chỉ thử / chạy lại → không commit gì
+        if: always() && inputs.chi_thu != true && inputs.gio == '' && inputs.ma == ''   # chỉ thử / chạy lại / xem mã → không commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -178,5 +191,6 @@ jobs:
           done
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0
           git commit -m "Trạng thái cảnh báo $(date -u +%F' '%H:%M) UTC"
-          git pull --rebase || true
-          git push || echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"
+          # mất trạng thái = lượt sau báo lặp / mất cờ "tổng kết đã gửi" → thử 3 lần, hỏng thì lần chạy đỏ (🩺 thấy ❌)
+          for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; sleep $((i * 5)); done
+          echo "::error::Không đẩy được trạng thái – Settings → Actions → General → Workflow permissions: Read and write"; exit 1

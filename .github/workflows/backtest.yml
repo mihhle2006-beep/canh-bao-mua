@@ -115,4 +115,4 @@ jobs:
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0
           git commit -m "Kết quả backtest $(date -u +%F)"
           for i in 1 2 3; do git pull --rebase && git push && exit 0; sleep 5; done
-          echo "Không đẩy được – Settings → Actions → General → Workflow permissions: Read and write"
+          echo "::error::Không đẩy được kết quả backtest – Settings → Actions → General → Workflow permissions: Read and write"; exit 1
