@@ -530,9 +530,25 @@ def test_tin_tong_hop_mua():
     b = {**k, "ma": "VSC", "gia_mua": 14.35, "atc": True, "uu_tien": 1.0}
     assert diem_vao.tin_tong_hop_mua([a], "2026-10-27 14:30") is None
     t = diem_vao.tin_tong_hop_mua([a, b], "2026-10-27 14:30").split("\n")
-    assert t[0].startswith("📋 2 MÃ BÁO MUA CÙNG LÚC (14:30 27/10)")
-    assert t[1].startswith("   1. ★1 VSC 14.35 – ATC") and t[2].startswith("   2. ★2 HAG")
-    assert any("TRƯỚC 14:45" in x for x in t)
+    assert t[0].startswith("📋 2 MÃ BÁO MUA CÙNG LÚC (14:30 27/10)") and "TRƯỚC 14:45" in t[0]
+    assert t[1] == "   1. ★1 VSC 14.35 – ATC (tin riêng ở trên)" and t[2].startswith("   2. ★2 HAG")
+    assert "dự phòng" not in "\n".join(t)
+
+
+def test_mua_cung_luc_chi_ma_sao_tin_rieng_con_lai_du_phong():
+    """30/10/2026: lượt 14:30 gửi 10 tin (8 mã MUA ATC) → chỉ mã ★ tin riêng, mã # là 1 dòng dự phòng trong tin tổng hợp
+    (đủ giá đặt / giới hạn / cắt lỗ); không mã nào ★ → mã ưu tiên nhất tin riêng."""
+    k = {"nhom": "VAO_NHU_MOI", "tu": 14.0, "den": 15.0, "cl": 13.5, "mt1": 15.5, "mt3": 17.0, "atc": True}
+    ds = [{**k, "ma": m, "gia_mua": 14.5, "uu_tien": u} for m, u in (("CCC", 8.0), ("AAA", 4.0), ("DDD", 9.0),
+                                                                     ("BBB", 5.0))]
+    rieng, du = diem_vao.chia_tin_mua(ds)
+    assert [x["ma"] for x in rieng] == ["AAA", "BBB"] and [x["ma"] for x in du] == ["CCC", "DDD"]
+    t = diem_vao.tin_tong_hop_mua(ds, "2026-10-29 14:30", rieng).split("\n")
+    assert t[1].endswith("AAA 14.50 – ATC (tin riêng ở trên)")
+    assert t[3] == "   3. #8 CCC 14.50 – ATC ≤ 15.00 · Cắt lỗ 13.50 – dự phòng"
+    assert "dự phòng chỉ khi còn tiền" in t[-1] and len(t) == 6
+    rieng, du = diem_vao.chia_tin_mua([ds[0], ds[2]])
+    assert [x["ma"] for x in rieng] == ["CCC"] and [x["ma"] for x in du] == ["DDD"]
 
 
 def test_dong_nhiet_do_rong_va_von_lenh_tach_he_so():
@@ -647,3 +663,32 @@ def test_nhac_lenh_ato_truoc_gio_mo_cua(monkeypatch, tmp_path):
     tt = vi_the.doc_trang_thai_ban()
     assert not vi_the.can_bao_ban("BBB", "BAN_TUAN", "2026-10-30 09:15", tt)          # trong phiên không báo lặp
     assert vi_the.tin_nhac_ato([], [], "2026-10-30") is None
+
+
+def test_trong_phien_mua_cung_luc_gom_tin(monkeypatch, tmp_path):
+    """Lượt 15' có 3 mã mới MUA (2 ★ + 1 #) và 1 mã đang giữ: tin riêng cho 2 mã ★ + mã đang giữ, mã # chỉ nằm trong
+    1 tin tổng hợp → 4 tin (trước 30/10/2026: 5 tin, lượt 14:30 29/10 là 10 tin)."""
+    monkeypatch.chdir(tmp_path)
+    k = {"nhom": "VAO_NHU_MOI", "tu": 14.0, "den": 15.0, "cl": 13.5, "mt1": 15.5, "mt3": 17.0, "atc": True,
+         "trang_thai": "MUA", "ly_do": "vào trễ – lệnh ATC trong vùng", "gia_nay": 14.5, "gia_mua": 14.5,
+         "thoi_diem": None, "tieu_chi": []}
+    ds = [{"ma": m, "uu_tien": u} for m, u in (("CCC", 8.0), ("AAA", 1.0), ("HHH", 2.0), ("BBB", 3.0))]
+    monkeypatch.setattr(diem_vao, "doc_ds_mua", lambda bay_gio: ds)
+    monkeypatch.setattr(diem_vao, "danh_gia", lambda z, dp, bay_gio, bt: {**k, **z})
+    monkeypatch.setattr(tong_ket_cl, "cach_vao", lambda kq: ("15P+GIO", "cấu hình"))
+    monkeypatch.setattr(chay, "nen_15p", lambda ma, bay_gio: pd.DataFrame())
+    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda df, *a: df)
+    monkeypatch.setattr(chay, "doc_trang_thai", lambda: {})
+    monkeypatch.setattr(chay, "ghi_trang_thai", lambda tt: None)
+    monkeypatch.setattr(chay, "_anh_mua_ngay", lambda kq, bay_gio: f"{kq['ma']}.png")
+    monkeypatch.setattr(chay, "_canh_bao_ban", lambda *a: None)
+    monkeypatch.setattr(chay, "_trang", lambda *a: None)
+    monkeypatch.setattr(chay.C, "GHI_NHAT_KY", False)
+    gui = []
+    monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, anh=None: gui.append((nd.split("\n")[0], rieng_tu, anh)))
+    vt = {"HHH": {"ma": "HHH", "so_cp": 100, "gia_von": 14.0}}
+    chay.trong_phien_15p(pd.Timestamp("2026-10-29 14:30"), vt)
+    assert len(gui) == 4
+    assert gui[0][0].startswith("💼 GIỮ THEO HỆ THỐNG – HHH") and gui[0][1:] == (True, "HHH.png")
+    assert [g[0].split(" – ")[1].split()[0] for g in gui[1:3]] == ["AAA", "BBB"] and gui[1][2] == "AAA.png"
+    assert gui[3][0].startswith("📋 3 MÃ BÁO MUA CÙNG LÚC") and gui[3][2] is None

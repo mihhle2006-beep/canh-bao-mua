@@ -227,21 +227,42 @@ def _von_nav(kq, gia, cl):
     return s or ""
 
 
-def tin_tong_hop_mua(ds, bay_gio):
+def _theo_uu_tien(ds):
+    """Mã sắp theo ★ (★1 trước), mã không có hạng ưu tiên cuối."""
+    return sorted(ds, key=lambda k: (k.get("uu_tien") if k.get("uu_tien") == k.get("uu_tien") and k.get("uu_tien")
+                                     is not None else 999))
+
+
+def chia_tin_mua(ds):
+    """Mã MUA cùng 1 lần quét 15' → (mã gửi TIN RIÊNG kèm ảnh, mã DỰ PHÒNG chỉ ghi trong tin tổng hợp). Tin riêng: mã ★;
+    không mã nào ★ → mã ưu tiên cao nhất. Người dùng 30/10/2026: lượt 14:30 29/10 gửi 10 tin (8 tin MUA ATC + tin thứ
+    tự + nhắc giờ) – như tin tổng kết, chỉ mã ★ đủ dòng, còn lại 1 dòng dự phòng."""
+    from .tong_ket_cl import nhan_uu_tien
+    x = _theo_uu_tien(ds)
+    rieng = [k for k in x if nhan_uu_tien(k.get("uu_tien")).startswith("★")] or x[:1]
+    return rieng, [k for k in x if k not in rieng]
+
+
+def tin_tong_hop_mua(ds, bay_gio, rieng=None):
     """≥ 2 mã báo MUA trong cùng 1 lần quét 15' (người dùng 27/10/2026: HAG + VSC cùng lúc 14:30) → 1 tin thứ tự mua
-    theo ★ (★1 trước) để biết đặt mã nào trước khi thiếu tiền / suất; 0–1 mã → None. Tin chi tiết từng mã vẫn gửi riêng."""
+    theo ★ (★1 trước) để biết đặt mã nào trước khi thiếu tiền / suất; 0–1 mã → None. rieng: mã đã có tin riêng (mặc
+    định chia_tin_mua) – 1 dòng; mã còn lại là DỰ PHÒNG, ghi đủ để đặt lệnh: giá, giới hạn, cắt lỗ."""
     if len(ds) < 2:
         return None
     from .tong_ket_cl import nhan_uu_tien
-    x = sorted(ds, key=lambda k: (k.get("uu_tien") if k.get("uu_tien") == k.get("uu_tien") and k.get("uu_tien")
-                                  is not None else 999))
-    d = [f"📋 {len(x)} MÃ BÁO MUA CÙNG LÚC ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – thứ tự đặt lệnh:"]
+    x = _theo_uu_tien(ds)
+    co_rieng = {k["ma"] for k in (chia_tin_mua(x)[0] if rieng is None else rieng)}
+    co_atc = any(k.get("atc") for k in x)
+    d = [f"📋 {len(x)} MÃ BÁO MUA CÙNG LÚC ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – thứ tự đặt lệnh"
+         + (" · ⏰ ATC đặt TRƯỚC 14:45" if co_atc else "") + ":"]
     for i, k in enumerate(x, 1):
-        gia = muc_sau_mua(k)[0]
-        d.append(f"   {i}. {(nhan_uu_tien(k.get('uu_tien')) + ' ').lstrip()}{k['ma']} {_f(gia)} – "
-                 + ("ATC" if k.get("atc") else "mua ngay") + f" (vùng {_f(k['tu'])}–{_f(k['den'])})")
+        gia, cl = muc_sau_mua(k)[:2]
+        dau = f"   {i}. {(nhan_uu_tien(k.get('uu_tien')) + ' ').lstrip()}{k['ma']} {_f(gia)} – " \
+              + ("ATC" if k.get("atc") else "mua ngay")
+        d.append(dau + (" (tin riêng ở trên)" if k["ma"] in co_rieng else
+                        f" ≤ {_f(k['den'])} · Cắt lỗ {_f(cl)} – dự phòng"))
     d.append("Đặt lần lượt từ trên xuống tới khi hết tiền / hết suất mã mới tuần này"
-             + (" · ⏰ ATC phải đặt TRƯỚC 14:45" if any(k.get("atc") for k in x) else ""))
+             + ("; dự phòng chỉ khi còn tiền / suất sau mã có tin riêng" if len(co_rieng) < len(x) else ""))
     return "\n".join(d)
 
 

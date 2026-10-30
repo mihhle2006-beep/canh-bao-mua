@@ -418,17 +418,22 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                      "Lý do": kq["ly_do"], "Giờ": f"{pd.Timestamp(kq['thoi_diem']):%H:%M}" if kq["thoi_diem"] is not None
                      else "", "Giá mua": kq["gia_mua"]})
         if diem_vao.can_bao(kq["ma"], kq["trang_thai"], bay_gio, luu, kq["ly_do"]):
-            nd = diem_vao.tin_mua(kq, bay_gio, bien_the, vt.get(kq["ma"])) if kq["trang_thai"] == "MUA" else \
-                diem_vao.tin_bo(kq, bay_gio)
-            anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
-            gui(nd, rieng_tu=kq["ma"] in vt, anh=anh) if not khong_gui else _in(nd, rieng_tu=kq["ma"] in vt)
             if kq["trang_thai"] == "MUA" and kq["ma"] not in vt:
-                moi_mua.append(kq)
+                moi_mua.append(kq)                          # mã mới: gửi sau vòng (★ tin riêng, còn lại dự phòng)
+            else:
+                nd = diem_vao.tin_mua(kq, bay_gio, bien_the, vt.get(kq["ma"])) if kq["trang_thai"] == "MUA" else \
+                    diem_vao.tin_bo(kq, bay_gio)
+                anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
+                gui(nd, rieng_tu=kq["ma"] in vt, anh=anh) if not khong_gui else _in(nd, rieng_tu=kq["ma"] in vt)
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
             so_bao += 1
-    th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio)        # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự đặt lệnh
+    rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
+    for kq in rieng:
+        nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
+        gui(nd, anh=_anh_mua_ngay(kq, bay_gio)) if not khong_gui else _in(nd)
+    th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
     if th:
         gui(th) if not khong_gui else _in(th)
     tt["_15p_hom_nay"] = {"ngay": f"{bay_gio:%Y-%m-%d}", "cach_vao": bien_the,

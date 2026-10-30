@@ -6,7 +6,8 @@ on:
   schedule:
     # Lịch 15' của GitHub trễ / bỏ lượt (thực tế 35–60 phút một lần, mất cả khung ATC) → mỗi buổi MỘT job hẹn sớm,
     # tự lặp đúng mỗi 15 phút trong phiên (bước "Quét & gửi cảnh báo", VONG_LAP)
-    - cron: "15 1 * * 1-5"         # 08:15 giờ VN – vòng lặp buổi sáng 09:00–11:30
+    - cron: "15 0 * * 1-5"         # 07:15 giờ VN – vòng lặp buổi sáng: ⏰ nhắc ATO 08:00–09:00 rồi 09:00–11:30 (GitHub
+                                   # trễ 30–55': lịch 08:15 cũ chạy 08:46–09:07 → lỡ khung nhắc ATO)
     - cron: "15 5 * * 1-5"         # 12:15 giờ VN – vòng lặp buổi chiều 13:00–14:45 (gồm lượt 14:30 báo MUA ATC)
     - cron: "20 8 * * 1-5"         # 15:20 giờ VN – tổng kết cuối ngày (kèm chấm đúng/sai tín hiệu)
     - cron: "7 2 * * 6"            # 09:07 thứ Bảy giờ VN – chạy LỊCH SỬ hằng tuần (chấm lại mọi tín hiệu, xuất Excel)
@@ -45,7 +46,7 @@ concurrency:
 jobs:
   chay:
     runs-on: ubuntu-24.04
-    timeout-minutes: 240                # vòng lặp buổi sáng ~3h20
+    timeout-minutes: 300                # vòng lặp buổi sáng tới 4h20 (07:15 → 11:35)
     steps:
       - uses: actions/checkout@v5
 
@@ -108,7 +109,7 @@ jobs:
           if [ "$CHI_THU" = "true" ]; then THEM="--khong_gui"; rm -rf /tmp/ptcp_goc; cp -a cache_ptcp /tmp/ptcp_goc 2>/dev/null || true; fi
           ma_thoat=0
           case "${{ github.event.schedule }}" in
-            "15 1 * * 1-5") HET=1135 ;;
+            "15 0 * * 1-5") HET=1135 ;;
             "15 5 * * 1-5") HET=1447 ;;
             *) HET="" ;;
           esac
