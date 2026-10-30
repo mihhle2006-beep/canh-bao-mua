@@ -34,7 +34,8 @@ THAM_SO_NOTEBOOK = ["--nhom", "tat_ca"]
 # Thứ tự thử nguồn GIÁ (tên phải có trong bo_loc/nguon/gia.py). Nguồn lỗi → tự chuyển nguồn sau.
 THU_TU_NGUON_GIA = ["VNDirect", "TCBS", "DNSE", "VCI", "SSI", "vnstock", "Yahoo"]
 # Thứ tự ưu tiên nguồn CƠ BẢN khi nhiều nguồn cùng có 1 chỉ tiêu (file người dùng luôn ưu tiên nhất)
-THU_TU_NGUON_CO_BAN = ["VNDirect", "vnstock", "Yahoo"]   # VNDirect: EPS 4 quý chuẩn, chạy được trên Colab
+THU_TU_NGUON_CO_BAN = ["VNDirect", "VNDirect BCTC", "vnstock", "Yahoo"]   # VNDirect: EPS 4 quý chuẩn, chạy được trên Colab;
+# VNDirect BCTC: LNST công ty mẹ từng quý (EPS = LNST 4 quý ÷ CP lưu hành)
 # TCBS đã TẮT (07/10/2026 không trả dữ liệu cho mọi mã, mỗi lần gọi vẫn tốn thời gian chờ) – thêm "TCBS" vào danh
 # sách trên để bật lại (cùng ptcp/cau_hinh.py NGUON_TAT).
 LECH_CANH_BAO_PCT = 20               # 2 nguồn lệch nhau > 20% ở cùng chỉ tiêu → cảnh báo dữ liệu
