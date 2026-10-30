@@ -559,9 +559,15 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
                       f"{TIEU_DE[nhom]} ({len(x)})") + atc]
         x = sorted(x, key=lambda k: (k["uu_tien"] if k.get("uu_tien") == k.get("uu_tien") and k.get("uu_tien")
                                      is not None else 999, k["rui_ro"] if k["rui_ro"] == k["rui_ro"] else 99))
-        dong += [dong_mua(k, dang_giu, bt) for k in x[:n_max]]
-        if len(x) > n_max:
-            dong.append(f"… +{len(x) - n_max} mã (xem Excel)")
+        sao = [k for k in x if nhan_uu_tien(k.get("uu_tien")).startswith("★")]
+        if not any(nhan_uu_tien(k.get("uu_tien")) for k in x):           # chưa xếp hạng → như cũ (đủ, tối đa n_max)
+            sao = x[:n_max]
+        dong += [dong_mua(k, dang_giu, bt) for k in sao]                 # ★: đủ 3 dòng (30/10/2026)
+        du = [k for k in x if k not in sao]                              # #6+ / quá n_max: 1 dòng (mua khi ★ không vào)
+        if du:
+            dong.append("   Dự phòng (chỉ khi mã ★ không vào được): " + " · ".join(
+                f"{(nhan_uu_tien(k.get('uu_tien')) + ' ').lstrip()}{k['ma']} {_f(k['tu'])}–{_f(k['den'])}"
+                for k in du[:n_max]) + (f" · … +{len(du) - n_max} mã" if len(du) > n_max else ""))
     cho = [k for k in ks if k["nhom"] == "CHO"]
     if cho:                                                          # 1 dòng: mã + vùng chờ
         dong += ["", f"{TIEU_DE['CHO']} ({len(cho)}): " + " · ".join(

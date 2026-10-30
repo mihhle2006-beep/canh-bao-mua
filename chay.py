@@ -51,6 +51,8 @@ def main(argv=None):
     if che_do == "tu_dong":
         if trong_phien(bay_gio):
             che_do = "trong_phien"
+        elif truoc_phien(bay_gio):
+            che_do = "truoc_phien"
         else:                        # tổng kết chỉ từ lịch 15:20 / chạy tay (lịch 15' bị GitHub trễ sau 15:00 không gửi lặp)
             print(f"{bay_gio:%H:%M %d/%m} ngoài giờ giao dịch → không làm gì.")
             return 0
@@ -75,7 +77,55 @@ def main(argv=None):
         print(f"Vị thế đang giữ: {len(vt)} mã (nguồn: {nguon_vt})")
     if che_do in ("tong_ket", "chien_luoc"):
         return tong_ket(bay_gio, vt, them, a.khong_gui)
+    if che_do == "truoc_phien":
+        return nhac_ato(bay_gio, vt, a.khong_gui)
     return trong_phien_15p(bay_gio, vt, a.khong_gui)
+
+
+def truoc_phien(bay_gio):
+    """08:00–09:00 ngày giao dịch (T2–T6, không lễ) – lượt đầu vòng lặp sáng: nhắc lệnh ATO."""
+    t = pd.Timestamp(bay_gio)
+    if t.weekday() >= 5 or f"{t:%Y-%m-%d}" in ma_bo_loc.ngay_nghi(t.year):
+        return False
+    return t.normalize() + pd.Timedelta(hours=8) <= t < t.normalize() + pd.Timedelta(hours=9)
+
+
+def nhac_ato(bay_gio, vt, khong_gui=False):
+    """⏰ Trước giờ mở cửa (1 lần / ngày): mã đang giữ phải bán ATO theo đóng cửa phiên trước + mã hệ bắt đáy mua ATO
+    (trạng thái lọc sáng loc_quy_b.json). Ghi mức đã báo vào trạng thái bán → trong phiên không báo lặp cùng mức."""
+    tt = vi_the.doc_trang_thai_ban()
+    hom_nay = pd.Timestamp(bay_gio).normalize()
+    if tt.get("_nhac_ato") == f"{hom_nay:%Y-%m-%d}":
+        print("Đã nhắc lệnh ATO hôm nay.")
+        return 0
+    ban = []
+    for ma, v in vt.items():
+        dn = tai(ma, "D", C.NGAY_BAT_DAU)
+        dn = vi_the._phien_da_dong(dn, bay_gio) if dn is not None and len(dn) else None
+        if dn is None or not len(dn):
+            continue
+        kb = vi_the.danh_gia_ban(v, {"ma": ma, "gia": float(dn.close.iloc[-1])}, dn, bay_gio)
+        if kb["muc"] not in vi_the.BAN_ATO or (kb["muc"] == "BAN_YEU_CAU" and kb["ngay_lenh"].normalize() > hom_nay):
+            continue
+        ban.append((v, kb))
+        vi_the.can_bao_ban(ma, kb["muc"], bay_gio, tt)
+    mua, suat = [], None
+    try:
+        from ptcp.bat_day import ty_trong_suat
+        from ptcp.loc_quy_b import doc
+        bd = (doc(han_ngay=None) or {}).get("bat_day") or {}
+        if bd.get("ngay") and pd.Timestamp(bd["ngay"]) + pd.offsets.BDay(1) == hom_nay:
+            mua, suat = [m for m in bd.get("cho_mua") or [] if m not in vt], ty_trong_suat()
+    except Exception as e:                                     # noqa: BLE001 – ptcp cũ / thiếu file: chỉ nhắc phần bán
+        print(f"⚠ Hệ bắt đáy: {type(e).__name__}")
+    tt["_nhac_ato"] = f"{hom_nay:%Y-%m-%d}"
+    vi_the.ghi_trang_thai_ban(tt)
+    nd = vi_the.tin_nhac_ato(ban, mua, bay_gio, suat)
+    if nd:
+        _in(nd, rieng_tu=True) if khong_gui else gui(nd, rieng_tu=True)
+    if not os.environ.get("GITHUB_ACTIONS"):
+        print(f"Nhắc lệnh ATO: {len(ban)} bán, {len(mua)} mua hệ bắt đáy.")
+    return 0
 
 
 def _phien_thuc(bay_gio):
