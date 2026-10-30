@@ -6,3 +6,4 @@ matplotlib
 openpyxl
 pytest
 holidays>=0.60
+yfinance                # nguồn cơ bản dự phòng của bộ lọc (số CP lưu hành, BVPS) – cài sẵn, khỏi cài lại mỗi lần quét

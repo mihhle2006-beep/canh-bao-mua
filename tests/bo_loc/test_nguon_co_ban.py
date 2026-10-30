@@ -212,6 +212,7 @@ def test_nguon_thieu_thu_vien_bo_qua_khong_ghi_loi(monkeypatch, tmp_path):
         ham = lambda ma, t=ten: goi.append(t)                                # noqa: E731
         ham.thu_vien = tv
         monkeypatch.setitem(co_ban.NGUON_CO_BAN, ten, ham)
+    monkeypatch.delitem(co_ban.NGUON_CO_BAN, "VNDirect BCTC")             # chỉ xét nguồn cần thư viện
     NHAT_KY.xoa()
     assert co_ban.lay_online("VPB", dung_cache=True, thu_muc_cache=str(tmp_path)) == {"VNDirect": {"pe": 6.1,
                                                                                                     "eps_ttm": 3758.0}}
@@ -222,6 +223,7 @@ def test_cache_thieu_lnst_tu_bo_sung_va_pe_theo_lnst(monkeypatch, tmp_path):
     """Lưu đệm chỉ có VNDirect + Yahoo (thiếu LNST 4 quý) → tự lấy thêm LNST → P/E = giá ÷ (LNST 4Q ÷ CP)."""
     co_ban._ghi_cache("VPB", str(tmp_path), {"VNDirect": {"pe": 6.1, "pb": 1.28, "eps_ttm": 3758.0},
                                               "Yahoo": {"so_cp": 10e9, "bvps": 22476.0, "pb": 1.02}})
+    monkeypatch.setitem(co_ban.NGUON_CO_BAN, "VNDirect BCTC", lambda ma: {})      # VNDirect chưa có đủ 4 quý
     monkeypatch.setitem(co_ban.NGUON_CO_BAN, "vnstock",
                         lambda ma: {"ln_4q_ty": 28193.0, "ky_lnst": "Q2/2026+Q1/2026+Q4/2025+Q3/2025"})
     online = co_ban.lay_online("VPB", dung_cache=True, thu_muc_cache=str(tmp_path))
@@ -267,3 +269,52 @@ def test_so_cp_bvps_uu_tien_yahoo_tru_cp_quy():
     assert kq["so_cp"] == cp and kq["bvps"] == 21270.871
     m = co_ban.tinh_chi_so(kq, 50.8)
     assert abs(m["pe"] - 25.07) / 25.07 < 0.01 and round(m["pb"], 2) == 2.39
+
+
+def _dong_vnd(quy, ma_ct=23000):
+    """Dòng /v4/financial_statements: {"2026-06-30": tỷ đồng}."""
+    return [{"code": "VPB", "itemCode": ma_ct, "fiscalDate": d, "numericValue": v * 1e9} for d, v in quy.items()]
+
+
+def test_vndirect_bctc_lnst_4_quy_va_tang_truong(monkeypatch):
+    goi = []
+    quy = {"2026-09-30": 7000.0, "2026-06-30": 6500.0, "2026-03-31": 6000.0, "2025-12-31": 5500.0,
+           "2025-09-30": 5000.0}
+
+    def gia_lap(url, params=None, **k):
+        assert "api-finfo.vndirect.com.vn/v4/financial_statements" in url and "reportType:QUARTER" in params["q"]
+        goi.append(params["q"])
+        return {"data": _dong_vnd(quy) + _dong_vnd({"2026-09-30": 1.0}, ma_ct=23003)}
+
+    monkeypatch.setattr(co_ban, "lay_json", gia_lap)
+    kq = co_ban.tu_vndirect_bctc("VPB")
+    assert len(goi) == 1 and "itemCode:23000" in goi[0]                    # 1 lần gọi / mã
+    assert kq["ln_4q_ty"] == pytest.approx(25000.0) and kq["ky_lnst"] == "Q3/2026+Q2/2026+Q1/2026+Q4/2025"
+    assert kq["ln_g_quy"] == pytest.approx(40.0)                            # Q3/2026 so Q3/2025
+
+
+def test_vndirect_bctc_khong_loc_duoc_item_va_thieu_quy(monkeypatch):
+    goi = []
+
+    def loc_loi(url, params=None, **k):
+        goi.append(params["q"])
+        if "itemCode" in params["q"]:
+            raise ValueError("HTTP 400")
+        return {"data": _dong_vnd({"2026-06-30": 2.0, "2026-03-31": 2.0, "2025-12-31": 2.0, "2025-09-30": 2.0})}
+
+    monkeypatch.setattr(co_ban, "lay_json", loc_loi)
+    assert co_ban.tu_vndirect_bctc("VPB")["ln_4q_ty"] == pytest.approx(8.0) and len(goi) == 2
+    monkeypatch.setattr(co_ban, "lay_json", lambda *a, **k: {"data": _dong_vnd(        # thiếu Q1/2026 → không cộng
+        {"2026-06-30": 2.0, "2025-12-31": 2.0, "2025-09-30": 2.0, "2025-06-30": 2.0})})
+    assert co_ban.tu_vndirect_bctc("VPB") == {}
+
+
+def test_pe_theo_lnst_vndirect_bctc(monkeypatch, tmp_path):
+    """Lưu đệm cũ thiếu LNST 4 quý → bổ sung từ VNDirect BCTC trước vnstock / Yahoo."""
+    co_ban._ghi_cache("VPB", str(tmp_path), {"VNDirect": {"eps_ttm": 3758.0}, "Yahoo": {"so_cp": 10e9}})
+    goi = []
+    monkeypatch.setitem(co_ban.NGUON_CO_BAN, "VNDirect BCTC",
+                        lambda ma: goi.append(ma) or {"ln_4q_ty": 30000.0, "ky_lnst": "Q3/2026+Q2/2026+Q1/2026+Q4/2025"})
+    monkeypatch.setitem(co_ban.NGUON_CO_BAN, "vnstock", lambda ma: pytest.fail("không cần vnstock"))
+    m = co_ban.tinh_chi_so(co_ban.gop(co_ban.lay_online("VPB", thu_muc_cache=str(tmp_path))), 30.0)
+    assert goi == ["VPB"] and m["eps_dung"] == pytest.approx(3000.0) and m["pe"] == pytest.approx(10.0)

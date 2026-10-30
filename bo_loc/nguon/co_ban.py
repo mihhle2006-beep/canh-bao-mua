@@ -208,6 +208,52 @@ def tu_vndirect(ma):
     return kq
 
 
+# LNST CÔNG TY MẸ THEO QUÝ (BCTC VNDirect finfo – cùng chỉ tiêu v23000 kho BCTC của ptcp, mọi loại DN: thường / ngân
+# hàng / CTCK / bảo hiểm) → EPS = LNST 4 quý ÷ CP lưu hành cho mọi mã (10/2026: chỉ ~25% mã có LNST 4 quý – vnstock hết
+# lượt, Yahoo thiếu quý). 1 lần gọi / mã; lọc itemCode không được thì đọc cả bảng KQKD 2 năm rồi tự lọc.
+_VND_MODEL = "1,2,3,89,90,91,101,102,103,411,412,413"
+_VND_LNST_ME = 23000
+
+
+def lnst_quy_vnd(dong):
+    """Dòng /v4/financial_statements (QUARTER) → {"Qn/YYYY": LNST công ty mẹ tỷ đồng}, chỉ itemCode 23000."""
+    kq = {}
+    for x in dong or []:
+        try:
+            if int(x.get("itemCode")) != _VND_LNST_ME or not x.get("fiscalDate"):
+                continue
+        except (TypeError, ValueError):
+            continue
+        v, t = _so(x.get("numericValue")), str(x["fiscalDate"])[:10]
+        if v is not None:
+            kq.setdefault(f"Q{(int(t[5:7]) + 2) // 3}/{t[:4]}", v / 1e9)
+    return kq
+
+
+def tu_vndirect_bctc(ma):
+    tu = f"{date.today().year - 2}-01-01"
+    goc = "https://api-finfo.vndirect.com.vn/v4/financial_statements"
+    q = f"code:{ma}~reportType:QUARTER~modelType:{_VND_MODEL}~fiscalDate:gte:{tu}"
+    quy = {}
+    for them, co in ((f"~itemCode:{_VND_LNST_ME}", 20), ("", 9999)):
+        try:
+            j = lay_json(goc, params={"q": q + them, "sort": "fiscalDate:desc", "size": co})
+        except Exception:
+            if not them:
+                raise
+            continue                                   # không lọc được theo itemCode → đọc cả bảng
+        quy = lnst_quy_vnd(j.get("data") if isinstance(j, dict) else None)
+        if len(quy) >= 4:
+            break
+    ds = sorted(quy.items(), key=lambda kv: int(kv[0][3:]) * 4 + int(kv[0][1]), reverse=True)
+    if not bon_quy_lien_tiep(ds):
+        return {}
+    kq = {"ln_4q_ty": sum(v for _, v in ds[:4]), "ky_lnst": "+".join(k for k, _ in ds[:4])}
+    if len(ds) > 4 and bon_quy_lien_tiep(ds[1:5]) and ds[4][1] > 0:        # quý gần nhất so cùng kỳ
+        kq["ln_g_quy"] = (ds[0][1] / ds[4][1] - 1) * 100
+    return kq
+
+
 # ================================================================ NGUỒN 3: Yahoo Finance (thư viện yfinance)
 _MA_YAHOO = {"trailingPE": "pe", "priceToBook": "pb", "returnOnEquity": "roe", "returnOnAssets": "roa",
              "trailingEps": "eps_ttm", "bookValue": "bvps", "sharesOutstanding": "so_cp",
@@ -296,7 +342,8 @@ def tu_vnstock(ma):
 
 
 tu_vnstock.thu_vien, tu_yahoo.thu_vien = "vnstock", "yfinance"
-NGUON_CO_BAN = {"VNDirect": tu_vndirect, "vnstock": tu_vnstock, "TCBS": tu_tcbs, "Yahoo": tu_yahoo}
+NGUON_CO_BAN = {"VNDirect": tu_vndirect, "VNDirect BCTC": tu_vndirect_bctc, "vnstock": tu_vnstock, "TCBS": tu_tcbs,
+                "Yahoo": tu_yahoo}
 
 
 # ================================================================ BỘ NHỚ ĐỆM
@@ -317,7 +364,7 @@ def _ghi_cache(ma, thu_muc, du_lieu):
         json.dump(du_lieu, fh, ensure_ascii=False)
 
 
-NGUON_LNST = ("vnstock", "TCBS", "Yahoo")       # nguồn có LNST theo quý (để EPS = LNST 4 quý ÷ số CP)
+NGUON_LNST = ("VNDirect BCTC", "vnstock", "TCBS", "Yahoo")   # nguồn có LNST theo quý (EPS = LNST 4 quý ÷ số CP)
 
 
 def _co_lnst(du_lieu):
@@ -347,7 +394,9 @@ def bo_sung_lnst(ma, du_lieu, thu_tu=NGUON_LNST):
             d = ham(ma)
         except (Exception, SystemExit) as e:
             NHAT_KY.ghi(f"LNST 4 quý {ma}", ten, "Lỗi", str(e)[:80])
+            CAU_DAO_CO_BAN.ghi(ten, False)                 # nguồn chết → ngắt, khỏi gọi lại cho mọi mã trong lần chạy
             continue
+        CAU_DAO_CO_BAN.ghi(ten, True)
         if d and d.get("ln_4q_ty") is not None:
             du_lieu[ten] = {**(du_lieu.get(ten) or {}), **d}
             NHAT_KY.ghi(f"LNST 4 quý {ma}", ten, "OK", f"{d['ln_4q_ty']:,.1f} tỷ ({d.get('ky_lnst', '')})")
