@@ -601,3 +601,49 @@ def test_ban_theo_yeu_cau_cot_ban_ato(monkeypatch):
     assert t.startswith("🔴 BÁN – THEO YÊU CẦU – AAA") and "Bán 300 CP lệnh ATO phiên 30/10" in t and "BAN AAA HET" in t
     assert tong_ket_cl.dong_giu(vt["AAA"], k, None)[0].startswith("AAA 51.00 +2.0% (+0.7R) · 🔴 BÁN ATO phiên 30/10")
     assert vi_the.danh_gia_ban(vt["BBB"], {"gia": 20.5})["muc"] == "GIU"
+
+
+def test_tong_ket_chi_ma_sao_day_du_con_lai_mot_dong(monkeypatch):
+    """30/10/2026: mã ★ (tối đa SO_MA_MOI_TUAN/tuần) ghi đủ 3 dòng; #6+ chỉ 1 dòng "Dự phòng" (mua khi ★ không vào)."""
+    n = C.SO_MA_MOI_TUAN
+    ks = [{"ma": f"M{i:02d}", "nhom": "VAO_NHU_MOI", "uu_tien": float(i), "gia": 10.0, "tu": 9.9, "den": 10.2,
+           "mt1": 10.5, "mt3": 11.5, "cl": 9.5, "rui_ro": 5.0, "ly_do": "MACD", "hieu_luc": pd.Timestamp("2026-10-30")}
+          for i in range(1, n + 4)]
+    monkeypatch.setattr(tong_ket_cl, "ds_khuyen_nghi", lambda ra: ks)
+    ra = {"doc": {"diem": 3, "so_chi_bao": 8}, "ty_trong": {"B": 1.0}, "vni": 1700.0, "cl": 2}
+    t = "\n".join(tong_ket_cl._tin(ra, "2026-10-29 15:20", None, set()))
+    assert all(f"★{i} M{i:02d} 10.00 | VÀO NHƯ LỆNH MỚI" in t for i in range(1, n + 1))
+    assert f"#{n + 1} M{n + 1:02d} 10.00" not in t
+    assert ("   Dự phòng (chỉ khi mã ★ không vào được): " + " · ".join(f"#{i} M{i:02d} 9.90–10.20"
+                                                                   for i in range(n + 1, n + 4))) in t
+
+
+def test_nhac_lenh_ato_truoc_gio_mo_cua(monkeypatch, tmp_path):
+    """30/10/2026: 08:00–09:00 ngày giao dịch → 1 tin ⏰ lệnh ATO (bán theo đóng cửa phiên trước + mua hệ bắt đáy), 1 lần /
+    ngày; mức đã báo ghi vào trạng thái bán → trong phiên không báo lặp."""
+    monkeypatch.chdir(tmp_path)
+    assert chay.truoc_phien("2026-10-30 08:45") and not chay.truoc_phien("2026-10-30 09:00")
+    assert not chay.truoc_phien("2026-10-31 08:45") and not chay.truoc_phien("2026-10-30 07:59")      # thứ Bảy / sớm
+    vt = {"AAA": {"ma": "AAA", "so_cp": 300, "gia_von": 50.0, "ngay_mua": "01/09/2026", "ban_ato": pd.Timestamp("2026-10-30")},
+          "BBB": {"ma": "BBB", "so_cp": 100, "gia_von": 20.0, "ngay_mua": "05/10/2026", "ban_ato": None}}
+    kb = {"AAA": {"muc": "GIU", "gia": 51.0, "ly_do": [], "ghi_chu": []},
+          "BBB": {"muc": "BAN_TUAN", "gia": 25.0, "ly_do": ["đóng cửa tuần < MA10 tuần"], "ghi_chu": []}}
+    monkeypatch.setattr(chay, "tai", lambda ma, *a, **k: _gia_dai(ma))
+    monkeypatch.setattr(vi_the, "_danh_gia_ban", lambda v, kq, dn=None, bay_gio=None: dict(kb[v["ma"]]))
+    monkeypatch.setattr(vi_the, "FILE_TRANG_THAI_BAN", str(tmp_path / "tt.json"))
+    monkeypatch.setattr(vi_the.doc_trang_thai_ban, "__defaults__", (str(tmp_path / "tt.json"),))
+    monkeypatch.setattr(vi_the.ghi_trang_thai_ban, "__defaults__", (str(tmp_path / "tt.json"),))
+    import ptcp.loc_quy_b as LQ
+    monkeypatch.setattr(LQ, "doc", lambda *a, **k: {"bat_day": {"ngay": "2026-10-29", "cho_mua": ["DIG", "BBB"]}})
+    gui = []
+    monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, **k: gui.append((nd, rieng_tu)))
+    assert chay.nhac_ato(pd.Timestamp("2026-10-30 08:45"), vt) == 0
+    (nd, rieng), = gui
+    assert rieng and nd.startswith("⏰ LỆNH ATO HÔM NAY 30/10 – đặt trước 9:00")
+    assert "🔴 BÁN AAA 300 CP – bạn yêu cầu bán" in nd and "🔴 BÁN BBB 100 CP – đóng cửa tuần < MA10 tuần" in nd
+    assert "🟢 MUA (hệ bắt đáy): DIG –" in nd                                      # BBB đang giữ → không mua
+    chay.nhac_ato(pd.Timestamp("2026-10-30 08:50"), vt)
+    assert len(gui) == 1                                                           # 1 lần / ngày
+    tt = vi_the.doc_trang_thai_ban()
+    assert not vi_the.can_bao_ban("BBB", "BAN_TUAN", "2026-10-30 09:15", tt)          # trong phiên không báo lặp
+    assert vi_the.tin_nhac_ato([], [], "2026-10-30") is None

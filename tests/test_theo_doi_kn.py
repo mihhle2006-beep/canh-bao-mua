@@ -50,3 +50,19 @@ def test_theo_doi(tmp_path):
     txt2 = "\n".join(T.tom_tat(pd.Timestamp("2026-10-09 16:00"), gia, None, path=p2, path_tt=tt))
     assert "❌ EEE" in txt2 and "-6.6%" in txt2
     assert "EEE" not in "\n".join(T.tom_tat(pd.Timestamp("2026-10-09 16:00"), gia, None, path=p2, path_tt=tt))
+
+
+def test_khuyen_nghi_mua_lai_giu_theo_lenh_moi(tmp_path):
+    """30/10/2026: lệnh cũ chạm cắt lỗ nhưng hệ thống vừa báo MUA lại (cắt lỗ mới thấp hơn giá) → GIỮ theo khuyến nghị mới,
+    không báo 🔴 BÁN cạnh tin ★ MUA của chính mã đó; giá dưới cả cắt lỗ mới → vẫn BÁN."""
+    gia = {"BBB": _gia(dinh=np.r_[np.full(190, 60.0), np.full(10, 55.0)])}
+    for cl_moi, giu in ((54.0, True), (56.0, False)):
+        p = _nk(tmp_path, [_r("BBB", "2026-09-01", "2026-09-02", 60.0, 58.0),
+                           _r("BBB", "2026-10-06", "2026-10-07", 55.0, cl_moi)])
+        tt = tmp_path / f"tt{cl_moi}.json"
+        txt = "\n".join(T.tom_tat(pd.Timestamp("2026-10-08 16:00"), gia, None, path=p, path_tt=tt))
+        bang = T.doc_tt(tt)["bang"]["dang_mo"]
+        if giu:
+            assert "🔴" not in txt and bang[0].startswith("🟢 BBB 55.00 | GIỮ theo khuyến nghị MUA mới 06/10 · Cắt lỗ 54.00")
+        else:
+            assert "🔴 BBB" in txt and "BÁN đầu phiên tới" in txt

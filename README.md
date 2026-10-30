@@ -38,6 +38,10 @@ Ví dụ (giá tính bằng nghìn đồng), mỗi mã 3 dòng:
 - **Mục tiêu 1R → 3R**: mốc để dời cắt lỗ lên, không phải lệnh bán.
 - **💰 ≤ X% NAV**: mua tối đa X% tài sản cho mã này (đã nhân sẵn mọi hệ số).
   Số cổ = NAV × X% ÷ (giá × 1.000). VD NAV 10 tr, ≤5.4%, giá 11.15 → 540.000 ÷ 11.150 ≈ 48 cổ.
+- Chỉ mã ★ (mua được trong tuần) ghi đủ 3 dòng; mã #6 trở đi gộp 1 dòng **Dự phòng** (chỉ mua khi mã ★ không vào được).
+- **⏰ LỆNH ATO HÔM NAY** (tin riêng, khoảng 8:15–8:45, trước giờ mở cửa): mã đang giữ phải bán ATO theo đóng cửa phiên
+  trước (chạm cắt lỗ, gãy MA10 tuần, hết hạn, hệ bắt đáy báo bán, cột `ban_ato`) và mã hệ bắt đáy mua ATO. Không có lệnh
+  thì không gửi; mã đã nhắc ở đây không bị báo lặp trong phiên.
 - Mục 💼 **Đang giữ** (tin riêng): mỗi mã 1 dòng (giá, lãi/lỗ, việc cần làm, cắt lỗ). Ngày mua, giá vốn, mục tiêu tiếp
   nằm ở tin 📊 DANH MỤC – không lặp lại.
 

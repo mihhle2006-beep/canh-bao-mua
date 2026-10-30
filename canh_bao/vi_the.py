@@ -440,6 +440,24 @@ def tin_ban(vt, kb, kq, bay_gio):
     return "\n".join(d)
 
 
+BAN_ATO = ("CAT_LO", "BAN_TUAN", "HET_HAN", "BD_BAN", "BAN_YEU_CAU")   # mức → bán đầu phiên (lệnh ATO)
+
+
+def tin_nhac_ato(ban, mua_bd, bay_gio, suat=None):
+    """Tin ⏰ trước giờ mở cửa (30/10/2026): lệnh ATO hôm nay – ban [(vt, kb)] mã đang giữ cần bán đầu phiên (đóng cửa
+    phiên trước đã chạm cắt lỗ / gãy MA10 tuần / hết hạn, hệ bắt đáy báo bán, bạn yêu cầu bán); mua_bd: mã hệ bắt đáy mua
+    ATO. Không có lệnh → None."""
+    if not ban and not mua_bd:
+        return None
+    d = [f"⏰ LỆNH ATO HÔM NAY {pd.Timestamp(bay_gio):%d/%m} – đặt trước 9:00"]
+    d += [f"🔴 BÁN {vt['ma']} {vt['so_cp']:,.0f} CP – {'; '.join(kb.get('ly_do') or [NHAN.get(kb['muc'], '')])}"
+          for vt, kb in ban]
+    if mua_bd:
+        d.append(f"🟢 MUA (hệ bắt đáy): {', '.join(mua_bd)}" + (f" – mỗi mã ≤ {suat:g}% NAV" if suat else "")
+                 + ", chỉ bằng tiền đang để không")
+    return "\n".join(d)
+
+
 def dong_tong_ket(vt, kb):
     d = [f"■ {vt['ma']} {_f(kb['gia'])} – {NHAN[kb['muc']]}",
          f"   Đang giữ: {vt['so_cp']:,.0f} CP",

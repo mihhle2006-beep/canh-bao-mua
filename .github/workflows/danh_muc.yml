@@ -3,7 +3,8 @@
 #   ghi vào file trong máy chạy rồi gửi Telegram (tóm tắt + dashboard + Excel); KHÔNG tải artifact; tổng vốn để ở
 #   repo danh-muc (tien_mat_chinh.json – "tong_von_trieu" lần nhập gần nhất, giữ nguyên như
 #   cũ); muốn đổi thì đặt SECRET TONG_VON_CHINH (bị che trong log) – không ghi số ở file này. Trạng thái cắt lỗ / lịch sử / tiền mặt / danh_muc.csv
-#   commit về repo danh-muc bằng secret DANH_MUC_TOKEN_GHI (Contents: Read and write). Lỗi → chỉ in mã thoát.
+#   commit về repo danh-muc bằng secret DANH_MUC_TOKEN_GHI (Contents: Read and write). Lỗi → chỉ in mã thoát; bước
+#   cuối báo hỏng cả lần chạy (sau khi đã lưu trạng thái) để tin 🩺 sức khoẻ thấy ❌.
 #   Secret cần: DANH_MUC_TOKEN_GHI; tuỳ chọn TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC (trống → bot chung),
 #   TONG_VON_CHINH (triệu đồng, chỉ khi đổi tổng tài sản), VNSTOCK_API_KEY. Giữ tiền mặt & cách chia
 #   vốn theo luật Quỹ Bứt Phá trong code (không còn tham số GIU_TIEN_MAT / CHON).
@@ -109,6 +110,7 @@ jobs:
           echo "Danh mục chính: mã thoát $ma"
           gui=0; python gui_telegram.py > /tmp/gui_chinh.txt 2>&1 || gui=$?
           echo "Gửi Telegram: mã thoát $gui"
+          [ "$ma$gui" = 00 ] || echo "LOI_DM=${LOI_DM:+$LOI_DM · }danh mục chính ($ma/$gui)" >> "$GITHUB_ENV"
 
       - name: Tóm tắt Telegram (kín – 1 tin ngắn + trang HTML)
         if: always()
@@ -120,6 +122,7 @@ jobs:
         run: |
           gui=0; python tom_tat_danh_muc.py > /tmp/tom_tat.txt 2>&1 || gui=$?
           echo "Tóm tắt Telegram: mã thoát $gui"
+          [ "$gui" = 0 ] || echo "LOI_DM=${LOI_DM:+$LOI_DM · }tóm tắt ($gui)" >> "$GITHUB_ENV"
 
       - name: Danh mục cũ (kín)
         if: always() && hashFiles('danh-muc/danh_muc_cu.csv') != ''
@@ -130,6 +133,7 @@ jobs:
         run: |
           ma=0; python -m dmuc.danh_muc_cu > /tmp/dm_cu.txt 2>&1 || ma=$?
           echo "Danh mục cũ: mã thoát $ma"
+          [ "$ma" = 0 ] || echo "LOI_DM=${LOI_DM:+$LOI_DM · }danh mục cũ ($ma)" >> "$GITHUB_ENV"
 
       - name: Lưu trạng thái về danh-muc
         if: always()
@@ -151,3 +155,8 @@ jobs:
             sleep $((i * 5))
           done
           echo "::error::Không đẩy được về danh-muc – kiểm tra secret DANH_MUC_TOKEN_GHI"; exit 1
+
+      - name: Báo hỏng nếu có bước lỗi (sau khi đã lưu)
+        if: always() && env.LOI_DM != ''
+        run: |
+          echo "::error::Bước lỗi: $LOI_DM"; exit 1

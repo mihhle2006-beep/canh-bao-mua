@@ -129,11 +129,15 @@ jobs:
             done
           }
           if [ -n "$HET" ]; then                       # vòng lặp: chạy mỗi mốc 15 phút (giờ VN) tới HET
+            loi=0
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt "$HET" ]; do
-              python chay.py --che_do tu_dong || echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"
+              python chay.py --che_do tu_dong || { loi=$((loi + 1)); echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"; }
               kiem_nhap || true
               bay_gio=$(date +%s); sleep $(( (bay_gio / 900 + 1) * 900 - bay_gio + 5 ))
             done
+            # ≥ 2 lượt lỗi → lần chạy đỏ (tin 🩺 sức khoẻ thấy ❌); 1 lượt (nguồn giá chập chờn) chỉ cảnh báo – bước sau vẫn chạy
+            if [ "$loi" -ge 2 ]; then echo "::error::$loi lượt lỗi trong vòng lặp"; exit 1; fi
+            [ "$loi" = 0 ] || echo "::warning::1 lượt lỗi trong vòng lặp"
             exit 0
           fi
           if [ -n "$MA" ]; then

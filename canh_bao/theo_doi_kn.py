@@ -66,6 +66,7 @@ def lenh_gia_dinh(nk, bay_gio):
             dau = mo[r["ma"]]
             if _ngay(r["ngay"]) > _ngay(dau["ngay_vao"]) and str(r["ngay"]) not in dau["them"]:
                 dau["them"].append(str(r["ngay"]))             # chỉ khuyến nghị MỚI sau ngày vào (bỏ ghi lặp)
+                dau["cl_moi"] = pd.to_numeric(r.get("cat_lo"), errors="coerce")    # cắt lỗ của khuyến nghị mới nhất
         else:
             mo[r["ma"]] = {**r.to_dict(), "them": []}
     return mo, [r.to_dict() for _, r in x[x["ket_qua"].isin(DONG)].iterrows()]
@@ -96,9 +97,15 @@ def danh_gia(mo, gia_ngay, tai, bay_gio, tt):
         if not kb.get("he_thoat"):
             continue
         muc, cl = kb["muc"], kb["cat_lo"]
+        cl_moi = r.get("cl_moi")
+        moi = muc in ("CAT_LO", "BAN_TUAN", "HET_HAN") and r["them"] and cl_moi == cl_moi and cl_moi \
+            and kb["gia"] > cl_moi                    # hệ thống vừa báo MUA lại → giữ theo lệnh mới (như danh mục thật)
         dau = f"{ma} {_f(kb['gia'])}"                 # 1 dòng / lệnh (tin gọn 29/10/2026)
         vao = " · " + vi_the.dong_da_vao(r["ngay_vao"], float(r["gia_vao"]), kb["lai_lo_pct"], kb["lai_R"])
-        if muc in ("CAT_LO", "BAN_TUAN", "HET_HAN"):
+        if moi:
+            dong, muc = (f"🟢 {dau} | GIỮ theo khuyến nghị MUA mới {pd.Timestamp(r['them'][-1]):%d/%m} · Cắt lỗ "
+                         f"{_f(cl_moi)}{vao}"), "GIU"
+        elif muc in ("CAT_LO", "BAN_TUAN", "HET_HAN"):
             ly = {"CAT_LO": f"chạm cắt lỗ {_f(cl)}", "BAN_TUAN": "đóng cửa tuần < MA10 tuần",
                   "HET_HAN": f"{kb.get('so_phien')} phiên chưa đạt 1R"}[muc]
             dong = f"🔴 {dau} | BÁN đầu phiên tới – {ly}{vao}"
