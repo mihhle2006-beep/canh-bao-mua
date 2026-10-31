@@ -15,6 +15,7 @@
 #   von89 – khoá lãi cả danh mục sau sóng lớn (NAV rơi từ đỉnh → bán ½ / hết)
 #   von88 – chẩn đoán năm 2026: lãi theo tháng, lệnh 2026, phễu lọc tín hiệu, tắt từng phần luật
 #   von87 – thoát ngắn kiểu "người 3" (cắt lỗ −2 %, chốt +3…6 %, giữ ≤ 5 phiên) trên chính điểm vào Quỹ B
+#   von99 – hệ thoát (KQKD quý xấu, ATC thứ Sáu) · hệ vào theo KQKD · nhồi khi hồi về MA20 + giả dược
 #   von98 – nhồi / nạp cỡ nhỏ (15–20% NAV, ×1,5) tiền mặt vs margin + giả dược
 #   von97 – margin nhồi / nạp thêm mã tăng mạnh (vay ký quỹ, lãi vay, gọi ký quỹ) + đòn bẩy chung + giả dược
 #   von96 – cờ doanh nghiệp (bất thường BCTC / đổi chiến lược) có giúp lệnh B không + giả dược
@@ -39,7 +40,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 / von90 / von91 / von92 / von93 / von94 / von95 / von96 / von97 / von98 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 / von90 / von91 / von92 / von93 / von94 / von95 / von96 / von97 / von98 / von99 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -62,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von85, von86, von87, von88, von89, von90, von91, von92, von93, von94, von95, von96, von97, von98]
+        phan: [chuan, von85, von86, von87, von88, von89, von90, von91, von92, von93, von94, von95, von96, von97, von98, von99]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -145,6 +146,7 @@ jobs:
             von96) export CHI_VON96=1; unset SO_NN ;;          # cờ doanh nghiệp
             von97) export CHI_VON97=1; unset SO_NN ;;          # margin nhồi mã tăng mạnh
             von98) export CHI_VON98=1; unset SO_NN ;;          # nhồi / nạp cỡ nhỏ
+            von99) export CHI_VON99=1; unset SO_NN ;;          # thoát KQKD / ATC, vào KQKD, nhồi khi hồi
             von92) export CHI_VON92=1; unset SO_NN ;;          # độ bền luật dự báo học dần (lưới + giả dược)
             von91) export CHI_VON91=1; unset SO_NN ;;          # điểm thị trường tổng hợp
             von90) export CHI_VON90=1; unset SO_NN ;;          # chỉ báo đỉnh thị trường
