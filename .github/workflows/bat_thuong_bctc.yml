@@ -193,11 +193,10 @@ jobs:
           pip install -q -r requirements.txt > /dev/null
           ls ../ra/*.json > /dev/null 2>&1 || { echo "Không có kết quả nhóm"; exit 0; }
           python -m ptcp.giai_thich_bat_thuong --luu ../ra/*.json --thay_doi ../thay_doi.txt
-          python -m ptcp.co_doanh_nghiep > /dev/null || true             # cờ DN cho tin MUA (ptcp/co_dn.json)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
-          git add du_lieu/bat_thuong_giai_thich ptcp/co_dn.json
+          git add du_lieu/bat_thuong_giai_thich
           git commit -q -m "Bất thường BCTC – kết quả đọc giải thích $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
           for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; sleep $((i * 5)); done
           exit 1
