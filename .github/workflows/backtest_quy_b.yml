@@ -15,6 +15,7 @@
 #   von89 – khoá lãi cả danh mục sau sóng lớn (NAV rơi từ đỉnh → bán ½ / hết)
 #   von88 – chẩn đoán năm 2026: lãi theo tháng, lệnh 2026, phễu lọc tín hiệu, tắt từng phần luật
 #   von87 – thoát ngắn kiểu "người 3" (cắt lỗ −2 %, chốt +3…6 %, giữ ≤ 5 phiên) trên chính điểm vào Quỹ B
+#   von95 – đà mạnh (điểm xu hướng ≥ +50%) → tiền nhàn rỗi vào VN-Index thay Trứng + giả dược
 #   von94 – nhiệt thị trường mở rộng ~18 nhóm chỉ báo × tham số (chọn 2013–19, kiểm 2020+) + 30 giả dược
 #   von85 – luật mới 29/10/2026 (độ rộng × ½ + hệ bắt đáy bán mở cửa như bot) so với luật cũ + breakout nóng có điều kiện
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
@@ -32,7 +33,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 / von90 / von91 / von92 / von93 / von94 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von85 / von86 / von87 / von88 / von89 / von90 / von91 / von92 / von93 / von94 / von95 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von84 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -55,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von85, von86, von87, von88, von89, von90, von91, von92, von93, von94]
+        phan: [chuan, von85, von86, von87, von88, von89, von90, von91, von92, von93, von94, von95]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -134,6 +135,7 @@ jobs:
           case "$PHAN" in
             von93) export CHI_VON93=1; unset SO_NN ;;          # biến thể chỉ báo × khung ngày / tuần
             von94) export CHI_VON94=1; unset SO_NN ;;          # nhiệt mở rộng + giả dược
+            von95) export CHI_VON95=1; unset SO_NN ;;          # đà mạnh → VN-Index
             von92) export CHI_VON92=1; unset SO_NN ;;          # độ bền luật dự báo học dần (lưới + giả dược)
             von91) export CHI_VON91=1; unset SO_NN ;;          # điểm thị trường tổng hợp
             von90) export CHI_VON90=1; unset SO_NN ;;          # chỉ báo đỉnh thị trường
