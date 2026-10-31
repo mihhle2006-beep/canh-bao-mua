@@ -216,12 +216,6 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     if kq.get("he_so_quyen"):
         d.append(f"(Giá đã điều chỉnh quyền – vùng / cắt lỗ của tin tổng kết quy đổi × {kq['he_so_quyen']:.3f}; "
                  "kiểm tra lại giá trên bảng điện)")
-    try:                                               # 31/10/2026: cờ bất thường BCTC / đổi chiến lược – chỉ thông tin
-        from ptcp.co_doanh_nghiep import dong as co_dn
-        if co_dn(kq["ma"]):
-            d.append(co_dn(kq["ma"]))
-    except Exception:                                  # noqa: BLE001 – ptcp cũ chưa có file cờ
-        pass
     return "\n".join(d)
 
 
