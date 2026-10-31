@@ -8,3 +8,10 @@ def _khong_goi_lich_quyen(monkeypatch):
     from canh_bao import cau_hinh as C
     monkeypatch.setattr(C, "BAO_SU_KIEN_QUYEN", False)
 
+
+
+@pytest.fixture(autouse=True)
+def _khong_doc_nav_that(monkeypatch):
+    """Test không đọc NAV tài khoản thật (vi_the.nav_that) – tin MUA không kèm số CP trừ test tự đặt."""
+    from canh_bao import vi_the
+    monkeypatch.setattr(vi_the, "_NAV", {"v": None})

@@ -692,3 +692,18 @@ def test_trong_phien_mua_cung_luc_gom_tin(monkeypatch, tmp_path):
     assert gui[0][0].startswith("💼 GIỮ THEO HỆ THỐNG – HHH") and gui[0][1:] == (True, "HHH.png")
     assert [g[0].split(" – ")[1].split()[0] for g in gui[1:3]] == ["AAA", "BBB"] and gui[1][2] == "AAA.png"
     assert gui[3][0].startswith("📋 3 MÃ BÁO MUA CÙNG LÚC") and gui[3][2] is None
+
+
+def test_tin_mua_ghi_so_co_phieu_theo_nav_that(monkeypatch):
+    from canh_bao import diem_vao, vi_the
+    monkeypatch.setattr(vi_the, "_NAV", {"v": 32e6})
+    s = diem_vao._von_nav({"ma": "AAA", "nhom": "MUA_MOI"}, 20.0, 18.0)       # cắt lỗ 10% → ≤7,5% NAV
+    assert "→ 120 CP ≈ 2.4 tr" in s
+    monkeypatch.setattr(vi_the, "_NAV", {"v": None})
+    assert "CP" not in diem_vao._von_nav({"ma": "AAA", "nhom": "MUA_MOI"}, 20.0, 18.0)
+
+
+def test_tin_co_so_cp_nav_la_rieng_tu():
+    from canh_bao.diem_vao import co_so_cp_nav
+    assert co_so_cp_nav("💰 ≤5% NAV → 120 CP ≈ 2.4 tr")
+    assert not co_so_cp_nav("💰 ≤5% NAV (rủi ro 0,75%)")

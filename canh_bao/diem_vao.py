@@ -219,12 +219,30 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     return "\n".join(d)
 
 
+def co_so_cp_nav(nd):
+    """Tin có số cổ phiếu tính theo NAV thật (_von_nav) → từ đó suy ra được NAV → chỉ gửi Telegram, KHÔNG in log công khai."""
+    return " CP ≈ " in (nd or "")
+
+
 def _von_nav(kq, gia, cl):
-    """'Khối lượng: 💰 ≤5.4% NAV (…)' – cùng công thức tin tổng kết, khoảng cắt lỗ tính theo giá đặt lệnh."""
-    from .tong_ket_cl import chu_von_lenh
+    """'💰 ≤5.4% NAV (…) → 45 CP ≈ 1,7 tr' – cùng công thức tin tổng kết, khoảng cắt lỗ tính theo giá đặt lệnh; có NAV tài
+    khoản thật (vi_the.nav_that) thì quy ra SỐ CỔ PHIẾU (lô lẻ < 100 CP đặt ở bảng lô lẻ)."""
+    from .tong_ket_cl import chu_von_lenh, von_lenh
     r = (gia - cl) / gia * 100 if gia == gia and cl == cl and gia > cl > 0 else None
-    s = chu_von_lenh({**kq, "rui_ro": r} if r else kq)
-    return s or ""
+    k = {**kq, "rui_ro": r} if r else kq
+    s = chu_von_lenh(k)
+    if not s:
+        return ""
+    try:
+        from .vi_the import nav_that
+        nav, tt = nav_that(), von_lenh(k)["ty_trong"]
+        if nav and tt == tt and gia == gia and gia > 0:
+            n = int(nav * tt / 100 // (gia * 1000))
+            if n > 0:
+                s += f" → {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr" + (" (lô lẻ)" if n < 100 else "")
+    except Exception:                                  # noqa: BLE001
+        pass
+    return s
 
 
 def _theo_uu_tien(ds):
