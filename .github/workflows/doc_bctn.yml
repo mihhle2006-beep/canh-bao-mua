@@ -22,8 +22,8 @@ on:
         description: "Từ năm báo cáo"
         default: "2020"
       den:
-        description: "Đến năm báo cáo"
-        default: "2025"
+        description: "Đến năm báo cáo (bỏ trống = năm trước – tự sang năm mới)"
+        default: ""
       vong:
         description: "Lượt hiện tại (tự tăng khi workflow tự chạy lại)"
         default: "1"
@@ -72,7 +72,7 @@ jobs:
           MA: ${{ inputs.ma }}
         run: |
           [ "${{ steps.cache_py.outputs.cache-hit }}" = "true" ] || pip install -q -r requirements.txt > /dev/null
-          ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} | tail -1)
+          ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} ${{ inputs.den && format('--den {0}', inputs.den) || '' }} | tail -1)
           nhom=$(DS="$ds" python -c "
           import json, os
           ds = [m for m in os.environ['DS'].split(',') if m]
@@ -131,7 +131,7 @@ jobs:
           [ "$con" -lt 0 ] && con=$(( con + 1440 ))
           han=$(( con < 320 ? con : 320 )); [ "$han" -lt 20 ] && han=20
           echo "Đọc tối đa $han phút"
-          python -m ptcp.chien_luoc_dn doc --ma "$NHOM" --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} --han_phut $han
+          python -m ptcp.chien_luoc_dn doc --ma "$NHOM" --tu ${{ inputs.tu || '2020' }} ${{ inputs.den && format('--den {0}', inputs.den) || '' }} --han_phut $han
       - name: Gom cache nhóm này
         if: always()
         env:
@@ -197,11 +197,11 @@ jobs:
           MA: ${{ inputs.ma }}
         run: |
           [ "${{ steps.cache_py.outputs.cache-hit }}" = "true" ] || pip install -q -r requirements.txt > /dev/null
-          con=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} --den ${{ inputs.den || '2025' }} | tail -1 | tr ',' '\n' | grep -c . || true)
+          con=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} ${{ inputs.den && format('--den {0}', inputs.den) || '' }} | tail -1 | tr ',' '\n' | grep -c . || true)
           echo "Còn $con mã chưa xong sau lượt ${{ inputs.vong || '1' }}"
           gio=$(TZ=Asia/Ho_Chi_Minh date +%H)
           if [ "$con" -gt 0 ] && { [ "$gio" -ge 21 ] || [ "$gio" -lt 4 ]; } && [ "${{ inputs.vong || '1' }}" -lt "${{ inputs.vong_toi_da || '8' }}" ]; then
-            gh workflow run doc_bctn.yml -R "${{ github.repository }}" -f ma="$MA" -f tu=${{ inputs.tu || '2020' }} -f den=${{ inputs.den || '2025' }} \
+            gh workflow run doc_bctn.yml -R "${{ github.repository }}" -f ma="$MA" -f tu=${{ inputs.tu || '2020' }} -f den=${{ inputs.den }} \
               -f vong=$(( ${{ inputs.vong || '1' }} + 1 )) -f vong_toi_da=${{ inputs.vong_toi_da || '8' }}
             echo "→ đã gọi lượt $(( ${{ inputs.vong || '1' }} + 1 ))"
           elif [ "$con" -gt 0 ]; then

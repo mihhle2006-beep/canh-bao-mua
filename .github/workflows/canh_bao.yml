@@ -6,8 +6,10 @@ on:
   schedule:
     # Lịch 15' của GitHub trễ / bỏ lượt (thực tế 35–60 phút một lần, mất cả khung ATC) → mỗi buổi MỘT job hẹn sớm,
     # tự lặp đúng mỗi 15 phút trong phiên (bước "Quét & gửi cảnh báo", VONG_LAP)
-    - cron: "15 0 * * 1-5"         # 07:15 giờ VN – vòng lặp buổi sáng: ⏰ nhắc ATO 08:00–09:00 rồi 09:00–11:30 (GitHub
-                                   # trễ 30–55': lịch 08:15 cũ chạy 08:46–09:07 → lỡ khung nhắc ATO)
+    - cron: "43 23 * * 0-4"        # 06:43 giờ VN (T2–T6) – vòng lặp buổi sáng: ⏰ nhắc ATO 08:00–09:00 rồi 09:00–11:30.
+                                   # Lịch 07:15 (00:15 UTC – giờ GitHub đông nhất) trễ 92–111' (10/2026: chạy ~09:00 →
+                                   # lỡ cả khung nhắc ATO); trước 08:00 vòng lặp chỉ chờ ("ngoài giờ → không làm gì")
+    - cron: "15 0 * * 1-5"         # 07:15 giờ VN – DỰ PHÒNG nếu lịch 06:43 không chạy (chạy trùng thì xếp sau, tự thoát)
     - cron: "15 5 * * 1-5"         # 12:15 giờ VN – vòng lặp buổi chiều 13:00–14:45 (gồm lượt 14:30 báo MUA ATC)
     - cron: "20 8 * * 1-5"         # 15:20 giờ VN – tổng kết cuối ngày (kèm chấm đúng/sai tín hiệu)
     - cron: "7 2 * * 6"            # 09:07 thứ Bảy giờ VN – chạy LỊCH SỬ hằng tuần (chấm lại mọi tín hiệu, xuất Excel)
@@ -48,7 +50,7 @@ concurrency:
 jobs:
   chay:
     runs-on: ubuntu-24.04
-    timeout-minutes: 300                # vòng lặp buổi sáng tới 4h20 (07:15 → 11:35)
+    timeout-minutes: 330                # vòng lặp buổi sáng tới ~4h55 (06:43 → 11:35)
     steps:
       - uses: actions/checkout@v5
 
@@ -111,7 +113,7 @@ jobs:
           if [ "$CHI_THU" = "true" ]; then THEM="--khong_gui"; rm -rf /tmp/ptcp_goc; cp -a cache_ptcp /tmp/ptcp_goc 2>/dev/null || true; fi
           ma_thoat=0
           case "${{ github.event.schedule }}" in
-            "15 0 * * 1-5") HET=1135 ;;
+            "43 23 * * 0-4"|"15 0 * * 1-5") HET=1135 ;;
             "15 5 * * 1-5") HET=1447 ;;
             *) HET="" ;;
           esac
