@@ -93,6 +93,39 @@ def doc_danh_muc(path_cuc_bo="danh_muc.csv"):
     return phan_tich_csv(noi_dung), nguon
 
 
+_NAV = {}
+
+
+def nav_that(vt=None):
+    """NAV tài khoản thật (đồng) ≈ tiền mặt (tien_mat_chinh.json) + giá trị cổ phiếu đang giữ (danh_muc.csv: giá vốn ×
+    (1 + lãi/lỗ %) do danh mục cập nhật hằng ngày) + gốc Trứng vàng (trung_vang_chinh.json). Không đọc được → None.
+    Chỉ dùng để quy % NAV trong tin MUA ra SỐ CỔ PHIẾU (31/10/2026: lệnh thật lệch khối lượng – MSN / VIX mua gấp ~5 lần,
+    TCH ~1/6 – làm tài khoản hụt ~6,9% NAV trong 3 tuần). KHÔNG in ra log (repo công khai)."""
+    if "v" in _NAV:
+        return _NAV["v"]
+    import json
+    v = None
+    try:
+        tm, _ = _tai_tu_github(os.environ.get("TIEN_MAT_PATH", "").strip() or "tien_mat_chinh.json")
+        if tm:
+            tien = float(json.loads(tm).get("tien_mat") or 0)
+            dm, _ = _tai_tu_github()
+            cp = 0.0
+            if dm:
+                d = pd.read_csv(io.StringIO(dm), dtype=str).fillna("")
+                for _, r in d.iterrows():
+                    n, gv, ll = _so(r.get("so_cp")), _so(r.get("gia_von")), _so(r.get("lai_lo_pct"))
+                    if n and gv:
+                        cp += n * gv * (1 + (ll or 0) / 100) * 1000
+            tr, _ = _tai_tu_github("trung_vang_chinh.json")
+            trung = sum(float(t.get("goc") or 0) for t in (json.loads(tr).get("trung") or [])) if tr else 0.0
+            v = tien + cp + trung if tien + cp + trung > 0 else None
+    except Exception:                                 # noqa: BLE001 – không có file / sai định dạng → không ghi số CP
+        v = None
+    _NAV["v"] = v
+    return v
+
+
 # ------------------------------------------------------------------ danh mục CŨ (mã mua trước khi có bot)
 def doc_danh_muc_cu(path_cuc_bo="danh_muc_cu.csv"):
     """danh_muc_cu.csv của repo danh-muc → ({MÃ: vị thế gộp}, nguồn). Cắt lỗ = cat_lo_de_xuat bot danh-muc ghi
