@@ -185,7 +185,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
-          git add du_lieu/chien_luoc_dn
+          pip install -q -r requirements.txt > /dev/null && python -m ptcp.co_doanh_nghiep > /dev/null || true
+          git add du_lieu/chien_luoc_dn ptcp/co_dn.json
           git commit -q -m "Chiến lược DN từ BCTN – lượt ${{ inputs.vong || '1' }} $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
           for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; sleep $((i * 5)); done
           exit 1
