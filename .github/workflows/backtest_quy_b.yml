@@ -8,6 +8,7 @@
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
 #   von86 – tài khoản thật: B + Trứng vàng + hệ bắt đáy CHUNG DÒNG TIỀN – số lần thiếu tiền, lệnh mua trễ, hệ vào / bỏ
+#   von101 – thị trường giảm mua 10 mã UPCoM lớn nhất, tăng mua HOSE + HNX
 #   von100 – mở rổ sang UPCoM (tự tải HOSE + HNX + UPCOM, cập nhật danh sách sàn) so rổ HOSE + HNX trên cùng dữ liệu
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
@@ -24,7 +25,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von86 / von100 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von99 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / von86 / von100 / von101 (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von99 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -47,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von86, von100]
+        phan: [chuan, von86, von100, von101]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -125,7 +126,7 @@ jobs:
         run: |
           case "$PHAN" in
             von86) export CHI_VON86=1; unset SO_NN ;;          # tài khoản thật: B + Trứng + bắt đáy chung tiền (2 luật × 20 thứ tự ★)
-            von100) export CHI_VON100=1 RO_BT=hose_hnx_upcom; unset SO_NN    # mở rổ sang UPCoM
+            von100|von101) export "CHI_${PHAN^^}=1" RO_BT=hose_hnx_upcom; unset SO_NN    # rổ có UPCoM
                     MA="HOSE,HNX,UPCOM"
                     python -m ptcp.san || echo "⚠ không cập nhật được danh sách sàn (UPCoM)" ;;
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
