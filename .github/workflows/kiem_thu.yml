@@ -9,7 +9,7 @@ on:
     - cron: "41 0 * * 1-5"          # 07:41 giờ VN, thứ Hai – thứ Sáu
   push:
     branches: [main]
-  pull_request:
+  # bỏ pull_request (11/2026): PR được gộp ngay → mỗi thay đổi bị test 2 lần (PR + push lên main)
   workflow_dispatch:
 
 permissions:
