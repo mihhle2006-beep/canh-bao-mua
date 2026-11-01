@@ -5,7 +5,7 @@ Nguyên tắc (11/2026): **thứ gì KÍN để ở repo riêng tư, việc CH�
 
 | Repo | Công khai? | Chứa gì |
 |---|---|---|
-| **canh-bao-mua** (repo này) | công khai | 29 workflow · bot cảnh báo (`canh_bao/`, `chay.py`) · bộ lọc (`bo_loc/`) · công cụ sở hữu (`cong_cu/so_huu`) · kết quả công khai (tín hiệu, lịch sử ★, backtest điểm vào) |
+| **canh-bao-mua** (repo này) | công khai | 30 workflow · bot cảnh báo (`canh_bao/`, `chay.py`) · bộ lọc (`bo_loc/`) · công cụ sở hữu (`cong_cu/so_huu`) · kết quả công khai (tín hiệu, lịch sử ★, backtest điểm vào) |
 | **danh-muc** | kín | thư viện chung `ptcp/` (luật Quỹ Bứt Phá, chỉ báo, backtest, định giá, BCTC…) · danh mục thật `dmuc/` + file danh mục / tiền / lệnh / Trứng vàng · script nghiên cứu (backtest quỹ, báo cáo mã, siêu cổ phiếu) · kho dữ liệu `du_lieu/` (BCTC, BCTN, bất thường) – xem `CAU_TRUC.md` trong danh-muc |
 | **gia_lap** | kín | giao dịch giả lập (tài khoản ảo theo đúng luật), sức khoẻ hệ thống, tổng kết tuần |
 | Bo_Loc | kín | phần bộ lọc riêng (PTĐTTC) – không chạy từ đây |
@@ -57,6 +57,7 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Kiem du lieu thi truong moi noi | thị trường, … | đủ dữ liệu để thử luật ở thị trường khác không | danh-muc |
 | Chan doan nguon | nhiều ô | in mẫu dữ liệu các nguồn giá / BCTC khi nghi lỗi nguồn | danh-muc |
 | Xuat CSV gia | mã, từ ngày | 1 file CSV giá ngày → Telegram | danh-muc |
+| Kiem tra DNSE API | – | gọi thử API DNSE (chỉ đọc) – log chỉ in mã phản hồi / số lượng / tên trường | danh-muc `dmuc/dnse_api.py` |
 | Doc trang | URL | in nội dung trang công khai (VD hướng dẫn DNSE) | – |
 
 Thêm / đổi workflow: sửa ở repo này; nếu workflow lấy repo kín thì phải có bước xoá file danh mục thật (test sẽ báo).
