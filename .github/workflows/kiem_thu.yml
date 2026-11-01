@@ -1,4 +1,5 @@
-# Kiểm thử canh-bao-mua + gia_lap với ptcp MỚI NHẤT của danh-muc – trước phiên mỗi ngày và mỗi lần push.
+# Kiểm thử canh-bao-mua + gia_lap + danh-muc (cả bộ test của repo kín danh-muc – 11/2026) với ptcp MỚI NHẤT của
+# danh-muc – trước phiên mỗi ngày, mỗi lần push và khi danh-muc vừa gộp code (chạy tay / workflow_dispatch).
 # ptcp không ghim phiên bản (dmuc chạy ptcp mới nhất; ghim ở đây sẽ làm 2 bên chạy 2 luật khác nhau) → bắt lỗi sớm:
 # ptcp mới làm hỏng bot → Telegram báo trước 9:00 thay vì bot hỏng giữa phiên.
 name: Kiem thu
@@ -21,7 +22,7 @@ concurrency:
 jobs:
   kiem_thu:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
     steps:
@@ -69,6 +70,26 @@ jobs:
           cd gia_lap && pip install -q -r requirements.txt > /dev/null
           ma=0; python -m pytest -q -p no:cacheprovider > /tmp/gl.txt 2>&1 || ma=$?
           tail -n 1 /tmp/gl.txt; exit $ma
+
+      - uses: actions/checkout@v5
+        if: steps.co.outputs.co == '1'
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+
+      - name: Test danh-muc (repo kín – xoá file danh mục thật, log chỉ in dòng tổng kết)
+        if: steps.co.outputs.co == '1'
+        run: |
+          cd danh-muc
+          rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv \
+                nhap*.txt trung_vang*.json
+          pip install -q -r requirements.txt > /dev/null
+          ma=0; python -m pytest -q -p no:cacheprovider tests/ > /tmp/dm.txt 2>&1 || ma=$?
+          tail -n 1 /tmp/dm.txt
+          [ $ma -eq 0 ] || grep -E "^(FAILED|ERROR) " /tmp/dm.txt | cut -d' ' -f2 | cut -d'[' -f1 | sort -u   # chỉ tên test hỏng
+          exit $ma
 
       - name: Báo Telegram khi hỏng
         if: failure() && github.event_name != 'pull_request'

@@ -2,7 +2,6 @@
 """Kiểm thử 4 bảng kết quả, mô hình nến và tiêu chí chiến lược rủi ro cao."""
 import numpy as np
 import pandas as pd
-import pytest
 
 from bo_loc import bon_bang as kf
 from bo_loc.phan_tich.ky_thuat import mo_hinh_nen

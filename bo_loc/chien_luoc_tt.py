@@ -17,8 +17,7 @@ import pandas as pd
 
 from .loi import cau_hinh as lcfg
 from .loi.chi_bao import tinh_chi_bao
-from .loi.chien_luoc import (NGUONG_LEN, NGUONG_XUONG, NHOM_HANH_DONG, TEN_CL, TY_TRONG, bang_chi_bao,
-                             doc_thi_truong, hanh_dong, lich_chien_luoc)
+from .loi.chien_luoc import (TEN_CL, TY_TRONG, bang_chi_bao, doc_thi_truong, hanh_dong, lich_chien_luoc)
 from .loi.he_thoat import chuan_bi, danh_sach_bien_the, di_ngang_vni, mo_phong, stop_chuan, tin_hieu_macd
 
 NHOM_MUA = ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")
