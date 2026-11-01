@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Chiến lược theo thị trường trong bộ lọc – cùng logic bot canh-bao-mua / ptcp (không mạng)."""
 import numpy as np
-import pandas as pd
 import pytest
 
 from bo_loc import chien_luoc_tt as T
