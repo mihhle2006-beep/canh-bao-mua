@@ -1,0 +1,36 @@
+# KIỂM KẾT NỐI DNSE LightSpeed API (chạy tay) – CHỈ ĐỌC, không đặt lệnh. Dùng secret DNSE_API_KEY / DNSE_API_SECRET của
+# repo này. Code ở repo kín danh-muc (dmuc/dnse_api.py, chỉ thư viện chuẩn Python). Repo CÔNG KHAI → log chỉ in mã phản
+# hồi, số tiểu khoản / số dòng vị thế và TÊN trường (không in số tài khoản, tiền, mã cổ phiếu).
+name: Kiem tra DNSE API
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kiem:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+          sparse-checkout: |
+            dmuc/dnse_api.py
+          sparse-checkout-cone-mode: false
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv nhap*.txt trung_vang*.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Gọi thử API (chỉ đọc)
+        env:
+          DNSE_API_KEY: ${{ secrets.DNSE_API_KEY }}
+          DNSE_API_SECRET: ${{ secrets.DNSE_API_SECRET }}
+        run: python danh-muc/dmuc/dnse_api.py --kiem
