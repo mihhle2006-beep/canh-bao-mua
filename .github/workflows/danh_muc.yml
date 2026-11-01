@@ -119,6 +119,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           GIA_LAP_DIR: ${{ github.workspace }}/gia_lap
           TONG_KET_TUAN: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}   # thứ Sáu tự có; chạy tay → có
+          VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}   # phân rã hiệu suất: tải giá mã giả lập chưa có trong cache
         run: |
           gui=0; python tom_tat_danh_muc.py > /tmp/tom_tat.txt 2>&1 || gui=$?
           echo "Tóm tắt Telegram: mã thoát $gui"

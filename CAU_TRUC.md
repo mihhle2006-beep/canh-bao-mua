@@ -29,7 +29,7 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Canh bao mua | 06:43 (dự phòng 07:15), 12:15, 15:20 T2–T6 · 09:07 thứ Bảy | bot: vòng sáng / chiều mỗi 15', tin MUA / BÁN, tổng kết 15:20, chấm lại tín hiệu thứ Bảy | repo này + `ptcp` |
 | Kiem thu | 07:41 T2–T6 + mỗi lần push | test canh-bao-mua + gia_lap + danh-muc; hỏng → Telegram | cả 3 repo |
 | Quet dinh ky | 14:20 T2–T6 | bộ lọc quét toàn sàn → `ma_mua_bo_loc.json` cho bot | repo này (`bo_loc`) |
-| Danh muc hang ngay | 14:50 T2–T6 (08:30 chỉ khi có `nhap.txt` mới) | danh mục THẬT: nhập lệnh, tóm tắt, dashboard, Excel, tiền nhàn rỗi → Telegram (chạy kín) | danh-muc `dmuc` |
+| Danh muc hang ngay | 14:50 T2–T6 (08:30 chỉ khi có `nhap.txt` mới) | danh mục THẬT: nhập lệnh, tóm tắt, dashboard, Excel, tiền nhàn rỗi; đầu tháng + phân rã hiệu suất tháng trước (thật so giả lập) → Telegram (chạy kín) | danh-muc `dmuc` |
 | Gia lap | 16:30 (kiểm lại 17:30, 18:53) T2–T6 | tài khoản giả lập theo luật | gia_lap |
 | Suc khoe he thong | 19:55 T2–T6 | các workflow có chạy / lỗi không, NAV giả lập | gia_lap |
 | Tong ket tuan (gia lap) | 20:17 thứ Sáu | tổng kết tuần giả lập | gia_lap |
