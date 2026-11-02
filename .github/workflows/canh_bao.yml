@@ -153,6 +153,7 @@ jobs:
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt "$HET" ]; do
               python chay.py --che_do tu_dong || { loi=$((loi + 1)); echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"; }
               kiem_nhap || true
+              python canh_bao/nhip_mac.py || true        # máy Mac im > 35' trong phiên → nhắn Telegram 1 lần
               cho_tin $(( ($(date +%s) / 900 + 1) * 900 + 5 ))
             done
             if [ "$HET" = 1447 ]; then        # vòng chiều xong → gọi danh mục đúng 15:02 (lịch 14:50 GitHub trễ tới ~1 giờ)
