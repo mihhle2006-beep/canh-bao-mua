@@ -62,7 +62,7 @@
   },
   "DPR": {
    "ngay": "2026-11-02",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "VIB": {
@@ -180,8 +180,10 @@
   },
   "REE": {
    "ngay": "2026-11-02",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "IDC": {
    "ngay": "2026-11-02",
@@ -200,17 +202,21 @@
   },
   "NAB": {
    "ngay": "2026-11-02",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "VJC": {
    "ngay": "2026-11-02",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "HDC": {
    "ngay": "2026-11-02",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "KDH": {
@@ -230,7 +236,7 @@
   },
   "CEO": {
    "ngay": "2026-11-02",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   }
  },
@@ -242,7 +248,7 @@
     "Mã": "DIG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "9.53–9.78",
-    "Giá": 9.29,
+    "Giá": 9.34,
     "Trạng thái": "BỎ",
     "Lý do": "chạm cắt lỗ 9.51 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
@@ -252,7 +258,7 @@
     "Mã": "SSI",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "19.20–19.85",
-    "Giá": 19.0,
+    "Giá": 18.95,
     "Trạng thái": "BỎ",
     "Lý do": "chạm cắt lỗ 19.00 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
@@ -272,17 +278,17 @@
     "Mã": "REE",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "44.80–46.60",
-    "Giá": 45.0,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 44.85,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 44.85
    },
    {
     "Mã": "HAG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "14.15–14.55",
-    "Giá": 13.7,
+    "Giá": 13.5,
     "Trạng thái": "BỎ",
     "Lý do": "chạm cắt lỗ 14.11 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
@@ -292,7 +298,7 @@
     "Mã": "NLG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "21.90–22.65",
-    "Giá": 21.3,
+    "Giá": 21.15,
     "Trạng thái": "BỎ",
     "Lý do": "chạm cắt lỗ 21.78 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
@@ -302,9 +308,9 @@
     "Mã": "HDC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "11.15–11.55",
-    "Giá": 11.4,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 12.0,
+    "Trạng thái": "BỎ",
+    "Lý do": "đóng cửa 12.00 ngoài vùng – không đặt ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
@@ -312,9 +318,9 @@
     "Mã": "CEO",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.90–11.40",
-    "Giá": 10.8,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 10.9,
+    "Trạng thái": "BỎ",
+    "Lý do": "chạm cắt lỗ 10.67 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
@@ -322,9 +328,9 @@
     "Mã": "DPR",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "37.45–39.10",
-    "Giá": 37.45,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 36.8,
+    "Trạng thái": "BỎ",
+    "Lý do": "chạm cắt lỗ 36.85 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
@@ -332,21 +338,21 @@
     "Mã": "NAB",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "12.25–12.70",
-    "Giá": 12.25,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 12.45,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 12.45
    },
    {
     "Mã": "VJC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "129.20–134.60",
-    "Giá": 132.5,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 131.9,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 131.9
    }
   ]
  }
