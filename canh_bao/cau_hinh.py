@@ -95,7 +95,7 @@ CACH_VAO_15P = "15P+GIO"           # 19/10/2026: backtest quỹ Bứt Phá theo 
                                    # chưa backtest → "15P+ATC". Hoặc đặt cố định: ATO | 15P | 15P+ATC | 15P+GIO | VWAP | LO …
 GIO_ATC = "14:25"                  # từ giờ này, cách vào "+ATC" chưa có điểm vào → báo đặt ATC nếu giá còn trong vùng
 QUET_DANH_MUC_CU = True            # trong phiên: quét cả danh_muc_cu.csv (repo danh-muc) – chạm / sát cắt lỗ đề xuất
-GAN_CAT_LO_PCT = 1.0               # trong phiên: mã đang giữ cách cắt lỗ ≤ 1% → nhắc chuẩn bị lệnh bán
+GAN_CAT_LO_PCT = 2.0               # trong phiên: mã đang giữ cách cắt lỗ ≤ 2% → nhắc chuẩn bị lệnh bán (1 lần/ngày)
 FILE_BACKTEST = "ket_qua_backtest.json"   # kết quả backtest (công khai – chỉ thống kê, không có danh mục)
 BACKTEST_TU = "2019-01-01"         # giá ngày cho backtest điểm bán / mua thêm
 BACKTEST_15P_TU = "2023-09-11"     # nến 15' lấy từ ngày này – Vietcap có từ 11/09/2023 (VNDirect/DNSE/SSI chỉ ~1 năm)

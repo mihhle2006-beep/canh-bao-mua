@@ -10,7 +10,10 @@ on:
                                    # Lịch 07:15 (00:15 UTC – giờ GitHub đông nhất) trễ 92–111' (10/2026: chạy ~09:00 →
                                    # lỡ cả khung nhắc ATO); trước 08:00 vòng lặp chỉ chờ ("ngoài giờ → không làm gì")
     - cron: "15 0 * * 1-5"         # 07:15 giờ VN – DỰ PHÒNG nếu lịch 06:43 không chạy (chạy trùng thì xếp sau, tự thoát)
-    - cron: "15 5 * * 1-5"         # 12:15 giờ VN – vòng lặp buổi chiều 13:00–14:45 (gồm lượt 14:30 báo MUA ATC)
+    - cron: "53 3 * * 1-5"         # 10:53 giờ VN – vòng lặp buổi chiều: XẾP HÀNG sau vòng sáng (cùng concurrency), vòng sáng
+                                   # lưu trạng thái xong (~11:47) là chạy ngay 13:00–14:45 (gồm lượt 14:30 báo MUA ATC) –
+                                   # GitHub trễ ≤ 2 giờ vẫn kịp; vòng sáng lỗi sớm → chạy luôn từ 10:53 (quét nốt buổi sáng)
+    - cron: "15 5 * * 1-5"         # 12:15 giờ VN – DỰ PHÒNG nếu lịch 10:53 không chạy (chạy trùng thì xếp sau, tự thoát)
     - cron: "20 8 * * 1-5"         # 15:20 giờ VN – tổng kết cuối ngày (kèm chấm đúng/sai tín hiệu)
     - cron: "7 2 * * 6"            # 09:07 thứ Bảy giờ VN – chạy LỊCH SỬ hằng tuần (chấm lại mọi tín hiệu, xuất Excel)
   workflow_dispatch:
@@ -103,6 +106,10 @@ jobs:
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
           GH_TOKEN: ${{ github.token }}
+          # nhắn lệnh cho bot danh mục → nhap.txt (canh_bao/lenh_tele.py – chỉ nhận tin chủ quỹ, log chỉ in số lượng)
+          TELEGRAM_TOKEN_DANH_MUC: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC }}
+          TELEGRAM_CHAT_ID_DANH_MUC: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC }}
+          DANH_MUC_TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           MA: ${{ inputs.ma }}
           CHI_THU: ${{ inputs.chi_thu || inputs.gio != '' }}
           GIO: ${{ inputs.gio }}
@@ -114,7 +121,7 @@ jobs:
           ma_thoat=0
           case "${{ github.event.schedule }}" in
             "43 23 * * 0-4"|"15 0 * * 1-5") HET=1135 ;;
-            "15 5 * * 1-5") HET=1447 ;;
+            "53 3 * * 1-5"|"15 5 * * 1-5") HET=1447 ;;
             *) HET="" ;;
           esac
           # nhap.txt ở danh-muc còn lệnh chưa áp → chạy danh mục ngay (không đợi cuối phiên). Không gọi khi danh mục đang
@@ -137,6 +144,7 @@ jobs:
             loi=0
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt "$HET" ]; do
               python chay.py --che_do tu_dong || { loi=$((loi + 1)); echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"; }
+              python canh_bao/lenh_tele.py || true       # tin nhắn lệnh → nhap.txt (kiem_nhap gọi danh mục ngay)
               kiem_nhap || true
               bay_gio=$(date +%s); sleep $(( (bay_gio / 900 + 1) * 900 - bay_gio + 5 ))
             done
