@@ -468,9 +468,11 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
     if ds:                                       # bản riêng: còn bao nhiêu suất → mua lần lượt theo ★ tới hết suất
         i = next((j for j, x in enumerate(day_du) if x.startswith(tuple(TIEU_DE[n] for n in NHOM_MUA))), len(day_du))
         day_du[i:i] = [ds, ""] if i < len(day_du) else ["", ds]
-    if giu:
-        day_du += ["", f"💼 ĐANG GIỮ ({len(giu)}) – ngày mua, giá vốn, mục tiêu: tin 📊 DANH MỤC"]
-        for vt, kb, mt in giu:
+    if giu:                      # tin gọn 02/11/2026: chỉ mã CẦN LÀM – mã chỉ GIỮ đã có từng dòng ở tin 📊 DANH MỤC
+        lam = [x for x in giu if (x[1] or {}).get("muc", "GIU") != "GIU" or (x[2] or {}).get("du")]
+        day_du += ["", f"💼 ĐANG GIỮ {len(giu)} mã – " + (f"{len(lam)} mã cần làm:" if lam else "không có việc cần làm")
+                   + " (từng mã: tin 📊 DANH MỤC)"]
+        for vt, kb, mt in lam:
             day_du += dong_giu(vt, kb, mt)
         sk = dong_su_kien({vt["ma"]: (kb or {}).get("gia", np.nan) for vt, kb, _ in giu}, bay_gio)
         day_du += [x.replace("vùng / cắt lỗ tự quy đổi theo tỷ lệ khi tới ngày", "mã đang giữ: cắt lỗ / giá vốn đổi theo "

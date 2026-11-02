@@ -226,10 +226,9 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         return 0
     kq_bt = tong_ket_cl.doc_ket_qua_backtest()
     tin, cong_khai = tong_ket_cl.tin_tong_ket(ra, bay_gio, giu, kq_bt)
-    td = _an_toan("Theo dõi khuyến nghị", theo_doi_kn.tom_tat, bay_gio, ra.get("gia_ngay"),
-                  lambda ma: tai(ma, "D", C.NGAY_BAT_DAU)) if C.GHI_NHAT_KY else None
-    if td:                                                     # chỉ khuyến nghị công khai → có trong cả 2 bản tin
-        tin, cong_khai = tin + "\n" + "\n".join(td), cong_khai + "\n" + "\n".join(td)
+    if C.GHI_NHAT_KY:            # theo dõi khuyến nghị (lệnh giả định, không ai giữ) → chỉ Bảng tổng hợp, không vào tin
+        _an_toan("Theo dõi khuyến nghị", theo_doi_kn.tom_tat, bay_gio, ra.get("gia_ngay"),
+                 lambda ma: tai(ma, "D", C.NGAY_BAT_DAU))
     if tin_bl:
         tin, cong_khai = f"{tin}\n\n{tin_bl}", f"{cong_khai}\n\n{tin_bl}"
     w_cl = ra.get("ty_trong_cl") or {}
@@ -243,7 +242,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
     else:
         gui(tin, rieng_tu=bool(giu))
     _an_toan("Biểu đồ mốc", _anh_tong_ket, ra, bay_gio, khong_gui)
-    if C.GUI_EXCEL:
+    if C.GUI_EXCEL and (C.GUI_EXCEL is True or pd.Timestamp(bay_gio).weekday() == 4):
         try:
             from canh_bao.bao_cao_excel import xuat
             path = xuat(ra, giu=giu, kq_bt=kq_bt, rieng=bool(giu))
@@ -284,13 +283,9 @@ def _trang(bay_gio, giu=None, kq_bt=None, khong_gui=False):
     p = _an_toan("Trang tổng hợp", trang_tong_hop.tao, None, None, bay_gio, kq_bt)
     if p:
         print(f"Trang tổng hợp: {p}")
-    if giu and C.GUI_TRANG_RIENG:
-        p = _an_toan("Trang riêng", trang_tong_hop.tao, None, giu, bay_gio, kq_bt)
-        if p and not khong_gui:
-            gui_file(p, f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d/%m/%Y} (mở bằng trình duyệt)", rieng_tu=True,
-                     ten=f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d-%m-%Y}{os.path.splitext(p)[1]}")
-        if p and os.environ.get("GITHUB_ACTIONS"):
-            os.remove(p)                                       # có danh mục thật: không để lại trên máy chạy
+    if giu and C.GUI_TRANG_RIENG and p and not khong_gui:      # bản công khai: 💼 danh mục thật đã ở trang 📊 DANH MỤC
+        gui_file(p, f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d/%m/%Y} (mở bằng trình duyệt)",
+                 ten=f"Bảng tổng hợp {pd.Timestamp(bay_gio):%d-%m-%Y}{os.path.splitext(p)[1]}")
 
 
 # ------------------------------------------------------------------ XEM RIÊNG 1 / VÀI MÃ

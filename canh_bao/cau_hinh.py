@@ -80,7 +80,8 @@ FILE_TRANG_THAI_CL = "trang_thai_chien_luoc.json"   # CL đang áp dụng (để
 SO_MA_MOI_NHOM = 8                 # số mã tối đa mỗi nhóm trong tin (còn lại xem Excel)
 BAO_SU_KIEN_QUYEN = True           # tin tổng kết: báo trước GDKHQ (chia / thưởng CP, cổ tức) – lịch VNDirect
 SO_NGAY_BAO_QUYEN = 10             # báo sự kiện có GDKHQ trong 10 ngày tới
-GUI_EXCEL = True                   # gửi file Excel chi tiết kèm tin tổng kết (riêng tư nếu có danh mục)
+GUI_EXCEL = "thu6"                 # Excel chi tiết kèm tin tổng kết: True = mỗi ngày · "thu6" = chỉ thứ Sáu (tin gọn 02/11:
+                                   # hằng ngày đã có Bảng tổng hợp HTML) · False = tắt
 FILE_EXCEL = "bao_cao_chien_luoc.xlsx"
 LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị chiến lược (chấm theo hệ thoát)
 
@@ -137,4 +138,4 @@ BO_LOC_FILE = None                 # đường dẫn file trên máy (ưu tiên 
 #     Bản CÔNG KHAI → docs/index.html (GitHub Pages). Bản RIÊNG có danh mục thật → chỉ gửi Telegram.
 DUNG_TRANG_TONG_HOP = True
 FILE_TRANG = "docs/index.html"
-GUI_TRANG_RIENG = True             # gửi kèm file HTML có mục 💼 danh mục thật qua Telegram (không commit)
+GUI_TRANG_RIENG = True             # gửi kèm Bảng tổng hợp HTML (bản công khai – 💼 danh mục thật ở trang 📊 DANH MỤC)
