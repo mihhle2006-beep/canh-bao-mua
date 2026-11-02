@@ -4,13 +4,10 @@
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
 # ở danh-muc ptcp/cau_hinh.py), von55–von84 (28–29/10/2026), von85 + von87–von99 (01/11/2026 – "không cải thiện được gì
-# nữa") – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch sử git. Còn:
+# nữa"), von86 / von100 / von101 / het_han / gia_cao (02/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
+# sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
-#   von86 – tài khoản thật: B + Trứng vàng + hệ bắt đáy CHUNG DÒNG TIỀN – số lần thiếu tiền, lệnh mua trễ, hệ vào / bỏ
-#   von101 – thị trường giảm mua 10 mã UPCoM lớn nhất, tăng mua HOSE + HNX
-#   gia_cao – đặt mua cao hơn giá khuyến nghị 0,5 / 1 / 2 % (lệnh mới & vào trễ ATC) – 20 thứ tự ★
-#   von100 – mở rổ sang UPCoM (tự tải HOSE + HNX + UPCOM, cập nhật danh sách sàn) so rổ HOSE + HNX trên cùng dữ liệu
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -26,7 +23,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / von86 / von100 / von101 / het_han / gia_cao (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von99 đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -49,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von86, von100, von101, het_han, gia_cao]
+        phan: [chuan]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -126,12 +123,6 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
-            gia_cao) export CHI_GIA_CAO=1; unset SO_NN ;;     # đặt mua cao hơn giá khuyến nghị x %
-            het_han) export CHI_HET_HAN=1; unset SO_NN ;;     # thời điểm bán lệnh hết hạn 63 phiên (lãi < 1R)
-            von86) export CHI_VON86=1; unset SO_NN ;;          # tài khoản thật: B + Trứng + bắt đáy chung tiền (2 luật × 20 thứ tự ★)
-            von100|von101) export "CHI_${PHAN^^}=1" RO_BT=hose_hnx_upcom; unset SO_NN    # rổ có UPCoM
-                    MA="HOSE,HNX,UPCOM"
-                    python -m ptcp.san || echo "⚠ không cập nhật được danh sách sàn (UPCoM)" ;;
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
           esac
