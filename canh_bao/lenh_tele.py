@@ -6,6 +6,7 @@ Lần chạy danh mục kế tiếp áp lệnh (trong phiên: vòng quét 15' g�
 thành "# ⚠ …" như nhập tay. "/help" → trả cú pháp.
   • Chỉ nhận tin từ đúng chat chủ quỹ (TELEGRAM_CHAT_ID_DANH_MUC / TELEGRAM_CHAT_ID); tin người khác bỏ qua.
   • Mỗi dòng ghi kèm "# tg:<update_id>" → chạy trùng (vòng quét + lịch mỗi giờ) không ghi 2 lần.
+  • CHO=<giây> (≤ 50): chờ tin tới (long-poll) – vòng quét gọi lặp trong lúc đợi mốc 15' → trong phiên trả lời sau vài giây.
   • Repo bot CÔNG KHAI → log chỉ in SỐ LƯỢNG, không in nội dung lệnh; trả lời qua Telegram (riêng tư).
 Chỉ thư viện chuẩn Python.  Biến môi trường: TELEGRAM_TOKEN_DANH_MUC (hoặc TELEGRAM_TOKEN), TELEGRAM_CHAT_ID_DANH_MUC
 (hoặc TELEGRAM_CHAT_ID), DANH_MUC_TOKEN_GHI (Contents: Read and write repo danh-muc), DANH_MUC_REPO.
@@ -30,10 +31,10 @@ HUONG_DAN = ("📝 Nhắn lệnh cho bot, mỗi dòng 1 lệnh (không ghi ngày
              "khác, Trứng vàng, bảng lãi.")
 
 
-def _goi(url, data=None, headers=None, method=None):
+def _goi(url, data=None, headers=None, method=None, cho=0):
     req = urllib.request.Request(url, data=json.dumps(data).encode() if data is not None else None,
                                  headers={"Content-Type": "application/json", **(headers or {})}, method=method)
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=30 + cho) as r:
         return json.loads(r.read().decode() or "null")
 
 
@@ -84,9 +85,10 @@ def chay(env=os.environ):
         print("Lệnh Telegram: thiếu TELEGRAM_TOKEN / CHAT_ID / DANH_MUC_TOKEN_GHI – bỏ qua")
         return 0
     api = f"https://api.telegram.org/bot{tg}"
+    cho = max(0, min(50, int(env.get("CHO") or 0)))                     # long-poll: tin tới là trả lời ngay
     try:
-        ups = _goi(f"{api}/getUpdates?timeout=0&allowed_updates=%5B%22message%22%5D").get("result") or []
-    except urllib.error.HTTPError as e:                                 # 409 = bot đang dùng webhook
+        ups = _goi(f"{api}/getUpdates?timeout={cho}&allowed_updates=%5B%22message%22%5D", cho=cho).get("result") or []
+    except urllib.error.HTTPError as e:                     # 409 = webhook / lần đọc khác (lịch mỗi giờ) chen ngang
         print(f"Lệnh Telegram: getUpdates HTTP {e.code} – bỏ qua")
         return 0
     if not ups:

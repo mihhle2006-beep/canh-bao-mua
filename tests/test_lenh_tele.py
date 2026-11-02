@@ -29,7 +29,7 @@ def test_chay_ghi_file_xac_nhan_va_tra_loi(monkeypatch, capsys):
     file = {"nd": "# mẫu\n# ✔ 30/10: 30/10 BAN MWG HET\n"}
     goi = []
 
-    def gia(url, data=None, headers=None, method=None):
+    def gia(url, data=None, headers=None, method=None, cho=0):
         goi.append((url.split("?")[0].rsplit("/", 1)[-1], method, data))
         if "getUpdates" in url and "offset" not in url:
             return {"result": [_tin(5, "BAN MWG 21 74,5"), _tin(6, "RUT 1", chat=999)]}
@@ -47,3 +47,10 @@ def test_chay_ghi_file_xac_nhan_va_tra_loi(monkeypatch, capsys):
     assert ten.index("getUpdates", 1) > ten.index("nhap.txt") and ten[-1] == "sendMessage"   # ghi xong mới xác nhận
     out = capsys.readouterr().out
     assert "MWG" not in out and "74" not in out                          # log công khai: chỉ số lượng
+
+
+def test_cho_long_poll(monkeypatch):
+    goi = []
+    monkeypatch.setattr(T, "_goi", lambda url, data=None, headers=None, method=None, cho=0: goi.append((url, cho)) or {})
+    T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "1", "DANH_MUC_TOKEN_GHI": "g", "CHO": "300"})
+    assert "timeout=50&" in goi[0][0] and goi[0][1] == 50                # chặn 50s, urlopen chờ lâu hơn

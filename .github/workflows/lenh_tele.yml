@@ -1,5 +1,5 @@
 # LỆNH QUA TELEGRAM – mỗi giờ (cả cuối tuần; Telegram chỉ giữ tin chưa đọc 24 giờ): đọc tin chủ quỹ nhắn cho bot danh mục
-# → nối vào nhap.txt repo danh-muc (canh_bao/lenh_tele.py). Trong phiên vòng quét 15' (canh_bao.yml) đọc thường hơn và gọi
+# → nối vào nhap.txt repo danh-muc (canh_bao/lenh_tele.py). Trong phiên vòng quét 15' (canh_bao.yml) nghe liên tục (trả lời sau vài giây) và gọi
 # danh mục ngay; ngoài phiên lệnh được áp lúc 08:30 / 15:02. Log chỉ in số lượng (repo công khai).
 name: Lenh Telegram
 

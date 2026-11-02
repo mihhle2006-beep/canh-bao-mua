@@ -140,16 +140,23 @@ jobs:
               fi
             done
           }
+          # đợi tới thời điểm $1 (epoch); trong lúc đợi nghe tin nhắn bot (long-poll ≤ 50s) → /help, lệnh trả lời sau vài giây
+          cho_tin() {
+            while con=$(( $1 - $(date +%s) )); [ "$con" -gt 8 ]; do
+              CHO=$(( con > 58 ? 50 : con - 8 )) python canh_bao/lenh_tele.py || true
+              sleep 3
+            done
+            con=$(( $1 - $(date +%s) )); [ "$con" -le 0 ] || sleep "$con"
+          }
           if [ -n "$HET" ]; then                       # vòng lặp: chạy mỗi mốc 15 phút (giờ VN) tới HET
             loi=0
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt "$HET" ]; do
               python chay.py --che_do tu_dong || { loi=$((loi + 1)); echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"; }
-              python canh_bao/lenh_tele.py || true       # tin nhắn lệnh → nhap.txt (kiem_nhap gọi danh mục ngay)
               kiem_nhap || true
-              bay_gio=$(date +%s); sleep $(( (bay_gio / 900 + 1) * 900 - bay_gio + 5 ))
+              cho_tin $(( ($(date +%s) / 900 + 1) * 900 + 5 ))
             done
             if [ "$HET" = 1447 ]; then        # vòng chiều xong → gọi danh mục đúng 15:02 (lịch 14:50 GitHub trễ tới ~1 giờ)
-              while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt 1502 ]; do sleep 20; done
+              cho_tin "$(TZ=Asia/Ho_Chi_Minh date -d 15:02 +%s)"
               gh workflow run danh_muc.yml --ref main -R "$GITHUB_REPOSITORY" && echo "đã gọi danh mục 15:02" || true
             fi
             # ≥ 2 lượt lỗi → lần chạy đỏ (tin 🩺 sức khoẻ thấy ❌); 1 lượt (nguồn giá chập chờn) chỉ cảnh báo – bước sau vẫn chạy
