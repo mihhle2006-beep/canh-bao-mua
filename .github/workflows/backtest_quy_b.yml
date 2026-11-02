@@ -4,11 +4,10 @@
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
 # ở danh-muc ptcp/cau_hinh.py), von55–von84 (28–29/10/2026), von85 + von87–von99 (01/11/2026 – "không cải thiện được gì
-# nữa"), von86 / von100 / von101 / het_han (02/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
+# nữa"), von86 / von100 / von101 / het_han / gia_cao (02/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
-#   gia_cao – đặt mua cao hơn giá khuyến nghị 0,5 / 1 / 2 % (lệnh mới & vào trễ ATC) – 20 thứ tự ★
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -24,7 +23,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / gia_cao (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -47,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, gia_cao]
+        phan: [chuan]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -124,7 +123,6 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
-            gia_cao) export CHI_GIA_CAO=1; unset SO_NN ;;     # đặt mua cao hơn giá khuyến nghị x %
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
           esac
