@@ -88,7 +88,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
-          for f in giao_dich_ao.json giao_dich_ao_lenh.csv giao_dich_ao_von.csv bao_cao.html; do
+          for f in giao_dich_ao*.json giao_dich_ao*.csv bao_cao.html; do      # + hệ song song giao_dich_ao_<khoá>.*
             if [ -f "$f" ]; then git add "$f"; fi
           done
           if git diff --cached --quiet; then echo "Không có thay đổi"; exit 0; fi
