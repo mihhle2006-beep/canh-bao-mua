@@ -97,10 +97,14 @@ def test_tong_ket_co_danh_muc_rieng_tu(moi_truong, monkeypatch, capsys):
         assert chay.main(["--che_do", "tong_ket", "--gio", "2026-10-02 15:30"]) == 0
     log = capsys.readouterr().out
     tin = next((nd, rt) for nd, rt in gui if nd.startswith("📊 TỔNG KẾT"))
-    assert tin[1] is True and "💼 ĐANG GIỮ (2)" in tin[0] and "XYZ" in tin[0]
-    assert "· Cắt lỗ" in tin[0] or "dời cắt lỗ lên" in tin[0]                  # 1 dòng / mã đang giữ
+    assert tin[1] is True and "💼 ĐANG GIỮ 2 mã" in tin[0]
+    lam = "không có việc cần làm" not in tin[0]                  # tin gọn: chỉ mã CẦN LÀM có dòng riêng
+    assert (("· Cắt lỗ" in tin[0] or "dời cắt lỗ lên" in tin[0]) if lam else "XYZ" not in tin[0])
     assert "XYZ" not in log and f"{gv:,.2f}" not in log and "💼" not in log     # log công khai sạch
-    assert gf.call_args[1]["rieng_tu"] is True and not os.path.exists(C.FILE_EXCEL)   # Actions: xoá file riêng
+    excel = [c for c in gf.call_args_list if str(c[0][0]).endswith(".xlsx")]
+    assert excel and excel[0][1]["rieng_tu"] is True and not os.path.exists(C.FILE_EXCEL)   # thứ Sáu · Actions xoá file
+    html = [c for c in gf.call_args_list if str(c[0][0]).endswith(".html")]
+    assert html and "💼" not in open(html[0][0][0], encoding="utf-8").read()   # bảng tổng hợp: bản công khai
     assert "XYZ" not in open("lich_su_danh_gia.csv", encoding="utf-8").read()
 
 

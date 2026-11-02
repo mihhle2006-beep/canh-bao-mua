@@ -283,7 +283,7 @@ nav a:hover{background:var(--nen-nhan);border-color:var(--nhan)}
 section{background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:16px;margin:16px 0}
 section h2{font-size:17px;margin:0 0 12px;padding-left:10px;border-left:4px solid var(--nhan)}
 h3{font-size:14px;margin:18px 0 8px;color:var(--mo)}
-.luoi-the{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.luoi-the{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
 .the{border:1px solid var(--vien);border-radius:10px;padding:10px 12px;background:var(--nen-nhan)}
 .the .nhan{font-size:12px;color:var(--mo)}
 .the .gia{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--nhan)}
