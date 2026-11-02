@@ -24,11 +24,11 @@ VN = timezone(timedelta(hours=7))
 FILE = "nhap.txt"
 CO_NGAY = re.compile(r"(^|\s)\d{1,2}[/\-]\d{1,2}([/\-]\d{2,4})?(\s|$)")
 HUONG_DAN = ("📝 Nhắn lệnh cho bot, mỗi dòng 1 lệnh (không ghi ngày → lấy ngày gửi tin):\n"
-             "  BAN MWG 21 74,5 · BAN VIB HET 16,2 · HPG 1000 27,5 (mua)\n"
-             "  NAP 5 · RUT 2.000.000 · TIEN 6.041.733\n"
+             "  BAN MWG 21 74,5 · BAN VIB HET 16,2 · HPG 1000 27,5 (mua; bỏ giá → lấy theo khuyến nghị)\n"
+             "  NAP 5 (5 triệu) · RUT 2.000.000 · TIEN 6.041.733 (đặt đúng tiền mặt)\n"
              "  TRUNG 5 6 (ấp 5 tr kỳ 6T) · THU 3 · THU HET · LAI_TRUNG 6T 7,5 12T 7,6\n"
-             "Lệnh khớp, tiền, nạp / rút trên DNSE đã tự đồng bộ (mỗi 3 giờ khi máy mở) – chỉ cần nhắn lệnh ở app "
-             "khác, Trứng vàng, bảng lãi.")
+             "Lệnh khớp, tiền, nạp / rút trên DNSE tự đồng bộ (trong phiên mỗi 10', ngoài phiên mỗi 3 giờ – khi máy Mac "
+             "mở) → chỉ cần nhắn lệnh ở app khác, Trứng vàng, bảng lãi. Tin không bắt đầu bằng / đều coi là lệnh.")
 
 
 def _goi(url, data=None, headers=None, method=None, cho=0):
