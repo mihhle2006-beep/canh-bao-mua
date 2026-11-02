@@ -61,11 +61,9 @@
    ]
   },
   "DPR": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "VIB": {
    "ngay": "2026-10-12",
@@ -95,7 +93,7 @@
    "da_bao": []
   },
   "DIG": {
-   "ngay": "2026-10-29",
+   "ngay": "2026-11-02",
    "trang_thai": "BỎ",
    "da_bao": []
   },
@@ -157,11 +155,9 @@
    "da_bao": []
   },
   "SSI": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "BỎ",
+   "da_bao": []
   },
   "VPL": {
    "ngay": "2026-10-21",
@@ -178,19 +174,17 @@
    ]
   },
   "HAG": {
-   "ngay": "2026-10-30",
+   "ngay": "2026-11-02",
    "trang_thai": "BỎ",
    "da_bao": []
   },
   "REE": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "IDC": {
-   "ngay": "2026-10-30",
+   "ngay": "2026-11-02",
    "trang_thai": "BỎ",
    "da_bao": []
   },
@@ -205,25 +199,19 @@
    "da_bao": []
   },
   "NAB": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "VJC": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "HDC": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "KDH": {
    "ngay": "2026-10-30",
@@ -236,81 +224,87 @@
    "da_bao": []
   },
   "NLG": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "BỎ",
+   "da_bao": []
   },
   "CEO": {
-   "ngay": "2026-10-30",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-02",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   }
  },
  "_15p_hom_nay": {
-  "ngay": "2026-10-30",
+  "ngay": "2026-11-02",
   "cach_vao": "15P+GIO",
   "ds": [
    {
-    "Mã": "SSI",
+    "Mã": "DIG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "19.35–20.15",
-    "Giá": 19.35,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 19.35
-   },
-   {
-    "Mã": "REE",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "44.85–46.60",
-    "Giá": 45.45,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 45.45
-   },
-   {
-    "Mã": "MSN",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "71.40–74.20",
-    "Giá": 70.6,
+    "Vùng": "9.53–9.78",
+    "Giá": 9.29,
     "Trạng thái": "BỎ",
-    "Lý do": "chạm cắt lỗ 70.69 trong phiên – huỷ lệnh ATC vào trễ",
+    "Lý do": "chạm cắt lỗ 9.51 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
    {
-    "Mã": "KDH",
+    "Mã": "SSI",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "13.95–14.40",
-    "Giá": 14.0,
+    "Vùng": "19.20–19.85",
+    "Giá": 19.0,
     "Trạng thái": "BỎ",
-    "Lý do": "chạm cắt lỗ 13.86 trong phiên – huỷ lệnh ATC vào trễ",
+    "Lý do": "chạm cắt lỗ 19.00 trong phiên – huỷ lệnh ATC vào trễ",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "IDC",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "33.90–35.20",
+    "Giá": 33.2,
+    "Trạng thái": "BỎ",
+    "Lý do": "chạm cắt lỗ 33.56 trong phiên – huỷ lệnh ATC vào trễ",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "REE",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "44.80–46.60",
+    "Giá": 45.0,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "HAG",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "14.15–14.55",
+    "Giá": 13.7,
+    "Trạng thái": "BỎ",
+    "Lý do": "chạm cắt lỗ 14.11 trong phiên – huỷ lệnh ATC vào trễ",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "NLG",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "21.90–22.65",
+    "Giá": 21.3,
+    "Trạng thái": "BỎ",
+    "Lý do": "chạm cắt lỗ 21.78 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
    {
     "Mã": "HDC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "11.10–11.50",
-    "Giá": 11.35,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 11.35
-   },
-   {
-    "Mã": "VSC",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "13.75–14.20",
-    "Giá": 13.3,
-    "Trạng thái": "BỎ",
-    "Lý do": "chạm cắt lỗ 13.65 trong phiên – huỷ lệnh ATC vào trễ",
+    "Vùng": "11.15–11.55",
+    "Giá": 11.4,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
     "Giá mua": null
    },
@@ -318,29 +312,29 @@
     "Mã": "CEO",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.90–11.40",
-    "Giá": 11.1,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 11.1
-   },
-   {
-    "Mã": "IDC",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "34.60–36.05",
-    "Giá": 34.4,
-    "Trạng thái": "BỎ",
-    "Lý do": "đóng cửa 34.40 ngoài vùng – không đặt ATC vào trễ",
+    "Giá": 10.8,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
     "Giá mua": null
    },
    {
-    "Mã": "HAG",
+    "Mã": "DPR",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "14.30–14.85",
-    "Giá": 14.15,
-    "Trạng thái": "BỎ",
-    "Lý do": "đóng cửa 14.15 ngoài vùng – không đặt ATC vào trễ",
+    "Vùng": "37.45–39.10",
+    "Giá": 37.45,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "NAB",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "12.25–12.70",
+    "Giá": 12.25,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
     "Giờ": "",
     "Giá mua": null
    },
@@ -348,41 +342,11 @@
     "Mã": "VJC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "129.20–134.60",
-    "Giá": 131.7,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 131.7
-   },
-   {
-    "Mã": "NAB",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "12.25–12.70",
-    "Giá": 12.65,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 12.65
-   },
-   {
-    "Mã": "DPR",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "37.85–39.10",
-    "Giá": 38.3,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 38.3
-   },
-   {
-    "Mã": "NLG",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "22.40–23.40",
-    "Giá": 22.55,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 22.55
+    "Giá": 132.5,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
    }
   ]
  }
