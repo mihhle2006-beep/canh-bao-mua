@@ -148,6 +148,10 @@ jobs:
               kiem_nhap || true
               bay_gio=$(date +%s); sleep $(( (bay_gio / 900 + 1) * 900 - bay_gio + 5 ))
             done
+            if [ "$HET" = 1447 ]; then        # vòng chiều xong → gọi danh mục đúng 15:02 (lịch 14:50 GitHub trễ tới ~1 giờ)
+              while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt 1502 ]; do sleep 20; done
+              gh workflow run danh_muc.yml --ref main -R "$GITHUB_REPOSITORY" && echo "đã gọi danh mục 15:02" || true
+            fi
             # ≥ 2 lượt lỗi → lần chạy đỏ (tin 🩺 sức khoẻ thấy ❌); 1 lượt (nguồn giá chập chờn) chỉ cảnh báo – bước sau vẫn chạy
             if [ "$loi" -ge 2 ]; then echo "::error::$loi lượt lỗi trong vòng lặp"; exit 1; fi
             [ "$loi" = 0 ] || echo "::warning::1 lượt lỗi trong vòng lặp"
