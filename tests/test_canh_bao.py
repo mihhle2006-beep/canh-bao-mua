@@ -364,10 +364,14 @@ def test_nut_mua_chon_so_luong_co_lo_le(monkeypatch):
     monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 237)
     assert diem_vao.nut_mua(kq) == [[("🛒 Mua 200 + 37 lẻ", "dl|M|REE|237|46600")],
                                     [("🛒 200", "dl|M|REE|200|46600"), ("🛒 100", "dl|M|REE|100|46600"), ("❌ Bỏ", "dh")]]
+    vsc = {"ma": "VSC", "den": 21.35, "tu": 20.0, "gia_nay": 21.0}
+    assert diem_vao.nut_du_phong([kq, vsc]) == [
+        [("🛒 REE 200 + 37 lẻ", "dl|M|REE|237|46600"), ("200", "dl|M|REE|200|46600"), ("100", "dl|M|REE|100|46600")],
+        [("🛒 VSC 200 + 37 lẻ", "dl|M|VSC|237|21300"), ("200", "dl|M|VSC|200|21300"), ("100", "dl|M|VSC|100|21300")]]
     monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 37)
     assert diem_vao.nut_mua(kq) == [[("🛒 Mua 37 lẻ", "dl|M|REE|37|46600")], [("❌ Bỏ", "dh")]]
     monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 0)
-    assert diem_vao.nut_mua(kq) is None
+    assert diem_vao.nut_mua(kq) is None and diem_vao.nut_du_phong([kq]) is None
 
 
 def test_gui_gan_nut_vao_phan_tin_cuoi(monkeypatch, capsys):
