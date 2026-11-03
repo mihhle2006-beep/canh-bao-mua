@@ -107,7 +107,7 @@ def test_hai_bot_doc_song_song(monkeypatch):
 def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
     goi = []
     nd = base64.b64encode('"✅ Đã đặt MUA 300 REE"\n"✘ lỗi"\n{"text": "✅ MUA 37 lẻ REE", "ok": true, "tin": 7}\n'
-                          .encode()).decode()
+                          '{"text": "⚠ VIX chưa khớp", "nut": [[["🛑 Bán lại", "dl|B|VIX"]]]}\n'.encode()).decode()
 
     def gia(url, data=None, headers=None, method=None, cho=0):
         goi.append((url.rsplit("/", 1)[-1].split("?")[0], method, data))
@@ -119,10 +119,12 @@ def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
     T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"})
     ten = [(g[0], g[1]) for g in goi]
     assert ten.index(("ket_qua.jsonl", "DELETE")) < ten.index(("sendMessage", None))
-    assert [g[2]["text"] for g in goi if g[0] == "sendMessage"] == ["✅ Đã đặt MUA 300 REE", "✘ lỗi"]
+    gui = [g[2] for g in goi if g[0] == "sendMessage"]
+    assert [g["text"] for g in gui] == ["✅ Đã đặt MUA 300 REE", "✘ lỗi", "⚠ VIX chưa khớp"]
+    assert gui[2]["reply_markup"] == {"inline_keyboard": [[{"text": "🛑 Bán lại", "callback_data": "dl|B|VIX"}]]}
     out = capsys.readouterr().out
     assert [g[2]["text"] for g in goi if g[0] == "editMessageText"] == ["✅ MUA 37 lẻ REE"]   # sửa tin xác nhận
-    assert "REE" not in out and "chuyển 3 kết quả" in out
+    assert "REE" not in out and "chuyển 4 kết quả" in out
 
 
 def test_tu_dat_id_theo_ngay(monkeypatch, capsys):
