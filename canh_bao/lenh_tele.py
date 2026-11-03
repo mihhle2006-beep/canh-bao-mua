@@ -10,7 +10,8 @@ thành "# ⚠ …" như nhập tay. "/help" → trả cú pháp.
   • Repo bot CÔNG KHAI → log chỉ in SỐ LƯỢNG, không in nội dung lệnh; trả lời qua Telegram (riêng tư).
 NÚT ĐẶT LỆNH trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID): "🛒 Đặt mua" / "🛑 Bán hết" → tin xác nhận
 ✅ / ❌ (5 phút) → ✅ gửi repository_dispatch "dat_lenh" tới repo danh-muc → máy Mac đặt lệnh (dmuc/dnse_lenh.py
-theo_yeu_cau) và báo kết quả. Nút trên tin > 3 giờ không nhận. Bot danh mục khác bot cảnh báo → đọc 2 bot song song.
+theo_yeu_cau), ghi kết quả vào danh-muc lenh_dat/ket_qua.jsonl → mỗi lần chạy chuyển lên Telegram rồi xoá file. Nút trên
+tin > 3 giờ không nhận. Bot danh mục khác bot cảnh báo → đọc 2 bot song song.
 Chỉ thư viện chuẩn Python.  Biến môi trường: TELEGRAM_TOKEN_DANH_MUC (hoặc TELEGRAM_TOKEN), TELEGRAM_CHAT_ID_DANH_MUC
 (hoặc TELEGRAM_CHAT_ID), DANH_MUC_TOKEN_GHI (Contents: Read and write repo danh-muc), DANH_MUC_REPO.
 """
@@ -28,6 +29,7 @@ from datetime import datetime, timedelta, timezone
 
 VN = timezone(timedelta(hours=7))
 FILE = "nhap.txt"
+FILE_KQ = "lenh_dat/ket_qua.jsonl"                                       # kết quả lệnh nút do máy Mac ghi
 NUT = re.compile(r"d[lx]\|(?:M\|[A-Z0-9]{3}\|\d{3,6}\|\d{4,7}|B\|[A-Z0-9]{3})")   # dl = nút trên tin, dx = ✅
 CO_NGAY = re.compile(r"(^|\s)\d{1,2}[/\-]\d{1,2}([/\-]\d{2,4})?(\s|$)")
 HUONG_DAN = ("📝 Nhắn lệnh cho bot, mỗi dòng 1 lệnh (không ghi ngày → lấy ngày gửi tin):\n"
@@ -137,6 +139,28 @@ def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
     return gui
 
 
+def chuyen_ket_qua(tg, chat, gh, repo):
+    """Kết quả lệnh nút (máy Mac ghi FILE_KQ ở danh-muc) → Telegram. Xoá file (theo sha) TRƯỚC khi gửi: không gửi trùng;
+    máy Mac vừa ghi thêm → xoá lỗi 409 → để lượt sau. → số kết quả đã gửi."""
+    url = f"https://api.github.com/repos/{repo}/contents/{FILE_KQ}"
+    h = {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github+json"}
+    try:
+        f = _goi(url, headers=h)
+        if not (isinstance(f, dict) and f.get("sha")):
+            return 0
+        _goi(url, {"message": "lenh_dat: đã chuyển kết quả lên Telegram", "sha": f["sha"]}, h, "DELETE")
+    except urllib.error.HTTPError:                                      # 404 = chưa có kết quả nào
+        return 0
+    ds = [d for d in base64.b64decode(f["content"]).decode("utf-8").splitlines() if d.strip()]
+    for d in ds:
+        try:
+            d = json.loads(d)
+        except ValueError:
+            pass
+        _goi(f"https://api.telegram.org/bot{tg}/sendMessage", {"chat_id": chat, "text": str(d)})
+    return len(ds)
+
+
 def _mot_bot(tg, chat, chat_nut, gh, repo, cho, loai):
     """Đọc 1 bot (long-poll): tin lệnh → nhap.txt (chat), nút đặt lệnh → máy Mac (chat_nut). → số dòng ghi + lệnh gửi."""
     api = f"https://api.telegram.org/bot{tg}"
@@ -193,11 +217,16 @@ def chay(env=os.environ):
         return 0
     cho = max(0, min(50, int(env.get("CHO") or 0)))                     # long-poll: tin tới là trả lời ngay
     if tg_nut == tg:
-        return _mot_bot(tg, chat, chat_nut, gh, repo, cho, ["message", "callback_query"])
-    with ThreadPoolExecutor(2) as ex:                                   # 2 bot: long-poll song song, bot nào có tin trả lời ngay
-        viec = [ex.submit(_mot_bot, tg, chat, chat_nut, gh, repo, cho, ["message"]),
-                ex.submit(_mot_bot, tg_nut, chat, chat_nut, gh, repo, cho, ["callback_query"])]
-        return sum(v.result() for v in viec)
+        n = _mot_bot(tg, chat, chat_nut, gh, repo, cho, ["message", "callback_query"])
+    else:
+        with ThreadPoolExecutor(2) as ex:                               # 2 bot: long-poll song song, bot nào có tin trả lời ngay
+            viec = [ex.submit(_mot_bot, tg, chat, chat_nut, gh, repo, cho, ["message"]),
+                    ex.submit(_mot_bot, tg_nut, chat, chat_nut, gh, repo, cho, ["callback_query"])]
+            n = sum(v.result() for v in viec)
+    kq = chuyen_ket_qua(tg_nut, chat_nut, gh, repo)
+    if kq:
+        print(f"Lệnh Telegram: chuyển {kq} kết quả lệnh nút từ máy Mac")
+    return n
 
 
 if __name__ == "__main__":
