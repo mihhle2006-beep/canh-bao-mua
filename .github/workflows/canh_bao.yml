@@ -23,6 +23,11 @@ on:
         default: "tong_ket"
         type: choice
         options: [tu_dong, trong_phien, tong_ket, lich_su]
+      vong:
+        description: "Chạy vòng lặp trong phiên: sang (tới 11:35) | chieu (tới 14:47 + danh mục 15:02 + tổng kết 15:20)"
+        default: ""
+        type: choice
+        options: ["", sang, chieu]
       ma:
         description: "Chỉ xem mã này (VD FPT hoặc FPT,HPG) – bỏ trống = chạy bình thường; xem mã không ghi trạng thái"
         default: ""
@@ -131,9 +136,9 @@ jobs:
           THEM=""
           if [ "$CHI_THU" = "true" ]; then THEM="--khong_gui"; rm -rf /tmp/ptcp_goc; cp -a cache_ptcp /tmp/ptcp_goc 2>/dev/null || true; fi
           ma_thoat=0
-          case "${{ github.event.schedule }}" in
-            "43 23 * * 0-4"|"15 0 * * 1-5") HET=1135 ;;
-            "53 3 * * 1-5"|"15 5 * * 1-5") HET=1447 ;;
+          case "${{ github.event.schedule }}${{ inputs.vong }}" in
+            "43 23 * * 0-4"|"15 0 * * 1-5"|sang) HET=1135 ;;
+            "53 3 * * 1-5"|"15 5 * * 1-5"|chieu) HET=1447 ;;
             *) HET="" ;;
           esac
           # nhap.txt ở danh-muc còn lệnh chưa áp → chạy danh mục ngay (không đợi cuối phiên). Không gọi khi danh mục đang
@@ -166,15 +171,23 @@ jobs:
             exit 0
           fi
           if [ -n "$HET" ]; then                       # vòng lặp: chạy mỗi mốc 15 phút (giờ VN) tới HET
-            loi=0
+            loi=0; chay=0
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt "$HET" ]; do
+              chay=1
               python chay.py --che_do tu_dong || { loi=$((loi + 1)); echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"; }
               kiem_nhap || true
               cho_tin $(( ($(date +%s) / 900 + 1) * 900 + 5 ))
             done
-            if [ "$HET" = 1447 ]; then        # vòng chiều xong → gọi danh mục đúng 15:02 (lịch 14:50 GitHub trễ tới ~1 giờ)
+            # lượt chạy trùng (lịch dự phòng xếp hàng, tới lượt khi vòng đã hết giờ) → không gọi lại danh mục / vòng sau
+            # lịch GitHub hay bỏ / trễ (03/11: bỏ 08:35, 15:20; vòng chiều kích trễ 44') → vòng tự nối, lịch chỉ còn là dự phòng
+            if [ "$HET" = 1135 ] && [ "$chay" = 1 ]; then      # vòng sáng xong → gọi vòng chiều (xếp hàng sau lần chạy này)
+              gh workflow run canh_bao.yml --ref main -R "$GITHUB_REPOSITORY" -f vong=chieu && echo "đã gọi vòng chiều" || true
+            fi
+            if [ "$HET" = 1447 ] && [ "$chay" = 1 ]; then      # vòng chiều xong → danh mục đúng 15:02, tổng kết 15:20
               cho_tin "$(TZ=Asia/Ho_Chi_Minh date -d 15:02 +%s)"
               gh workflow run danh_muc.yml --ref main -R "$GITHUB_REPOSITORY" && echo "đã gọi danh mục 15:02" || true
+              cho_tin "$(TZ=Asia/Ho_Chi_Minh date -d 15:20 +%s)"
+              python chay.py --che_do tong_ket || { loi=$((loi + 1)); echo "⚠ tổng kết 15:20 lỗi"; }   # lịch 15:20 chạy sau: cờ đã gửi → không gửi lặp
             fi
             # ≥ 2 lượt lỗi → lần chạy đỏ (tin 🩺 sức khoẻ thấy ❌); 1 lượt (nguồn giá chập chờn) chỉ cảnh báo – bước sau vẫn chạy
             if [ "$loi" -ge 2 ]; then echo "::error::$loi lượt lỗi trong vòng lặp"; exit 1; fi
