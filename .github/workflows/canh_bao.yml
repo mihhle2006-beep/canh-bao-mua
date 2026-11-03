@@ -60,6 +60,9 @@ jobs:
     timeout-minutes: 330                # vòng lặp buổi sáng tới ~4h55 (06:43 → 11:35)
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}       # đầu nhánh lúc job BẮT ĐẦU (không phải commit lúc lịch kích): vòng chiều xếp hàng sau vòng
+                                       # sáng lấy được trạng thái vòng sáng vừa lưu + code mới gộp (03/11: xung đột lưu trạng thái)
 
       - uses: actions/setup-python@v6
         with:
@@ -223,5 +226,9 @@ jobs:
           git diff --cached --quiet && echo "Không có thay đổi" && exit 0
           git commit -m "Trạng thái cảnh báo $(date -u +%F' '%H:%M) UTC"
           # mất trạng thái = lượt sau báo lặp / mất cờ "tổng kết đã gửi" → thử 3 lần, hỏng thì lần chạy đỏ (🩺 thấy ❌)
-          for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; sleep $((i * 5)); done
+          # xung đột cùng dòng (lần chạy khác vừa lưu) → giữ bản của lần chạy này (mới hơn); hỏng thì huỷ rebase rồi thử lại
+          for i in 1 2 3; do
+            git pull -q --rebase -X theirs --autostash && git push -q && exit 0
+            git rebase --abort 2>/dev/null || true; sleep $((i * 5))
+          done
           echo "::error::Không đẩy được trạng thái – Settings → Actions → General → Workflow permissions: Read and write"; exit 1
