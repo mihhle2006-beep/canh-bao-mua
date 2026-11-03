@@ -1,12 +1,15 @@
 {
- "ngay_quet": "2026-11-02",
- "luc": "2026-11-02 15:37",
- "phien": "2026-11-02",
+ "ngay_quet": "2026-11-03",
+ "luc": "2026-11-03 22:23",
+ "phien": "2026-11-03",
  "chien_luoc": [
   "quy_b",
   "xu_huong"
  ],
  "ma": {
+  "HDC": [
+   "quy_b"
+  ],
   "NAB": [
    "quy_b",
    "xu_huong"
