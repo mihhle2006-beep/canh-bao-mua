@@ -1,6 +1,7 @@
 # TRA TÀI LIỆU DOANH NGHIỆP (chạy tay): đọc báo cáo thường niên + BCTC năm kiểm toán (hợp nhất trước) của 1 mã, 1 năm –
 # chữ PDF / OCR – rồi in câu có lời giải thích chứa từ khoá (danh-muc ptcp/giai_thich_bat_thuong.py --tra). Tài liệu công
-# bố công khai của doanh nghiệp → in log được; KHÔNG đọc danh mục thật (xoá file).
+# bố công khai của doanh nghiệp → in log được; KHÔNG đọc danh mục thật (xoá file). Chữ từng tài liệu (đánh số trang) lưu ở
+# danh-muc du_lieu/van_ban/<MÃ>/ + file tải về cuối trang lần chạy → tìm lại không cần đọc PDF lại.
 name: Tra tai lieu doanh nghiep
 
 on:
@@ -10,14 +11,14 @@ on:
         description: "Mã"
         default: "MVN"
       nam:
-        description: "Năm tài chính"
+        description: "Năm tài chính (nhiều năm: 2019,2020,2021)"
         default: "2020"
       tu_khoa:
         description: "Nhóm từ khoá – mỗi nhóm cách nhau dấu ; , trong nhóm cách nhau dấu ,"
         default: "chi phí quản lý doanh nghiệp,dự phòng;cổ phần hóa,quyết toán,doanh nghiệp nhà nước;chênh lệch,trước kiểm toán,điều chỉnh;thu nhập khác,xóa nợ,miễn giảm;hoàn nhập;lợi nhuận sau thuế,kế hoạch"
 
 permissions:
-  contents: read
+  contents: read                   # repo này; ghi danh-muc bằng DANH_MUC_TOKEN_GHI
 
 jobs:
   tra:
@@ -58,4 +59,28 @@ jobs:
           NAM: ${{ inputs.nam }}
           TU_KHOA: ${{ inputs.tu_khoa }}
           CONG_KHAI: "1"
-        run: python -m ptcp.giai_thich_bat_thuong --ma "$MA" --tra "$NAM" --tu_khoa "$TU_KHOA"
+        run: for y in ${NAM//,/ }; do python -m ptcp.giai_thich_bat_thuong --ma "$MA" --tra "$y" --tu_khoa "$TU_KHOA" || true; done
+      - name: Lưu chữ tài liệu vào danh-muc (du_lieu/van_ban)
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          [ -d du_lieu/van_ban ] || { echo "Không có tài liệu đọc được"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
+          git add du_lieu/van_ban
+          git commit -q -m "Văn bản tài liệu ${{ inputs.ma }} ${{ inputs.nam }}" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
+          for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; git rebase --abort 2>/dev/null || true; sleep $((i * 5)); done
+          exit 1
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: van-ban-${{ inputs.ma }}-${{ github.run_id }}
+          path: danh-muc/du_lieu/van_ban/
+          if-no-files-found: ignore
+      - name: Lưu đệm chữ tài liệu (lần sau khỏi tải / OCR lại)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: danh-muc/cache_du_lieu/tai_lieu
+          key: tai-lieu-bt-${{ github.run_id }}
