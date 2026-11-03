@@ -428,12 +428,12 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
         nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
-        nut = diem_vao.nut_mua(kq)                          # chọn số CP – bấm là đặt (lenh_tele.xu_ly_nut)
+        nut = diem_vao.nut_mua(kq)                          # chọn số CP → hỏi xác nhận ✅ (lenh_tele.xu_ly_nut)
         rt = diem_vao.co_so_cp_nav(nd) or bool(nut)         # có số CP theo NAV thật → không in log công khai
         gui(nd, rieng_tu=rt, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=rt)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
-    if th:
-        gui(th) if not khong_gui else _in(th)
+    if th:                                                  # mã dự phòng: nút mua (bấm → hỏi xác nhận ✅)
+        gui(th, nut=diem_vao.nut_du_phong([k for k in moi_mua if k not in rieng])) if not khong_gui else _in(th)
     tt["_15p_hom_nay"] = {"ngay": f"{bay_gio:%Y-%m-%d}", "cach_vao": bien_the,
                           "ds": [{k: (None if isinstance(v, float) and v != v else v) for k, v in r.items()}
                                  for r in bang]}

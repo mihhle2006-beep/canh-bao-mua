@@ -9,11 +9,11 @@ thành "# ⚠ …" như nhập tay. "/help" → trả cú pháp.
   • CHO=<giây> (≤ 50): chờ tin tới (long-poll) – vòng quét gọi lặp trong lúc đợi mốc 15' → trong phiên trả lời sau vài giây.
   • Repo bot CÔNG KHAI → log chỉ in SỐ LƯỢNG, không in nội dung lệnh; trả lời qua Telegram (riêng tư).
 TỰ ĐẶT LỆNH (tu_dat, gọi từ chay.py): tin CHẠM CẮT LỖ → bán hết (lô chẵn + lô lẻ) – không cần bấm.
-NÚT trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID) – BẤM LÀ ĐẶT, không hỏi lại: tin MUA "🛒 <số CP>" (chọn
-số lượng), tin bán "🛑 Bán hết". Mỗi tin 1 lệnh: bấm xong nút thành nhãn ⏳ → repository_dispatch "dat_lenh" tới danh-muc →
-máy Mac đặt lệnh (dmuc/dnse_lenh.py theo_yeu_cau, tự tách lô chẵn + lô lẻ), ghi kết quả vào danh-muc lenh_dat/ket_qua.jsonl →
-mỗi lần chạy chuyển kết quả: đặt được → sửa nhãn trên tin thành ✅; lỗi → 1 tin ✘. Nút trên tin > 3 giờ không nhận. Bot
-danh mục khác bot cảnh báo → đọc 2 bot song song.
+NÚT trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID) – LUÔN HỎI LẠI: bấm "🛒 <số CP>" (tin MUA ★ / mã dự
+phòng) hoặc "🛑 Bán hết" → 1 tin xác nhận [✅ Mua / Bán] [❌ Thôi] (5 phút) → ✅: repository_dispatch "dat_lenh" tới danh-muc
+→ máy Mac đặt lệnh (dmuc/dnse_lenh.py theo_yeu_cau, tự tách lô chẵn + lô lẻ), ghi kết quả vào danh-muc
+lenh_dat/ket_qua.jsonl → mỗi lần chạy chuyển kết quả: SỬA tin xác nhận thành dòng ✅ / ✘ (không thêm tin); ❌ Thôi → xoá
+tin xác nhận. Nút trên tin > 3 giờ không nhận. Bot danh mục khác bot cảnh báo → đọc 2 bot song song.
 Chỉ thư viện chuẩn Python.  Biến môi trường: TELEGRAM_TOKEN_DANH_MUC (hoặc TELEGRAM_TOKEN), TELEGRAM_CHAT_ID_DANH_MUC
 (hoặc TELEGRAM_CHAT_ID), DANH_MUC_TOKEN_GHI (Contents: Read and write repo danh-muc), DANH_MUC_REPO.
 """
@@ -32,7 +32,7 @@ from datetime import datetime, timedelta, timezone
 VN = timezone(timedelta(hours=7))
 FILE = "nhap.txt"
 FILE_KQ = "lenh_dat/ket_qua.jsonl"                                       # kết quả lệnh nút do máy Mac ghi
-NUT = re.compile(r"dl\|(?:M\|[A-Z0-9]{3}\|\d{1,6}\|\d{4,7}|B\|[A-Z0-9]{3})")   # dh = ❌ bỏ, x = nhãn đã bấm
+NUT = re.compile(r"d[lx]\|(?:M\|[A-Z0-9]{3}\|\d{1,6}\|\d{4,7}|B\|[A-Z0-9]{3})")   # dl = nút trên tin, dx = ✅
 CO_NGAY = re.compile(r"(^|\s)\d{1,2}[/\-]\d{1,2}([/\-]\d{2,4})?(\s|$)")
 HUONG_DAN = ("📝 Nhắn lệnh cho bot, mỗi dòng 1 lệnh (không ghi ngày → lấy ngày gửi tin):\n"
              "  BAN MWG 21 74,5 · BAN VIB HET 16,2 · HPG 1000 27,5 (mua; bỏ giá → lấy theo khuyến nghị)\n"
@@ -96,13 +96,9 @@ def chu_kl(n):
 
 def mo_ta_nut(data):
     p = data.split("|")
-    return f"MUA {chu_kl(int(p[3]))} {p[2]}" if p[1] == "M" else f"BÁN HẾT {p[2]}"
-
-
-def nhan(api, chat, tin, chu):
-    """Thay hàng nút của tin bằng 1 nhãn (bấm không làm gì) – chu None: bỏ hết nút."""
-    _goi(f"{api}/editMessageReplyMarkup", {"chat_id": chat, "message_id": tin, "reply_markup": {
-        "inline_keyboard": [[{"text": chu, "callback_data": "x"}]] if chu else []}})
+    if p[1] == "M":
+        return f"MUA {chu_kl(int(p[3]))} {p[2]} (LO ≤ {int(p[4]):,}đ)".replace(",", ".")
+    return f"BÁN HẾT {p[2]} (lô chẵn + lẻ, giá khớp −2 %)"
 
 
 def gui_may_mac(yc, gh, repo):
@@ -129,40 +125,52 @@ def tu_dat(ben, ma, kl=0, gia=0, env=os.environ):
 
 
 def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
-    """Bấm nút (callback_query) trên tin của chat chủ quỹ → gửi lệnh tới máy Mac luôn; 1 tin 1 lệnh (id chat:tin, nút
-    thành nhãn ⏳). → số lệnh đã gửi máy Mac."""
+    """Bấm nút (callback_query) trên tin của chat chủ quỹ: dl → tin xác nhận (trả lời tin gốc) · dx (✅, ≤ 5 phút) → gửi
+    lệnh tới máy Mac, tin xác nhận thành dòng ⏳ · dt (❌ Thôi) → xoá tin xác nhận · dh (❌ Bỏ trên tin gốc) → bỏ hết nút.
+    → số lệnh đã gửi máy Mac."""
     bay, gui, xong = bay_gio or time.time(), 0, set()
     for cq in cqs:
         m, data = cq.get("message") or {}, str(cq.get("data") or "")
         tin, tra = m.get("message_id"), {"callback_query_id": cq.get("id")}
-        if data == "x":                                                 # nhãn ⏳ / ✅ đã bấm
-            _goi(f"{api}/answerCallbackQuery", tra)
-            continue
-        if str((m.get("chat") or {}).get("id")) != str(chat) or not (NUT.fullmatch(data) or data == "dh"):
+        if str((m.get("chat") or {}).get("id")) != str(chat) or not (NUT.fullmatch(data) or data in ("dh", "dt")):
             _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Không nhận nút này"})
             continue
-        if data == "dh":
-            _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Đã bỏ – không đặt lệnh"})
-            nhan(api, chat, tin, None)
-            continue
-        if bay - int(m.get("date") or 0) > 3 * 3600:
+        tuoi = bay - int(m.get("date") or 0)
+        if data.startswith("dl") and tuoi > 3 * 3600:
             _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Tin quá 3 giờ – không đặt lệnh từ tin này"})
             continue
-        if tin in xong:                                                 # bấm 2 nút / 2 lần trong 1 lượt đọc
-            _goi(f"{api}/answerCallbackQuery", tra)
+        _goi(f"{api}/answerCallbackQuery", tra)
+        if data == "dh":
+            _goi(f"{api}/editMessageReplyMarkup", {"chat_id": chat, "message_id": tin,
+                                                   "reply_markup": {"inline_keyboard": []}})
+            continue
+        if data == "dt":
+            _goi(f"{api}/deleteMessage", {"chat_id": chat, "message_id": tin})
+            continue
+        if data.startswith("dl"):
+            _goi(f"{api}/sendMessage", {"chat_id": chat, "reply_to_message_id": tin, "text": f"Xác nhận {mo_ta_nut(data)}?",
+                                        "reply_markup": {"inline_keyboard": [[
+                                            {"text": "✅ Mua" if "|M|" in data else "✅ Bán", "callback_data": "dx" + data[2:]},
+                                            {"text": "❌ Thôi", "callback_data": "dt"}]]}})
+            continue
+        if tin in xong:                                                 # bấm ✅ 2 lần trong 1 lượt đọc
             continue
         xong.add(tin)
+
+        def sua(t):
+            _goi(f"{api}/editMessageText", {"chat_id": chat, "message_id": tin, "text": t})
+        if tuoi > 300:
+            sua("⌛ Quá 5 phút chưa xác nhận – không đặt; bấm lại nút trên tin")
+            continue
         p = data.split("|")
         yc = {"id": f"{chat}:{tin}", "ben": p[1], "ma": p[2], "kl": int(p[3]) if p[1] == "M" else 0,
               "gia": int(p[4]) if p[1] == "M" else 0, "luc": int(bay), "chat": str(chat), "tin": tin}
         try:
             gui_may_mac(yc, gh, repo)
         except urllib.error.HTTPError as e:
-            _goi(f"{api}/answerCallbackQuery", {**tra, "show_alert": True,
-                                                 "text": f"⚠ Không gửi được lệnh (GitHub HTTP {e.code}) – đặt tay trên app DNSE"})
+            sua(f"⚠ Không gửi được lệnh (GitHub HTTP {e.code}) – đặt tay trên app DNSE")
             continue
-        _goi(f"{api}/answerCallbackQuery", {**tra, "text": f"Đã gửi {mo_ta_nut(data)} – lần đầu trong ngày: duyệt Smart OTP"})
-        nhan(api, chat, tin, f"⏳ Đã gửi {mo_ta_nut(data)}")
+        sua(f"⏳ Đã gửi {mo_ta_nut(data)} – lần đầu trong ngày: duyệt Smart OTP")
         gui += 1
     return gui
 
@@ -187,11 +195,10 @@ def chuyen_ket_qua(tg, chat, gh, repo):
         except ValueError:
             pass
         d = d if isinstance(d, dict) else {"text": str(d)}
-        if d.get("tin"):                                                # lệnh bấm nút: kết quả hiện ngay trên tin gốc
+        if d.get("tin"):                                                # lệnh bấm nút: sửa tin xác nhận thành kết quả
             try:
-                nhan(api, chat, d["tin"], d["text"] if d.get("ok") else "✘ Chưa đặt được – xem tin dưới")
-                if d.get("ok"):
-                    continue
+                _goi(f"{api}/editMessageText", {"chat_id": chat, "message_id": d["tin"], "text": d["text"]})
+                continue
             except urllib.error.HTTPError:
                 pass
         _goi(f"{api}/sendMessage", {"chat_id": chat, "text": d["text"]})

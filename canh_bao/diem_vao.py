@@ -265,17 +265,34 @@ def lenh_mua(kq):
     return n, int(round(den * 1000)) // 100 * 100
 
 
+def _lua_chon(n):
+    """Số CP cho nút: số theo NAV, chỉ lô chẵn, 100 CP (bỏ trùng) – 237 → [237, 200, 100]."""
+    return [n] + sorted({n // 100 * 100, min(n, 100)} - {0, n}, reverse=True)
+
+
 def nut_mua(kq):
-    """Nút chọn số CP cho tin MUA (bấm là đặt – canh_bao/lenh_tele.py): hàng 1 số theo NAV (VD 200 + 37 lẻ), hàng 2 chỉ lô
-    chẵn · 100 CP · ❌ Bỏ. None khi không có lệnh."""
+    """Nút chọn số CP cho tin MUA ★ (bấm → canh_bao/lenh_tele.py hỏi xác nhận ✅ rồi mới đặt): hàng 1 số theo NAV (VD 200 +
+    37 lẻ), hàng 2 chỉ lô chẵn · 100 CP · ❌ Bỏ. None khi không có lệnh."""
     from .lenh_tele import chu_kl
     lm = lenh_mua(kq)
     if not lm:
         return None
     (n, g), ma = lm, kq["ma"]
-    khac = sorted({n // 100 * 100, min(n, 100)} - {0, n}, reverse=True)
+    ks = _lua_chon(n)
     return [[(f"🛒 Mua {chu_kl(n)}", f"dl|M|{ma}|{n}|{g}")],
-            [(f"🛒 {chu_kl(k)}", f"dl|M|{ma}|{k}|{g}") for k in khac] + [("❌ Bỏ", "dh")]]
+            [(f"🛒 {chu_kl(k)}", f"dl|M|{ma}|{k}|{g}") for k in ks[1:]] + [("❌ Bỏ", "dh")]]
+
+
+def nut_du_phong(ds):
+    """Tin tổng hợp: 1 hàng nút / mã DỰ PHÒNG – [🛒 VSC 200 + 37 lẻ] [200] [100] (bấm → hỏi xác nhận ✅). None khi không có."""
+    from .lenh_tele import chu_kl
+    hang = []
+    for kq in ds:
+        lm = lenh_mua(kq)
+        if lm:
+            hang.append([(f"🛒 {kq['ma']} {chu_kl(k)}" if i == 0 else chu_kl(k), f"dl|M|{kq['ma']}|{k}|{lm[1]}")
+                         for i, k in enumerate(_lua_chon(lm[0]))])
+    return hang or None
 
 
 def _theo_uu_tien(ds):
