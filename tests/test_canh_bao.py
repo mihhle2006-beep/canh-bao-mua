@@ -399,3 +399,13 @@ def test_tu_dat_chi_luot_quet_that(monkeypatch):
     assert not chay._tu_dat(bg - pd.Timedelta(hours=2), False, "B", "VIX")   # chạy lại giờ cũ --gio
     monkeypatch.setattr(C, "TU_DAT_LENH", False)
     assert not chay._tu_dat(bg, False, "B", "VIX") and len(goi) == 1
+
+
+def test_tin_thu_nut_chi_ngoai_gio(monkeypatch):
+    from datetime import datetime
+    from canh_bao import tin_thu_nut as TN
+    gui = []
+    monkeypatch.setattr(TN, "gui", lambda nd, rieng_tu=False, nut=None: gui.append(nut) or True)
+    assert TN.gui_thu(datetime(2026, 11, 4, 10, 0, tzinfo=TN.VN)) == 1 and gui == []   # trong giờ: không gửi
+    assert TN.gui_thu(datetime(2026, 11, 3, 15, 0, tzinfo=TN.VN)) == 0
+    assert gui[0][0][0] == ("🛒 Mua 200 + 37 lẻ", "dl|M|VND|237|23800")
