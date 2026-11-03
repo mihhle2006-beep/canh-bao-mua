@@ -35,6 +35,10 @@ on:
         description: "Chạy lại thời điểm cũ, giờ VN (VD 2026-10-22 14:30) – chỉ in log, KHÔNG gửi Telegram / lưu trạng thái"
         default: ""
         type: string
+      ghi_bu:
+        description: "Cùng ô gio: chạy lại lượt bị mất VÀ lưu trạng thái + nhật ký tín hiệu (không gửi Telegram, không đặt lệnh)"
+        default: false
+        type: boolean
       thu_nut:
         description: "Gửi thử 1 tin MUA có nút rồi nghe bấm 15 phút – chỉ ngoài giờ nhận lệnh (máy Mac không đặt lệnh)"
         default: false
@@ -51,7 +55,7 @@ permissions:
 # Lần chạy tay (tổng kết…) trong phiên CHỜ vòng lặp xong, không huỷ nó (cancel-in-progress cũ = true: bấm Run giữa phiên là
 # mất cảnh báo 15' tới hết buổi). Chạy thử / chạy lại giờ cũ / xem mã: nhóm riêng, chạy ngay, không ghi trạng thái / cache.
 concurrency:
-  group: canh-bao${{ (inputs.gio != '' || inputs.chi_thu || inputs.ma != '' || inputs.thu_nut) && '-thu' || '' }}
+  group: canh-bao${{ ((inputs.gio != '' && !inputs.ghi_bu) || inputs.chi_thu || inputs.ma != '' || inputs.thu_nut) && '-thu' || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -214,7 +218,7 @@ jobs:
           retention-days: 30
 
       - name: Lưu trạng thái, nhật ký tín hiệu & trang tổng hợp (công khai)
-        if: always() && inputs.chi_thu != true && inputs.gio == '' && inputs.ma == '' && inputs.thu_nut != true   # chỉ thử / chạy lại / xem mã → không commit
+        if: always() && inputs.chi_thu != true && (inputs.gio == '' || inputs.ghi_bu) && inputs.ma == '' && inputs.thu_nut != true   # chỉ thử / chạy lại / xem mã → không commit (ghi bù thì commit)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
