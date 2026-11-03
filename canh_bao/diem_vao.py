@@ -273,14 +273,14 @@ def _lua_chon(n):
 def nut_mua(kq):
     """Nút chọn số CP cho tin MUA ★ (bấm → canh_bao/lenh_tele.py hỏi xác nhận ✅ rồi mới đặt): hàng 1 số theo NAV (VD 200 +
     37 lẻ), hàng 2 chỉ lô chẵn · 100 CP · ❌ Bỏ. None khi không có lệnh."""
-    from .lenh_tele import chu_kl
     lm = lenh_mua(kq)
-    if not lm:
-        return None
-    (n, g), ma = lm, kq["ma"]
-    ks = _lua_chon(n)
+    return nut_chon(kq["ma"], *lm) if lm else None
+
+
+def nut_chon(ma, n, g):
+    from .lenh_tele import chu_kl
     return [[(f"🛒 Mua {chu_kl(n)}", f"dl|M|{ma}|{n}|{g}")],
-            [(f"🛒 {chu_kl(k)}", f"dl|M|{ma}|{k}|{g}") for k in ks[1:]] + [("❌ Bỏ", "dh")]]
+            [(f"🛒 {chu_kl(k)}", f"dl|M|{ma}|{k}|{g}") for k in _lua_chon(n)[1:]] + [("❌ Bỏ", "dh")]]
 
 
 def nut_du_phong(ds):

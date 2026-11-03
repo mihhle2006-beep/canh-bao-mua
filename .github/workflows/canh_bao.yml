@@ -35,6 +35,10 @@ on:
         description: "Chạy lại thời điểm cũ, giờ VN (VD 2026-10-22 14:30) – chỉ in log, KHÔNG gửi Telegram / lưu trạng thái"
         default: ""
         type: string
+      thu_nut:
+        description: "Gửi thử 1 tin MUA có nút rồi nghe bấm 15 phút – chỉ ngoài giờ nhận lệnh (máy Mac không đặt lệnh)"
+        default: false
+        type: boolean
       nhanh_ptcp:
         description: "Nhánh danh-muc lấy ptcp (chạy thử code chưa gộp) – bỏ trống = main"
         default: ""
@@ -47,7 +51,7 @@ permissions:
 # Lần chạy tay (tổng kết…) trong phiên CHỜ vòng lặp xong, không huỷ nó (cancel-in-progress cũ = true: bấm Run giữa phiên là
 # mất cảnh báo 15' tới hết buổi). Chạy thử / chạy lại giờ cũ / xem mã: nhóm riêng, chạy ngay, không ghi trạng thái / cache.
 concurrency:
-  group: canh-bao${{ (inputs.gio != '' || inputs.chi_thu || inputs.ma != '') && '-thu' || '' }}
+  group: canh-bao${{ (inputs.gio != '' || inputs.chi_thu || inputs.ma != '' || inputs.thu_nut) && '-thu' || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -112,6 +116,7 @@ jobs:
           DANH_MUC_TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           MA: ${{ inputs.ma }}
           CHI_THU: ${{ inputs.chi_thu || inputs.gio != '' }}
+          THU_NUT: ${{ inputs.thu_nut }}
           GIO: ${{ inputs.gio }}
         # lịch thứ Bảy → lich_su; chạy tay → chế độ đã chọn; còn lại → tu_dong
         # có nhập mã → chỉ xem mã đó · chỉ thử → không gửi Telegram, khôi phục trạng thái riêng (cache_ptcp) sau khi chạy
@@ -148,6 +153,11 @@ jobs:
             done
             con=$(( $1 - $(date +%s) )); [ "$con" -le 0 ] || sleep "$con"
           }
+          if [ "$THU_NUT" = true ]; then                # 1 tin MUA thử có nút → nghe bấm 15' (canh_bao/tin_thu_nut.py)
+            python -m canh_bao.tin_thu_nut || exit 1
+            cho_tin $(( $(date +%s) + 900 ))
+            exit 0
+          fi
           if [ -n "$HET" ]; then                       # vòng lặp: chạy mỗi mốc 15 phút (giờ VN) tới HET
             loi=0
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt "$HET" ]; do
@@ -184,7 +194,7 @@ jobs:
       # lưu cả khi lần chạy đỏ (vòng lặp ≥ 2 lượt lỗi): trạng thái bán đã báo phải sang buổi sau, không báo lặp. Chạy thử /
       # chạy lại giờ cũ / xem mã không lưu – cache của chúng (trạng thái lúc bắt đầu) không được đè cache mới của vòng lặp
       - name: Lưu cache
-        if: always() && inputs.chi_thu != true && inputs.gio == '' && inputs.ma == ''
+        if: always() && inputs.chi_thu != true && inputs.gio == '' && inputs.ma == '' && inputs.thu_nut != true
         uses: actions/cache/save@v5
         with:
           path: |
@@ -201,7 +211,7 @@ jobs:
           retention-days: 30
 
       - name: Lưu trạng thái, nhật ký tín hiệu & trang tổng hợp (công khai)
-        if: always() && inputs.chi_thu != true && inputs.gio == '' && inputs.ma == ''   # chỉ thử / chạy lại / xem mã → không commit
+        if: always() && inputs.chi_thu != true && inputs.gio == '' && inputs.ma == '' && inputs.thu_nut != true   # chỉ thử / chạy lại / xem mã → không commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
