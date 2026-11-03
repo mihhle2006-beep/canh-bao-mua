@@ -8,6 +8,9 @@ thành "# ⚠ …" như nhập tay. "/help" → trả cú pháp.
   • Mỗi dòng ghi kèm "# tg:<update_id>" → chạy trùng (vòng quét + lịch mỗi giờ) không ghi 2 lần.
   • CHO=<giây> (≤ 50): chờ tin tới (long-poll) – vòng quét gọi lặp trong lúc đợi mốc 15' → trong phiên trả lời sau vài giây.
   • Repo bot CÔNG KHAI → log chỉ in SỐ LƯỢNG, không in nội dung lệnh; trả lời qua Telegram (riêng tư).
+NÚT ĐẶT LỆNH trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID): "🛒 Đặt mua" / "🛑 Bán hết" → tin xác nhận
+✅ / ❌ (5 phút) → ✅ gửi repository_dispatch "dat_lenh" tới repo danh-muc → máy Mac đặt lệnh (dmuc/dnse_lenh.py
+theo_yeu_cau) và báo kết quả. Nút trên tin > 3 giờ không nhận. Bot danh mục khác bot cảnh báo → đọc 2 bot song song.
 Chỉ thư viện chuẩn Python.  Biến môi trường: TELEGRAM_TOKEN_DANH_MUC (hoặc TELEGRAM_TOKEN), TELEGRAM_CHAT_ID_DANH_MUC
 (hoặc TELEGRAM_CHAT_ID), DANH_MUC_TOKEN_GHI (Contents: Read and write repo danh-muc), DANH_MUC_REPO.
 """
@@ -16,12 +19,16 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 VN = timezone(timedelta(hours=7))
 FILE = "nhap.txt"
+NUT = re.compile(r"d[lx]\|(?:M\|[A-Z0-9]{3}\|\d{3,6}\|\d{4,7}|B\|[A-Z0-9]{3})")   # dl = nút trên tin, dx = ✅
 CO_NGAY = re.compile(r"(^|\s)\d{1,2}[/\-]\d{1,2}([/\-]\d{2,4})?(\s|$)")
 HUONG_DAN = ("📝 Nhắn lệnh cho bot, mỗi dòng 1 lệnh (không ghi ngày → lấy ngày gửi tin):\n"
              "  BAN MWG 21 74,5 · BAN VIB HET 16,2 · HPG 1000 27,5 (mua; bỏ giá → lấy theo khuyến nghị)\n"
@@ -77,23 +84,72 @@ def them_vao(noi_dung, dong):
     return noi_dung.rstrip("\n") + "\n" + "\n".join(moi) + "\n", moi
 
 
-def chay(env=os.environ):
-    tg = env.get("TELEGRAM_TOKEN_DANH_MUC") or env.get("TELEGRAM_TOKEN")
-    chat = env.get("TELEGRAM_CHAT_ID_DANH_MUC") or env.get("TELEGRAM_CHAT_ID")
-    gh, repo = env.get("DANH_MUC_TOKEN_GHI"), env.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc"
-    if not (tg and chat and gh):
-        print("Lệnh Telegram: thiếu TELEGRAM_TOKEN / CHAT_ID / DANH_MUC_TOKEN_GHI – bỏ qua")
-        return 0
+def mo_ta_nut(data):
+    p = data.split("|")
+    if p[1] == "M":
+        return f"MUA {int(p[3]):,} {p[2]} – lệnh LO giá ≤ {int(p[4]):,}đ (khớp ngay ở giá bán tốt nhất)".replace(",", ".")
+    return f"BÁN HẾT {p[2]} (số CP bán được trên DNSE) – lệnh LO giá khớp −2 %"
+
+
+def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
+    """Bấm nút (callback_query) → [tin xác nhận | gửi lệnh tới máy Mac | bỏ]. Chỉ nhận nút trên tin của chat chủ quỹ.
+    → số lệnh đã gửi máy Mac."""
+    bay, gui, xong = bay_gio or time.time(), 0, set()
+    for cq in cqs:
+        m, data = cq.get("message") or {}, str(cq.get("data") or "")
+        tra = {"callback_query_id": cq.get("id")}
+        if str((m.get("chat") or {}).get("id")) != str(chat) or not (NUT.fullmatch(data) or data == "dh"):
+            _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Không nhận nút này"})
+            continue
+        tuoi = bay - int(m.get("date") or 0)
+        if data.startswith("dl") and tuoi > 3 * 3600:
+            _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Tin quá 3 giờ – không đặt lệnh từ tin này"})
+            continue
+        _goi(f"{api}/answerCallbackQuery", tra)
+        if data.startswith("dl"):
+            _goi(f"{api}/sendMessage", {"chat_id": chat, "text": f"Xác nhận {mo_ta_nut(data)}?", "reply_markup": {
+                "inline_keyboard": [[{"text": "✅ Đặt lệnh", "callback_data": "dx" + data[2:]},
+                                     {"text": "❌ Thôi", "callback_data": "dh"}]]}})
+            continue
+        if m.get("message_id") in xong:                                  # bấm ✅ 2 lần trong 1 lượt đọc
+            continue
+        xong.add(m.get("message_id"))
+
+        def sua(t):
+            _goi(f"{api}/editMessageText", {"chat_id": chat, "message_id": m.get("message_id"), "text": t})
+        if data == "dh":
+            sua("❌ Đã bỏ – không đặt lệnh")
+            continue
+        if tuoi > 300:
+            sua("⌛ Quá 5 phút chưa xác nhận – bấm lại nút trên tin cảnh báo")
+            continue
+        p = data.split("|")
+        yc = {"id": f"{chat}:{m.get('message_id')}", "ben": p[1], "ma": p[2], "kl": int(p[3]) if p[1] == "M" else 0,
+              "gia": int(p[4]) if p[1] == "M" else 0, "luc": int(bay), "chat": str(chat)}
+        try:
+            _goi(f"https://api.github.com/repos/{repo}/dispatches", {"event_type": "dat_lenh", "client_payload": yc},
+                 {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github+json"}, "POST")
+        except urllib.error.HTTPError as e:
+            sua(f"⚠ Không gửi được lệnh tới máy Mac (GitHub HTTP {e.code}) – đặt tay trên app DNSE")
+            continue
+        sua(f"⏳ {mo_ta_nut(data)} – đã gửi máy Mac. App DNSE hỏi Smart OTP thì bấm DUYỆT; kết quả báo ở chat này.")
+        gui += 1
+    return gui
+
+
+def _mot_bot(tg, chat, chat_nut, gh, repo, cho, loai):
+    """Đọc 1 bot (long-poll): tin lệnh → nhap.txt (chat), nút đặt lệnh → máy Mac (chat_nut). → số dòng ghi + lệnh gửi."""
     api = f"https://api.telegram.org/bot{tg}"
-    cho = max(0, min(50, int(env.get("CHO") or 0)))                     # long-poll: tin tới là trả lời ngay
     try:
-        ups = _goi(f"{api}/getUpdates?timeout={cho}&allowed_updates=%5B%22message%22%5D", cho=cho).get("result") or []
+        ups = _goi(f"{api}/getUpdates?timeout={cho}&allowed_updates={urllib.parse.quote(json.dumps(loai))}",
+                   cho=cho).get("result") or []
     except urllib.error.HTTPError as e:                     # 409 = webhook / lần đọc khác (lịch mỗi giờ) chen ngang
         print(f"Lệnh Telegram: getUpdates HTTP {e.code} – bỏ qua")
         return 0
     if not ups:
         return 0
-    tin, hoi, la = loc_tin(ups, chat)
+    cqs = [u["callback_query"] for u in ups if "callback_query" in u]
+    tin, hoi, la = loc_tin([u for u in ups if "callback_query" not in u], chat)
     dong = [d for u in tin for d in dong_lenh(u)]
     moi = []
     if dong:
@@ -121,8 +177,27 @@ def chay(env=os.environ):
         tra_loi.append(HUONG_DAN)
     for t in tra_loi:
         _goi(f"{api}/sendMessage", {"chat_id": chat, "text": t})
-    print(f"Lệnh Telegram: {len(tin)} tin · ghi {len(moi)} dòng · bỏ {la} tin không phải chủ quỹ")
-    return len(moi)
+    so_nut = xu_ly_nut(api, cqs, chat_nut, gh, repo) if cqs else 0      # sau xác nhận đọc: lỗi giữa chừng → bấm lại
+    print(f"Lệnh Telegram: {len(tin)} tin · ghi {len(moi)} dòng · bỏ {la} tin không phải chủ quỹ"
+          + (f" · {len(cqs)} nút bấm, {so_nut} lệnh gửi máy Mac" if cqs else ""))
+    return len(moi) + so_nut
+
+
+def chay(env=os.environ):
+    tg = env.get("TELEGRAM_TOKEN_DANH_MUC") or env.get("TELEGRAM_TOKEN")
+    chat = env.get("TELEGRAM_CHAT_ID_DANH_MUC") or env.get("TELEGRAM_CHAT_ID")
+    tg_nut, chat_nut = env.get("TELEGRAM_TOKEN") or tg, env.get("TELEGRAM_CHAT_ID") or chat   # bot gửi tin cảnh báo
+    gh, repo = env.get("DANH_MUC_TOKEN_GHI"), env.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc"
+    if not (tg and chat and gh):
+        print("Lệnh Telegram: thiếu TELEGRAM_TOKEN / CHAT_ID / DANH_MUC_TOKEN_GHI – bỏ qua")
+        return 0
+    cho = max(0, min(50, int(env.get("CHO") or 0)))                     # long-poll: tin tới là trả lời ngay
+    if tg_nut == tg:
+        return _mot_bot(tg, chat, chat_nut, gh, repo, cho, ["message", "callback_query"])
+    with ThreadPoolExecutor(2) as ex:                                   # 2 bot: long-poll song song, bot nào có tin trả lời ngay
+        viec = [ex.submit(_mot_bot, tg, chat, chat_nut, gh, repo, cho, ["message"]),
+                ex.submit(_mot_bot, tg_nut, chat, chat_nut, gh, repo, cho, ["callback_query"])]
+        return sum(v.result() for v in viec)
 
 
 if __name__ == "__main__":

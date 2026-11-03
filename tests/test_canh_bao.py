@@ -355,3 +355,28 @@ def test_vi_the_cu_gia_von_ngoai_bien_khong_cat_lo_oan():
     vt = {"ma": "AAA", "so_cp": 100, "gia_von": 50.0, "ngay_mua": "12/10/2026", "cat_lo": 42.4, "cat_lo_goc": 42.4}
     kb = vi_the.danh_gia_ban(vt, {"ma": "AAA", "gia": 43.6}, dn, "2026-10-16 20:00")
     assert kb.get("he_thoat") and kb["muc"] != "CAT_LO" and kb["cat_lo"] < 43.6
+
+
+def test_nut_mua_lo_100_gia_gioi_han(monkeypatch):
+    from canh_bao import diem_vao
+    kq = {"ma": "REE", "den": 46.6, "tu": 45.0, "gia_nay": 46.0}
+    monkeypatch.setattr(diem_vao, "muc_sau_mua", lambda k: (46.0, 43.0, 49.0, 55.0))
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 345)
+    assert diem_vao.nut_mua(kq) == [[("🛒 Đặt mua 300 REE (LO ≤ 46.600đ)", "dl|M|REE|300|46600")]]
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 99)
+    assert diem_vao.nut_mua(kq) is None                                  # lô lẻ: không nút
+
+
+def test_gui_gan_nut_vao_phan_tin_cuoi(monkeypatch, capsys):
+    import json
+    from canh_bao import thong_bao
+    post = []
+
+    class R:
+        status_code, text = 200, ""
+    monkeypatch.setenv("TELEGRAM_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "1")
+    monkeypatch.setattr(thong_bao.requests, "post", lambda url, data=None, **k: post.append(data) or R())
+    thong_bao.gui("a\n" * 3000, nut=[[("🛑 Bán hết VIX", "dl|B|VIX")]])
+    assert len(post) >= 2 and all("reply_markup" not in d for d in post[:-1])
+    assert json.loads(post[-1]["reply_markup"])["inline_keyboard"][0][0]["callback_data"] == "dl|B|VIX"

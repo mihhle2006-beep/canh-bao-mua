@@ -689,7 +689,7 @@ def test_trong_phien_mua_cung_luc_gom_tin(monkeypatch, tmp_path):
     monkeypatch.setattr(chay, "_trang", lambda *a: None)
     monkeypatch.setattr(chay.C, "GHI_NHAT_KY", False)
     gui = []
-    monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, anh=None: gui.append((nd.split("\n")[0], rieng_tu, anh)))
+    monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, anh=None, nut=None: gui.append((nd.split("\n")[0], rieng_tu, anh)))
     vt = {"HHH": {"ma": "HHH", "so_cp": 100, "gia_von": 14.0}}
     chay.trong_phien_15p(pd.Timestamp("2026-10-29 14:30"), vt)
     assert len(gui) == 4
