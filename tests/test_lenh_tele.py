@@ -43,7 +43,7 @@ def test_chay_ghi_file_xac_nhan_va_tra_loi(monkeypatch, capsys):
     env = {"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"}
     assert T.chay(env) == 1
     assert file["nd"].endswith("02/11/2026 BAN MWG 21 74,5  # tg:5\n") and "RUT" not in file["nd"]
-    ten = [g[0] for g in goi]
+    ten = [g[0] for g in goi if g[0] != "ket_qua.jsonl"]
     assert ten.index("getUpdates", 1) > ten.index("nhap.txt") and ten[-1] == "sendMessage"   # ghi xong mới xác nhận
     out = capsys.readouterr().out
     assert "MWG" not in out and "74" not in out                          # log công khai: chỉ số lượng
@@ -90,4 +90,24 @@ def test_hai_bot_doc_song_song(monkeypatch):
     goi = []
     monkeypatch.setattr(T, "_goi", lambda url, data=None, headers=None, method=None, cho=0: goi.append(url) or {})
     T.chay({"TELEGRAM_TOKEN": "a", "TELEGRAM_TOKEN_DANH_MUC": "b", "TELEGRAM_CHAT_ID": "1", "DANH_MUC_TOKEN_GHI": "g"})
-    assert sorted(u.split("/getUpdates")[0][-1] + ("cb" if "callback" in u else "") for u in goi) == ["acb", "b"]
+    assert sorted(u.split("/getUpdates")[0][-1] + ("cb" if "callback" in u else "") for u in goi if "getUpdates" in u) \
+        == ["acb", "b"]
+
+
+def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
+    goi = []
+    nd = base64.b64encode('"✅ Đã đặt MUA 300 REE"\n"✘ lỗi"\n'.encode()).decode()
+
+    def gia(url, data=None, headers=None, method=None, cho=0):
+        goi.append((url.rsplit("/", 1)[-1].split("?")[0], method, data))
+        if url.endswith("ket_qua.jsonl") and method is None:
+            return {"sha": "s", "content": nd}
+        return {}
+
+    monkeypatch.setattr(T, "_goi", gia)
+    T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"})
+    ten = [(g[0], g[1]) for g in goi]
+    assert ten.index(("ket_qua.jsonl", "DELETE")) < ten.index(("sendMessage", None))
+    assert [g[2]["text"] for g in goi if g[0] == "sendMessage"] == ["✅ Đã đặt MUA 300 REE", "✘ lỗi"]
+    out = capsys.readouterr().out
+    assert "REE" not in out and "chuyển 2 kết quả" in out
