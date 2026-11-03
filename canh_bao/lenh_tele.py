@@ -201,7 +201,9 @@ def chuyen_ket_qua(tg, chat, gh, repo):
                 continue
             except urllib.error.HTTPError:
                 pass
-        _goi(f"{api}/sendMessage", {"chat_id": chat, "text": d["text"]})
+        nut = {"reply_markup": {"inline_keyboard": [[{"text": t, "callback_data": c} for t, c in h] for h in d["nut"]]}} \
+            if d.get("nut") else {}                                     # VD ⚠ bán chưa khớp → [🛑 Bán lại theo giá mới]
+        _goi(f"{api}/sendMessage", {"chat_id": chat, "text": d["text"], **nut})
     return len(ds)
 
 
