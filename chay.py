@@ -428,9 +428,11 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
         nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
-        rt = diem_vao.co_so_cp_nav(nd)                      # có số CP theo NAV thật → không in log công khai
-        gui(nd, rieng_tu=rt, anh=_anh_mua_ngay(kq, bay_gio), nut=diem_vao.nut_mua(kq)) if not khong_gui else \
-            _in(nd, rieng_tu=rt)
+        nut, lm = diem_vao.nut_mua(kq), diem_vao.lenh_mua(kq)
+        rt = diem_vao.co_so_cp_nav(nd) or bool(lm)          # có số CP theo NAV thật → không in log công khai
+        if lm and _tu_dat(bay_gio, khong_gui, "M", kq["ma"], *lm):
+            nd, nut = nd + f"\n🤖 Đã tự gửi lệnh MUA {diem_vao.chu_lenh_mua(kq, *lm)} tới máy Mac{DUYET}", None
+        gui(nd, rieng_tu=rt, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=rt)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
     if th:
         gui(th) if not khong_gui else _in(th)
@@ -443,6 +445,19 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     _trang(bay_gio)
     _in_nguon()
     return 0
+
+
+DUYET = " – app DNSE hỏi Smart OTP thì bấm DUYỆT (lần đầu trong ngày); kết quả báo sau"
+
+
+def _tu_dat(bay_gio, khong_gui, ben, ma, kl=0, gia=0):
+    """Tự gửi lệnh tới máy Mac (canh_bao/lenh_tele.tu_dat) – chỉ lượt quét THẬT: gửi Telegram, đúng giờ hiện tại (chạy lại
+    giờ cũ --gio / chỉ thử không đặt lệnh), công tắc C.TU_DAT_LENH."""
+    if khong_gui or not getattr(C, "TU_DAT_LENH", False) \
+            or abs(gio_viet_nam() - pd.Timestamp(bay_gio)) > pd.Timedelta(minutes=20):
+        return False
+    from canh_bao.lenh_tele import tu_dat
+    return tu_dat(ben, ma, kl, gia)
 
 
 def _canh_bao_ban(bay_gio, vt, khong_gui):
@@ -464,6 +479,8 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
                 f"{ma} – {vi_the.NHAN.get(kb['muc'], kb['muc'])} @ {bieu_do_moc._f(gia)}", gia_nay=gia,
                 ngay_mua=v.get("ngay_mua") or None) if kb.get("he_thoat") else None
             nut = [[(f"🛑 Bán hết {ma} (LO giá khớp −2 %)", f"dl|B|{ma}")]] if kb["muc"] in vi_the.BAN_ATO else None
+            if kb["muc"] == "CAT_LO" and _tu_dat(bay_gio, khong_gui, "B", ma):
+                nd, nut = nd + f"\n🤖 Đã tự gửi lệnh BÁN HẾT {ma} (LO giá khớp −2 %) tới máy Mac{DUYET}", None
             gui(nd, rieng_tu=True, anh=anh, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
             if anh and os.path.exists(anh):
                 os.remove(anh)                                 # ảnh có giá vốn thật: không để lại trên máy chạy

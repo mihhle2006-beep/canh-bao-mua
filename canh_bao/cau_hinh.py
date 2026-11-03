@@ -53,6 +53,7 @@ THU_MUC_CACHE = "cache_gia"
 EV_NGUONG = 1.0                    # % – EV sau phí (ptcp) tối thiểu để phát MUA NGAY (= ngưỡng ptcp)
 
 # --- Nhật ký & chấm điểm tín hiệu (canh_bao/nhat_ky.py) ---
+TU_DAT_LENH = True                 # tin MUA ★ (đủ lô 100) / CHẠM CẮT LỖ → tự gửi lệnh tới máy Mac (False = chỉ nút bấm)
 GHI_NHAT_KY = True                 # ghi mọi tín hiệu (MUA NGAY, khuyến nghị ptcp, cảnh báo bán) & tự chấm ĐÚNG/SAI
 KY_HAN_MUA = 63                    # phiên – hạn chấm lệnh mua khi ptcp không cho kỳ hạn (= SO_PHIEN_XAC_SUAT)
 KY_HAN_BAN = 20                    # phiên – sau cảnh báo bán bao lâu thì so giá để chấm
