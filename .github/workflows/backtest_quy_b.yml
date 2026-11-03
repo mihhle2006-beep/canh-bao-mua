@@ -23,7 +23,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan · von102 (hệ thoát thêm chỉ số) (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, von102]
+        phan: [chuan]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -123,7 +123,6 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
         run: |
           case "$PHAN" in
-            von102) export CHI_VON102=1 ;;                    # hệ thoát: phiên phân phối · VNI < MA50 (03/11/2026)
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
           esac
