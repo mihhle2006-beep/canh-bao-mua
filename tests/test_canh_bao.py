@@ -357,14 +357,17 @@ def test_vi_the_cu_gia_von_ngoai_bien_khong_cat_lo_oan():
     assert kb.get("he_thoat") and kb["muc"] != "CAT_LO" and kb["cat_lo"] < 43.6
 
 
-def test_nut_mua_lo_100_gia_gioi_han(monkeypatch):
+def test_nut_mua_chon_so_luong_co_lo_le(monkeypatch):
     from canh_bao import diem_vao
     kq = {"ma": "REE", "den": 46.6, "tu": 45.0, "gia_nay": 46.0}
     monkeypatch.setattr(diem_vao, "muc_sau_mua", lambda k: (46.0, 43.0, 49.0, 55.0))
-    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 345)
-    assert diem_vao.nut_mua(kq) == [[("🛒 Đặt mua 300 REE (LO ≤ 46.600đ)", "dl|M|REE|300|46600")]]
-    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 99)
-    assert diem_vao.nut_mua(kq) is None                                  # lô lẻ: không nút
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 237)
+    assert diem_vao.nut_mua(kq) == [[("🛒 Mua 200 + 37 lẻ", "dl|M|REE|237|46600")],
+                                    [("🛒 200", "dl|M|REE|200|46600"), ("🛒 100", "dl|M|REE|100|46600"), ("❌ Bỏ", "dh")]]
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 37)
+    assert diem_vao.nut_mua(kq) == [[("🛒 Mua 37 lẻ", "dl|M|REE|37|46600")], [("❌ Bỏ", "dh")]]
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 0)
+    assert diem_vao.nut_mua(kq) is None
 
 
 def test_gui_gan_nut_vao_phan_tin_cuoi(monkeypatch, capsys):

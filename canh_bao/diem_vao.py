@@ -256,23 +256,26 @@ def so_cp_nav(kq, gia, cl):
 
 
 def lenh_mua(kq):
-    """Lệnh mua cho tin MUA → (số CP theo NAV làm tròn xuống lô 100, giá LO đồng = giới hạn vùng mua den làm tròn xuống
-    100đ → khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin) | None khi < 100 CP / không có giới hạn."""
+    """Lệnh mua cho tin MUA → (số CP theo NAV – lô chẵn + lô lẻ, giá LO đồng = giới hạn vùng mua den làm tròn xuống 100đ →
+    khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin) | None khi 0 CP / không có giới hạn."""
     gia, cl, _, _ = muc_sau_mua(kq)
-    n, den = so_cp_nav(kq, gia, cl) // 100 * 100, kq.get("den")
-    if n < 100 or not den or den != den:
+    n, den = so_cp_nav(kq, gia, cl), kq.get("den")
+    if n < 1 or not den or den != den:
         return None
     return n, int(round(den * 1000)) // 100 * 100
 
 
-def chu_lenh_mua(kq, n, g):
-    return f"{n:,} {kq['ma']} (LO ≤ {g:,}đ)".replace(",", ".")
-
-
 def nut_mua(kq):
-    """Nút Telegram "🛒 Đặt mua" (lenh_mua) – None khi không có lệnh."""
+    """Nút chọn số CP cho tin MUA (bấm là đặt – canh_bao/lenh_tele.py): hàng 1 số theo NAV (VD 200 + 37 lẻ), hàng 2 chỉ lô
+    chẵn · 100 CP · ❌ Bỏ. None khi không có lệnh."""
+    from .lenh_tele import chu_kl
     lm = lenh_mua(kq)
-    return [[(f"🛒 Đặt mua {chu_lenh_mua(kq, *lm)}", f"dl|M|{kq['ma']}|{lm[0]}|{lm[1]}")]] if lm else None
+    if not lm:
+        return None
+    (n, g), ma = lm, kq["ma"]
+    khac = sorted({n // 100 * 100, min(n, 100)} - {0, n}, reverse=True)
+    return [[(f"🛒 Mua {chu_kl(n)}", f"dl|M|{ma}|{n}|{g}")],
+            [(f"🛒 {chu_kl(k)}", f"dl|M|{ma}|{k}|{g}") for k in khac] + [("❌ Bỏ", "dh")]]
 
 
 def _theo_uu_tien(ds):

@@ -62,10 +62,10 @@ def _nut(uid, data, mid=7, date=NGAY, chat=111):
                                                  "message": {"message_id": mid, "date": date, "chat": {"id": chat}}}}
 
 
-def test_nut_xac_nhan_roi_gui_may_mac(monkeypatch, capsys):
-    goi, ups = [], [_nut(1, "dl|M|REE|300|46600", mid=7), _nut(2, "dl|B|VIX", mid=8, date=NGAY - 4 * 3600),
-                    _nut(3, "dx|M|REE|300|46600", mid=9), _nut(4, "dx|M|REE|300|46600", mid=9),
-                    _nut(5, "dl|M|REE|300|46600", chat=999), _nut(6, "dh", mid=10)]
+def test_bam_nut_la_dat_1_tin_1_lenh(monkeypatch, capsys):
+    goi, ups = [], [_nut(1, "dl|M|REE|237|46600", mid=7), _nut(2, "dl|M|REE|200|46600", mid=7),   # bấm 2 nút 1 tin
+                    _nut(3, "dl|B|VIX", mid=8, date=NGAY - 4 * 3600), _nut(4, "dl|M|REE|237|46600", chat=999),
+                    _nut(5, "dh", mid=10), _nut(6, "x", mid=7)]
 
     def gia(url, data=None, headers=None, method=None, cho=0):
         goi.append((url.split("?")[0].rsplit("/", 1)[-1], data))
@@ -75,16 +75,20 @@ def test_nut_xac_nhan_roi_gui_may_mac(monkeypatch, capsys):
     monkeypatch.setattr(T.time, "time", lambda: NGAY + 60)
     assert T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"}) == 1
     ten = [g[0] for g in goi]
-    xn = [g[1] for g in goi if g[0] == "sendMessage"]
-    assert len(xn) == 1 and "MUA 300 REE" in xn[0]["text"]                # chỉ nút hợp lệ, tin < 3 giờ, đúng chat
-    assert xn[0]["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == "dx|M|REE|300|46600"
     gd = [g[1] for g in goi if g[0] == "dispatches"]
-    assert len(gd) == 1 and gd[0]["client_payload"] == {"id": "111:9", "ben": "M", "ma": "REE", "kl": 300, "gia": 46600,
-                                                        "luc": NGAY + 60, "chat": "111"}   # bấm ✅ 2 lần: 1 lệnh
-    assert ten.count("answerCallbackQuery") == 6 and ten.count("editMessageText") == 2
-    assert ten.index("getUpdates", 1) < ten.index("dispatches")         # xác nhận đọc trước khi gửi lệnh
+    assert len(gd) == 1 and gd[0]["client_payload"] == {"id": "111:7", "ben": "M", "ma": "REE", "kl": 237, "gia": 46600,
+                                                        "luc": NGAY + 60, "chat": "111", "tin": 7}
+    nh = [g[1] for g in goi if g[0] == "editMessageReplyMarkup"]
+    assert [(n["message_id"], n["reply_markup"]["inline_keyboard"]) for n in nh] == [
+        (7, [[{"text": "⏳ Đã gửi MUA 200 + 37 lẻ REE", "callback_data": "x"}]]), (10, [])]   # nhãn ⏳ · ❌ bỏ hết nút
+    assert "sendMessage" not in ten and ten.count("answerCallbackQuery") == 6   # không tin xác nhận – bấm là đặt
+    assert ten.index("getUpdates", 1) < ten.index("dispatches")
     out = capsys.readouterr().out
     assert "REE" not in out and "6 nút bấm, 1 lệnh gửi máy Mac" in out
+
+
+def test_chu_kl():
+    assert [T.chu_kl(n) for n in (237, 200, 37, 1250)] == ["200 + 37 lẻ", "200", "37 lẻ", "1.200 + 50 lẻ"]
 
 
 def test_hai_bot_doc_song_song(monkeypatch):
@@ -97,7 +101,8 @@ def test_hai_bot_doc_song_song(monkeypatch):
 
 def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
     goi = []
-    nd = base64.b64encode('"✅ Đã đặt MUA 300 REE"\n"✘ lỗi"\n'.encode()).decode()
+    nd = base64.b64encode('"✅ Đã đặt MUA 300 REE"\n"✘ lỗi"\n{"text": "✅ MUA 37 lẻ REE", "ok": true, "tin": 7}\n'
+                          .encode()).decode()
 
     def gia(url, data=None, headers=None, method=None, cho=0):
         goi.append((url.rsplit("/", 1)[-1].split("?")[0], method, data))
@@ -111,7 +116,9 @@ def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
     assert ten.index(("ket_qua.jsonl", "DELETE")) < ten.index(("sendMessage", None))
     assert [g[2]["text"] for g in goi if g[0] == "sendMessage"] == ["✅ Đã đặt MUA 300 REE", "✘ lỗi"]
     out = capsys.readouterr().out
-    assert "REE" not in out and "chuyển 2 kết quả" in out
+    assert [g[2]["reply_markup"]["inline_keyboard"][0][0]["text"] for g in goi if g[0] == "editMessageReplyMarkup"] \
+        == ["✅ MUA 37 lẻ REE"]                                          # đặt được từ nút: sửa nhãn tin gốc, không tin mới
+    assert "REE" not in out and "chuyển 3 kết quả" in out
 
 
 def test_tu_dat_id_theo_ngay(monkeypatch, capsys):

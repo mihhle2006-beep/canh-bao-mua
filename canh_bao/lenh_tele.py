@@ -8,11 +8,12 @@ thành "# ⚠ …" như nhập tay. "/help" → trả cú pháp.
   • Mỗi dòng ghi kèm "# tg:<update_id>" → chạy trùng (vòng quét + lịch mỗi giờ) không ghi 2 lần.
   • CHO=<giây> (≤ 50): chờ tin tới (long-poll) – vòng quét gọi lặp trong lúc đợi mốc 15' → trong phiên trả lời sau vài giây.
   • Repo bot CÔNG KHAI → log chỉ in SỐ LƯỢNG, không in nội dung lệnh; trả lời qua Telegram (riêng tư).
-TỰ ĐẶT LỆNH (tu_dat, gọi từ chay.py): tin MUA ★ đủ lô 100 → mua; tin CHẠM CẮT LỖ → bán hết – không cần bấm.
-NÚT ĐẶT LỆNH trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID): "🛒 Đặt mua" / "🛑 Bán hết" → tin xác nhận
-✅ / ❌ (5 phút) → ✅ gửi repository_dispatch "dat_lenh" tới repo danh-muc → máy Mac đặt lệnh (dmuc/dnse_lenh.py
-theo_yeu_cau), ghi kết quả vào danh-muc lenh_dat/ket_qua.jsonl → mỗi lần chạy chuyển lên Telegram rồi xoá file. Nút trên
-tin > 3 giờ không nhận. Bot danh mục khác bot cảnh báo → đọc 2 bot song song.
+TỰ ĐẶT LỆNH (tu_dat, gọi từ chay.py): tin CHẠM CẮT LỖ → bán hết (lô chẵn + lô lẻ) – không cần bấm.
+NÚT trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID) – BẤM LÀ ĐẶT, không hỏi lại: tin MUA "🛒 <số CP>" (chọn
+số lượng), tin bán "🛑 Bán hết". Mỗi tin 1 lệnh: bấm xong nút thành nhãn ⏳ → repository_dispatch "dat_lenh" tới danh-muc →
+máy Mac đặt lệnh (dmuc/dnse_lenh.py theo_yeu_cau, tự tách lô chẵn + lô lẻ), ghi kết quả vào danh-muc lenh_dat/ket_qua.jsonl →
+mỗi lần chạy chuyển kết quả: đặt được → sửa nhãn trên tin thành ✅; lỗi → 1 tin ✘. Nút trên tin > 3 giờ không nhận. Bot
+danh mục khác bot cảnh báo → đọc 2 bot song song.
 Chỉ thư viện chuẩn Python.  Biến môi trường: TELEGRAM_TOKEN_DANH_MUC (hoặc TELEGRAM_TOKEN), TELEGRAM_CHAT_ID_DANH_MUC
 (hoặc TELEGRAM_CHAT_ID), DANH_MUC_TOKEN_GHI (Contents: Read and write repo danh-muc), DANH_MUC_REPO.
 """
@@ -31,7 +32,7 @@ from datetime import datetime, timedelta, timezone
 VN = timezone(timedelta(hours=7))
 FILE = "nhap.txt"
 FILE_KQ = "lenh_dat/ket_qua.jsonl"                                       # kết quả lệnh nút do máy Mac ghi
-NUT = re.compile(r"d[lx]\|(?:M\|[A-Z0-9]{3}\|\d{3,6}\|\d{4,7}|B\|[A-Z0-9]{3})")   # dl = nút trên tin, dx = ✅
+NUT = re.compile(r"dl\|(?:M\|[A-Z0-9]{3}\|\d{1,6}\|\d{4,7}|B\|[A-Z0-9]{3})")   # dh = ❌ bỏ, x = nhãn đã bấm
 CO_NGAY = re.compile(r"(^|\s)\d{1,2}[/\-]\d{1,2}([/\-]\d{2,4})?(\s|$)")
 HUONG_DAN = ("📝 Nhắn lệnh cho bot, mỗi dòng 1 lệnh (không ghi ngày → lấy ngày gửi tin):\n"
              "  BAN MWG 21 74,5 · BAN VIB HET 16,2 · HPG 1000 27,5 (mua; bỏ giá → lấy theo khuyến nghị)\n"
@@ -87,11 +88,21 @@ def them_vao(noi_dung, dong):
     return noi_dung.rstrip("\n") + "\n" + "\n".join(moi) + "\n", moi
 
 
+def chu_kl(n):
+    """237 → '200 + 37 lẻ' · 200 → '200' · 37 → '37 lẻ' (lô chẵn + lô lẻ – máy Mac đặt 2 lệnh)."""
+    c, le = n // 100 * 100, n % 100
+    return " + ".join([f"{c:,}".replace(",", ".")] * bool(c) + [f"{le} lẻ"] * bool(le))
+
+
 def mo_ta_nut(data):
     p = data.split("|")
-    if p[1] == "M":
-        return f"MUA {int(p[3]):,} {p[2]} – lệnh LO giá ≤ {int(p[4]):,}đ (khớp ngay ở giá bán tốt nhất)".replace(",", ".")
-    return f"BÁN HẾT {p[2]} (số CP bán được trên DNSE) – lệnh LO giá khớp −2 %"
+    return f"MUA {chu_kl(int(p[3]))} {p[2]}" if p[1] == "M" else f"BÁN HẾT {p[2]}"
+
+
+def nhan(api, chat, tin, chu):
+    """Thay hàng nút của tin bằng 1 nhãn (bấm không làm gì) – chu None: bỏ hết nút."""
+    _goi(f"{api}/editMessageReplyMarkup", {"chat_id": chat, "message_id": tin, "reply_markup": {
+        "inline_keyboard": [[{"text": chu, "callback_data": "x"}]] if chu else []}})
 
 
 def gui_may_mac(yc, gh, repo):
@@ -101,7 +112,7 @@ def gui_may_mac(yc, gh, repo):
 
 
 def tu_dat(ben, ma, kl=0, gia=0, env=os.environ):
-    """Tin MUA ★ / tin CHẠM CẮT LỖ (chay.py) → gửi lệnh tới máy Mac luôn, không nút. id theo bên + mã + ngày → mỗi ngày
+    """Tin CHẠM CẮT LỖ (chay.py) → gửi lệnh tới máy Mac luôn, không nút. id theo bên + mã + ngày → mỗi ngày
     tối đa 1 lệnh tự động / mã / bên (máy Mac bỏ id trùng). → True khi đã gửi. Log công khai: không in mã / số lượng."""
     gh, chat = env.get("DANH_MUC_TOKEN_GHI"), env.get("TELEGRAM_CHAT_ID")
     if not (gh and chat):
@@ -118,46 +129,40 @@ def tu_dat(ben, ma, kl=0, gia=0, env=os.environ):
 
 
 def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
-    """Bấm nút (callback_query) → [tin xác nhận | gửi lệnh tới máy Mac | bỏ]. Chỉ nhận nút trên tin của chat chủ quỹ.
-    → số lệnh đã gửi máy Mac."""
+    """Bấm nút (callback_query) trên tin của chat chủ quỹ → gửi lệnh tới máy Mac luôn; 1 tin 1 lệnh (id chat:tin, nút
+    thành nhãn ⏳). → số lệnh đã gửi máy Mac."""
     bay, gui, xong = bay_gio or time.time(), 0, set()
     for cq in cqs:
         m, data = cq.get("message") or {}, str(cq.get("data") or "")
-        tra = {"callback_query_id": cq.get("id")}
+        tin, tra = m.get("message_id"), {"callback_query_id": cq.get("id")}
+        if data == "x":                                                 # nhãn ⏳ / ✅ đã bấm
+            _goi(f"{api}/answerCallbackQuery", tra)
+            continue
         if str((m.get("chat") or {}).get("id")) != str(chat) or not (NUT.fullmatch(data) or data == "dh"):
             _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Không nhận nút này"})
             continue
-        tuoi = bay - int(m.get("date") or 0)
-        if data.startswith("dl") and tuoi > 3 * 3600:
+        if data == "dh":
+            _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Đã bỏ – không đặt lệnh"})
+            nhan(api, chat, tin, None)
+            continue
+        if bay - int(m.get("date") or 0) > 3 * 3600:
             _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Tin quá 3 giờ – không đặt lệnh từ tin này"})
             continue
-        _goi(f"{api}/answerCallbackQuery", tra)
-        if data.startswith("dl"):
-            _goi(f"{api}/sendMessage", {"chat_id": chat, "text": f"Xác nhận {mo_ta_nut(data)}?", "reply_markup": {
-                "inline_keyboard": [[{"text": "✅ Đặt lệnh", "callback_data": "dx" + data[2:]},
-                                     {"text": "❌ Thôi", "callback_data": "dh"}]]}})
+        if tin in xong:                                                 # bấm 2 nút / 2 lần trong 1 lượt đọc
+            _goi(f"{api}/answerCallbackQuery", tra)
             continue
-        if m.get("message_id") in xong:                                  # bấm ✅ 2 lần trong 1 lượt đọc
-            continue
-        xong.add(m.get("message_id"))
-
-        def sua(t):
-            _goi(f"{api}/editMessageText", {"chat_id": chat, "message_id": m.get("message_id"), "text": t})
-        if data == "dh":
-            sua("❌ Đã bỏ – không đặt lệnh")
-            continue
-        if tuoi > 300:
-            sua("⌛ Quá 5 phút chưa xác nhận – bấm lại nút trên tin cảnh báo")
-            continue
+        xong.add(tin)
         p = data.split("|")
-        yc = {"id": f"{chat}:{m.get('message_id')}", "ben": p[1], "ma": p[2], "kl": int(p[3]) if p[1] == "M" else 0,
-              "gia": int(p[4]) if p[1] == "M" else 0, "luc": int(bay), "chat": str(chat)}
+        yc = {"id": f"{chat}:{tin}", "ben": p[1], "ma": p[2], "kl": int(p[3]) if p[1] == "M" else 0,
+              "gia": int(p[4]) if p[1] == "M" else 0, "luc": int(bay), "chat": str(chat), "tin": tin}
         try:
             gui_may_mac(yc, gh, repo)
         except urllib.error.HTTPError as e:
-            sua(f"⚠ Không gửi được lệnh tới máy Mac (GitHub HTTP {e.code}) – đặt tay trên app DNSE")
+            _goi(f"{api}/answerCallbackQuery", {**tra, "show_alert": True,
+                                                 "text": f"⚠ Không gửi được lệnh (GitHub HTTP {e.code}) – đặt tay trên app DNSE"})
             continue
-        sua(f"⏳ {mo_ta_nut(data)} – đã gửi máy Mac. App DNSE hỏi Smart OTP thì bấm DUYỆT; kết quả báo ở chat này.")
+        _goi(f"{api}/answerCallbackQuery", {**tra, "text": f"Đã gửi {mo_ta_nut(data)} – lần đầu trong ngày: duyệt Smart OTP"})
+        nhan(api, chat, tin, f"⏳ Đã gửi {mo_ta_nut(data)}")
         gui += 1
     return gui
 
@@ -175,12 +180,21 @@ def chuyen_ket_qua(tg, chat, gh, repo):
     except urllib.error.HTTPError:                                      # 404 = chưa có kết quả nào
         return 0
     ds = [d for d in base64.b64decode(f["content"]).decode("utf-8").splitlines() if d.strip()]
+    api = f"https://api.telegram.org/bot{tg}"
     for d in ds:
         try:
             d = json.loads(d)
         except ValueError:
             pass
-        _goi(f"https://api.telegram.org/bot{tg}/sendMessage", {"chat_id": chat, "text": str(d)})
+        d = d if isinstance(d, dict) else {"text": str(d)}
+        if d.get("tin"):                                                # lệnh bấm nút: kết quả hiện ngay trên tin gốc
+            try:
+                nhan(api, chat, d["tin"], d["text"] if d.get("ok") else "✘ Chưa đặt được – xem tin dưới")
+                if d.get("ok"):
+                    continue
+            except urllib.error.HTTPError:
+                pass
+        _goi(f"{api}/sendMessage", {"chat_id": chat, "text": d["text"]})
     return len(ds)
 
 

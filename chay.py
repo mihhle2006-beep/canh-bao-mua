@@ -428,10 +428,8 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
         nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
-        nut, lm = diem_vao.nut_mua(kq), diem_vao.lenh_mua(kq)
-        rt = diem_vao.co_so_cp_nav(nd) or bool(lm)          # có số CP theo NAV thật → không in log công khai
-        if lm and _tu_dat(bay_gio, khong_gui, "M", kq["ma"], *lm):
-            nd, nut = nd + f"\n🤖 Đã tự gửi lệnh MUA {diem_vao.chu_lenh_mua(kq, *lm)} tới máy Mac{DUYET}", None
+        nut = diem_vao.nut_mua(kq)                          # chọn số CP – bấm là đặt (lenh_tele.xu_ly_nut)
+        rt = diem_vao.co_so_cp_nav(nd) or bool(nut)         # có số CP theo NAV thật → không in log công khai
         gui(nd, rieng_tu=rt, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=rt)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
     if th:
@@ -447,7 +445,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     return 0
 
 
-DUYET = " – app DNSE hỏi Smart OTP thì bấm DUYỆT (lần đầu trong ngày); kết quả báo sau"
+DUYET = " · lần đầu trong ngày: duyệt Smart OTP"
 
 
 def _tu_dat(bay_gio, khong_gui, ben, ma, kl=0, gia=0):
@@ -478,9 +476,9 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
                 ma, dn, bieu_do_moc.moc_vi_the(v.get("gia_von"), kb.get("R"), kb.get("cat_lo")),
                 f"{ma} – {vi_the.NHAN.get(kb['muc'], kb['muc'])} @ {bieu_do_moc._f(gia)}", gia_nay=gia,
                 ngay_mua=v.get("ngay_mua") or None) if kb.get("he_thoat") else None
-            nut = [[(f"🛑 Bán hết {ma} (LO giá khớp −2 %)", f"dl|B|{ma}")]] if kb["muc"] in vi_the.BAN_ATO else None
+            nut = [[(f"🛑 Bán hết {ma} (giá khớp −2 %)", f"dl|B|{ma}")]] if kb["muc"] in vi_the.BAN_ATO else None
             if kb["muc"] == "CAT_LO" and _tu_dat(bay_gio, khong_gui, "B", ma):
-                nd, nut = nd + f"\n🤖 Đã tự gửi lệnh BÁN HẾT {ma} (LO giá khớp −2 %) tới máy Mac{DUYET}", None
+                nd, nut = nd + f"\n🤖 Đã gửi lệnh BÁN HẾT {ma} (lô chẵn + lẻ, giá khớp −2 %){DUYET}", None
             gui(nd, rieng_tu=True, anh=anh, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
             if anh and os.path.exists(anh):
                 os.remove(anh)                                 # ảnh có giá vốn thật: không để lại trên máy chạy
