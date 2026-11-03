@@ -380,3 +380,15 @@ def test_gui_gan_nut_vao_phan_tin_cuoi(monkeypatch, capsys):
     thong_bao.gui("a\n" * 3000, nut=[[("🛑 Bán hết VIX", "dl|B|VIX")]])
     assert len(post) >= 2 and all("reply_markup" not in d for d in post[:-1])
     assert json.loads(post[-1]["reply_markup"])["inline_keyboard"][0][0]["callback_data"] == "dl|B|VIX"
+
+
+def test_tu_dat_chi_luot_quet_that(monkeypatch):
+    from canh_bao import lenh_tele
+    goi = []
+    monkeypatch.setattr(lenh_tele, "tu_dat", lambda *a: goi.append(a) or True)
+    bg = chay.gio_viet_nam()
+    assert chay._tu_dat(bg, False, "M", "REE", 300, 46600) and goi == [("M", "REE", 300, 46600)]
+    assert not chay._tu_dat(bg, True, "B", "VIX")                        # chỉ thử / --khong_gui
+    assert not chay._tu_dat(bg - pd.Timedelta(hours=2), False, "B", "VIX")   # chạy lại giờ cũ --gio
+    monkeypatch.setattr(C, "TU_DAT_LENH", False)
+    assert not chay._tu_dat(bg, False, "B", "VIX") and len(goi) == 1

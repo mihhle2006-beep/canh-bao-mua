@@ -8,6 +8,7 @@ thành "# ⚠ …" như nhập tay. "/help" → trả cú pháp.
   • Mỗi dòng ghi kèm "# tg:<update_id>" → chạy trùng (vòng quét + lịch mỗi giờ) không ghi 2 lần.
   • CHO=<giây> (≤ 50): chờ tin tới (long-poll) – vòng quét gọi lặp trong lúc đợi mốc 15' → trong phiên trả lời sau vài giây.
   • Repo bot CÔNG KHAI → log chỉ in SỐ LƯỢNG, không in nội dung lệnh; trả lời qua Telegram (riêng tư).
+TỰ ĐẶT LỆNH (tu_dat, gọi từ chay.py): tin MUA ★ đủ lô 100 → mua; tin CHẠM CẮT LỖ → bán hết – không cần bấm.
 NÚT ĐẶT LỆNH trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID): "🛒 Đặt mua" / "🛑 Bán hết" → tin xác nhận
 ✅ / ❌ (5 phút) → ✅ gửi repository_dispatch "dat_lenh" tới repo danh-muc → máy Mac đặt lệnh (dmuc/dnse_lenh.py
 theo_yeu_cau), ghi kết quả vào danh-muc lenh_dat/ket_qua.jsonl → mỗi lần chạy chuyển lên Telegram rồi xoá file. Nút trên
@@ -93,6 +94,29 @@ def mo_ta_nut(data):
     return f"BÁN HẾT {p[2]} (số CP bán được trên DNSE) – lệnh LO giá khớp −2 %"
 
 
+def gui_may_mac(yc, gh, repo):
+    """Yêu cầu lệnh → repository_dispatch "dat_lenh" (repo danh-muc) → máy Mac đặt lệnh (dmuc/dnse_lenh.theo_yeu_cau)."""
+    _goi(f"https://api.github.com/repos/{repo}/dispatches", {"event_type": "dat_lenh", "client_payload": yc},
+         {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github+json"}, "POST")
+
+
+def tu_dat(ben, ma, kl=0, gia=0, env=os.environ):
+    """Tin MUA ★ / tin CHẠM CẮT LỖ (chay.py) → gửi lệnh tới máy Mac luôn, không nút. id theo bên + mã + ngày → mỗi ngày
+    tối đa 1 lệnh tự động / mã / bên (máy Mac bỏ id trùng). → True khi đã gửi. Log công khai: không in mã / số lượng."""
+    gh, chat = env.get("DANH_MUC_TOKEN_GHI"), env.get("TELEGRAM_CHAT_ID")
+    if not (gh and chat):
+        return False
+    bg = datetime.now(VN)
+    try:
+        gui_may_mac({"id": f"tu:{ben}:{ma}:{bg:%Y-%m-%d}", "ben": ben, "ma": ma, "kl": int(kl), "gia": int(gia),
+                     "luc": int(bg.timestamp()), "chat": str(chat), "tu": True},
+                    gh, env.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc")
+        return True
+    except (urllib.error.URLError, OSError) as e:
+        print(f"⚠ Gửi lệnh tự động tới máy Mac lỗi: {type(e).__name__}")
+        return False
+
+
 def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
     """Bấm nút (callback_query) → [tin xác nhận | gửi lệnh tới máy Mac | bỏ]. Chỉ nhận nút trên tin của chat chủ quỹ.
     → số lệnh đã gửi máy Mac."""
@@ -129,8 +153,7 @@ def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
         yc = {"id": f"{chat}:{m.get('message_id')}", "ben": p[1], "ma": p[2], "kl": int(p[3]) if p[1] == "M" else 0,
               "gia": int(p[4]) if p[1] == "M" else 0, "luc": int(bay), "chat": str(chat)}
         try:
-            _goi(f"https://api.github.com/repos/{repo}/dispatches", {"event_type": "dat_lenh", "client_payload": yc},
-                 {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github+json"}, "POST")
+            gui_may_mac(yc, gh, repo)
         except urllib.error.HTTPError as e:
             sua(f"⚠ Không gửi được lệnh tới máy Mac (GitHub HTTP {e.code}) – đặt tay trên app DNSE")
             continue

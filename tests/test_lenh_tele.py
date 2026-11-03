@@ -2,6 +2,7 @@
 """canh_bao/lenh_tele.py – lệnh nhắn Telegram → nhap.txt (giả lập Telegram & GitHub API)."""
 import base64
 import json
+from datetime import datetime
 
 from canh_bao import lenh_tele as T
 
@@ -111,3 +112,17 @@ def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
     assert [g[2]["text"] for g in goi if g[0] == "sendMessage"] == ["✅ Đã đặt MUA 300 REE", "✘ lỗi"]
     out = capsys.readouterr().out
     assert "REE" not in out and "chuyển 2 kết quả" in out
+
+
+def test_tu_dat_id_theo_ngay(monkeypatch, capsys):
+    goi = []
+    monkeypatch.setattr(T, "_goi", lambda url, data=None, headers=None, method=None, cho=0: goi.append((url, data)))
+    env = {"DANH_MUC_TOKEN_GHI": "g", "TELEGRAM_CHAT_ID": "111"}
+    assert T.tu_dat("M", "REE", 300, 46600, env) and T.tu_dat("B", "VIX", env=env)
+    yc = [d["client_payload"] for u, d in goi]
+    hom_nay = datetime.now(T.VN).strftime("%Y-%m-%d")
+    assert [y["id"] for y in yc] == [f"tu:M:REE:{hom_nay}", f"tu:B:VIX:{hom_nay}"]   # mỗi ngày 1 lệnh tự động / mã / bên
+    assert (yc[0]["kl"], yc[0]["gia"], yc[0]["chat"], yc[0]["tu"]) == (300, 46600, "111", True)
+    assert goi[0][0].endswith("/repos/mihhle2006-beep/danh-muc/dispatches")
+    assert T.tu_dat("M", "REE", 300, 46600, {}) is False and len(goi) == 2
+    assert "REE" not in capsys.readouterr().out
