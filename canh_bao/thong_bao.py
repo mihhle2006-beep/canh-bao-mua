@@ -22,10 +22,11 @@ def _chia(noi_dung, toi_da=3800):
     return phan + ([cur] if cur.strip() else [])
 
 
-def gui(noi_dung, rieng_tu=False, anh=None):
+def gui(noi_dung, rieng_tu=False, anh=None, nut=None):
     """
     Gửi Telegram: số kiểu Việt Nam, định dạng HTML (tiêu đề/nhãn đậm); anh = đường dẫn PNG → GỘP 1 tin: ảnh + chú
     thích là cả nội dung (phần vượt 1.024 ký tự mới gửi tiếp dạng chữ). rieng_tu=True: tin có số liệu vị thế → KHÔNG in ra log (repo công khai).
+    nut = [[(chữ, callback_data), …], …] → nút bấm dưới phần tin cuối (canh_bao/lenh_tele.py xử lý khi bấm).
     """
     from .trinh_bay import dinh_dang_html, vn_hoa
     noi_dung = vn_hoa(noi_dung)
@@ -40,17 +41,20 @@ def gui(noi_dung, rieng_tu=False, anh=None):
     goc = f"https://api.telegram.org/bot{token}"
     ok = True
     con = noi_dung
+    rm = {"reply_markup": json.dumps({"inline_keyboard": [[{"text": t, "callback_data": d} for t, d in h]
+                                                          for h in nut]})} if nut else {}
     if anh and C.GUI_ANH and os.path.exists(anh):              # 1 tin: ảnh + chú thích = cả nội dung (≤ 1.024 ký tự)
         dong, cap = noi_dung.rstrip().split("\n"), []
         while dong and len("\n".join(cap + dong[:1])) <= 1000:
             cap.append(dong.pop(0))
         cap = cap or [noi_dung.split("\n")[0][:1000]]
         con = "\n".join(dong)
+        nut_anh = {} if _chia(con) else rm                     # cả tin nằm trong chú thích → nút gắn vào ảnh
         try:
             for du_lieu in ({"caption": dinh_dang_html("\n".join(cap)), "parse_mode": "HTML"},
                             {"caption": "\n".join(cap)}):              # HTML lỗi → chú thích chữ thường
                 with open(anh, "rb") as fh:
-                    r = requests.post(f"{goc}/sendPhoto", data={"chat_id": chat, **du_lieu}, files={"photo": fh},
+                    r = requests.post(f"{goc}/sendPhoto", data={"chat_id": chat, **du_lieu, **nut_anh}, files={"photo": fh},
                                       timeout=60)
                 if r.status_code == 200:
                     break
@@ -60,12 +64,14 @@ def gui(noi_dung, rieng_tu=False, anh=None):
         except requests.RequestException as e:
             print("Telegram (ảnh) lỗi:", str(e)[:100])
             con = noi_dung
-    for phan in _chia(con):
+    ds = _chia(con)
+    for i, phan in enumerate(ds):
+        them = rm if i == len(ds) - 1 else {}
         r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": dinh_dang_html(phan.rstrip()),
-                                                       "parse_mode": "HTML", "disable_web_page_preview": "true"},
+                                                       "parse_mode": "HTML", "disable_web_page_preview": "true", **them},
                           timeout=30)
         if r.status_code != 200:                                     # HTML lỗi → gửi lại dạng chữ thường
-            r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": phan.rstrip()}, timeout=30)
+            r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": phan.rstrip(), **them}, timeout=30)
         if r.status_code != 200:
             print("Telegram lỗi:", r.text[:200])
             ok = False

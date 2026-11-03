@@ -227,22 +227,43 @@ def co_so_cp_nav(nd):
 def _von_nav(kq, gia, cl):
     """'💰 ≤5.4% NAV (…) → 45 CP ≈ 1,7 tr' – cùng công thức tin tổng kết, khoảng cắt lỗ tính theo giá đặt lệnh; có NAV tài
     khoản thật (vi_the.nav_that) thì quy ra SỐ CỔ PHIẾU (lô lẻ < 100 CP đặt ở bảng lô lẻ)."""
-    from .tong_ket_cl import chu_von_lenh, von_lenh
-    r = (gia - cl) / gia * 100 if gia == gia and cl == cl and gia > cl > 0 else None
-    k = {**kq, "rui_ro": r} if r else kq
-    s = chu_von_lenh(k)
+    from .tong_ket_cl import chu_von_lenh
+    s = chu_von_lenh(_k_rui_ro(kq, gia, cl))
     if not s:
         return ""
+    n = so_cp_nav(kq, gia, cl)
+    if n > 0:
+        s += f" → {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr" + (" (lô lẻ)" if n < 100 else "")
+    return s
+
+
+def _k_rui_ro(kq, gia, cl):
+    r = (gia - cl) / gia * 100 if gia == gia and cl == cl and gia > cl > 0 else None
+    return {**kq, "rui_ro": r} if r else kq
+
+
+def so_cp_nav(kq, gia, cl):
+    """Số CP theo NAV tài khoản thật × tỷ trọng lệnh (tong_ket_cl.von_lenh) – 0 khi không tính được."""
     try:
+        from .tong_ket_cl import von_lenh
         from .vi_the import nav_that
-        nav, tt = nav_that(), von_lenh(k)["ty_trong"]
+        nav, tt = nav_that(), von_lenh(_k_rui_ro(kq, gia, cl))["ty_trong"]
         if nav and tt == tt and gia == gia and gia > 0:
-            n = int(nav * tt / 100 // (gia * 1000))
-            if n > 0:
-                s += f" → {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr" + (" (lô lẻ)" if n < 100 else "")
+            return int(nav * tt / 100 // (gia * 1000))
     except Exception:                                  # noqa: BLE001
         pass
-    return s
+    return 0
+
+
+def nut_mua(kq):
+    """Nút Telegram "🛒 Đặt mua" cho tin MUA: số CP theo NAV làm tròn xuống lô 100 (< 100 → không nút), lệnh LO giá =
+    giới hạn vùng mua (den, làm tròn xuống 100đ) → khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin."""
+    gia, cl, _, _ = muc_sau_mua(kq)
+    n, den = so_cp_nav(kq, gia, cl) // 100 * 100, kq.get("den")
+    if n < 100 or not den or den != den:
+        return None
+    g = int(round(den * 1000)) // 100 * 100
+    return [[(f"🛒 Đặt mua {n:,} {kq['ma']} (LO ≤ {g:,}đ)".replace(",", "."), f"dl|M|{kq['ma']}|{n}|{g}")]]
 
 
 def _theo_uu_tien(ds):

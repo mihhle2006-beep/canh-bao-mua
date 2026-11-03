@@ -429,7 +429,8 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     for kq in rieng:
         nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
         rt = diem_vao.co_so_cp_nav(nd)                      # có số CP theo NAV thật → không in log công khai
-        gui(nd, rieng_tu=rt, anh=_anh_mua_ngay(kq, bay_gio)) if not khong_gui else _in(nd, rieng_tu=rt)
+        gui(nd, rieng_tu=rt, anh=_anh_mua_ngay(kq, bay_gio), nut=diem_vao.nut_mua(kq)) if not khong_gui else \
+            _in(nd, rieng_tu=rt)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
     if th:
         gui(th) if not khong_gui else _in(th)
@@ -462,7 +463,8 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
                 ma, dn, bieu_do_moc.moc_vi_the(v.get("gia_von"), kb.get("R"), kb.get("cat_lo")),
                 f"{ma} – {vi_the.NHAN.get(kb['muc'], kb['muc'])} @ {bieu_do_moc._f(gia)}", gia_nay=gia,
                 ngay_mua=v.get("ngay_mua") or None) if kb.get("he_thoat") else None
-            gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
+            nut = [[(f"🛑 Bán hết {ma} (LO giá khớp −2 %)", f"dl|B|{ma}")]] if kb["muc"] in vi_the.BAN_ATO else None
+            gui(nd, rieng_tu=True, anh=anh, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
             if anh and os.path.exists(anh):
                 os.remove(anh)                                 # ảnh có giá vốn thật: không để lại trên máy chạy
             if C.GHI_NHAT_KY:

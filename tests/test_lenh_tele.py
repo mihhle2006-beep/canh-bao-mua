@@ -54,3 +54,40 @@ def test_cho_long_poll(monkeypatch):
     monkeypatch.setattr(T, "_goi", lambda url, data=None, headers=None, method=None, cho=0: goi.append((url, cho)) or {})
     T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "1", "DANH_MUC_TOKEN_GHI": "g", "CHO": "300"})
     assert "timeout=50&" in goi[0][0] and goi[0][1] == 50                # chặn 50s, urlopen chờ lâu hơn
+
+
+def _nut(uid, data, mid=7, date=NGAY, chat=111):
+    return {"update_id": uid, "callback_query": {"id": f"c{uid}", "data": data,
+                                                 "message": {"message_id": mid, "date": date, "chat": {"id": chat}}}}
+
+
+def test_nut_xac_nhan_roi_gui_may_mac(monkeypatch, capsys):
+    goi, ups = [], [_nut(1, "dl|M|REE|300|46600", mid=7), _nut(2, "dl|B|VIX", mid=8, date=NGAY - 4 * 3600),
+                    _nut(3, "dx|M|REE|300|46600", mid=9), _nut(4, "dx|M|REE|300|46600", mid=9),
+                    _nut(5, "dl|M|REE|300|46600", chat=999), _nut(6, "dh", mid=10)]
+
+    def gia(url, data=None, headers=None, method=None, cho=0):
+        goi.append((url.split("?")[0].rsplit("/", 1)[-1], data))
+        return {"result": ups} if "getUpdates" in url and "offset" not in url else None
+
+    monkeypatch.setattr(T, "_goi", gia)
+    monkeypatch.setattr(T.time, "time", lambda: NGAY + 60)
+    assert T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"}) == 1
+    ten = [g[0] for g in goi]
+    xn = [g[1] for g in goi if g[0] == "sendMessage"]
+    assert len(xn) == 1 and "MUA 300 REE" in xn[0]["text"]                # chỉ nút hợp lệ, tin < 3 giờ, đúng chat
+    assert xn[0]["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == "dx|M|REE|300|46600"
+    gd = [g[1] for g in goi if g[0] == "dispatches"]
+    assert len(gd) == 1 and gd[0]["client_payload"] == {"id": "111:9", "ben": "M", "ma": "REE", "kl": 300, "gia": 46600,
+                                                        "luc": NGAY + 60, "chat": "111"}   # bấm ✅ 2 lần: 1 lệnh
+    assert ten.count("answerCallbackQuery") == 6 and ten.count("editMessageText") == 2
+    assert ten.index("getUpdates", 1) < ten.index("dispatches")         # xác nhận đọc trước khi gửi lệnh
+    out = capsys.readouterr().out
+    assert "REE" not in out and "6 nút bấm, 1 lệnh gửi máy Mac" in out
+
+
+def test_hai_bot_doc_song_song(monkeypatch):
+    goi = []
+    monkeypatch.setattr(T, "_goi", lambda url, data=None, headers=None, method=None, cho=0: goi.append(url) or {})
+    T.chay({"TELEGRAM_TOKEN": "a", "TELEGRAM_TOKEN_DANH_MUC": "b", "TELEGRAM_CHAT_ID": "1", "DANH_MUC_TOKEN_GHI": "g"})
+    assert sorted(u.split("/getUpdates")[0][-1] + ("cb" if "callback" in u else "") for u in goi) == ["acb", "b"]
