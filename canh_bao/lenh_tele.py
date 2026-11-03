@@ -39,7 +39,9 @@ HUONG_DAN = ("📝 Nhắn lệnh cho bot, mỗi dòng 1 lệnh (không ghi ngày
              "  NAP 5 (5 triệu) · RUT 2.000.000 · TIEN 6.041.733 (đặt đúng tiền mặt)\n"
              "  TRUNG 5 6 (ấp 5 tr kỳ 6T) · THU 3 · THU HET · LAI_TRUNG 6T 7,5 12T 7,6\n"
              "Lệnh khớp, tiền, nạp / rút trên DNSE tự đồng bộ (trong phiên mỗi 10', ngoài phiên mỗi 3 giờ – khi máy Mac "
-             "mở) → chỉ cần nhắn lệnh ở app khác, Trứng vàng, bảng lãi. Tin không bắt đầu bằng / đều coi là lệnh.")
+             "mở) → chỉ cần nhắn lệnh ở app khác, Trứng vàng, bảng lãi. Tin không bắt đầu bằng / đều coi là lệnh.\n"
+             "🛒 Nút trên tin MUA: chọn số CP → ✅ xác nhận mới đặt lệnh (máy Mac). Chạm cắt lỗ: tự bán hết – máy Mac tắt thì "
+             "bán tay trên app DNSE. 08:40 duyệt Smart OTP 1 lần cho cả ngày.")
 
 
 def _goi(url, data=None, headers=None, method=None, cho=0):

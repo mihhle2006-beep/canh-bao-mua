@@ -26,10 +26,10 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Workflow | Lịch | Làm gì | Code ở |
 |---|---|---|---|
 | Loc quy But Pha | 06:07 T2–T6 | lọc mã đủ luật Quỹ Bứt Phá (top GTGD, RS, biến động) → `loc_quy_b.json` | danh-muc `ptcp` |
-| Canh bao mua | 06:43 (dự phòng 07:15), 12:15, 15:20 T2–T6 · 09:07 thứ Bảy | bot: vòng sáng / chiều mỗi 15', tin MUA / BÁN, tổng kết 15:20, chấm lại tín hiệu thứ Bảy | repo này + `ptcp` |
+| Canh bao mua | 06:43 (dự phòng 07:15) T2–T6 → vòng sáng xong tự gọi vòng chiều (lịch 10:53 / 12:15 chỉ dự phòng) → 15:02 gọi danh mục, 15:20 tổng kết · 09:07 thứ Bảy | bot: vòng sáng / chiều mỗi 15', tin MUA / BÁN, tổng kết 15:20, chấm lại tín hiệu thứ Bảy. Tin MUA có nút chọn số CP (lô chẵn + lẻ) → ✅ xác nhận mới đặt; chạm cắt lỗ tự bán hết (máy Mac phải mở); nghe tin nhắn bot (`canh_bao/lenh_tele.py`) | repo này + `ptcp` |
 | Kiem thu | 07:41 T2–T6 + mỗi lần push | test canh-bao-mua + gia_lap + danh-muc; hỏng → Telegram | cả 3 repo |
 | Quet dinh ky | 14:20 T2–T6 | bộ lọc quét toàn sàn → `ma_mua_bo_loc.json` cho bot | repo này (`bo_loc`) |
-| Danh muc hang ngay | 14:50 T2–T6 (08:30 chỉ khi có `nhap.txt` mới) | danh mục THẬT: nhập lệnh, tóm tắt, dashboard, Excel, tiền nhàn rỗi; đầu tháng + phân rã hiệu suất tháng trước (thật so giả lập) → Telegram (chạy kín) | danh-muc `dmuc` |
+| Danh muc hang ngay | 15:02 T2–T6 (vòng chiều gọi; lịch 14:50 dự phòng) · 08:30 / trong phiên khi có `nhap.txt` mới | danh mục THẬT: nhập lệnh, tóm tắt, dashboard, Excel, tiền nhàn rỗi; đầu tháng + phân rã hiệu suất tháng trước (thật so giả lập) → Telegram (chạy kín) | danh-muc `dmuc` |
 | Gia lap | 16:30 (kiểm lại 17:30, 18:53) T2–T6 | tài khoản giả lập theo luật | gia_lap |
 | Suc khoe he thong | 19:55 T2–T6 | các workflow có chạy / lỗi không, NAV giả lập | gia_lap |
 | Tong ket tuan (gia lap) | 20:17 thứ Sáu | tổng kết tuần giả lập | gia_lap |
@@ -39,13 +39,22 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Tai nen 15p | 01:43 thứ Bảy | tải nến 15' (giữ cache backtest) | repo này |
 | Boi so nganh | 03:13 thứ Bảy | bội số định giá theo ngành | danh-muc |
 | Tra cuu ma | 07:53 thứ Bảy (+ chạy tay) | tra cứu mã đang giữ / theo dõi | danh-muc `ptcp.tra_cuu` |
-| Backtest quy But Pha | 09:13 ngày 1 hằng tháng (+ chạy tay) | mốc luật đang chạy (`chuan`) · `von86` tài khoản thật · `von100/101` UPCoM | danh-muc `chay_backtest_quy_b.py` |
+| Backtest quy But Pha | 09:13 ngày 1 hằng tháng (+ chạy tay) | mốc luật đang chạy (`chuan`); kết luận các phần cũ đã xoá ở danh-muc `KET_LUAN_BACKTEST_CU.md` | danh-muc `chay_backtest_quy_b.py` |
 | Backtest | 02:17 ngày 2 hằng tháng | backtest điểm vào 15' → `ket_qua_backtest.json` (bot tự chọn cách vào) | repo này |
+
+### Chạy trên máy Mac ở Việt Nam (repo danh-muc, runner `vn` – API DNSE chỉ gọi được từ VN)
+
+| Workflow | Lịch | Làm gì | Code ở |
+|---|---|---|---|
+| Dong bo DNSE | 08:35 T2–T6 vòng mỗi 10' tới 15:05 (dự phòng mỗi 30' 09:05–14:35) · ngoài phiên mỗi 3 giờ | lệnh khớp, tiền, vị thế DNSE → danh mục thật; giữ Mac không tự ngủ trong vòng | danh-muc `dmuc/dnse_dong_bo.py` |
+| Dat lenh tu Telegram | nút ✅ trên tin (repository_dispatch từ `lenh_tele.py`) · 08:40 / 09:05 xin sẵn Smart OTP | đặt lệnh LO (tách lô chẵn + lẻ, chặn ngoài giờ / nút cũ / trần giá trị / trùng); bán: 5' sau còn chưa khớp → ⚠ + nút bán lại; kết quả → `lenh_dat/ket_qua.jsonl` → bot gửi Telegram | danh-muc `dmuc/dnse_lenh.py` |
+| Dat lenh thu | chạy tay: số lệnh, mã, số CP (< 100 = lô lẻ) | đặt N lệnh MUA giá sàn rồi huỷ ngay, đo thời gian | danh-muc `dmuc/dnse_lenh.py --thu` |
 
 ### Chỉ chạy tay
 
 | Workflow | Ô nhập | Làm gì | Code ở |
 |---|---|---|---|
+| Canh bao mua | vong (sang / chieu) · gio + ghi_bu · thu_nut · ma · chi_thu | chạy vòng tay khi lịch bỏ · chạy lại lượt bị mất và lưu trạng thái · gửi thử 1 tin nút (ngoài giờ) · xem 1 mã · chỉ thử | repo này |
 | Bao cao ma | mã, nội dung | báo cáo đầy đủ 1 mã (định giá, BCTC, bất thường, chiến lược, bản ghi nhớ) | danh-muc |
 | Bao cao CTCK | mã, số báo cáo | báo cáo phân tích của CTCK + giá → Excel | danh-muc |
 | Tra cứu BCTC | mã / ngành / sàn | xuất BCTC Excel | danh-muc `ptcp.xuat_bctc` |
