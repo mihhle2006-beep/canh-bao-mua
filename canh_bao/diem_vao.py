@@ -231,7 +231,7 @@ def _von_nav(kq, gia, cl):
     s = chu_von_lenh(_k_rui_ro(kq, gia, cl))
     if not s:
         return ""
-    n = so_cp_nav(kq, gia, cl)
+    n = _lo_atc(kq, so_cp_nav(kq, gia, cl))
     if n > 0:
         s += f" → {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr" + (" (lô lẻ)" if n < 100 else "")
     return s
@@ -240,6 +240,11 @@ def _von_nav(kq, gia, cl):
 def _k_rui_ro(kq, gia, cl):
     r = (gia - cl) / gia * 100 if gia == gia and cl == cl and gia > cl > 0 else None
     return {**kq, "rui_ro": r} if r else kq
+
+
+def _lo_atc(kq, n):
+    """Tin MUA ATC → chỉ lô chẵn (237 → 200): lô lẻ chỉ khớp phiên liên tục, sàn không nhận lô lẻ ở ATO / ATC."""
+    return n // 100 * 100 if kq.get("atc") else n
 
 
 def so_cp_nav(kq, gia, cl):
@@ -259,7 +264,7 @@ def lenh_mua(kq):
     """Lệnh mua cho tin MUA → (số CP theo NAV – lô chẵn + lô lẻ, giá LO đồng = giới hạn vùng mua den làm tròn xuống 100đ →
     khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin) | None khi 0 CP / không có giới hạn."""
     gia, cl, _, _ = muc_sau_mua(kq)
-    n, den = so_cp_nav(kq, gia, cl), kq.get("den")
+    n, den = _lo_atc(kq, so_cp_nav(kq, gia, cl)), kq.get("den")
     if n < 1 or not den or den != den:
         return None
     return n, int(round(den * 1000)) // 100 * 100

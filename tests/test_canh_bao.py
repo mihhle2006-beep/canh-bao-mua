@@ -372,6 +372,10 @@ def test_nut_mua_chon_so_luong_co_lo_le(monkeypatch):
     assert diem_vao.nut_mua(kq) == [[("🛒 Mua 37 lẻ", "dl|M|REE|37|46600")], [("❌ Bỏ", "dh")]]
     monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 0)
     assert diem_vao.nut_mua(kq) is None and diem_vao.nut_du_phong([kq]) is None
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 237)       # ⏰ MUA ATC: sàn không nhận lô lẻ → chỉ lô chẵn
+    assert diem_vao.nut_mua({**kq, "atc": True})[0] == [("🛒 Mua 200", "dl|M|REE|200|46600")]
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 37)
+    assert diem_vao.nut_mua({**kq, "atc": True}) is None
 
 
 def test_gui_gan_nut_vao_phan_tin_cuoi(monkeypatch, capsys):
