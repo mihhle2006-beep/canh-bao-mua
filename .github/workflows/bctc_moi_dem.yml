@@ -5,6 +5,8 @@
 # Pha", mùa BCTC không phải chờ nhiều ngày) → tin Telegram "BCTC mới" (mã top 100 GTGD: kết quả quý, chấm điểm, dòng tiền
 # & chất lượng lợi nhuận, bất thường số liệu – đã gộp, bỏ ý trùng) → commit kho → "Bat thuong BCTC" tự chạy tiếp (đọc
 # báo cáo thường niên tìm giải thích). Bước sáng (--moi 80) vẫn chạy: lấy nốt mã công bố sau giờ chạy đêm.
+# Sau đó File KQKD (ptcp/kqkd_excel --tu_dong): mã HOSE + HNX ngoài rổ chính (kho riêng du_lieu/bctc_kqkd – tin BCTC mới,
+# bất thường không đụng) chỉ tải mã thiếu kỳ mới; quý / năm mới ĐỦ BCTC (≥ 90 % số mã) → gửi file 1 lần / kỳ.
 name: BCTC moi hang dem
 
 on:
@@ -63,6 +65,14 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: python -m ptcp.kho_bctc --moi_het
 
+      - name: File KQKD khi đủ BCTC quý / năm mới (mã ngoài rổ chính – chỉ tải mã có kỳ mới)
+        continue-on-error: true
+        timeout-minutes: 60
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m ptcp.kqkd_excel --tu_dong --gui --ra "KQKD_$(date +%d-%m-%Y).xlsx"
+
       - name: Lưu kho BCTC
         env:
           TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
@@ -70,7 +80,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
-          git add du_lieu/bctc
+          for f in du_lieu/bctc du_lieu/bctc_kqkd du_lieu/kqkd_da_gui.json; do [ -e "$f" ] && git add "$f"; done
           git commit -q -m "BCTC mới (đêm) $(date +%F)" > /dev/null 2>&1 || { echo "Không có BCTC mới"; exit 0; }
           for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
           echo "Không đẩy được – kiểm tra Settings → Actions → Workflow permissions"; exit 1
