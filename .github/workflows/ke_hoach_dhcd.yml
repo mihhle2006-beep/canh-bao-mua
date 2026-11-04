@@ -19,6 +19,14 @@ on:
       den:
         description: "Đến năm kế hoạch"
         default: "2026"
+      lam_moi:
+        description: "Đọc lại cả năm đã có kế hoạch (sau khi sửa cách trích)"
+        type: boolean
+        default: false
+      luu_hong:
+        description: "Lưu chữ trang 'kế hoạch' của văn bản không trích được số (du_lieu/van_ban – soát tay)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read                   # repo này; ghi danh-muc bằng DANH_MUC_TOKEN_GHI
@@ -71,7 +79,7 @@ jobs:
         env:
           MA: ${{ inputs.ma }}
           CONG_KHAI: "1"
-        run: python -m ptcp.ke_hoach_dhcd ${MA:+--ma "$MA"} --top ${{ inputs.ma == '' && inputs.top || 0 }} --tu ${{ inputs.tu }} --den ${{ inputs.den }} --chia ${{ matrix.nhom }}/4 --han_phut 300
+        run: python -m ptcp.ke_hoach_dhcd ${MA:+--ma "$MA"} --top ${{ inputs.ma == '' && inputs.top || 0 }} --tu ${{ inputs.tu }} --den ${{ inputs.den }} --chia ${{ matrix.nhom }}/4 --han_phut 300 ${{ inputs.lam_moi && '--lam_moi' || '' }} ${{ inputs.luu_hong && '--luu_hong' || '' }}
       - name: Lưu kết quả vào danh-muc (du_lieu/ke_hoach)
         if: always()
         env:
@@ -82,6 +90,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           git add du_lieu/ke_hoach
+          [ -d du_lieu/van_ban ] && git add du_lieu/van_ban
           git commit -q -m "Kế hoạch ĐHCĐ nhóm ${{ matrix.nhom }}/4" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
           for i in 1 2 3 4 5; do git pull -q --rebase --autostash && git push -q && exit 0; git rebase --abort 2>/dev/null || true; sleep $((i * 7)); done
           exit 1
