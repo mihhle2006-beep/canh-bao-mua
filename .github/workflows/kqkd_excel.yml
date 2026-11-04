@@ -1,4 +1,4 @@
-# FILE KẾT QUẢ KINH DOANH THEO QUÝ (chạy tay – kiểu file KQKD của TVI): HOSE + HNX từ kho BCTC danh-muc (du_lieu/bctc,
+# FILE KẾT QUẢ KINH DOANH THEO QUÝ (chạy tay): HOSE + HNX từ kho BCTC danh-muc (du_lieu/bctc,
 # Vietcap IQ) → Excel gửi Telegram (danh-muc ptcp/kqkd_excel.py). "tai_them": tải mã chưa có / thiếu quý mới rồi lưu
 # lại kho (lần đầu ~400 mã ~30'; sau chỉ mã có quý mới). BCTC công bố công khai → in log được; KHÔNG đọc danh mục thật.
 name: File KQKD theo quy
