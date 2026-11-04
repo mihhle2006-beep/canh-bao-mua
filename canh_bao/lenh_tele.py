@@ -197,14 +197,14 @@ def chuyen_ket_qua(tg, chat, gh, repo):
         except ValueError:
             pass
         d = d if isinstance(d, dict) else {"text": str(d)}
+        nut = {"reply_markup": {"inline_keyboard": [[{"text": t, "callback_data": c} for t, c in h] for h in d["nut"]]}} \
+            if d.get("nut") else {}                     # VD ⚠ bán chưa khớp → [🛑 Bán lại theo giá mới] · [🛑 Bán nốt lô lẻ]
         if d.get("tin"):                                                # lệnh bấm nút: sửa tin xác nhận thành kết quả
             try:
-                _goi(f"{api}/editMessageText", {"chat_id": chat, "message_id": d["tin"], "text": d["text"]})
+                _goi(f"{api}/editMessageText", {"chat_id": chat, "message_id": d["tin"], "text": d["text"], **nut})
                 continue
             except urllib.error.HTTPError:
                 pass
-        nut = {"reply_markup": {"inline_keyboard": [[{"text": t, "callback_data": c} for t, c in h] for h in d["nut"]]}} \
-            if d.get("nut") else {}                                     # VD ⚠ bán chưa khớp → [🛑 Bán lại theo giá mới]
         _goi(f"{api}/sendMessage", {"chat_id": chat, "text": d["text"], **nut})
     return len(ds)
 
