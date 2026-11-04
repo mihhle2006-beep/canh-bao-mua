@@ -1,0 +1,67 @@
+# FILE KẾT QUẢ KINH DOANH THEO QUÝ (chạy tay – kiểu file KQKD của TVI): HOSE + HNX từ kho BCTC danh-muc (du_lieu/bctc,
+# Vietcap IQ) → Excel gửi Telegram (danh-muc ptcp/kqkd_excel.py). "tai_them": tải mã chưa có / thiếu quý mới rồi lưu
+# lại kho (lần đầu ~400 mã ~30'; sau chỉ mã có quý mới). BCTC công bố công khai → in log được; KHÔNG đọc danh mục thật.
+name: File KQKD theo quy
+
+on:
+  workflow_dispatch:
+    inputs:
+      tai_them:
+        description: "Tải mã chưa có / thiếu quý mới (Vietcap IQ) rồi lưu vào kho – bỏ chọn: chỉ dựng file từ kho"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read                   # repo này; ghi danh-muc bằng DANH_MUC_TOKEN_GHI
+
+concurrency:
+  group: kqkd-excel
+  cancel-in-progress: false
+
+jobs:
+  kqkd:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: danh-muc
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv nhap*.txt trung_vang*.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: danh-muc/requirements.txt
+      - run: pip install -q -r requirements.txt > /dev/null
+      - name: Dựng file KQKD
+        id: kq
+        env:
+          CONG_KHAI: "1"
+        run: python -m ptcp.kqkd_excel ${{ inputs.tai_them && '--tai' || '' }} --ra "KQKD_$(TZ=Asia/Ho_Chi_Minh date +%d-%m-%Y).xlsx"
+      - name: Lưu kho BCTC vào danh-muc (du_lieu/bctc)
+        if: always() && inputs.tai_them
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
+          git add du_lieu/bctc
+          git commit -q -m "Kho BCTC: tải thêm / cập nhật (File KQKD)" > /dev/null 2>&1 || { echo "Kho không đổi"; exit 0; }
+          for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && exit 0; git rebase --abort 2>/dev/null || true; sleep $((i * 5)); done
+          exit 1
+      - name: Gửi Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FILE: ${{ steps.kq.outputs.file }}
+          CHU: "📊 KQKD theo quý HOSE + HNX tới ${{ steps.kq.outputs.quy }}: ${{ steps.kq.outputs.so_ma }} mã (${{ steps.kq.outputs.da_co }} mã đã ra ${{ steps.kq.outputs.quy }}) – gõ mã ở sheet Tìm nhanh CP, lọc ở sheet Lọc"
+        run: python -c "import os; from ptcp.telegram import gui; ok = gui(file=os.environ['FILE'], chu_thich=os.environ['CHU']); print('Đã gửi' if ok else 'Chưa gửi được'); raise SystemExit(0 if ok else 1)"
