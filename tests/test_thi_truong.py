@@ -195,7 +195,9 @@ def test_workflow_tra_cuu_web():
     assert "rm -f danh_muc*.csv" in t and "upload-artifact" not in t and "git push" not in t and "git commit" not in t
     luu = [s for s in job["steps"] if "cache/save" in str(s.get("uses", ""))]
     assert len(luu) == 1 and luu[0]["with"]["path"] == "docs/ma/du_lieu" and luu[0]["with"]["key"].startswith("tra-cuu-")
-    assert "ptcp.web_tra_cuu" in t and "bang_thi_truong.yml/dispatches" in t
+    assert "ptcp.web_tra_cuu" in t and "bang_thi_truong.yml/dispatches" in t and "thi_truong.tra_cuu_dn" in t
+    lay_cu = [s for s in job["steps"] if "cache/restore" in str(s.get("uses", ""))]
+    assert lay_cu and lay_cu[0]["with"]["restore-keys"] == "tra-cuu-"            # mã chưa tới lượt giữ file cũ
     b = yaml.safe_load(open(".github/workflows/bang_thi_truong.yml", encoding="utf-8"))
     lay = [s for s in b["jobs"]["dung"]["steps"] if s.get("with", {}).get("path") == "docs/ma/du_lieu"]
     assert len(lay) == 1 and "cache/restore" in lay[0]["uses"] and lay[0]["with"]["restore-keys"] == "tra-cuu-"
@@ -209,7 +211,88 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert "<script src" not in h and "@import" not in h and "fonts.googleapis" not in h
     assert 'const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json"' in h
+    for tab in ("tong-quan", "tai-chinh", "dinh-gia", "co-dong", "co-tuc", "lich-su", "tin", "ho-so", "he-thong"):
+        assert f'["{tab}",' in h, tab
     assert not re.search(r"fetch\(\s*['\"]https?:", h)
     assert "const esc = " in h and "const url = u => /^https?:" in h
     t = open("docs/thi_truong/index.html", encoding="utf-8").read()
     assert 'href="../ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t
+
+
+
+def test_tra_cuu_dn_gon(tmp_path):
+    from thi_truong import tra_cuu_dn as T
+    ds = [{"tradingDate": f"2026-11-0{i}T00:00:00", "openPriceAdjusted": 20000 + i, "highestPriceAdjusted": 21000,
+           "lowestPriceAdjusted": 19000, "closePriceAdjusted": 20500 + i * 10, "closePrice": 41000, "totalMatchVolume": 1e6,
+           "totalValue": 2.05e10, "totalDealValue": 1e9, "foreignBuyValueTotal": 3e9, "foreignSellValueTotal": 1e9,
+           "foreignOwnedPercentage": 0.2, "totalBuyTradeVolume": 5e5, "totalSellTradeVolume": 4e5} for i in (4, 3, 2)]
+    ds.append({"tradingDate": "2026-11-01T00:00:00", "closePriceAdjusted": 0})          # không giao dịch → bỏ
+    g = T.gon_gia(ds, {"2026-11-03": 1.5})
+    assert g["d"] == ["2026-11-02", "2026-11-03", "2026-11-04"] and g["c"][-1] == 20.54 and g["c0"][0] == 41.0
+    assert g["nn"] == [2.0, 2.0, 2.0] and g["nn_pt"][0] == 20.0 and g["td"] == [None, 1.5, None] and g["gt"][0] == 20.5
+    assert "td" not in T.gon_gia(ds)
+    cs = T.gon_chi_so([{"year": 2026, "quarter": 2, "pe": 8.0, "roe": 0.2, "npl": 0, "marketCap": 5e12},
+                       {"year": 2025, "quarter": 4, "pe": 9.0, "roe": 0.18, "npl": 0, "marketCap": 4e12}])
+    assert cs["ky"] == ["Q4.25", "Q2.26"] and cs["pe"] == [9.0, 8.0] and "no_xau" not in cs and cs["von_hoa"] == [4000, 5000]
+    sk = T.gon_su_kien([{"exrightDate": "2026-05-19T00:00:00", "eventCode": "DIV", "eventTitleVi": "Cổ tức", "valuePerShare": 700},
+                        {"publicDate": "2026-10-01", "eventCode": "ISS", "exerciseRatio": 0.5}, {"eventCode": "X"}])
+    assert [x["ngay"] for x in sk] == ["2026-10-01", "2026-05-19"] and sk[1]["gia_tri"] == 700
+    cd = T.gon_co_dong([{"ownerName": "A", "percentage": 0.01, "ownerType": "INDIVIDUAL"}, {"ownerName": "B", "percentage": 0.2,
+                                                                                          "ownerType": "CORPORATE"}])
+    assert [x["ten"] for x in cd] == ["B", "A"] and cd[0]["pt"] == 20.0 and cd[0]["loai"] == "Tổ chức"
+    assert T.chu_html("<div>Ng&acirc;n h&agrave;ng<br>A</div>") == "Ngân hàng\nA"
+    tin = T.tach_tin('<li>05/11/2026 18:05 <a href="/x.chn">Tin &amp; 1</a></li><li>03/11/2026<a href="javascript:x">y</a></li>')
+    assert tin == [{"ngay": "2026-11-05 18:05", "tieu_de": "Tin & 1", "link": "https://cafef.vn/x.chn"}]
+
+
+def test_tra_cuu_dn_nguon(monkeypatch):
+    from thi_truong import tra_cuu_dn as T
+
+    def goi(url, **k):
+        if "kbsec" in url:
+            return {"FD": "06/08/1993", "CC": 70862, "LD": "04/06/2018", "LP": 128000, "SM": "<p>- A</p>",
+                    "Subsidiaries": [{"NM": "Con", "OR": 79.8, "CC": -1, "D": "2025-12-31T00:00:00"}],
+                    "Leaders": [{"NM": "Ông X", "PI": "TGĐ", "PO": "TGĐ (CEO)", "FD": "2020"}], "Khac": [{"a": 1}]}
+        if "simplize.vn/api/company/summary" in url:
+            return {"data": {"nameVi": "Cty", "website": "https://x.vn", "businessLine": "<div>L</div>"}}
+        if "simplize" in url:
+            return {"data": [{"issueDate": "28/10/2026", "source": "ssi", "recommend": "MUA", "targetPrice": 37500,
+                              "title": "T", "attachedLink": "https://x/a.pdf"}]}
+        if "BaoCaoPhanTich" in url:
+            return {"Data": [{"DateDeploy": "/Date(1793145600000)/", "ResourceCode": "SSI", "Title": "T2", "FileName": "f.pdf"},
+                             {"DateDeploy": "/Date(1792022400000)/", "ResourceCode": "VCBS", "Title": "T3"}]}
+        raise ValueError("HTTP 404")
+    monkeypatch.setattr(T.nguon, "goi", goi)
+
+    def khong_mang(*a, **k):
+        raise ValueError("không gọi mạng trong test")
+    monkeypatch.setattr(T.nguon, "_phien", lambda: type("S", (), {"get": khong_mang})())
+    kb = T.ho_so_kbs("TCB")
+    assert kb["thanh_lap"] == "06/08/1993" and kb["gia_chao_san"] == 128000 and kb["nganh_nghe"] == "- A"
+    assert kb["cong_ty"][0] == {"ten": "Con", "so_huu": 79.8, "von": None, "ngay": "2025-12-31", "ghi_chu": ""}
+    assert kb["lanh_dao"][0]["cv"] == "TGĐ" and kb["khac"] == {"Khac": [{"a": 1}]}
+    assert T.tom_tat_simplize("TCB")["linh_vuc"] == "L"
+    bc = T.bao_cao_ctck("TCB")
+    assert bc[0]["ctck"] == "SSI" and bc[0]["mt"] == 37.5 and bc[0]["link"] == "https://x/a.pdf"     # gộp trùng SSI cùng ngày
+    assert len(bc) == 2 and bc[1]["ctck"] == "VCBS"
+    dn, loi = T.lay_dn("TCB", {"ct": {"cu": 1}})
+    assert set(loi) == {"ct", "cc", "cd", "sk", "nb", "cs", "tin"} and dn["ct"] == {"cu": 1} and "kbs" in dn
+
+
+def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
+    from thi_truong import tra_cuu_dn as T
+    ra = str(tmp_path)
+    T._ghi({"cap_nhat": "2026-01-01"}, f"{ra}/gia/AAA.json")
+    T._ghi({"cap_nhat": "2026-01-01"}, f"{ra}/dn/AAA.json")
+    T._ghi({"cap_nhat": "2026-02-01"}, f"{ra}/gia/BBB.json")
+    T._ghi({"cap_nhat": "2026-02-01"}, f"{ra}/dn/BBB.json")
+    assert T.thu_tu(["BBB", "AAA", "CCC"], ra, "2026-03-01") == ["CCC", "AAA", "BBB"]     # chưa có → cũ nhất trước
+    assert T.thu_tu(["BBB"], ra, "2026-02-01") == []                                      # đã cập nhật hôm nay
+    monkeypatch.setattr(T, "lay_gia", lambda m, san="": {"d": ["2026-11-05"], "c": [1.0]})
+    monkeypatch.setattr(T, "lay_dn", lambda m, cu=None: ({"ct": {"m": m}}, []) if m != "BBB" else ({}, ["ct"] * T.SO_PHAN_DN))
+    xong, loi, con = T.chay(["AAA", "BBB", "CCC"], ra, phut=5, luong=2, in_ra=lambda *_: None)
+    assert (xong, loi, con) == (3, 0, 0)
+    assert T._doc(f"{ra}/dn/AAA.json")["ct"] == {"m": "AAA"} and T._doc(f"{ra}/dn/BBB.json") == {"cap_nhat": "2026-02-01"}
+    assert T._doc(f"{ra}/gia/CCC.json")["c"] == [1.0]
+    _, _, con = T.chay(["DDD", "EEE"], ra, phut=0, in_ra=lambda *_: None)                   # hết giờ → không nhận mã mới
+    assert con == 2

@@ -1,7 +1,10 @@
 # DỮ LIỆU TRANG "TRA CỨU MÃ" (web docs/ma/ – GitHub Pages): danh-muc ptcp/web_tra_cuu.py dựng JSON từ số liệu CÔNG KHAI
 # (kho BCTC Vietcap IQ, giá / tên / ngành VNDirect, kế hoạch ĐHCĐ, bất thường BCTC, chiến lược DN từ BCTN, bội số ngành,
 # định giá hệ thống) – cùng cách tính file KQKD quý. KHÔNG đọc danh mục thật (xoá file trước khi chạy, CONG_KHAI=1).
-# Kết quả → cache "tra-cuu-*" (không commit vào repo) → "Bang thi truong" lấy cache khi gói trang → gọi triển khai ngay.
+# + thi_truong/tra_cuu_dn.py (repo này): lịch sử giá ~2 năm, hồ sơ, cổ đông, sự kiện, giao dịch nội bộ, chỉ số theo quý, tin,
+# báo cáo CTCK từ Vietcap IQ / CafeF / Simplize – xoay vòng mã cũ nhất trước trong giới hạn phút (Vietcap hay chặn).
+# Kết quả → cache "tra-cuu-*" (không commit vào repo; lấy lại cache cũ trước để mã chưa tới lượt giữ file) → "Bang thi
+# truong" lấy cache khi gói trang → gọi triển khai ngay.
 #   • 06:41 giờ VN T2–T7: sau "BCTC moi hang dem" (04:15) – BCTC / bất thường / định giá mới nhất
 #   • bấm tay khi cần
 name: Du lieu tra cuu
@@ -10,6 +13,13 @@ on:
   schedule:
     - cron: "41 23 * * 0-5"        # 06:41 giờ VN thứ Hai – thứ Bảy
   workflow_dispatch:
+    inputs:
+      ma:
+        description: "Chỉ lấy dữ liệu doanh nghiệp cho các mã này (trống = xoay vòng mọi mã)"
+        default: ""
+      phut:
+        description: "Giới hạn phút cho phần doanh nghiệp"
+        default: "40"
 
 permissions:
   contents: read
@@ -27,8 +37,11 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-    timeout-minutes: 30
+    timeout-minutes: 55
     steps:
+      - uses: actions/checkout@v5                   # repo này (thi_truong/tra_cuu_dn.py)
+        with:
+          persist-credentials: false
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
@@ -54,8 +67,22 @@ jobs:
         if: steps.cache_py.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
 
-      - name: Dựng dữ liệu tra cứu
+      - name: Lấy dữ liệu lần trước (mã chưa tới lượt giữ file cũ)
+        uses: actions/cache/restore@v5
+        with:
+          path: docs/ma/du_lieu
+          key: tra-cuu-${{ github.run_id }}
+          restore-keys: tra-cuu-
+
+      - name: Dựng dữ liệu tra cứu (BCTC, định giá, kế hoạch, bất thường, chiến lược)
         run: python -m ptcp.web_tra_cuu --ra "$GITHUB_WORKSPACE/docs/ma/du_lieu"
+
+      - name: Dữ liệu doanh nghiệp & giá (Vietcap IQ / CafeF / Simplize – xoay vòng)
+        working-directory: .
+        env:
+          MA: ${{ inputs.ma }}
+          PHUT: ${{ inputs.phut || '40' }}
+        run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut "$PHUT" --luong 8 ${MA:+--ma "$MA"}
 
       - name: Lưu dữ liệu (cache cho Bang thi truong)
         uses: actions/cache/save@v5

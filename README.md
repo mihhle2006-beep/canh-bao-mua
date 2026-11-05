@@ -86,12 +86,17 @@ Workflow `Bang thi truong`: 5' một lần trong giờ giao dịch + 15:10, chu�
 
 ## 🔎 Tra cứu mã (web)
 
-Trang `docs/ma/` (`…/canh-bao-mua/ma/#HPG`) – ~750 mã HOSE / HNX có BCTC trong kho: giá trong phiên (từ Bảng thị trường),
-P/E · P/B · EPS · BVPS · PEG, giá trị hợp lý + RẺ / HỢP LÝ / ĐẮT, dự phóng LNST năm, doanh thu / LNST 9 quý + YoY, LNST 4
-năm, chỉ số tài chính (ROE, nợ / VCSH, NIM, nợ xấu…), kế hoạch ĐHCĐ + % hoàn thành, bất thường BCTC + lời giải thích từ
-BCTN, chiến lược doanh nghiệp theo năm; tab **Lọc KQKD** (lọc / sắp xếp cả sàn) và **Ngành** (bội số ngành). Bấm mã ở
-Bảng thị trường → mở trang tra cứu. Dữ liệu: workflow `Du lieu tra cuu` (06:41 T2–T7, danh-muc `ptcp/web_tra_cuu.py` – cùng
-số với file KQKD quý, chỉ số liệu công bố công khai) → cache → `Bang thi truong` gói cùng khi triển khai.
+Trang `docs/ma/` (`…/canh-bao-mua/ma/#TCB`, `#TCB/tai-chinh`…) – ~750 mã HOSE / HNX, dạng app với 9 mục:
+**Tổng quan** (biểu đồ nến 2 năm + MA10/20/50/200 + khối lượng, hiệu suất 1 ngày → 1 năm, thống kê giá, beta, chỉ số cơ bản,
+góc hệ thống: xu hướng, RSI / MACD, khối ngoại & tự doanh, giá trị hợp lý, ★ bot) · **Tài chính** (KQKD / CĐKT / LCTT quý / năm
+đầy đủ chỉ tiêu, biểu đồ, F-Score, Z-Score, DuPont, so với ngành theo phân vị, chỉ số theo quý) · **Định giá** (giá trị hợp lý,
+P/E – P/B lịch sử với dải ±1σ, giá mục tiêu Vietcap + CTCK, kế hoạch ĐHCĐ) · **Cổ đông** (cơ cấu, room ngoại, cổ đông lớn, giao
+dịch nội bộ) · **Cổ tức & sự kiện** · **Lịch sử giá** (giá / nước ngoài / cung cầu / tự doanh) · **Tin & báo cáo** (CafeF, báo
+cáo CTCK) · **Hồ sơ** (thành lập, niêm yết, vốn điều lệ, giá chào sàn, công ty con – liên kết, ban lãnh đạo) · **Phân tích hệ
+thống** (bất thường BCTC + giải thích, chiến lược DN qua BCTN). Tab **Lọc KQKD** và **Ngành** cho cả sàn.
+Dữ liệu: workflow `Du lieu tra cuu` (06:41 T2–T7) – danh-muc `ptcp/web_tra_cuu.py` (BCTC, định giá, F / Z / DuPont…) +
+`thi_truong/tra_cuu_dn.py` (Vietcap IQ / KBS / Simplize / CafeF – xoay vòng mã cũ nhất trước) → cache → `Bang thi truong` gói
+cùng khi triển khai. Chỉ số liệu công bố công khai.
 
 ## Cài đặt
 
