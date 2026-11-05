@@ -5,7 +5,7 @@ TRANG TỔNG HỢP – 1 file HTML tự chứa (không thư viện ngoài) gom n
   ② Tín hiệu hôm nay: danh sách mua phiên tới (tin tổng kết) + trạng thái điểm vào 15' trong phiên
   ③ Mã từ bộ lọc Bo_Loc: ngày thêm, hạn 4 phiên, đã đạt điểm mua chưa (ma_bo_loc.json)
   ④ Theo dõi khuyến nghị đã gửi: đủ danh sách lệnh giả định (theo_doi_kn.json)
-  ④ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv)
+  ⑤ Độ chính xác của bot: ĐÚNG/SAI theo từng loại tín hiệu (lich_su_danh_gia.csv) – CHỈ bản riêng, không lên web
   (chỉ bản RIÊNG) danh mục thật: lãi/lỗ, cắt lỗ, hành động – KHÔNG bao giờ ghi vào docs/
 
 Chỉ đọc file trạng thái (không cần ptcp, không tải giá) → dựng lại được sau mỗi lần chạy, kể cả trong phiên.
@@ -320,9 +320,9 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
     muc = [("thi-truong", "① Sức khoẻ thị trường", _khoi_thi_truong(cl.get("thi_truong"))),
            ("tin-hieu", "② Tín hiệu hôm nay", _khoi_tin_hieu(cl, cb)),
            ("bo-loc", "③ Mã từ bộ lọc Bo_Loc", _khoi_bo_loc(_doc_json(getattr(C, "FILE_MA_BO_LOC", "")), luc)),
-           ("theo-doi", "④ Theo dõi khuyến nghị đã gửi", _khoi_theo_doi(_doc_json("theo_doi_kn.json"))),
-           ("chinh-xac", "⑤ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv")))]
-    if giu:
+           ("theo-doi", "④ Theo dõi khuyến nghị đã gửi", _khoi_theo_doi(_doc_json("theo_doi_kn.json")))]
+    if giu:                                                # độ chính xác ĐÚNG/SAI: chỉ bản riêng (06/11/2026 – không lên web)
+        muc.append(("chinh-xac", "⑤ Độ chính xác của bot", _khoi_chinh_xac(_doc_csv("lich_su_danh_gia.csv"))))
         muc.insert(0, ("danh-muc", "💼 Danh mục thật (riêng tư)", _khoi_rieng(giu)))
     nav = "".join(f'<a href="#{i}">{_e(t)}</a>' for i, t, _ in muc)
     if not giu:                                            # bản công khai (docs/) – cùng site Pages với bảng thị trường

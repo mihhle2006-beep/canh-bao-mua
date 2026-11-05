@@ -457,5 +457,29 @@ def test_workflow_tra_cuu_web_co_canslim():
     buoc = [s.get("run", "") for s in d["jobs"]["dung"]["steps"]]
     i_dn = next(i for i, r in enumerate(buoc) if "thi_truong.tra_cuu_dn" in r)
     i_cs = next(i for i, r in enumerate(buoc) if "thi_truong.canslim_web" in r)
+    i_vgm = next(i for i, r in enumerate(buoc) if "thi_truong.xep_hang_web" in r)
     i_luu = next(i for i, s in enumerate(d["jobs"]["dung"]["steps"]) if "cache/save" in str(s.get("uses", "")))
-    assert i_dn < i_cs < i_luu and "|| echo" in buoc[i_cs]           # sau giá, trước lưu cache; lỗi không làm hỏng lượt
+    assert i_dn < i_cs < i_vgm < i_luu and "|| echo" in buoc[i_cs] and "|| echo" in buoc[i_vgm]   # sau giá + CANSLIM (rs),
+                                                                    # trước lưu cache; lỗi không làm hỏng lượt
+
+
+
+def test_xep_hang_vgm():
+    """Xếp hạng A–F kiểu VGM: hạng phần trăm (bằng nhau cùng hạng), mỗi nhóm cần ≥ 2 chỉ tiêu, tổng cần ≥ 2 nhóm; P/E ≤ 0
+    xếp cuối nhóm giá trị; chữ chia đều ~⅕. Mã giả M00…M19."""
+    from thi_truong import xep_hang_web as XH
+    assert XH.hang_pt({"A": 1, "B": 2, "C": 2, "D": None}) == {"A": 0.0, "B": 75.0, "C": 75.0}
+    assert XH.hang_pt({"A": 1, "B": 2}, cao_tot=False) == {"A": 100.0, "B": 0.0}
+    assert [XH.chu(x) for x in (95, 80, 79.9, 45, 20, 3)] == ["A", "A", "B", "C", "D", "F"] and XH.chu(None) is None
+    ds = [{"ma": f"M{i:02d}", "pe": 5 + i, "pb": 0.5 + i / 10, "dinh_gia": 0.5 - i / 20, "ln_yoy": i / 10, "ln4_yoy": i / 10,
+           "dt_yoy": i / 20, "dt4_yoy": i / 20, "rs": 5 * i, "cach52": -i} for i in range(20)]
+    ds[0]["pe"] = -3                                                     # lỗ → giá trị kém nhất dù P/B rẻ
+    ds.append({"ma": "THIEU", "pe": 8})                                  # thiếu gần hết → không xếp
+    gia = {r["ma"]: {"c": [10.0] * 30 + [10 + j * (i / 50) for j in range(70)]} for i, r in enumerate(ds[:20])}
+    assert XH.tinh(ds, gia) == 20
+    v = {r["ma"]: r.get("vgm") for r in ds}
+    assert v["THIEU"] is None and all(len(x.split()) == 4 for k, x in v.items() if k != "THIEU")
+    assert v["M19"].split()[1] == "A" and v["M00"].split()[1] == "F"      # tăng trưởng cao nhất / thấp nhất
+    assert v["M01"].split()[0] == "A" and v["M00"].split()[0] != "A"      # rẻ nhất (P/E dương thấp) / lỗ
+    tong = [x.split()[3] for k, x in v.items() if k != "THIEU"]
+    assert all(tong.count(c) == 4 for c in "ABCDF")                     # 20 mã → mỗi chữ 4 mã

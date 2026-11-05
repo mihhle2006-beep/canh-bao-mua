@@ -172,6 +172,9 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .chu-bd{position:absolute;left:8px;top:6px;z-index:3;font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
 .chu-bd b{font-weight:650}
 .cham-song{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tang);margin-right:5px;vertical-align:middle}
+.nut-td{font-size:12.5px;font-weight:600;border:1px solid var(--vien);background:var(--the);border-radius:14px;padding:2px 11px;margin-left:8px;vertical-align:middle;color:var(--nhan)}
+.nut-td[aria-pressed=true]{background:var(--nhan-nen);border-color:transparent}
+.chip .pt{font-size:12px;margin-left:5px}
 .the-chu{display:inline-block;font-size:10.5px;font-weight:700;border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:middle}
 .the-chu.giu{background:var(--dung-nen);color:#6b5200}.the-chu.bot{background:var(--nhan-nen);color:var(--nhan)}
 .cty .ic{font-size:13px;font-weight:700;color:var(--nhan)}
@@ -199,6 +202,18 @@ const TAB = [["tong-quan", "Tổng quan"], ["tin", "Tin tức"], ["ho-so", "Hồ
   ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
   ["bao-cao", "Báo cáo CTCK"], ["tai-lieu", "Tài liệu"], ["he-thong", "Hệ thống"]];
 let DS = null, META = {}, NG = null, MKT = null, LIVE = {}, BOT = {}, GIU = new Set(), CT_BCTC = null, TEN_CT = null;
+// danh sách theo dõi CÁ NHÂN – chỉ lưu trong trình duyệt này (localStorage), không gửi đi đâu
+const KHOA_TD = "bang_tt_theo_doi";                // DÙNG CHUNG với danh sách theo dõi của Bảng thị trường (cùng tên miền)
+const TD = new Set((() => { try { return JSON.parse(localStorage.getItem(KHOA_TD) || "[]").filter(m => /^[A-Z0-9]{2,10}$/.test(m)); } catch (e) { return []; } })());
+function doi_td(ma) { TD.has(ma) ? TD.delete(ma) : TD.add(ma);
+  try { localStorage.setItem(KHOA_TD, JSON.stringify([...TD].sort())); localStorage.setItem("bang_tt_td_v", "2"); } catch (e) {} }
+const dong_ds = ma => (DS || []).find(x => x.ma === ma) || {};
+const VGM_TEN = ["Giá trị", "Tăng trưởng", "Động lượng", "Tổng"];
+function vgm_html(v) {                          // "B A C B" → Giá trị B · Tăng trưởng A · Động lượng C · Tổng B
+  if (!v) return "";
+  const c = v.split(" "), lop = x => x === "A" ? "t" : x === "F" ? "g" : x === "–" ? "m" : "";
+  return c.map((x, i) => `${i === 3 ? "<b>" : ""}${VGM_TEN[i]} <span class="${lop(x)}">${esc(x)}</span>${i === 3 ? "</b>" : ""}`).join(" · ");
+}
 const KHO = {};                     // mã → {r, g, n, b}
 const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", tc: "bc", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC"};
 let CS_NGANH = null;
@@ -376,9 +391,9 @@ function dau_ma(ma, k, tab) {
   const c = gn.gia == null ? "" : gn.tran && gn.gia >= gn.tran ? "tr" : gn.san && gn.gia <= gn.san ? "sa" : mau(gn.pt);
   const td = gn.tc != null && gn.gia != null ? gn.gia - gn.tc : null;
   return `<div class="ma-dau"><div class="ma-tren"><div class="ma-ten">
-    <h2>${esc(ma)}<span class="nhan-san">${esc(r.san || LIVE[ma]?.san || "")}</span>${GIU.has(ma) ? `<span class="huy giu">Đang giữ</span>` : ""}</h2>
+    <h2>${esc(ma)}<span class="nhan-san">${esc(r.san || LIVE[ma]?.san || "")}</span>${GIU.has(ma) ? `<span class="huy giu">Đang giữ</span>` : ""}<button class="nut-td" data-td="${esc(ma)}" aria-pressed="${TD.has(ma)}">${TD.has(ma) ? "✓ Đang theo dõi" : "+ Theo dõi"}</button></h2>
     <div class="ten-dd" title="${esc(ten)}">${esc(ten)}${r.nganh ? " · " + esc(r.nganh) : ""}</div>
-    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${sk.f ? `<span class="huy hl">F-Score ${sk.f.diem}/9</span>` : ""}${sk.z ? `<span class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</span>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
+    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${sk.f ? `<span class="huy hl">F-Score ${sk.f.diem}/9</span>` : ""}${sk.z ? `<span class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</span>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
     <div class="ma-gia"><span class="lon ${c}">${gn.gia != null ? so(gn.gia, 2) : "–"}</span><span class="pill ${c || "d"} ${c}">${td != null ? (td > 0 ? "+" : "") + so(td, 2) : ""} (${pt(gn.pt, 2)})</span>
     <div class="nho">${gn.live ? `${MKT?.dang_gd ? "<span class=\"cham-song\"></span>trong phiên" : "đóng cửa"} · ${esc(MKT?.cap_nhat || "")}` : gn.ngay ? "phiên " + ngay_vn(gn.ngay) : ""}</div></div></div>
     <nav class="tab" aria-label="Mục">${TAB.map(([id, t]) => `<a href="#${esc(ma)}/${id}"${id === tab ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}</nav></div>`;
@@ -515,6 +530,7 @@ function goc_he_thong(ma, k, x, gn) {
     d.push(["Giá trị hợp lý", `${so(r.gia_tri / 1000, 2)} <span class="${mau(dg)}">(${pt(dg)})</span>`]); }
   if (r.lnst_f) d.push(["LNST năm dự phóng", `${so(r.lnst_f, 0)} tỷ${r.ht_kh ? ` · đã đạt ${pt(r.ht_kh, 0, false)} kế hoạch` : ""}`]);
   const cs = canslim_dong((DS || []).find(x => x.ma === ma) || r); if (cs) d.push(["CANSLIM", cs]);
+  const vg = dong_ds(ma).vgm; if (vg) d.push(["Xếp hạng VGM", vgm_html(vg)]);
   return d.map(([a, b]) => `<div class="dong"><span class="n">${a}</span><span class="v">${b}</span></div>`).join("") || `<div class="trong">Chưa có dữ liệu</div>`;
 }
 
@@ -828,16 +844,26 @@ function hien_dau() {
   const re = DS.filter(r => r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
   const f = DS.filter(r => r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
   const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 24).map(r => r.ma);
+  const vA = DS.filter(r => (r.vgm || "").endsWith("A") && r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 24).map(r => r.ma);
+  const chip_pt = m => { const l = LIVE[m], p = l?.pt != null ? l.pt / 100 : null;
+    return `<a class="chip" href="#${esc(m)}">${esc(m)}${p != null ? `<span class="pt ${mau(p)}">${pt(p, 1)}</span>` : ""}</a>`; };
+  const du_tk = MKT?.loc?.du_tk ?? 2, lv = Object.values(LIVE).filter(l => MA_OK(l.ma) && (l.gt20 ?? l.gt ?? 0) >= du_tk);
+  const loc_tk = (dk, sx) => lv.filter(dk).sort(sx || ((a, b) => (b.gt ?? 0) - (a.gt ?? 0))).slice(0, 16).map(l => l.ma);
+  const tk = [["Vượt đỉnh 52 tuần", loc_tk(l => l.bit & 1)], ["Khối lượng đột biến ≥ 2× TB20, giá tăng", loc_tk(l => l.kl_x >= 2 && l.pt > 0, (a, b) => b.kl_x - a.kl_x)],
+    ["Thủng đáy 52 tuần", loc_tk(l => l.bit & 2)]].filter(x => x[1].length);
   let h = `<div class="dau-chinh"><h2>Tra cứu mã</h2><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
     placeholder="Nhập mã cổ phiếu – VD V, HPG" aria-label="Tìm mã cổ phiếu" maxlength="10" autocomplete="off"
     spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div>
     <p>${DS.length} mã HOSE · HNX · UPCoM – giá, tài chính, cổ đông, định giá, CANSLIM</p></div><div class="the"><div class="than nhom-chip">`;
+  if (TD.size) h += `<h3>Danh sách theo dõi của bạn <span class="m" style="text-transform:none;font-weight:400">· lưu trong trình duyệt này · bấm "+ Theo dõi" ở trang mã để thêm</span></h3>${[...TD].sort().map(chip_pt).join("")}`;
   if (GIU.size) h += `<h3>Danh mục đang giữ</h3>${[...GIU].sort().map(chip).join("")}`;
   if (Object.keys(BOT).length) h += `<h3>Bot đang khuyến nghị mua</h3>${Object.keys(BOT).map(chip).join("")}`;
   h += `<h3>Vốn hoá lớn nhất</h3>${DS.slice(0, 30).map(r => chip(r.ma)).join("")}`;
   if (tang.length) h += `<h3>LNST quý tăng mạnh (≥ 2 quý liền, quý ≥ 50 tỷ)</h3>${tang.map(chip).join("")}`;
   if (re.length) h += `<h3>Rẻ so giá trị hợp lý (vốn hoá ≥ 1.000 tỷ)</h3>${re.map(chip).join("")}`;
   if (f.length) h += `<h3>F-Score ≥ 8 (sức khoẻ tài chính tốt, vốn hoá ≥ 1.000 tỷ)</h3>${f.map(chip).join("")}`;
+  if (tk.length) h += `<h3>Tín hiệu kỹ thuật trong phiên <span class="m" style="text-transform:none;font-weight:400">· ${esc(MKT?.cap_nhat || "")} · GTGD ≥ ${so(du_tk, 0)} tỷ</span></h3>` + tk.map(([t, ds]) => `<div class="m" style="font-size:12.5px;margin:6px 0 2px">${esc(t)} (${ds.length})</div>${ds.map(chip_pt).join("")}`).join("");
+  if (vA.length) h += `<h3>Xếp hạng A (kiểu VGM: giá trị · tăng trưởng · động lượng, vốn hoá ≥ 500 tỷ)</h3>${vA.map(chip).join("")}`;
   if (cs.length) { const m = META.canslim?.m;
     h += `<h3>CANSLIM ≥ 4/5 (C·A·N·S·L, vốn hoá ≥ 500 tỷ, xếp theo RS)${m ? ` · thị trường (M): <span class="${m === "tăng" ? "t" : m === "giảm" ? "g" : ""}">${esc(m)}</span>` : ""}</h3>${cs.map(chip).join("")}`; }
   $("#noi-dung").innerHTML = h + `</div></div>`;
@@ -847,12 +873,13 @@ function hien_dau() {
 }
 const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["pe_h", "P/E"], ["pb_h", "P/B"], ["roe", "ROE"], ["ln_q", "LNST quý"],
   ["ln_yoy", "LN quý YoY"], ["ln4_yoy", "LN 4Q YoY"], ["dt_yoy", "DT YoY"], ["bien", "Biên gộp"], ["lien", "Quý tăng liền"], ["f", "F-Score"],
-  ["dg_h", "So giá trị HL"], ["cs", "CANSLIM"], ["rs", "RS"], ["von", "Vốn hoá"], ["rui_ro_bctc", "Rủi ro BCTC"]];
+  ["dg_h", "So giá trị HL"], ["vgm_d", "VGM"], ["cs", "CANSLIM"], ["rs", "RS"], ["von", "Vốn hoá"], ["rui_ro_bctc", "Rủi ro BCTC"]];
 const LOC = {tim: "", san: "", nganh: "", sx: "von", tang: false, bat: new Set()};
 const BAT = {tang: ["LN quý tăng > 20%", r => r.ln_yoy > .2], toc: ["Tăng tốc", r => r.tang_toc === "Có"], re: ["Rẻ", r => r.dg_h >= .2],
   pe: ["P/E < 12", r => r.pe_h > 0 && r.pe_h < 12], roe: ["ROE > 15%", r => r.roe > .15], f: ["F-Score ≥ 7", r => r.f >= 7],
   sach: ["Không rủi ro BCTC", r => !r.rui_ro_bctc], lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000],
-  cs: ["CANSLIM ≥ 4", r => r.cs >= 4], rs: ["RS ≥ 80", r => r.rs >= 80]};
+  cs: ["CANSLIM ≥ 4", r => r.cs >= 4], rs: ["RS ≥ 80", r => r.rs >= 80], vgm: ["Hạng A (VGM)", r => (r.vgm || "").endsWith("A")],
+  td: ["Đang theo dõi", r => TD.has(r.ma)]};
 function o_loc(r, k) {
   switch (k) {
     case "ma": return `<td class="trai ma"><a href="#${esc(r.ma)}"><b>${esc(r.ma)}</b></a>${GIU.has(r.ma) ? '<span class="the-chu giu">giữ</span>' : ""}${BOT[r.ma] ? '<span class="the-chu bot">bot</span>' : ""}</td>`;
@@ -863,6 +890,8 @@ function o_loc(r, k) {
     case "roe": case "bien": return `<td>${r[k] != null ? pt(r[k], 1, false) : "–"}</td>`;
     case "ln_q": return `<td class="${r.ln_q < 0 ? "g" : ""}">${ty(r.ln_q)}</td>`;
     case "lien": case "f": case "rs": return `<td>${r[k] ?? ""}</td>`;
+    case "vgm_d": { const v = (r.vgm || "").split(" ");
+      return `<td title="${esc(vgm_html(r.vgm).replace(/<[^>]+>/g, ""))}">${r.vgm ? `<b class="${v[3] === "A" ? "t" : v[3] === "F" ? "g" : ""}">${esc(v[3])}</b><span class="m"> ${esc(v.slice(0, 3).join(""))}</span>` : ""}</td>`; }
     case "cs": return `<td title="${esc(r.cs_d || "")}">${r.cs != null ? `<b class="${r.cs >= 4 ? "t" : ""}">${r.cs}</b><span class="m"> ${esc(r.cs_d || "")}</span>` : ""}</td>`;
     case "von": return `<td>${so(r.von, 0)}</td>`;
     case "rui_ro_bctc": return `<td class="${r.rui_ro_bctc ? "g" : ""}">${r.rui_ro_bctc || ""}</td>`;
@@ -1021,6 +1050,8 @@ function gan_tim(o, di) {
   return inp;
 }
 gan_tim($("#tim-dau"));
+document.addEventListener("click", e => { const b = e.target.closest("[data-td]"); if (!b) return;
+  doi_td(b.dataset.td); const co = TD.has(b.dataset.td); b.setAttribute("aria-pressed", co); b.textContent = co ? "✓ Đang theo dõi" : "+ Theo dõi"; });
 let MA_TRUOC = "";
 addEventListener("hashchange", () => { const m = location.hash.split("/")[0]; dinh_tuyen(); if (m !== MA_TRUOC) scrollTo(0, 0); MA_TRUOC = m; });
 
