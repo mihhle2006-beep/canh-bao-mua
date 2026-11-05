@@ -123,6 +123,16 @@ tbody tr{background:var(--the)}
 .trong{padding:30px;text-align:center;color:var(--mo)}
 .loi{max-width:640px;margin:40px auto;padding:20px;text-align:center}
 [hidden]{display:none!important}
+.sao{border:0;background:none;padding:0 4px 0 0;font-size:14px;color:#c4cad4;line-height:1}
+.sao[aria-pressed=true]{color:#e0a800}
+.td-the{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;align-items:stretch}
+.td-the button{flex:0 0 auto;border:1px solid var(--vien);background:var(--the);border-radius:8px;padding:6px 10px;text-align:left;min-width:96px}
+.td-the b{display:block;font-size:13px}
+.td-the .so{font-size:12.5px;font-weight:600}
+.cong-cu{display:flex;gap:8px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--luoi)}
+.cong-cu button{border:1px solid var(--vien);background:var(--the);border-radius:7px;padding:4px 10px;font-size:12.5px}
+.bao{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d2430;color:#fff;padding:8px 14px;border-radius:8px;
+  font-size:13px;z-index:60;box-shadow:0 4px 14px #0003}
 </style>
 </head>
 <body>
@@ -140,6 +150,11 @@ tbody tr{background:var(--the)}
 <main>
   <section id="tq">
     <div class="cs" id="cs"></div>
+    <div class="the" id="td-khoi" hidden style="margin-bottom:16px">
+      <div class="khoi-dau"><h2>★ Theo dõi</h2><span class="phu so" id="td-tom"></span>
+        <button class="bat" style="margin-left:auto;padding:3px 10px" id="td-mo">Xem bảng</button></div>
+      <div class="td-the" id="td-ds"></div>
+    </div>
     <div class="luoi2">
       <div class="the">
         <div class="khoi-dau"><h2 id="bd-ten">VN-Index</h2><span class="phu so" id="bd-phu"></span>
@@ -185,6 +200,8 @@ tbody tr{background:var(--the)}
       <nav class="the ben" id="ben" aria-label="Nhóm lọc"></nav>
       <div class="the">
         <div class="khung-bang-dau"><b id="loc-ten"></b><span class="phu" id="loc-mo-ta"></span><span class="phai so" id="loc-so"></span></div>
+        <div class="cong-cu" id="td-cong-cu" hidden><button id="td-chep">Sao chép link danh sách (mở trên máy khác)</button>
+          <button id="td-xoa">Xoá hết</button></div>
         <div class="bang-boc"><table><thead id="loc-dau-bang"></thead><tbody id="loc-than"></tbody></table></div>
         <button class="them" id="loc-them" hidden>Xem thêm</button>
       </div>
@@ -202,6 +219,18 @@ const ST = Object.assign({tab: "tq", cs: "VNINDEX", khung: "1D", kich: "vh", san
   nhom: "gt_lon", sap: null, chieu: -1, so_dong: 100}, doc_st());
 
 function doc_st() { try { return JSON.parse(localStorage.getItem("bang_tt") || "{}"); } catch (e) { return {}; } }
+// THEO DÕI: danh sách mã chỉ lưu trong trình duyệt này (localStorage) – trang công khai không chứa danh mục của ai.
+// Nạp nhanh: mở trang với #theo_doi=AAA,BBB (link riêng) → lưu vào máy rồi xoá khỏi thanh địa chỉ.
+let TD = (() => { try { return JSON.parse(localStorage.getItem("bang_tt_theo_doi") || "[]"); } catch (e) { return []; } })();
+const luu_td = () => { try { localStorage.setItem("bang_tt_theo_doi", JSON.stringify(TD)); } catch (e) {} };
+const sach_ma = s => [...new Set(String(s || "").toUpperCase().split(/[^A-Z0-9]+/).filter(m => m.length >= 3 && m.length <= 8))].slice(0, 60);
+(() => { const m = location.hash.match(/theo_doi=([^&]*)/);
+  if (!m) return;
+  const ds = sach_ma(decodeURIComponent(m[1]));
+  if (ds.length) { TD = ds; luu_td(); setTimeout(() => bao(`Đã lưu ${ds.length} mã vào Theo dõi trên máy này`), 600); }
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} })();
+function bao(t) { const b = document.createElement("div"); b.className = "bao"; b.textContent = t; document.body.appendChild(b); setTimeout(() => b.remove(), 3200); }
+function doi_td(ma) { TD = TD.includes(ma) ? TD.filter(x => x !== ma) : TD.concat([ma]); luu_td(); ve_tat(); }
 function luu_st() { try { const {tim, so_dong, ...x} = ST; localStorage.setItem("bang_tt", JSON.stringify(x)); } catch (e) {} }
 
 // ---------- định dạng ----------
@@ -348,6 +377,24 @@ function ve_duong(hop, diem, tc, nhan_x, x_max, ten_tc) {
 }
 function nice(x) { const m = Math.pow(10, Math.floor(Math.log10(x))), r = x / m; return (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * m; }
 
+// ---------- dải theo dõi (tổng quan) ----------
+function ve_theo_doi() {
+  const khoi = $("#td-khoi"); khoi.hidden = !TD.length; if (!TD.length) return;
+  const ds = TD.map(m => L.find(r => r.ma === m) || {ma: m});
+  const co = ds.filter(r => r.pt != null), tang = co.filter(r => r.pt > 0).length, giam = co.filter(r => r.pt < 0).length;
+  const tb = co.length ? co.reduce((a, r) => a + r.pt, 0) / co.length : null;
+  $("#td-tom").innerHTML = `${TD.length} mã · <span class="t">${tang} tăng</span> · <span class="g">${giam} giảm</span>${tb != null ? ` · TB <span class="${lop(tb)}">${dau(tb)}%</span>` : ""}`;
+  $("#td-ds").innerHTML = ds.map(r => `<button data-ma="${esc(r.ma)}" title="${esc(r.ten || "")}"><b>${esc(r.ma)}</b>${r.pt == null ? `<span class="so" style="color:var(--mo)">–</span>`
+    : `<span class="so ${lop_gia(r)}">${nf(r.gia)} · ${dau(r.pt)}%</span><span class="so" style="display:block;font-weight:400;color:var(--mo)">NN ${r.nn == null ? "–" : dau(r.nn, 1)} tỷ</span>`}</button>`).join("");
+  $("#td-ds").querySelectorAll("button").forEach(b => b.onclick = () => { ST.nhom = "theo_doi"; ST.sap = null; luu_st(); doi_tab("loc"); });
+}
+$("#td-mo").onclick = () => { ST.nhom = "theo_doi"; ST.sap = null; luu_st(); doi_tab("loc"); };
+$("#td-xoa").onclick = () => { if (confirm("Xoá hết danh sách theo dõi trên máy này?")) { TD = []; luu_td(); ve_tat(); } };
+$("#td-chep").onclick = async () => {
+  const u = location.origin + location.pathname + "#theo_doi=" + TD.join(",");
+  try { await navigator.clipboard.writeText(u); bao("Đã chép link – link chứa danh sách mã, đừng chia sẻ công khai"); }
+  catch (e) { prompt("Chép link này (chứa danh sách mã của bạn):", u); } };
+
 // ---------- bản đồ nhiệt ----------
 const THANG = [[-Infinity, -5, "#b3261e"], [-5, -3, "#d84a3f"], [-3, -1, "#ec8a82"], [-1, -1e-9, "#f6c3be"],
   [-1e-9, 1e-9, "#ecd889"], [1e-9, 1, "#b9e0c6"], [1, 3, "#74c393"], [3, 5, "#2f9e5c"], [5, Infinity, "#17783f"]];
@@ -404,6 +451,8 @@ function ve_ban_do() {
     for (const o of squarify(n.ds, n.x + GAP / 2, n.y + dau_cao + GAP / 2, n.w - GAP, n.h - dau_cao - GAP)) {
       const mau = la_rong ? mau_rong(o[k], mx) : mau_pt(o.pt, o.tt);
       const r = el("rect", {x: o.x + 1, y: o.y + 1, width: Math.max(o.w - 2, 0), height: Math.max(o.h - 2, 0), rx: 2, fill: mau}, gn);
+      if (TD.includes(o.ma) && o.w > 6 && o.h > 6) el("rect", {x: o.x + 2, y: o.y + 2, width: o.w - 4, height: o.h - 4, rx: 2, fill: "none",
+        stroke: "#1d2430", "stroke-width": 2, "pointer-events": "none"}, gn);
       r.dataset.i = O_ND.length; O_ND.push(o);
       const cm = chu_tren(mau);
       if (o.w >= 30 && o.h >= 16) {
@@ -524,6 +573,8 @@ function ve_tac() {
 
 // ---------- lọc mã ----------
 const NHOM = [
+  ["TÍN HIỆU BOT", [["bot", "Danh sách mua của bot", "Danh sách mua công khai của canh-bao-mua cho phiên hiệu lực – vùng mua, cắt lỗ, mục tiêu; ✔ = giá đang trong vùng mua", r => BOT[r.ma], "pt", -1]]],
+  ["THEO DÕI", [["theo_doi", "★ Danh sách theo dõi", "Mã bạn đánh dấu ★ (lưu trong trình duyệt này) – luôn hiện đủ, không theo bộ lọc sàn / ngành / thanh khoản", r => TD.includes(r.ma), "gt", -1]]],
   ["BIẾN ĐỘNG", [["tang", "Tăng giá", "Giá cao hơn tham chiếu", r => r.co_gd && r.pt > 0, "pt", -1],
     ["giam", "Giảm giá", "Giá thấp hơn tham chiếu", r => r.co_gd && r.pt < 0, "pt", 1],
     ["tran", "Trần", "Đang ở giá trần", r => r.tt === 1, "gt", -1], ["san", "Sàn", "Đang ở giá sàn", r => r.tt === -1, "gt", -1],
@@ -545,7 +596,9 @@ const NHOM_MAP = Object.fromEntries(NHOM.flatMap(([, ds]) => ds.map(d => [d[0], 
 const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia", "Giá"], ["pt", "±%"], ["gt", "GTGD"], ["kl_x", "KL/TB"], ["mcd", "Mua CĐ"],
   ["chuoi", "Chuỗi NN"], ["nn5", "NN 5P"], ["nn20", "NN 20P"], ["nn", "NN ròng"], ["rsi", "RSI"], ["bien", "Biên độ phiên", 1]];
 
+let BOT = {};
 function dung_loc() {
+  BOT = Object.fromEntries(((D.tin_hieu || {}).ma || []).map(x => [x[0], {nhom: x[1], tu: x[2], den: x[3], cl: x[4], mt1: x[5], mt3: x[6], ly_do: x[7]}]));
   const c = D.loc.cot;
   L = D.loc.dong.map(r => Object.fromEntries(c.map((k, i) => [k, r[i]])));
   for (const r of L) { r.ten = (D.ten || {})[r.ma] || ""; r.tim = bo_dau(r.ma + " " + r.ten); }
@@ -569,30 +622,45 @@ function ve_loc() {
     const h = document.createElement("h3"); h.textContent = ten; ben.appendChild(h);
     for (const [k, nhan, , f] of ds) {
       const b = document.createElement("button"); b.setAttribute("aria-pressed", String(ST.nhom === k));
-      b.innerHTML = `${esc(nhan)}<span class="so">${f ? nen.filter(f).length : ""}</span>`;
+      b.innerHTML = `${esc(nhan)}<span class="so">${k === "theo_doi" ? TD.length : k === "bot" ? Object.keys(BOT).length : f ? nen.filter(f).length : ""}</span>`;
       b.onclick = () => { ST.nhom = k; ST.sap = null; ST.so_dong = 100; luu_st(); ve_loc(); };
       ben.appendChild(b);
     }
   }
   const chon = $("#loc-nhom");
   chon.innerHTML = NHOM.map(([ten, ds]) => `<optgroup label="${esc(ten)}">` + ds.map(([k, nhan, , f]) =>
-    `<option value="${k}" ${k === ST.nhom ? "selected" : ""}>${esc(nhan)}${f ? " (" + nen.filter(f).length + ")" : ""}</option>`).join("") + "</optgroup>").join("");
+    `<option value="${k}" ${k === ST.nhom ? "selected" : ""}>${esc(nhan)}${k === "theo_doi" ? " (" + TD.length + ")" : k === "bot" ? " (" + Object.keys(BOT).length + ")" : f ? " (" + nen.filter(f).length + ")" : ""}</option>`).join("") + "</optgroup>").join("");
   chon.onchange = e => { ST.nhom = e.target.value; ST.sap = null; ST.so_dong = 100; luu_st(); ve_loc(); };
   const [k, nhan, mo_ta, f, sap0, chieu0] = NHOM_MAP[ST.nhom] || NHOM_MAP.gt_lon;
-  let ds = f ? nen.filter(f) : nen.slice();
+  const la_td = k === "theo_doi", la_bot = k === "bot";
+  let ds = la_td ? L.filter(r => TD.includes(r.ma) && (!ST.tim.trim() || r.tim.includes(bo_dau(ST.tim.trim()))))
+    : la_bot ? L.filter(r => BOT[r.ma]) : f ? nen.filter(f) : nen.slice();
+  $("#td-cong-cu").hidden = !la_td || !TD.length;
   const sap = ST.sap || sap0, chieu = ST.sap ? ST.chieu : chieu0;
   ds.sort((a, b) => { const x = a[sap], y = b[sap]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
     return (typeof x === "string" ? x.localeCompare(y) : x - y) * (chieu > 0 ? 1 : -1) || b.gt - a.gt; });
   if (!f) ds = ds.slice(0, 50);
-  $("#loc-ten").textContent = nhan; $("#loc-mo-ta").textContent = mo_ta; $("#loc-so").textContent = `${ds.length} mã`;
+  $("#loc-ten").textContent = nhan + (la_bot && D.tin_hieu ? ` – phiên ${ngay_vn(D.tin_hieu.hieu_luc)}` : "");
+  $("#loc-mo-ta").textContent = la_bot && !D.tin_hieu ? "Chưa có danh sách mua" : mo_ta; $("#loc-so").textContent = `${la_td ? TD.length : ds.length} mã`;
   $("#loc-dau-bang").innerHTML = "<tr>" + COT.map(([c, t, trai]) => `<th data-c="${c}" class="${trai ? "trai" : ""}${c === "nganh" ? " cot-nganh" : ""}" ${c === sap ? `aria-sort="${chieu > 0 ? "ascending" : "descending"}"` : ""}>${t}</th>`).join("") + "</tr>";
   for (const th of document.querySelectorAll("#loc-dau-bang th")) th.onclick = () => { const c = th.dataset.c; if (c === "bien" || c === "nganh") return;
     if (ST.sap === c) ST.chieu = -ST.chieu; else { ST.sap = c; ST.chieu = c === "ma" ? 1 : -1; } ve_loc(); };
   const than = $("#loc-than");
-  if (!ds.length) { than.innerHTML = `<tr><td colspan="${COT.length}" class="trong">Không có mã nào khớp bộ lọc</td></tr>`; $("#loc-them").hidden = true; return; }
-  than.innerHTML = ds.slice(0, ST.so_dong).map(dong_html).join("");
+  if (!ds.length && !(la_td && TD.length)) { than.innerHTML = `<tr><td colspan="${COT.length}" class="trong">${la_td ? "Chưa có mã nào – bấm ☆ cạnh mã ở các nhóm khác (hoặc tìm mã rồi bấm ☆) để thêm" : la_bot ? "Bot chưa có danh sách mua cho phiên này" : "Không có mã nào khớp bộ lọc"}</td></tr>`; $("#loc-them").hidden = true; return; }
+  const thieu = la_td ? TD.filter(m => !L.some(r => r.ma === m)) : [];
+  than.innerHTML = ds.slice(0, ST.so_dong).map(r => dong_html(r) + (la_bot ? dong_bot(r) : "")).join("") + thieu.map(m =>
+    `<tr><td class="ma trai"><button class="sao" aria-pressed="true" data-ma="${esc(m)}" aria-label="Bỏ theo dõi ${esc(m)}">★</button>${esc(m)}</td>
+     <td class="trai" colspan="${COT.length - 1}" style="color:var(--mo)">Không có trong dữ liệu (mã không giao dịch / thanh khoản quá thấp)</td></tr>`).join("");
+  than.querySelectorAll(".sao").forEach(b => b.onclick = e => { e.stopPropagation(); doi_td(b.dataset.ma); });
   $("#loc-them").hidden = ds.length <= ST.so_dong;
   $("#loc-them").textContent = `Xem thêm (${ds.length - ST.so_dong} mã)`;
+}
+function dong_bot(r) {
+  const b = BOT[r.ma]; if (!b) return "";
+  const trong = r.gia >= b.tu && r.gia <= b.den, duoi_cl = b.cl && r.gia < b.cl;
+  return `<tr style="background:#fafbfd"><td></td><td class="trai" colspan="${COT.length - 1}" style="white-space:normal;color:var(--chu2);font-size:12.5px">
+    <b>${esc(b.nhom)}</b> · vùng mua <span class="so">${nf(b.tu)}–${nf(b.den)}</span> ${trong ? '<span class="t">✔ đang trong vùng</span>' : r.gia > b.den ? '<span class="d">trên vùng (không đuổi)</span>' : '<span class="g">dưới vùng</span>'}
+    · cắt lỗ <span class="so ${duoi_cl ? "g" : ""}">${nf(b.cl)}</span> · mục tiêu <span class="so">${nf(b.mt1)} → ${nf(b.mt3)}</span>${b.ly_do ? ` · ${esc(b.ly_do)}` : ""}</td></tr>`;
 }
 function lop_gia(r) { return r.tt === 1 ? "tr" : r.tt === -1 ? "sa" : lop(r.gia - r.tc); }
 function nen_pt(r) { return r.tt === 1 ? "#f2e6fb" : r.tt === -1 ? "#e0f5f8" : r.pt > 0 ? "var(--tang-nen)" : r.pt < 0 ? "var(--giam-nen)" : "var(--dung-nen)"; }
@@ -606,7 +674,8 @@ function bien_svg(r) {
 }
 function dong_html(r) {
   const nn = v => `<span class="${lop(v)}">${v == null ? "–" : dau(v, Math.abs(v) >= 100 ? 0 : 1)}</span>`;
-  return `<tr><td class="ma trai" title="${esc(r.ten)}">${esc(r.ma)}${r.san !== "HSX" ? `<span class="nhan-san">${r.san === "UPCOM" ? "UPC" : r.san}</span>` : ""}</td>
+  const co = TD.includes(r.ma);
+  return `<tr><td class="ma trai" title="${esc(r.ten)}"><button class="sao" aria-pressed="${co}" data-ma="${esc(r.ma)}" aria-label="${co ? "Bỏ" : "Thêm"} theo dõi ${esc(r.ma)}">${co ? "★" : "☆"}</button>${esc(r.ma)}${r.san !== "HSX" ? `<span class="nhan-san">${r.san === "UPCOM" ? "UPC" : r.san}</span>` : ""}</td>
     <td class="trai cot-nganh" style="color:var(--chu2)">${esc(D.nganh[r.nganh] || "")}</td>
     <td class="so ${lop_gia(r)}">${nf(r.gia)}</td>
     <td class="so"><span class="o-pt ${lop_gia(r)}" style="background:${nen_pt(r)}">${dau(r.pt)}%</span></td>
@@ -641,7 +710,7 @@ function ve_tat() {
   const cu = D.dang_gd && tuoi > 12;
   $("#cham").className = "cham" + (D.dang_gd && !cu ? " song" : "");
   $("#trang-thai").textContent = `Phiên ${ngay_vn(D.phien)}/${D.phien.slice(0, 4)} · ${D.dang_gd ? (cu ? `dữ liệu cách đây ${Math.round(tuoi)} phút` : "đang giao dịch") : "đã đóng cửa"} · cập nhật ${D.cap_nhat.slice(11, 16)}`;
-  if (ST.tab === "tq") { ve_the(); ve_bieu_do(); ve_ban_do(); ve_tk(); ve_tac(); }
+  if (ST.tab === "tq") { ve_the(); ve_theo_doi(); ve_bieu_do(); ve_ban_do(); ve_tk(); ve_tac(); }
   else ve_loc();
 }
 async function tai() {

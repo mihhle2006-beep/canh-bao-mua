@@ -119,7 +119,7 @@ jobs:
           sudo apt-get update -q > /dev/null
           sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
       - name: Khôi phục đệm chữ tài liệu (lần chạy trước)
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: danh-muc/cache_du_lieu/tai_lieu
           key: tai-lieu-bt-${{ github.run_id }}
@@ -174,7 +174,7 @@ jobs:
           merge-multiple: true
           path: ra
       - name: Khôi phục đệm chữ cũ
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: danh-muc/cache_du_lieu/tai_lieu
           key: tai-lieu-bt-${{ github.run_id }}
@@ -185,7 +185,7 @@ jobs:
           merge-multiple: true
           path: danh-muc/cache_du_lieu/tai_lieu
       - name: Lưu đệm chữ tài liệu (cũ + mới) cho lần sau
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: danh-muc/cache_du_lieu/tai_lieu
           key: tai-lieu-bt-${{ github.run_id }}

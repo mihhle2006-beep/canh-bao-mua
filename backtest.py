@@ -70,12 +70,12 @@ def main():
 
     start = a.tu or C.NGAY_BAT_DAU
     print(f"\n{'=' * 72}")
-    print(f" BACKTEST CANH_BAO_MUA – bộ máy ptcp (point-in-time, walk-forward)")
+    print(" BACKTEST CANH_BAO_MUA – bộ máy ptcp (point-in-time, walk-forward)")
     print(f"{'=' * 72}")
     print(f" Mã : {', '.join(ds_ma)}")
     print(f" Từ : {start}  |  Mỗi {a.buoc} phiên  |  Kỳ hạn chấm: {a.ky_han} phiên")
     print(f" Ngưỡng đang dùng: EV ≥ {C.EV_NGUONG}%, R/R ≥ {C.RR_TOI_THIEU}  (◄ trong bảng độ nhạy)")
-    print(f" Giới hạn: bỏ qua khung Giờ (không có dữ liệu intraday lịch sử)")
+    print(" Giới hạn: bỏ qua khung Giờ (không có dữ liệu intraday lịch sử)")
     print(f"{'─' * 72}\n")
 
     if len(ds_ma) == 1:
