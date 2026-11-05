@@ -293,12 +293,18 @@ def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
     assert T.thu_tu(["BBB", "AAA", "CCC"], ra, "2026-03-01") == ["CCC", "AAA", "BBB"]     # chưa có → cũ nhất trước
     assert T.thu_tu(["ZZZ", "CCC"], ra, "2026-03-01") == ["ZZZ", "CCC"]                     # cùng độ cũ: giữ thứ tự (vốn hoá)
     assert T.thu_tu(["BBB"], ra, "2026-02-01") == []                                      # đã cập nhật hôm nay
-    assert T.thu_tu(["BBB"], ra, "2026-02-01", lam_moi=True) == ["BBB"]
+    assert T.thu_tu(["BBB"], ra, "2026-02-01", lam_moi=True) == ["BBB"]                  # định dạng cũ → làm lại
+    T._ghi({"cap_nhat": "2026-02-01", "phien_ban": T.PHIEN_BAN_DN}, f"{ra}/dn/BBB.json")
+    assert T.thu_tu(["BBB"], ra, "2026-02-01", lam_moi=True) == []                       # đã xong định dạng mới hôm nay
+    T._ghi({"cap_nhat": "2026-01-01", "phien_ban": T.PHIEN_BAN_DN}, f"{ra}/dn/AAA.json")
+    T._ghi({"cap_nhat": "2026-01-01"}, f"{ra}/dn/ZZZ.json")
+    T._ghi({"cap_nhat": "2026-01-01"}, f"{ra}/gia/ZZZ.json")
+    assert T.thu_tu(["AAA", "ZZZ"], ra, "2026-03-01") == ["ZZZ", "AAA"]                  # cùng độ cũ: định dạng cũ trước
     monkeypatch.setattr(T, "lay_gia", lambda m, san="": {"d": ["2026-11-05"], "c": [1.0]})
     monkeypatch.setattr(T, "lay_dn", lambda m, cu=None, *a: ({"ct": {"m": m}}, []) if m != "BBB" else ({}, ["ct"] * T.SO_PHAN_DN))
     xong, loi, con = T.chay(["AAA", "BBB", "CCC"], ra, phut=5, luong=2, in_ra=lambda *_: None)
     assert (xong, loi, con) == (3, 0, 0)
-    assert T._doc(f"{ra}/dn/AAA.json")["ct"] == {"m": "AAA"} and T._doc(f"{ra}/dn/BBB.json") == {"cap_nhat": "2026-02-01"}
+    assert T._doc(f"{ra}/dn/AAA.json")["ct"] == {"m": "AAA"} and T._doc(f"{ra}/dn/BBB.json")["cap_nhat"] == "2026-02-01"  # lỗi hết → giữ file
     assert T._doc(f"{ra}/gia/CCC.json")["c"] == [1.0]
     _, _, con = T.chay(["DDD", "EEE"], ra, phut=0, in_ra=lambda *_: None)                   # hết giờ → không nhận mã mới
     assert con == 2
