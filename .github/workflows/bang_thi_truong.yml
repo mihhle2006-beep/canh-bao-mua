@@ -13,8 +13,8 @@ on:
     - cron: "10 8 * * 1-5"         # 15:10 chốt phiên
     - cron: "7 12 * * 1-5"         # 19:07 chuẩn bị phiên sau
   push:
-    branches: [main, "claude/**"]  # TẠM (thử nghiệm nhánh – bỏ trước khi gộp): nhánh claude/** chạy & đẩy dữ liệu mẫu về
-    paths: ["docs/**", "thi_truong/**", ".github/workflows/bang_thi_truong.yml"]
+    branches: [main]
+    paths: ["docs/**", "thi_truong/**", ".github/workflows/bang_thi_truong.yml"]   # giao diện / code đổi → triển khai ngay
   workflow_dispatch:
     inputs:
       chuan_bi:
@@ -83,7 +83,7 @@ jobs:
           key: tt-${{ github.run_id }}
 
       - name: (thử nghiệm) đẩy du_lieu.json về nhánh
-        if: github.ref != 'refs/heads/main' && (inputs.ghi_nhanh || github.event_name == 'push')
+        if: inputs.ghi_nhanh && github.ref != 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"

@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bảng thị trường</title>
+<meta name="description" content="Tổng quan thị trường chứng khoán Việt Nam trong phiên: chỉ số, bản đồ nhiệt HOSE, thống kê phiên, tác động VN-Index, lọc mã.">
+<style>
+:root{
+  --nen:#f3f5f8;--the:#fff;--vien:#e3e7ee;--luoi:#edf0f4;
+  --chu:#1d2430;--chu2:#4b5565;--mo:#7a8494;
+  --tang:#0f8a4a;--giam:#d1342b;--dung:#b88a00;--tran:#9b3fd1;--san:#0e9fb3;
+  --tang-nen:#e3f4ea;--giam-nen:#fde8e6;--dung-nen:#fbf3d6;
+  --nhan:#1f6feb;--nhan-nen:#e8f0fe;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--nen);color:var(--chu);
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.so{font-variant-numeric:tabular-nums}
+.t{color:var(--tang)}.g{color:var(--giam)}.d{color:var(--dung)}.tr{color:var(--tran)}.sa{color:var(--san)}
+button{font:inherit;color:inherit;cursor:pointer}
+header{background:var(--the);border-bottom:1px solid var(--vien);position:sticky;top:0;z-index:20}
+.dau{max-width:1440px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:16px;min-height:52px;flex-wrap:wrap}
+.dau h1{font-size:17px;margin:0;font-weight:650;white-space:nowrap}
+.tab{display:flex;gap:2px;align-self:stretch}
+.tab button{background:none;border:0;border-bottom:2px solid transparent;padding:0 12px;font-weight:500;color:var(--chu2)}
+.tab button[aria-selected=true]{color:var(--chu);border-bottom-color:var(--nhan)}
+.tt-phien{margin-left:auto;color:var(--mo);font-size:12.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cham{width:8px;height:8px;border-radius:50%;background:var(--mo);display:inline-block}
+.cham.song{background:var(--tang);box-shadow:0 0 0 3px #0f8a4a22}
+.tt-phien a{color:var(--nhan);text-decoration:none}
+main{max-width:1440px;margin:0 auto;padding:16px}
+.the{background:var(--the);border:1px solid var(--vien);border-radius:10px}
+.cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.cs .the{padding:10px 12px;display:grid;grid-template-columns:1fr 92px;gap:2px 8px;text-align:left;
+  border-width:1px;cursor:pointer}
+.cs .the[aria-pressed=true]{border-color:var(--nhan);background:var(--nhan-nen)}
+.cs .ten{font-weight:600;color:var(--chu2);font-size:13px}
+.cs .gia{font-size:19px;font-weight:650}
+.cs .tdoi{font-size:12.5px;font-weight:550}
+.cs svg{grid-row:1/4;grid-column:2;align-self:center}
+.cs .phu{grid-column:1/3;font-size:11.5px;color:var(--mo);text-align:right;margin-top:-2px}
+@media (max-width:600px){
+  .cs{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .cs .the{grid-template-columns:minmax(0,1fr);padding:8px 10px}
+  .cs svg{grid-row:auto;grid-column:1;width:100%;height:30px}
+  .cs .phu{grid-column:1;text-align:left;margin-top:0}
+  .cs .gia{font-size:17px}
+  .an-dt{display:none}
+  .tt-phien{margin-left:0;width:100%;padding-bottom:6px}
+}
+.luoi2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;margin-bottom:16px}
+.luoi3{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);gap:16px}
+@media (max-width:1000px){.luoi2,.luoi3{grid-template-columns:minmax(0,1fr)}}
+.khoi-dau{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--luoi);flex-wrap:wrap}
+.khoi-dau h2{font-size:15px;margin:0;font-weight:650}
+.khoi-dau .phu{color:var(--mo);font-size:12.5px}
+.nut{display:flex;gap:2px;background:var(--nen);border-radius:8px;padding:2px;margin-left:auto}
+.nut button{border:0;background:none;padding:3px 9px;border-radius:6px;font-size:12.5px;color:var(--chu2);white-space:nowrap}
+#loc-san{overflow-x:auto;max-width:100%}
+#loc-nhom{display:none;font:inherit;border:1px solid var(--vien);border-radius:8px;padding:6px 10px;background:var(--the);width:100%}
+.nut button[aria-pressed=true]{background:var(--the);color:var(--chu);font-weight:600;box-shadow:0 1px 2px #0001}
+.bieu{position:relative;padding:6px 8px 4px}
+.bieu svg{display:block;width:100%}
+.goi-y{position:fixed;pointer-events:none;background:#1d2430;color:#fff;font-size:12px;line-height:1.4;
+  padding:6px 9px;border-radius:6px;z-index:50;display:none;max-width:260px;box-shadow:0 4px 14px #0003}
+.goi-y b{font-weight:650}
+.chu-giai{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--mo);padding:6px 14px 12px}
+.chu-giai i{display:inline-block;width:20px;height:9px;border-radius:2px}
+.tk{padding:4px 16px 8px}
+.tk .muc{padding:12px 0;border-bottom:1px solid var(--luoi)}
+.tk .muc:last-child{border-bottom:0}
+.tk .hang{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tk .nhan{color:var(--chu2);font-weight:550}
+.tk .lon{font-size:19px;font-weight:650;margin-left:auto}
+.tk .nho{color:var(--mo);font-size:12px}
+.thanh{display:flex;height:9px;border-radius:5px;overflow:hidden;gap:2px;margin:8px 0 6px;background:var(--the)}
+.thanh>span{display:block;height:100%}
+.tien-do{position:relative;height:9px;background:var(--luoi);border-radius:5px;margin:8px 0 6px}
+.tien-do span{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.tien-do .vach{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--chu)}
+.nhan-xet{margin:0 0 4px;padding:8px 10px;border-radius:8px;background:var(--dung-nen);color:#6b5200;font-size:12.5px}
+.nhan-xet:empty{display:none}
+/* lọc mã */
+.loc-dau{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.loc-dau select,.loc-dau input{font:inherit;border:1px solid var(--vien);border-radius:8px;padding:6px 10px;background:var(--the);color:var(--chu)}
+.loc-dau input{min-width:200px;flex:0 1 260px}
+.bat{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--vien);border-radius:8px;padding:6px 10px;background:var(--the)}
+.bat[aria-pressed=true]{background:var(--nhan-nen);border-color:var(--nhan);color:var(--nhan);font-weight:600}
+.loc-dau .dem{margin-left:auto;color:var(--mo);font-size:12.5px}
+.loc{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.loc{grid-template-columns:minmax(0,1fr)}}
+.ben{padding:8px 0}
+.ben h3{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mo);margin:12px 14px 4px;font-weight:650}
+.ben button{display:flex;width:calc(100% - 12px);margin:0 6px;justify-content:space-between;border:0;background:none;
+  padding:6px 8px;border-radius:7px;text-align:left;color:var(--chu)}
+.ben button span{color:var(--mo);font-size:12.5px}
+.ben button[aria-pressed=true]{background:var(--nhan-nen);color:var(--nhan);font-weight:600}
+.ben button[aria-pressed=true] span{color:var(--nhan)}
+@media (max-width:860px){.ben{display:none}#loc-nhom{display:block}}
+@media (max-width:600px){.cot-nganh{display:none}.loc-dau input{flex:1 1 100%}}
+.bang-boc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+thead th{position:sticky;top:0;background:var(--the);color:var(--mo);font-weight:600;font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.03em;text-align:right;padding:8px 10px;border-bottom:1px solid var(--vien);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:first-child,thead th.trai{text-align:left}
+thead th[aria-sort]::after{content:" ▾";color:var(--nhan)}
+thead th[aria-sort=ascending]::after{content:" ▴"}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--luoi);text-align:right;white-space:nowrap}
+tbody td.trai{text-align:left}
+tbody tr:hover{background:#f7f9fc}
+td.ma{font-weight:650;position:sticky;left:0;background:inherit}
+tbody tr{background:var(--the)}
+.nhan-san{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:600;color:var(--mo);border:1px solid var(--vien);border-radius:4px;padding:0 4px}
+.o-pt{display:inline-block;min-width:62px;padding:2px 6px;border-radius:5px;font-weight:600}
+.bien{display:block;width:150px;height:14px}
+.khung-bang-dau{padding:10px 14px;border-bottom:1px solid var(--luoi);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.khung-bang-dau b{font-size:14.5px}
+.khung-bang-dau .phu{color:var(--mo);font-size:12.5px}
+.khung-bang-dau .phai{margin-left:auto;color:var(--mo);font-size:12.5px}
+.them{display:block;margin:10px auto 14px;border:1px solid var(--vien);background:var(--the);border-radius:8px;padding:6px 14px}
+.trong{padding:30px;text-align:center;color:var(--mo)}
+.loi{max-width:640px;margin:40px auto;padding:20px;text-align:center}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <div class="dau">
+    <h1>Bảng thị trường</h1>
+    <div class="tab" role="tablist">
+      <button role="tab" id="tab-tq" aria-selected="true" data-tab="tq">Tổng quan</button>
+      <button role="tab" id="tab-loc" aria-selected="false" data-tab="loc">Lọc mã</button>
+    </div>
+    <div class="tt-phien"><span class="cham" id="cham"></span><span id="trang-thai">Đang tải…</span>
+      <a href="../">Bảng tổng hợp</a></div>
+  </div>
+</header>
+<main>
+  <section id="tq">
+    <div class="cs" id="cs"></div>
+    <div class="luoi2">
+      <div class="the">
+        <div class="khoi-dau"><h2 id="bd-ten">VN-Index</h2><span class="phu so" id="bd-phu"></span>
+          <div class="nut" id="bd-khung"></div></div>
+        <div class="bieu" id="bd"></div>
+      </div>
+      <div class="the">
+        <div class="khoi-dau"><h2>Bản đồ nhiệt</h2><span class="phu">HOSE</span>
+          <div class="nut" id="nd-kich">
+            <button data-k="vh" aria-pressed="true">Vốn hóa</button><button data-k="gt" aria-pressed="false">GTGD</button>
+            <button data-k="nn" aria-pressed="false">Nước ngoài</button><button data-k="td" aria-pressed="false">Tự doanh</button>
+          </div></div>
+        <div class="bieu" id="nd"></div>
+        <div class="chu-giai" id="nd-giai"></div>
+      </div>
+    </div>
+    <div class="luoi3">
+      <div class="the">
+        <div class="khoi-dau"><h2>Thống kê phiên</h2><span class="phu">HOSE</span></div>
+        <div class="tk" id="tk"></div>
+      </div>
+      <div class="the">
+        <div class="khoi-dau"><h2>Tác động</h2><span class="phu">VN-Index · 10 mã kéo / đè mạnh nhất</span>
+          <span class="phu so" style="margin-left:auto" id="td-rong"></span></div>
+        <div class="bieu" id="tac"></div>
+      </div>
+    </div>
+  </section>
+  <section id="loc" hidden>
+    <div class="loc-dau">
+      <div class="nut" id="loc-san" style="margin-left:0">
+        <button data-s="" aria-pressed="true">Toàn thị trường</button><button data-s="HSX" aria-pressed="false">HSX</button>
+        <button data-s="HNX" aria-pressed="false">HNX</button><button data-s="UPCOM" aria-pressed="false">UPCoM</button>
+        <button data-s="VN30" aria-pressed="false">VN30</button><button data-s="HNX30" aria-pressed="false">HNX30</button>
+      </div>
+      <select id="loc-nganh" aria-label="Ngành"><option value="">Mọi ngành</option></select>
+      <button class="bat" id="loc-tk" aria-pressed="true" title="GTGD trung bình 20 phiên ≥ 2 tỷ">Đủ thanh khoản</button>
+      <input id="loc-tim" type="search" placeholder="Tìm mã hoặc tên…" autocomplete="off">
+      <span class="dem so" id="loc-dem"></span>
+      <select id="loc-nhom" aria-label="Nhóm lọc"></select>
+    </div>
+    <div class="loc">
+      <nav class="the ben" id="ben" aria-label="Nhóm lọc"></nav>
+      <div class="the">
+        <div class="khung-bang-dau"><b id="loc-ten"></b><span class="phu" id="loc-mo-ta"></span><span class="phai so" id="loc-so"></span></div>
+        <div class="bang-boc"><table><thead id="loc-dau-bang"></thead><tbody id="loc-than"></tbody></table></div>
+        <button class="them" id="loc-them" hidden>Xem thêm</button>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="goi-y" id="goi-y" role="tooltip"></div>
+<script>
+"use strict";
+const URL_DL = "du_lieu.json";
+const $ = s => document.querySelector(s);
+const MAU = {tang: "#0f8a4a", giam: "#d1342b", dung: "#b88a00", luoi: "#edf0f4", truc: "#7a8494", chu: "#1d2430"};
+let D = null, L = null;            // dữ liệu, dòng lọc (đối tượng)
+const ST = Object.assign({tab: "tq", cs: "VNINDEX", khung: "1D", kich: "vh", san: "", nganh: "", du_tk: true, tim: "",
+  nhom: "gt_lon", sap: null, chieu: -1, so_dong: 100}, doc_st());
+
+function doc_st() { try { return JSON.parse(localStorage.getItem("bang_tt") || "{}"); } catch (e) { return {}; } }
+function luu_st() { try { const {tim, so_dong, ...x} = ST; localStorage.setItem("bang_tt", JSON.stringify(x)); } catch (e) {} }
+
+// ---------- định dạng ----------
+const nf = (v, n = 2) => v == null || !isFinite(v) ? "–" : v.toLocaleString("en-US", {minimumFractionDigits: n, maximumFractionDigits: n});
+const dau = (v, n = 2) => v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + nf(Math.abs(v), n);
+const lop = v => v == null ? "" : v > 0 ? "t" : v < 0 ? "g" : "d";
+const ty = (v, n = 0) => v == null ? "–" : dau(v, n) + " tỷ";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const bo_dau = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+const ngay_vn = s => s ? s.slice(8, 10) + "/" + s.slice(5, 7) : "";
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, at = {}, cha) { const e = document.createElementNS(SVGNS, tag); for (const k in at) e.setAttribute(k, at[k]); if (cha) cha.appendChild(e); return e; }
+
+// ---------- gợi ý (tooltip) ----------
+const GY = $("#goi-y");
+function hien_gy(html, x, y) {
+  GY.innerHTML = html; GY.style.display = "block";
+  const r = GY.getBoundingClientRect();
+  let l = x + 14, t = y + 14;
+  if (l + r.width > innerWidth - 8) l = x - r.width - 14;
+  if (t + r.height > innerHeight - 8) t = y - r.height - 14;
+  GY.style.left = Math.max(8, l) + "px"; GY.style.top = Math.max(8, t) + "px";
+}
+const an_gy = () => { GY.style.display = "none"; };
+
+// ---------- trục thời gian phiên: 9:00–11:30 & 13:00–15:00 (bỏ nghỉ trưa) ----------
+const PHUT_TRUA = 150, NGHI = 90, PHUT_HET = 360;
+const x_phien = m => m <= PHUT_TRUA ? m : m >= PHUT_TRUA + NGHI ? m - NGHI : PHUT_TRUA;
+const gio = m => { const h = 9 + Math.floor(m / 60), p = m % 60; return h + ":" + String(p).padStart(2, "0"); };
+
+// ---------- thẻ chỉ số ----------
+function ve_the() {
+  const cs = $("#cs"); cs.innerHTML = "";
+  for (const x of D.chi_so) {
+    const b = document.createElement("button");
+    b.className = "the"; b.setAttribute("aria-pressed", String(x.ma === ST.cs));
+    const l = lop(x.td);
+    b.innerHTML = `<span class="ten">${esc(x.ten)}</span><span class="gia so ${l}">${nf(x.gia, x.ma === "VN30F1M" ? 1 : 2)}</span>
+      <span class="tdoi so ${l}">${dau(x.td, x.ma === "VN30F1M" ? 1 : 2)} &nbsp;${dau(x.pt)}%</span>
+      ${x.basis != null ? `<span class="phu so">Basis ${dau(x.basis, 1)}</span>` : ""}`;
+    b.appendChild(sparkline(x, 92, 44));
+    b.onclick = () => { ST.cs = x.ma; if (x.ma !== "VNINDEX") ST.khung = "1D"; luu_st(); ve_the(); ve_bieu_do(); };
+    b.title = x.ma === "VN30F1M" ? "So với đóng cửa phiên trước" : `${x.tang ?? "–"} tăng · ${x.dung ?? "–"} đứng · ${x.giam ?? "–"} giảm`;
+    cs.appendChild(b);
+  }
+}
+function sparkline(x, w, h) {
+  const s = el("svg", {width: w, height: h, viewBox: `0 0 ${w} ${h}`, preserveAspectRatio: "none", "aria-hidden": "true"});
+  const c = x.c || [], t = x.t || [];
+  if (c.length < 2) return s;
+  const vals = c.concat(x.tc != null ? [x.tc] : []);
+  let lo = Math.min(...vals), hi = Math.max(...vals); if (hi === lo) { hi += 1; lo -= 1; }
+  const X = m => 2 + x_phien(m) / x_phien(PHUT_HET) * (w - 4), Y = v => 3 + (hi - v) / (hi - lo) * (h - 6);
+  const mau = c[c.length - 1] >= (x.tc ?? c[0]) ? MAU.tang : MAU.giam;
+  const d = c.map((v, i) => (i ? "L" : "M") + X(t[i]).toFixed(1) + " " + Y(v).toFixed(1)).join("");
+  if (x.tc != null) el("line", {x1: 2, x2: w - 2, y1: Y(x.tc), y2: Y(x.tc), stroke: MAU.truc, "stroke-width": 1, "stroke-dasharray": "2 3", opacity: .7}, s);
+  el("path", {d: d + `L${X(t[t.length - 1]).toFixed(1)} ${h}L${X(t[0]).toFixed(1)} ${h}Z`, fill: mau, opacity: .1}, s);
+  el("path", {d, fill: "none", stroke: mau, "stroke-width": 1.5, "stroke-linejoin": "round", "stroke-linecap": "round", "vector-effect": "non-scaling-stroke"}, s);
+  return s;
+}
+
+// ---------- biểu đồ chính ----------
+const KHUNG = [["1D", "1D"], ["1W", "1W"], ["1M", "1M"], ["3M", "3M"], ["6M", "6M"], ["1Y", "1Y"]];
+function ve_bieu_do() {
+  const x = D.chi_so.find(v => v.ma === ST.cs) || D.chi_so[0];
+  $("#bd-ten").textContent = x.ten;
+  const nk = $("#bd-khung"); nk.innerHTML = "";
+  for (const [k, t] of KHUNG) {
+    if (x.ma !== "VNINDEX" && k !== "1D") continue;
+    const b = document.createElement("button"); b.textContent = t; b.setAttribute("aria-pressed", String(ST.khung === k));
+    b.onclick = () => { ST.khung = k; luu_st(); ve_bieu_do(); }; nk.appendChild(b);
+  }
+  const khung = x.ma === "VNINDEX" ? ST.khung : "1D";
+  let diem = [], tc = null, nhan_x;
+  if (khung === "1D") {
+    diem = (x.c || []).map((v, i) => ({x: x_phien(x.t[i]), v, nhan: gio(x.t[i])})); tc = x.tc;
+    nhan_x = [0, 60, 120, 240, 300].map(m => [x_phien(m), gio(m)]).filter(([p]) => p <= x_phien(PHUT_HET));
+  } else if (khung === "1W") {
+    diem = D.vni_tuan.c.map((v, i) => ({x: i, v, nhan: D.vni_tuan.t[i]}));
+    nhan_x = []; let truoc = "";
+    D.vni_tuan.t.forEach((t, i) => { const n = t.slice(0, 5); if (n !== truoc) { nhan_x.push([i, n]); truoc = n; } });
+  } else {
+    const so = {"1M": 22, "3M": 66, "6M": 130, "1Y": 260}[khung];
+    const ds = D.vni_ngay.slice(-so);
+    diem = ds.map(([d, v], i) => ({x: i, v, nhan: ngay_vn(d) + "/" + d.slice(0, 4)}));
+    tc = ds.length ? ds[0][1] : null;
+    const buoc = Math.max(1, Math.round(ds.length / 6));
+    nhan_x = ds.map(([d], i) => [i, ngay_vn(d)]).filter((_, i) => i % buoc === 0);
+  }
+  const dau_ky = khung === "1D" ? x.tc : (diem[0] || {}).v;
+  const cuoi = (diem[diem.length - 1] || {}).v;
+  $("#bd-phu").innerHTML = cuoi != null && dau_ky ? `<span class="${lop(cuoi - dau_ky)}">${dau(cuoi - dau_ky)} (${dau((cuoi / dau_ky - 1) * 100)}%)</span> ${khung === "1D" ? "so với tham chiếu" : "trong " + khung}` : "";
+  ve_duong($("#bd"), diem, tc, nhan_x, khung === "1D" ? x_phien(PHUT_HET) : Math.max(diem.length - 1, 1), khung === "1D" ? "TC" : "Đầu kỳ");
+}
+function ve_duong(hop, diem, tc, nhan_x, x_max, ten_tc) {
+  hop.innerHTML = "";
+  const W = Math.max(hop.clientWidth - 16, 280), H = Math.round(Math.min(Math.max(W * .46, 230), 330));
+  const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Biểu đồ chỉ số"}, hop);
+  if (diem.length < 2) { el("text", {x: W / 2, y: H / 2, "text-anchor": "middle", fill: MAU.truc}, s).textContent = "Chưa có dữ liệu"; return; }
+  const P = {l: 6, r: 58, t: 10, b: 24};
+  const vals = diem.map(d => d.v).concat(tc != null ? [tc] : []);
+  let lo = Math.min(...vals), hi = Math.max(...vals); const du = (hi - lo) * .08 || 1; lo -= du; hi += du;
+  const X = v => P.l + v / x_max * (W - P.l - P.r), Y = v => P.t + (hi - v) / (hi - lo) * (H - P.t - P.b);
+  // lưới & trục Y (bên phải)
+  const buoc = nice((hi - lo) / 5);
+  for (let v = Math.ceil(lo / buoc) * buoc; v <= hi; v += buoc) {
+    el("line", {x1: P.l, x2: W - P.r, y1: Y(v), y2: Y(v), stroke: MAU.luoi, "stroke-width": 1}, s);
+    el("text", {x: W - P.r + 8, y: Y(v) + 4, fill: MAU.truc, "font-size": 11, class: "so"}, s).textContent = nf(v, buoc < 1 ? 2 : 0);
+  }
+  for (const [p, t] of nhan_x) el("text", {x: X(p), y: H - 6, fill: MAU.truc, "font-size": 11, "text-anchor": p === 0 ? "start" : "middle"}, s).textContent = t;
+  const goc = tc ?? diem[0].v;
+  const d = diem.map((p, i) => (i ? "L" : "M") + X(p.x).toFixed(1) + " " + Y(p.v).toFixed(1)).join("");
+  const id = "c" + Math.random().toString(36).slice(2, 7);
+  const defs = el("defs", {}, s);
+  const ct = el("clipPath", {id: id + "t"}, defs); el("rect", {x: 0, y: 0, width: W, height: Y(goc)}, ct);
+  const cg = el("clipPath", {id: id + "g"}, defs); el("rect", {x: 0, y: Y(goc), width: W, height: H}, cg);
+  const vung = d + `L${X(diem[diem.length - 1].x).toFixed(1)} ${Y(goc).toFixed(1)}L${X(diem[0].x).toFixed(1)} ${Y(goc).toFixed(1)}Z`;
+  el("path", {d: vung, fill: MAU.tang, opacity: .1, "clip-path": `url(#${id}t)`}, s);
+  el("path", {d: vung, fill: MAU.giam, opacity: .1, "clip-path": `url(#${id}g)`}, s);
+  el("line", {x1: P.l, x2: W - P.r, y1: Y(goc), y2: Y(goc), stroke: MAU.truc, "stroke-width": 1, "stroke-dasharray": "3 4"}, s);
+  el("path", {d, fill: "none", stroke: MAU.tang, "stroke-width": 2, "stroke-linejoin": "round", "clip-path": `url(#${id}t)`}, s);
+  el("path", {d, fill: "none", stroke: MAU.giam, "stroke-width": 2, "stroke-linejoin": "round", "clip-path": `url(#${id}g)`}, s);
+  // nhãn tham chiếu & giá cuối bên trục phải
+  const nhan = (v, mau, chu) => { const g = el("g", {}, s); el("rect", {x: W - P.r + 2, y: Y(v) - 9, width: P.r - 4, height: 18, rx: 3, fill: mau}, g);
+    el("text", {x: W - P.r + 6, y: Y(v) + 4, fill: "#fff", "font-size": 11, "font-weight": 600, class: "so"}, g).textContent = chu; };
+  const cuoi = diem[diem.length - 1];
+  nhan(goc, MAU.truc, nf(goc, 2));
+  nhan(cuoi.v, cuoi.v >= goc ? MAU.tang : MAU.giam, nf(cuoi.v, 2));
+  el("text", {x: W - P.r - 4, y: Y(goc) - 5, fill: MAU.truc, "font-size": 10.5, "text-anchor": "end"}, s).textContent = ten_tc;
+  // trỏ chuột
+  const doc = el("line", {y1: P.t, y2: H - P.b, stroke: MAU.chu, "stroke-width": 1, opacity: 0}, s);
+  const cham = el("circle", {r: 4.5, fill: MAU.tang, stroke: "#fff", "stroke-width": 2, opacity: 0}, s);
+  const vung_tro = el("rect", {x: P.l, y: P.t, width: W - P.l - P.r, height: H - P.t - P.b, fill: "transparent"}, s);
+  const tro = e => {
+    const r = s.getBoundingClientRect(), mx = (e.clientX - r.left) * W / r.width;
+    let best = diem[0], bd = 1e9; for (const p of diem) { const k = Math.abs(X(p.x) - mx); if (k < bd) { bd = k; best = p; } }
+    doc.setAttribute("x1", X(best.x)); doc.setAttribute("x2", X(best.x)); doc.setAttribute("opacity", .35);
+    cham.setAttribute("cx", X(best.x)); cham.setAttribute("cy", Y(best.v)); cham.setAttribute("opacity", 1);
+    cham.setAttribute("fill", best.v >= goc ? MAU.tang : MAU.giam);
+    hien_gy(`<b>${esc(best.nhan)}</b><br><span class="so">${nf(best.v)}</span> · <span class="so">${dau(best.v - goc)} (${dau((best.v / goc - 1) * 100)}%)</span>`, e.clientX, e.clientY);
+  };
+  vung_tro.addEventListener("pointermove", tro); vung_tro.addEventListener("pointerdown", tro);
+  vung_tro.addEventListener("pointerleave", () => { an_gy(); doc.setAttribute("opacity", 0); cham.setAttribute("opacity", 0); });
+}
+function nice(x) { const m = Math.pow(10, Math.floor(Math.log10(x))), r = x / m; return (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * m; }
+
+// ---------- bản đồ nhiệt ----------
+const THANG = [[-Infinity, -5, "#b3261e"], [-5, -3, "#d84a3f"], [-3, -1, "#ec8a82"], [-1, -1e-9, "#f6c3be"],
+  [-1e-9, 1e-9, "#ecd889"], [1e-9, 1, "#b9e0c6"], [1, 3, "#74c393"], [3, 5, "#2f9e5c"], [5, Infinity, "#17783f"]];
+const MAU_TRAN = "#a24fd6", MAU_SAN = "#1aa9bb";
+const mau_pt = (pt, tt) => tt === 1 ? MAU_TRAN : tt === -1 ? MAU_SAN : (THANG.find(([a, b]) => pt > a && pt <= b) || THANG[4])[2];
+function mau_rong(v, mx) { if (!v) return "#e6e9ef"; const k = Math.min(Math.abs(v) / (mx || 1), 1);
+  const [a, b] = v > 0 ? [[185, 224, 198], [23, 120, 63]] : [[246, 195, 190], [179, 38, 30]];
+  return `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * Math.sqrt(k))).join(",")})`; }
+const chu_tren = mau => { const m = mau.match(/\d+/g); let r, g, b;
+  if (mau[0] === "#") { r = parseInt(mau.slice(1, 3), 16); g = parseInt(mau.slice(3, 5), 16); b = parseInt(mau.slice(5, 7), 16); } else [r, g, b] = m.map(Number);
+  return (.299 * r + .587 * g + .114 * b) > 150 ? "#1d2430" : "#fff"; };
+
+function squarify(muc, x, y, w, h) {
+  const tong = muc.reduce((a, b) => a + b.v, 0), out = [];
+  if (!tong || w <= 0 || h <= 0) return out;
+  const k = w * h / tong; let con = muc.map(m => Object.assign({}, m, {a: m.v * k})), hang = [];
+  const te = (h_, c) => { const s = h_.reduce((a, b) => a + b.a, 0); const mx = Math.max(...h_.map(z => z.a)), mn = Math.min(...h_.map(z => z.a));
+    return Math.max(c * c * mx / (s * s), s * s / (c * c * mn)); };
+  const dat = () => { const s = hang.reduce((a, b) => a + b.a, 0);
+    if (w >= h) { const ww = s / h; let yy = y; for (const z of hang) { const hh = z.a / ww; out.push(Object.assign(z, {x, y: yy, w: ww, h: hh})); yy += hh; } x += ww; w -= ww; }
+    else { const hh = s / w; let xx = x; for (const z of hang) { const ww = z.a / hh; out.push(Object.assign(z, {x: xx, y, w: ww, h: hh})); xx += ww; } y += hh; h -= hh; }
+    hang = []; };
+  while (con.length) { const c = Math.min(w, h), m = con[0];
+    if (!hang.length || te(hang.concat([m]), c) <= te(hang, c)) { hang.push(m); con.shift(); } else dat(); }
+  if (hang.length) dat();
+  return out;
+}
+let O_ND = [];
+function ve_ban_do() {
+  const hop = $("#nd"); hop.innerHTML = "";
+  const W = Math.max(hop.clientWidth - 16, 280), H = Math.round(Math.min(Math.max(W * .62, 320), 470));
+  const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Bản đồ nhiệt HOSE theo ngành"}, hop);
+  const c = D.ban_do.cot, ix = Object.fromEntries(c.map((k, i) => [k, i]));
+  const k = ST.kich, la_rong = k === "nn" || k === "td";
+  const dong = D.ban_do.dong.map(r => ({ma: r[ix.ma], ng: r[ix.nganh], vh: r[ix.vh], pt: r[ix.pt], gt: r[ix.gt], nn: r[ix.nn], td: r[ix.td], tt: r[ix.tt]}))
+    .map(r => Object.assign(r, {v: la_rong ? Math.abs(r[k] || 0) : (r[k] || 0)})).filter(r => r.v > 0);
+  const mx = la_rong ? Math.max(...dong.map(r => Math.abs(r[k] || 0))) * .6 : 0;
+  const nhom = {};
+  for (const r of dong) (nhom[r.ng] = nhom[r.ng] || []).push(r);
+  const nganh = Object.entries(nhom).map(([g, ds]) => ({g: +g, ds: ds.sort((a, b) => b.v - a.v), v: ds.reduce((a, b) => a + b.v, 0),
+    pt: ds.reduce((a, b) => a + b.pt * b.vh, 0) / Math.max(ds.reduce((a, b) => a + b.vh, 0), 1e-9),
+    rong: ds.reduce((a, b) => a + (b[k] || 0), 0)})).sort((a, b) => b.v - a.v);
+  O_ND = [];
+  for (const n of squarify(nganh, 0, 0, W, H)) {
+    const GAP = 2, dau_cao = n.h > 46 && n.w > 70 ? 17 : 0;
+    const gn = el("g", {}, s);
+    if (dau_cao) {
+      const ten = D.nganh[n.g] || "Khác";
+      const t = el("text", {x: n.x + 5, y: n.y + 12.5, "font-size": 11, "font-weight": 600, fill: MAU.chu}, gn);
+      const gtri = la_rong ? ty(n.rong) : dau(n.pt) + "%";
+      t.textContent = ten; const tsp = el("tspan", {fill: la_rong ? (n.rong >= 0 ? MAU.tang : MAU.giam) : (n.pt >= 0 ? MAU.tang : MAU.giam), dx: 6}, t); tsp.textContent = gtri;
+      cat_chu(t, n.w - 8);
+    }
+    for (const o of squarify(n.ds, n.x + GAP / 2, n.y + dau_cao + GAP / 2, n.w - GAP, n.h - dau_cao - GAP)) {
+      const mau = la_rong ? mau_rong(o[k], mx) : mau_pt(o.pt, o.tt);
+      const r = el("rect", {x: o.x + 1, y: o.y + 1, width: Math.max(o.w - 2, 0), height: Math.max(o.h - 2, 0), rx: 2, fill: mau}, gn);
+      r.dataset.i = O_ND.length; O_ND.push(o);
+      const cm = chu_tren(mau);
+      if (o.w >= 30 && o.h >= 16) {
+        const co = Math.max(9, Math.min(22, Math.sqrt(o.w * o.h) / 4.2, o.w / 3.2));
+        const hai = o.h >= co * 2.6;
+        const t1 = el("text", {x: o.x + o.w / 2, y: o.y + o.h / 2 + (hai ? -co * .15 : co * .35), "text-anchor": "middle", "font-size": co, "font-weight": 650, fill: cm, "pointer-events": "none"}, gn);
+        t1.textContent = o.ma;
+        if (hai) { const t2 = el("text", {x: o.x + o.w / 2, y: o.y + o.h / 2 + co * .95, "text-anchor": "middle", "font-size": co * .72, fill: cm, "pointer-events": "none", class: "so"}, gn);
+          t2.textContent = la_rong ? ty(o[k], 1) : dau(o.pt) + "%"; }
+      }
+    }
+  }
+  s.addEventListener("pointermove", e => { const i = e.target.dataset && e.target.dataset.i; if (i == null) return an_gy();
+    const o = O_ND[+i], ten = (D.ten || {})[o.ma] || "";
+    hien_gy(`<b>${esc(o.ma)}</b> ${esc(ten)}<br>${esc(D.nganh[o.ng] || "")}<br>Thay đổi <span class="so">${dau(o.pt)}%</span>${o.tt === 1 ? " (trần)" : o.tt === -1 ? " (sàn)" : ""}<br>
+      Vốn hóa <span class="so">${nf(o.vh, 0)} tỷ</span> · GTGD <span class="so">${nf(o.gt, 1)} tỷ</span><br>
+      Nước ngoài <span class="so">${ty(o.nn, 1)}</span> · Tự doanh (${ngay_vn(D.tu_doanh.phien)}) <span class="so">${ty(o.td, 1)}</span>`, e.clientX, e.clientY); });
+  s.addEventListener("pointerleave", an_gy);
+  s.addEventListener("click", e => { const i = e.target.dataset && e.target.dataset.i; if (i == null) return;
+    ST.tim = O_ND[+i].ma; $("#loc-tim").value = ST.tim; doi_tab("loc"); });
+  const giai = $("#nd-giai");
+  giai.innerHTML = la_rong
+    ? `<span>Bán ròng</span><i style="background:${mau_rong(-1, 1)}"></i><i style="background:${mau_rong(-.2, 1)}"></i><i style="background:${mau_rong(.2, 1)}"></i><i style="background:${mau_rong(1, 1)}"></i><span>Mua ròng</span><span style="margin-left:10px">Kích thước = |giá trị ròng|${k === "td" ? " · phiên " + ngay_vn(D.tu_doanh.phien) : ""}</span>`
+    : `<span>−5%</span>${THANG.map(z => `<i style="background:${z[2]}"></i>`).join("")}<span>+5%</span><i style="background:${MAU_TRAN};margin-left:10px"></i><span>Trần</span><i style="background:${MAU_SAN}"></i><span>Sàn</span>`;
+}
+function cat_chu(t, w) { try { while (t.getComputedTextLength() > w && t.firstChild.textContent.length > 3) t.firstChild.textContent = t.firstChild.textContent.slice(0, -2) + "…"; } catch (e) {} }
+
+// ---------- thống kê phiên ----------
+function cot_nho(ls, w = 150, h = 30) {
+  const s = el("svg", {width: w, height: h, viewBox: `0 0 ${w} ${h}`, "aria-hidden": "true"});
+  const v = (ls || []).filter(x => x != null); if (!v.length) return s;
+  const tr = v.map(Math.abs).sort((a, b) => b - a), mx = (tr[0] > 3 * (tr[1] || 0) ? tr[1] * 1.5 : tr[0]) || 1, bw = w / v.length;
+  el("line", {x1: 0, x2: w, y1: h / 2, y2: h / 2, stroke: MAU.luoi}, s);
+  v.forEach((x, i) => { const hh = Math.max(Math.min(Math.abs(x) / mx, 1) * (h / 2 - 1), 1);
+    el("rect", {x: i * bw + 1, y: x >= 0 ? h / 2 - hh : h / 2, width: Math.max(bw - 2, 1), height: hh, fill: x >= 0 ? MAU.tang : MAU.giam, opacity: i === v.length - 1 ? 1 : .55}, s); });
+  return s;
+}
+function ve_tk() {
+  const v = D.chi_so.find(x => x.ma === "VNINDEX") || {}, tk = D.thanh_khoan, kn = D.khoi_ngoai, tdo = D.tu_doanh;
+  const tong = (v.tang || 0) + (v.dung || 0) + (v.giam || 0) || 1;
+  const so_tb = tk.du_kien && tk.tb20 ? (tk.du_kien / tk.tb20 - 1) * 100 : null;
+  const mx = Math.max(tk.du_kien || 0, tk.tb20 || 0, tk.tong || 0) * 1.05 || 1;
+  const tac = D.tac_dong, dau1 = (tac.len || []).slice(-1)[0];
+  const xet = [];
+  if (v.pt > 0 && v.giam > v.tang) xet.push(`Tăng "giả": VN-Index ${dau(v.pt)}% nhưng ${v.giam} mã giảm > ${v.tang} mã tăng.`);
+  if (v.pt < 0 && v.tang > v.giam) xet.push(`Chỉ số giảm nhưng độ rộng tích cực (${v.tang} tăng / ${v.giam} giảm).`);
+  if (dau1 && v.td && Math.abs(v.td) > .5 && dau1[1] / v.td > .5 && v.td > 0) xet.push(`${dau1[0]} góp ${dau(dau1[1])} / ${dau(v.td)} điểm (${Math.round(dau1[1] / v.td * 100)}%).`);
+  const t = $("#tk");
+  t.innerHTML = `<p class="nhan-xet" id="nx">${esc(xet.join(" "))}</p>
+  <div class="muc"><div class="hang"><span class="nhan">Độ rộng</span><span class="nho" style="margin-left:auto"><span class="tr">${v.tran ?? 0} trần</span> · <span class="sa">${v.san ?? 0} sàn</span></span></div>
+    <div class="thanh" role="img" aria-label="${v.tang} tăng, ${v.dung} đứng giá, ${v.giam} giảm">
+      <span style="width:${v.tang / tong * 100}%;background:${MAU.tang}"></span><span style="width:${v.dung / tong * 100}%;background:#d8b84a"></span><span style="width:${v.giam / tong * 100}%;background:${MAU.giam}"></span></div>
+    <div class="hang so"><span class="t"><b>${v.tang ?? "–"}</b> tăng</span><span class="d"><b>${v.dung ?? "–"}</b> đứng giá</span><span class="g"><b>${v.giam ?? "–"}</b> giảm</span></div></div>
+  <div class="muc"><div class="hang"><span class="nhan">GTGD HOSE</span><span class="lon so">${nf(tk.tong, 0)} tỷ</span></div>
+    <div class="nho so">khớp lệnh ${nf(tk.khop, 0)} tỷ${tk.thoa_thuan ? ` · thỏa thuận ${nf(tk.thoa_thuan, 0)} tỷ` : ""}</div>
+    <div class="tien-do" role="img" aria-label="Đã giao dịch so với dự kiến và trung bình 20 phiên">
+      <span style="width:${Math.min((tk.du_kien || 0) / mx * 100, 100)}%;background:#bcd2f7"></span>
+      <span style="width:${(tk.tong || 0) / mx * 100}%;background:var(--nhan)"></span>
+      ${tk.tb20 ? `<i class="vach" style="left:${tk.tb20 / mx * 100}%" title="TB20"></i>` : ""}</div>
+    <div class="nho so">${D.dang_gd && tk.du_kien ? `Dự kiến cả phiên ~${nf(tk.du_kien, 0)} tỷ` : "Cả phiên"}${so_tb != null ? ` (<span class="${lop(so_tb)}">${dau(so_tb, 0)}%</span> so TB20)` : ""} · TB20 ${nf(tk.tb20, 0)} tỷ</div></div>
+  <div class="muc"><div class="hang"><span class="nhan">Khối ngoại ròng</span><span class="lon so ${lop(kn.hom_nay)}">${ty(kn.hom_nay)}</span></div>
+    <div class="hang"><span class="nho so">${kn.chuoi ? `${kn.chuoi > 0 ? "Mua" : "Bán"} ròng ${Math.abs(kn.chuoi)} phiên liên tiếp · ` : ""}20 phiên ${ty(kn.tong20)}</span><span style="margin-left:auto" id="kn-cot"></span></div></div>
+  <div class="muc"><div class="hang"><span class="nhan">Tự doanh ròng</span><span class="lon so ${lop(tdo.rong)}">${ty(tdo.rong)}</span></div>
+    <div class="hang"><span class="nho so">Phiên ${ngay_vn(tdo.phien)} · 20 phiên ${ty(tdo.tong20)}</span><span style="margin-left:auto" id="td-cot"></span></div></div>`;
+  $("#kn-cot").appendChild(cot_nho(kn.ls)); $("#td-cot").appendChild(cot_nho(tdo.ls));
+}
+
+// ---------- tác động ----------
+function ve_tac() {
+  const hop = $("#tac"); hop.innerHTML = "";
+  const tac = D.tac_dong, ds = (tac.xuong || []).slice().sort((a, b) => a[1] - b[1]).concat((tac.len || []).slice().sort((a, b) => a[1] - b[1]));
+  $("#td-rong").innerHTML = `Ròng <b class="${lop(tac.rong)}">${dau(tac.rong)} điểm</b>`;
+  if (!ds.length) return;
+  const W = Math.max(hop.clientWidth - 16, 280);
+  // mã quá lớn (VD 1 mã gấp > 2,2 lần mã thứ 2) → cắt cột, vẽ dấu gãy, nhãn vẫn ghi đúng giá trị
+  const tr = ds.map(d => Math.abs(d[1])).sort((a, b) => b - a);
+  const tran = tr[0] > 2.2 * (tr[1] || 0) && tr[1] ? tr[1] * 1.5 : tr[0];
+  const dai = v => Math.min(Math.abs(v), tran), gay = v => Math.abs(v) > tran;
+  const gy = d => hien_gy(`<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Tác động <span class="so">${dau(d[1])} điểm</span><br>Giá <span class="so">${dau(d[2])}%</span>`, ...gy.xy);
+  const tro = (vung, d) => { vung.addEventListener("pointermove", e => { gy.xy = [e.clientX, e.clientY]; gy(d); }); vung.addEventListener("pointerleave", an_gy); };
+  const mx_d = Math.max(...ds.map(d => d[1] > 0 ? dai(d[1]) : 0), 0), mx_a = Math.max(...ds.map(d => d[1] < 0 ? dai(d[1]) : 0), 0);
+  if (W < 560) {                                                   // điện thoại: cột ngang, 1 mã / dòng
+    const hang = 21, H = ds.length * hang + 8, x_ten = 46, x_pt = 46, vung_w = W - x_ten - x_pt - 70;
+    const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Mã tác động mạnh nhất lên VN-Index"}, hop);
+    const k = vung_w / ((mx_d + mx_a) || 1), x0 = x_ten + 34 + mx_a * k;
+    el("line", {x1: x0, x2: x0, y1: 0, y2: H, stroke: "#cfd5de"}, s);
+    ds.slice().reverse().forEach((d, i) => {
+      const y = 4 + i * hang, w = Math.max(dai(d[1]) * k, 2), duong = d[1] >= 0, mau = duong ? MAU.tang : MAU.giam;
+      el("text", {x: 0, y: y + 14, "font-size": 12, "font-weight": 650, fill: MAU.chu}, s).textContent = d[0];
+      el("text", {x: x_ten, y: y + 14, "font-size": 11, fill: d[2] > 0 ? MAU.tang : d[2] < 0 ? MAU.giam : MAU.truc, class: "so"}, s).textContent = d[2] == null ? "" : dau(d[2]) + "%";
+      const bx = duong ? x0 : x0 - w;
+      el("rect", {x: bx, y: y + 4, width: w, height: 12, rx: 3, fill: mau}, s);
+      if (gay(d[1])) for (const dx of [-14, -9]) el("line", {x1: (duong ? bx + w : bx) + (duong ? dx : -dx) - 2, x2: (duong ? bx + w : bx) + (duong ? dx : -dx) + 2, y1: y + 18, y2: y + 2, stroke: "#fff", "stroke-width": 2}, s);
+      el("text", {x: duong ? bx + w + 4 : bx - 4, y: y + 14, "font-size": 11, "font-weight": 600, "text-anchor": duong ? "start" : "end", fill: MAU.chu, class: "so"}, s).textContent = dau(d[1]);
+      tro(el("rect", {x: 0, y, width: W, height: hang, fill: "transparent"}, s), d);
+    });
+    return;
+  }
+  const H = 300, P = {t: 22, b: 40 + (mx_a ? 16 : 0)};
+  const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Mã tác động mạnh nhất lên VN-Index"}, hop);
+  const cot = W / ds.length, bw = Math.min(24, cot * .62);
+  const ty_le = (H - P.t - P.b) / ((mx_d + mx_a) || 1), y0 = P.t + mx_d * ty_le;
+  el("line", {x1: 0, x2: W, y1: y0, y2: y0, stroke: "#cfd5de"}, s);
+  ds.forEach((d, i) => {
+    const cx = cot * i + cot / 2, h = Math.max(dai(d[1]) * ty_le, 2), duong = d[1] >= 0;
+    const y = duong ? y0 - h : y0, r = Math.min(4, h / 2), mau = duong ? MAU.tang : MAU.giam;
+    const p = duong ? `M${cx - bw / 2} ${y0}V${y + r}Q${cx - bw / 2} ${y} ${cx - bw / 2 + r} ${y}H${cx + bw / 2 - r}Q${cx + bw / 2} ${y} ${cx + bw / 2} ${y + r}V${y0}Z`
+                    : `M${cx - bw / 2} ${y0}V${y0 + h - r}Q${cx - bw / 2} ${y0 + h} ${cx - bw / 2 + r} ${y0 + h}H${cx + bw / 2 - r}Q${cx + bw / 2} ${y0 + h} ${cx + bw / 2} ${y0 + h - r}V${y0}Z`;
+    el("path", {d: p, fill: mau}, s);
+    if (gay(d[1])) for (const dy of [12, 18]) { const yy = duong ? y + dy : y0 + h - dy;
+      el("line", {x1: cx - bw / 2 - 1, x2: cx + bw / 2 + 1, y1: yy + 3, y2: yy - 3, stroke: "#fff", "stroke-width": 2.5}, s); }
+    el("text", {x: cx, y: duong ? y - 5 : y0 + h + 13, "text-anchor": "middle", "font-size": 11, fill: MAU.chu, class: "so", "font-weight": 600}, s).textContent = dau(d[1]);
+    el("text", {x: cx, y: H - 22, "text-anchor": "middle", "font-size": 11.5, "font-weight": 650, fill: MAU.chu}, s).textContent = d[0];
+    el("text", {x: cx, y: H - 7, "text-anchor": "middle", "font-size": 10.5, fill: d[2] > 0 ? MAU.tang : d[2] < 0 ? MAU.giam : MAU.truc, class: "so"}, s).textContent = d[2] == null ? "" : dau(d[2]) + "%";
+    tro(el("rect", {x: cot * i, y: P.t, width: cot, height: H - P.t, fill: "transparent"}, s), d);
+  });
+}
+
+// ---------- lọc mã ----------
+const NHOM = [
+  ["BIẾN ĐỘNG", [["tang", "Tăng giá", "Giá cao hơn tham chiếu", r => r.co_gd && r.pt > 0, "pt", -1],
+    ["giam", "Giảm giá", "Giá thấp hơn tham chiếu", r => r.co_gd && r.pt < 0, "pt", 1],
+    ["tran", "Trần", "Đang ở giá trần", r => r.tt === 1, "gt", -1], ["san", "Sàn", "Đang ở giá sàn", r => r.tt === -1, "gt", -1],
+    ["hoi", "Hồi từ đáy phiên", "Đã giảm ≥ 2% trong phiên rồi hồi ≥ 2% từ đáy", r => r.co_gd && r.thap <= r.tc * .98 && r.gia >= r.thap * 1.02, "pt", -1],
+    ["roi", "Rơi từ đỉnh phiên", "Đã tăng ≥ 2% trong phiên rồi rơi ≥ 2% từ đỉnh", r => r.co_gd && r.cao >= r.tc * 1.02 && r.gia <= r.cao * .98, "pt", 1]]],
+  ["DÒNG TIỀN", [["gt_lon", "GT lớn nhất", "50 mã giá trị giao dịch lớn nhất phiên", null, "gt", -1],
+    ["kl_dot", "KL đột biến", "KL ≥ 2 lần mức thường có tới giờ này (TB 20 phiên) · GTGD ≥ 1 tỷ", r => r.kl_x >= 2 && r.gt >= 1, "kl_x", -1],
+    ["cd_manh", "Mua chủ động mạnh", "Mua chủ động ≥ 60% KL khớp có chiều · GTGD ≥ 3 tỷ", r => r.mcd >= 60 && r.gt >= 3, "mcd", -1]]],
+  ["KHỐI NGOẠI", [["nn_mua", "Mua ròng", "Khối ngoại mua ròng hôm nay", r => r.nn > 0, "nn", -1],
+    ["nn_ban", "Bán ròng", "Khối ngoại bán ròng hôm nay", r => r.nn < 0, "nn", 1],
+    ["gom", "Gom ≥ 5 phiên", "Khối ngoại mua ròng ≥ 5 phiên liên tiếp (tính cả hôm nay)", r => r.chuoi >= 5, "chuoi", -1],
+    ["xa", "Xả ≥ 5 phiên", "Khối ngoại bán ròng ≥ 5 phiên liên tiếp (tính cả hôm nay)", r => r.chuoi <= -5, "chuoi", 1]]],
+  ["KỸ THUẬT", [["dinh52", "Vượt đỉnh 52 tuần", "Giá vượt đỉnh cao nhất 250 phiên trước", r => r.bit & 1, "pt", -1],
+    ["day52", "Thủng đáy 52 tuần", "Giá thủng đáy thấp nhất 250 phiên trước", r => r.bit & 2, "pt", 1],
+    ["ma_len", "Cắt lên MA20 / MA50", "Hôm nay giá cắt lên đường trung bình 20 hoặc 50 phiên", r => r.bit & 12, "pt", -1],
+    ["ma_xuong", "Cắt xuống MA20 / MA50", "Hôm nay giá cắt xuống đường trung bình 20 hoặc 50 phiên", r => r.bit & 48, "pt", 1],
+    ["rsi_mua", "RSI quá mua", "RSI 14 ≥ 70", r => r.rsi >= 70, "rsi", -1], ["rsi_ban", "RSI quá bán", "RSI 14 ≤ 30", r => r.rsi != null && r.rsi <= 30, "rsi", 1]]]];
+const NHOM_MAP = Object.fromEntries(NHOM.flatMap(([, ds]) => ds.map(d => [d[0], d])));
+const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia", "Giá"], ["pt", "±%"], ["gt", "GTGD"], ["kl_x", "KL/TB"], ["mcd", "Mua CĐ"],
+  ["chuoi", "Chuỗi NN"], ["nn5", "NN 5P"], ["nn20", "NN 20P"], ["nn", "NN ròng"], ["rsi", "RSI"], ["bien", "Biên độ phiên", 1]];
+
+function dung_loc() {
+  const c = D.loc.cot;
+  L = D.loc.dong.map(r => Object.fromEntries(c.map((k, i) => [k, r[i]])));
+  for (const r of L) { r.ten = (D.ten || {})[r.ma] || ""; r.tim = bo_dau(r.ma + " " + r.ten); }
+  const sel = $("#loc-nganh"), cu = ST.nganh;
+  sel.innerHTML = `<option value="">Mọi ngành</option>` + D.nganh.map((n, i) => `<option value="${i}">${esc(n)}</option>`).join("");
+  sel.value = cu;
+}
+function loc_nen() {
+  const nh = D.nhom || {}, s = ST.san, tim = bo_dau(ST.tim.trim());
+  return L.filter(r => (!s || (s === "VN30" || s === "HNX30" ? (nh[s] || []).includes(r.ma) : r.san === s))
+    && (ST.nganh === "" || r.nganh === +ST.nganh) && (!ST.du_tk || (r.gt20 ?? r.gt) >= D.loc.du_tk || tim)
+    && (!tim || r.tim.includes(tim)));
+}
+function ve_loc() {
+  for (const b of document.querySelectorAll("#loc-san button")) b.setAttribute("aria-pressed", String(b.dataset.s === ST.san));
+  $("#loc-tk").setAttribute("aria-pressed", String(ST.du_tk));
+  const nen = loc_nen();
+  $("#loc-dem").textContent = `${nen.length} mã · cập nhật ${D.cap_nhat.slice(11, 19)}`;
+  const ben = $("#ben"); ben.innerHTML = "";
+  for (const [ten, ds] of NHOM) {
+    const h = document.createElement("h3"); h.textContent = ten; ben.appendChild(h);
+    for (const [k, nhan, , f] of ds) {
+      const b = document.createElement("button"); b.setAttribute("aria-pressed", String(ST.nhom === k));
+      b.innerHTML = `${esc(nhan)}<span class="so">${f ? nen.filter(f).length : ""}</span>`;
+      b.onclick = () => { ST.nhom = k; ST.sap = null; ST.so_dong = 100; luu_st(); ve_loc(); };
+      ben.appendChild(b);
+    }
+  }
+  const chon = $("#loc-nhom");
+  chon.innerHTML = NHOM.map(([ten, ds]) => `<optgroup label="${esc(ten)}">` + ds.map(([k, nhan, , f]) =>
+    `<option value="${k}" ${k === ST.nhom ? "selected" : ""}>${esc(nhan)}${f ? " (" + nen.filter(f).length + ")" : ""}</option>`).join("") + "</optgroup>").join("");
+  chon.onchange = e => { ST.nhom = e.target.value; ST.sap = null; ST.so_dong = 100; luu_st(); ve_loc(); };
+  const [k, nhan, mo_ta, f, sap0, chieu0] = NHOM_MAP[ST.nhom] || NHOM_MAP.gt_lon;
+  let ds = f ? nen.filter(f) : nen.slice();
+  const sap = ST.sap || sap0, chieu = ST.sap ? ST.chieu : chieu0;
+  ds.sort((a, b) => { const x = a[sap], y = b[sap]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * (chieu > 0 ? 1 : -1) || b.gt - a.gt; });
+  if (!f) ds = ds.slice(0, 50);
+  $("#loc-ten").textContent = nhan; $("#loc-mo-ta").textContent = mo_ta; $("#loc-so").textContent = `${ds.length} mã`;
+  $("#loc-dau-bang").innerHTML = "<tr>" + COT.map(([c, t, trai]) => `<th data-c="${c}" class="${trai ? "trai" : ""}${c === "nganh" ? " cot-nganh" : ""}" ${c === sap ? `aria-sort="${chieu > 0 ? "ascending" : "descending"}"` : ""}>${t}</th>`).join("") + "</tr>";
+  for (const th of document.querySelectorAll("#loc-dau-bang th")) th.onclick = () => { const c = th.dataset.c; if (c === "bien" || c === "nganh") return;
+    if (ST.sap === c) ST.chieu = -ST.chieu; else { ST.sap = c; ST.chieu = c === "ma" ? 1 : -1; } ve_loc(); };
+  const than = $("#loc-than");
+  if (!ds.length) { than.innerHTML = `<tr><td colspan="${COT.length}" class="trong">Không có mã nào khớp bộ lọc</td></tr>`; $("#loc-them").hidden = true; return; }
+  than.innerHTML = ds.slice(0, ST.so_dong).map(dong_html).join("");
+  $("#loc-them").hidden = ds.length <= ST.so_dong;
+  $("#loc-them").textContent = `Xem thêm (${ds.length - ST.so_dong} mã)`;
+}
+function lop_gia(r) { return r.tt === 1 ? "tr" : r.tt === -1 ? "sa" : lop(r.gia - r.tc); }
+function nen_pt(r) { return r.tt === 1 ? "#f2e6fb" : r.tt === -1 ? "#e0f5f8" : r.pt > 0 ? "var(--tang-nen)" : r.pt < 0 ? "var(--giam-nen)" : "var(--dung-nen)"; }
+function bien_svg(r) {
+  const lo = r.san_gia || r.thap, hi = r.tran || r.cao; if (!(hi > lo)) return "";
+  const X = v => 4 + (v - lo) / (hi - lo) * 142;
+  const m = r.tt === 1 ? "#a24fd6" : r.tt === -1 ? "#1aa9bb" : r.gia > r.tc ? MAU.tang : r.gia < r.tc ? MAU.giam : "#c99a00";
+  return `<svg class="bien" viewBox="0 0 150 14" aria-label="Thấp ${nf(r.thap)} – cao ${nf(r.cao)}"><rect x="4" y="5" width="142" height="4" rx="2" fill="#e6e9ef"/>
+    <rect x="${X(r.thap)}" y="5" width="${Math.max(X(r.cao) - X(r.thap), 2)}" height="4" rx="2" fill="#aab3c0"/>
+    <rect x="${X(r.tc) - 1}" y="1" width="2" height="12" fill="#c99a00"/><circle cx="${X(r.gia)}" cy="7" r="4" fill="${m}" stroke="#fff" stroke-width="1.5"/></svg>`;
+}
+function dong_html(r) {
+  const nn = v => `<span class="${lop(v)}">${v == null ? "–" : dau(v, Math.abs(v) >= 100 ? 0 : 1)}</span>`;
+  return `<tr><td class="ma trai" title="${esc(r.ten)}">${esc(r.ma)}${r.san !== "HSX" ? `<span class="nhan-san">${r.san === "UPCOM" ? "UPC" : r.san}</span>` : ""}</td>
+    <td class="trai cot-nganh" style="color:var(--chu2)">${esc(D.nganh[r.nganh] || "")}</td>
+    <td class="so ${lop_gia(r)}">${nf(r.gia)}</td>
+    <td class="so"><span class="o-pt ${lop_gia(r)}" style="background:${nen_pt(r)}">${dau(r.pt)}%</span></td>
+    <td class="so">${nf(r.gt, 1)}</td><td class="so">${r.kl_x == null ? "–" : nf(r.kl_x, 1) + "×"}</td>
+    <td class="so ${r.mcd == null ? "" : r.mcd >= 55 ? "t" : r.mcd <= 45 ? "g" : ""}">${r.mcd == null ? "–" : nf(r.mcd, 0) + "%"}</td>
+    <td class="so ${lop(r.chuoi)}">${r.chuoi ? (r.chuoi > 0 ? "+" : "−") + Math.abs(r.chuoi) + " phiên" : "–"}</td>
+    <td class="so">${nn(r.nn5)}</td><td class="so">${nn(r.nn20)}</td><td class="so">${nn(r.nn)}</td>
+    <td class="so ${r.rsi >= 70 ? "g" : r.rsi != null && r.rsi <= 30 ? "t" : ""}">${r.rsi == null ? "–" : nf(r.rsi, 0)}</td>
+    <td class="trai">${bien_svg(r)}</td></tr>`;
+}
+
+// ---------- điều khiển ----------
+function doi_tab(t) {
+  ST.tab = t; luu_st();
+  for (const b of document.querySelectorAll(".tab button")) b.setAttribute("aria-selected", String(b.dataset.tab === t));
+  $("#tq").hidden = t !== "tq"; $("#loc").hidden = t !== "loc";
+  ve_tat();
+}
+document.querySelectorAll(".tab button").forEach(b => b.onclick = () => doi_tab(b.dataset.tab));
+document.querySelectorAll("#nd-kich button").forEach(b => b.onclick = () => {
+  ST.kich = b.dataset.k; luu_st();
+  document.querySelectorAll("#nd-kich button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); ve_ban_do(); });
+document.querySelectorAll("#loc-san button").forEach(b => b.onclick = () => { ST.san = b.dataset.s; ST.so_dong = 100; luu_st(); ve_loc(); });
+$("#loc-nganh").onchange = e => { ST.nganh = e.target.value; ST.so_dong = 100; luu_st(); ve_loc(); };
+$("#loc-tk").onclick = () => { ST.du_tk = !ST.du_tk; luu_st(); ve_loc(); };
+$("#loc-tim").oninput = e => { ST.tim = e.target.value; ST.so_dong = 100; ve_loc(); };
+$("#loc-them").onclick = () => { ST.so_dong += 200; ve_loc(); };
+
+function ve_tat() {
+  if (!D) return;
+  const tuoi = (Date.now() - new Date(D.cap_nhat.replace(" ", "T") + "+07:00")) / 60000;
+  const cu = D.dang_gd && tuoi > 12;
+  $("#cham").className = "cham" + (D.dang_gd && !cu ? " song" : "");
+  $("#trang-thai").textContent = `Phiên ${ngay_vn(D.phien)}/${D.phien.slice(0, 4)} · ${D.dang_gd ? (cu ? `dữ liệu cách đây ${Math.round(tuoi)} phút` : "đang giao dịch") : "đã đóng cửa"} · cập nhật ${D.cap_nhat.slice(11, 16)}`;
+  if (ST.tab === "tq") { ve_the(); ve_bieu_do(); ve_ban_do(); ve_tk(); ve_tac(); }
+  else ve_loc();
+}
+async function tai() {
+  try {
+    const r = await fetch(URL_DL + "?t=" + Date.now(), {cache: "no-store"});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    D = await r.json(); dung_loc(); ve_tat();
+  } catch (e) {
+    if (!D) $("main").innerHTML = `<div class="the loi">Chưa tải được dữ liệu (${esc(e.message)}). Thử tải lại trang sau ít phút.</div>`;
+  }
+}
+document.querySelectorAll("#nd-kich button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.k === ST.kich)));
+$("#loc-tim").value = ST.tim;
+doi_tab(ST.tab === "loc" ? "loc" : "tq");
+tai();
+setInterval(() => { if (!document.hidden) tai(); }, 60000);
+let hen; addEventListener("resize", () => { clearTimeout(hen); hen = setTimeout(ve_tat, 150); });
+</script>
+</body>
+</html>
