@@ -184,6 +184,47 @@ def tin_hieu_bot(duong=None):
     return {"hieu_luc": ds.get("hieu_luc"), "ma": ma} if ma else None
 
 
+SO_PHIEN_DT = (5, 10, 20)                     # dòng tiền / tác động nhiều phiên (kiểu FiinTrade 1 · 5 · 10 · 20 ngày)
+
+
+def _ls_truoc(cb, m, ps):
+    """Lịch sử gọn của mã chỉ gồm phiên TRƯỚC phiên ps."""
+    ls = (cb.get("ls") or {}).get(m) or {}
+    return ls.get("bo_cuoi") if (ls.get("day_du") or {}).get("ngay", "") >= ps else ls.get("day_du")
+
+
+def doi_n_phien(c, gia, n):
+    """% đổi giá hiện tại so đóng cửa n phiên trước (c: đóng cửa các phiên TRƯỚC hôm nay, cũ → mới; c[-1] = phiên trước)."""
+    if not c or len(c) < n or not c[-n] or not gia:
+        return None
+    return (gia / c[-n] - 1) * 100
+
+
+def tac_dong_n(H, cb, ps, vni_gia, vni_ngay, so=SO_PHIEN_DT, top=10):
+    """Tác động lên VN-Index n phiên – mã HOSE (cổ phiếu): Δgiá (so đóng cửa n phiên trước) × CP niêm yết ÷ hệ số chia
+    (tổng vốn hoá hiện tại ÷ VN-Index hiện tại). Giá lịch sử đã điều chỉnh → xấp xỉ (lệch nhỏ ở mã có GDKHQ trong kỳ).
+    → {"5": {"len": [[mã, điểm, %]…], "xuong": […], "rong": VN-Index đổi thật (điểm)}, …}."""
+    st = H[H["loai"] == "STOCK"]
+    von = float((st["gia"] * st["cp"]).sum()) if len(st) else 0.0
+    if not vni_gia or von <= 0:
+        return {}
+    chia = von / float(vni_gia)
+    truoc = [v for d, v in vni_ngay if d < ps and v]
+    out = {}
+    for n in so:
+        ds = []
+        for m, r in st.iterrows():
+            c = (_ls_truoc(cb, m, ps) or {}).get("c") or []
+            if len(c) >= n and c[-n] and r["gia"] > 0 and r["cp"] > 0:
+                ds.append([m, _r((r["gia"] - c[-n]) * r["cp"] / chia), _r((r["gia"] / c[-n] - 1) * 100)])
+        if not ds:
+            continue
+        ds.sort(key=lambda x: x[1])
+        out[str(n)] = {"len": [x for x in ds[::-1][:top] if x[1] > 0], "xuong": [x for x in ds[:top] if x[1] < 0],
+                       "rong": _r(float(vni_gia) - truoc[-n]) if len(truoc) >= n else None}
+    return out
+
+
 def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
     luc = luc or tinh.gio_vn()
     ma_cs = list(nguon.CHI_SO) + ["VN30F1M"]
@@ -230,7 +271,8 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
     def _tac(ds):
         return [[x.get("symbol"), _r(x.get("impact")), _r(pt.get(x.get("symbol")))] for x in ds or []]
 
-    tac_dong = {"rong": vni.get("td"), "len": _tac(tac.get("topUp")), "xuong": _tac(tac.get("topDown"))}
+    tac_dong = {"rong": vni.get("td"), "len": _tac(tac.get("topUp")), "xuong": _tac(tac.get("topDown")),
+                "n": tac_dong_n(H, cb, ps, vni.get("gia"), cb.get("vni_ngay", []))}
     # nhóm ngành chung (bản đồ nhiệt + lọc)
     ten_nganh = sorted(set(cb["nganh"].values()))
     so_nganh = {t: i for i, t in enumerate(ten_nganh)}
@@ -250,8 +292,7 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
     # bảng lọc
     dong = []
     for m, r in cp.iterrows():
-        ls = (cb["ls"].get(m) or {})
-        ls = ls.get("bo_cuoi") if (ls.get("day_du") or {}).get("ngay", "") >= ps else ls.get("day_du")
+        ls = _ls_truoc(cb, m, ps)
         kt = tinh.ky_thuat(ls, r["gia"])                              # lịch sử IQ & bảng giá cùng đơn vị đồng
         bit = sum(v for k, v in BIT.items() if kt.get(k))
         nn_ls = (ls or {}).get("nn") or []
@@ -263,7 +304,8 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
                      _r(r["gt"]), kl_x, mcd.get(m), _r(r["nn"]), _r(sum(gia_nn[:5])), _r(sum(gia_nn[:20])),
                      tinh.chuoi(gia_nn), _r(r["tc"] / 1000, 2), _r(r["tran"] / 1000, 2), _r(r["san_gia"] / 1000, 2),
                      _r(r["cao"] / 1000, 2), _r(r["thap"] / 1000, 2), {"tran": 1, "san": -1}.get(r["tt"], 0),
-                     _r((ls or {}).get("gt20"), 1), bit, kt.get("rsi"), int(bool(r["co_gd"]))])
+                     _r((ls or {}).get("gt20"), 1), bit, kt.get("rsi"), int(bool(r["co_gd"])),
+                     *[_r(doi_n_phien((ls or {}).get("c"), r["gia"], n)) for n in SO_PHIEN_DT], _r(sum(gia_nn[:10]))])
     vni_ngay = [x for x in cb.get("vni_ngay", []) if x[0] < ps] + ([[ps, vni.get("gia")]] if vni.get("gia") else [])
     w = _tuan(nen1.get("VNINDEX"))
     out = {"cap_nhat": f"{luc:%Y-%m-%d %H:%M:%S}", "phien": ps, "dang_gd": bool(dang_gd), "chi_so": the,
@@ -271,7 +313,8 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
            "tac_dong": tac_dong, "nganh": ten_nganh,
            "ban_do": {"cot": ["ma", "nganh", "vh", "pt", "gt", "nn", "td", "tt"], "dong": hm},
            "loc": {"cot": ["ma", "san", "nganh", "gia", "pt", "gt", "kl_x", "mcd", "nn", "nn5", "nn20", "chuoi", "tc",
-                           "tran", "san_gia", "cao", "thap", "tt", "gt20", "bit", "rsi", "co_gd"], "dong": dong,
+                           "tran", "san_gia", "cao", "thap", "tt", "gt20", "bit", "rsi", "co_gd", "p5", "p10", "p20", "nn10"],
+                   "dong": dong,
                    "bit": BIT, "du_tk": GT_DU_THANH_KHOAN},
            "ten": {m: cb.get("ten", {}).get(m, "") for m in cp.index},
            "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot(), "danh_muc": ma_dang_giu()}
