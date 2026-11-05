@@ -281,10 +281,10 @@ def test_workflow_co_gac_dung_cach():
 def test_giam_sat_loi_tu_chay_lai_hoac_bao_ngay():
     tu = datetime(2026, 11, 6, 8, 0, tzinfo=UTC)
 
-    def r(id_, wf, phut, kq="failure", lan=1, nhanh="main"):
+    def r(id_, wf, phut, kq="failure", lan=1, nhanh="main", tt="completed"):
+        luc = (tu + timedelta(minutes=phut)).strftime("%Y-%m-%dT%H:%M:%SZ")
         return {"id": id_, "path": f".github/workflows/{wf}", "name": wf.split(".")[0], "conclusion": kq, "run_attempt": lan,
-                "head_branch": nhanh, "updated_at": (tu + timedelta(minutes=phut)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "html_url": f"https://x/{id_}"}
+                "head_branch": nhanh, "updated_at": luc, "created_at": luc, "status": tt, "html_url": f"https://x/{id_}"}
 
     class GH:
         def __init__(self):
@@ -301,7 +301,8 @@ def test_giam_sat_loi_tu_chay_lai_hoac_bao_ngay():
     gh.runs = [r(1, "tra_cuu_web.yml", 5),                     # dữ liệu → tự chạy lại, không nhắn
                r(2, "danh_muc.yml", 6),                        # → nhắn ngay
                r(3, "quet_dinh_ky.yml", 7, "success"),
-               r(4, "canh_bao.yml", 8, "cancelled"),           # hủy (concurrency) → bỏ qua
+               r(4, "canh_bao.yml", 8, "cancelled"),           # hủy (concurrency – có lần mới hơn) → bỏ qua
+               r(8, "canh_bao.yml", 12, None, tt="queued"),     # lần mới hơn đang chờ
                r(5, "kiem_thu.yml", 9),                        # tự nhắn
                r(6, "canh_bao.yml", 9, nhanh="claude/x"),      # nhánh thử
                r(7, "gia_lap.yml", -30)]                       # trước lúc đồng hồ chạy
@@ -314,6 +315,12 @@ def test_giam_sat_loi_tu_chay_lai_hoac_bao_ngay():
     tin = gs.buoc()
     assert len(tin) == 1 and "đã tự chạy lại 1 lần, vẫn lỗi" in tin[0] and gh.post == ["actions/runs/1/rerun-failed-jobs"]
     assert not any("http" in x for x in log)                  # log công khai: chỉ tên workflow
+    # bị huỷ KHÔNG có lần mới hơn (deploy Pages quá 10' – 05/11/2026) → coi là lỗi: CHAY_LAI chạy lại cả lần chạy
+    gh.runs = [r(20, "bang_thi_truong.yml", 40, "cancelled")]
+    assert gs.buoc() == [] and gh.post[-1] == "actions/runs/20/rerun"
+    gh.runs = [r(21, "danh_muc.yml", 41, "cancelled")]
+    tin = gs.buoc()
+    assert len(tin) == 1 and "bị huỷ" in tin[0]
 
 
 def test_dong_ho_yml():
