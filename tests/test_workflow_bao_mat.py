@@ -33,3 +33,24 @@ def test_workflow_lay_danh_muc_deu_xoa_du_file_that():
             if mat:
                 thieu[f"{os.path.basename(f)}:{ten}"] = mat
     assert not thieu, f"workflow lấy danh-muc nhưng không xoá đủ file thật: {thieu}"
+
+
+def test_chi_mot_token_github_va_khoa_cache_khong_theo_token():
+    """11/2026: gộp còn 1 token GitHub (DANH_MUC_TOKEN_GHI – repo kín danh-muc + gia_lap: Contents R/W, Actions R/W) cho
+    dễ gia hạn; trạng thái riêng mã hoá bằng khoá cố định (CACHE_KEY / token bot Telegram) – tạo lại token GitHub không
+    làm mất trạng thái (mất → báo bán lặp)."""
+    import re
+    bo = {"DANH_MUC_TOKEN_DOC", "SUC_KHOE_TOKEN", "BO_LOC_TOKEN"}
+    dung = set()
+    for f in glob.glob(os.path.join(THU_MUC, "*.yml")):
+        dung |= set(re.findall(r"secrets\.([A-Z0-9_]+)", open(f, encoding="utf-8").read()))
+    assert not (dung & bo), f"đã gộp vào DANH_MUC_TOKEN_GHI – bỏ {dung & bo}"
+    assert "DANH_MUC_TOKEN_GHI" in dung
+    d = yaml.safe_load(open(os.path.join(THU_MUC, "canh_bao.yml"), encoding="utf-8"))
+    buoc = {s.get("name", ""): s for s in d["jobs"]["chay"]["steps"]}
+    giai = next(v for k, v in buoc.items() if k.startswith("Giải mã trạng thái"))
+    ma = next(v for k, v in buoc.items() if k.startswith("Mã hoá trạng thái"))
+    for s in (giai, ma):
+        assert "DANH_MUC_TOKEN_GHI" not in s["env"]["KHOA"] and "CACHE_KEY" in s["env"]["KHOA"]
+    assert "KHOA_CU" in giai["run"]                      # đọc được cache cũ (mã bằng token)
+    assert 'rm -f $ds' in ma["run"].splitlines()[-1]     # luôn xoá bản rõ

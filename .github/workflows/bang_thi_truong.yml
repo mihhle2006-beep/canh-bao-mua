@@ -70,7 +70,7 @@ jobs:
       - name: Mã đang giữ (chỉ mã – không in ra log)
         if: github.ref == 'refs/heads/main'
         env:
-          TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           REPO: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
         run: |
           F="$RUNNER_TEMP/ma_giu.txt"

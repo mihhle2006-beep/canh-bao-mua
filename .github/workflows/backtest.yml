@@ -55,7 +55,7 @@ jobs:
 
       - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
         env:
-          TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
@@ -65,7 +65,7 @@ jobs:
         continue-on-error: true
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: _kho_dm
           sparse-checkout: du_lieu/bctc/

@@ -9,7 +9,9 @@ chạy 10:24, Danh mục 08:30 chạy 15:18, Kiểm thử 07:41 chạy 14:22, Qu
     đồng hồ truyền đúng chuỗi cron (UTC) → chạy y như lịch.
   • Chạy liên tục: mỗi lượt ≈ 5 giờ 40 phút rồi tự gọi lượt sau (GITHUB_TOKEN gọi workflow_dispatch vẫn tạo lần chạy mới);
     đứt chuỗi → lịch dự phòng của dong_ho.yml (2 giờ / lần) khởi động lại; lượt đến sau thấy lượt cũ còn chạy → thoát.
-  • 20:05 hằng ngày: kiểm hạn token repo kín (DANH_MUC_TOKEN_*) – còn < 14 ngày → nhắn Telegram.
+  • Việc ở repo KÍN danh-muc (máy Mac: vòng đồng bộ DNSE, xin mã OTP đặt lệnh) – dòng "danh-muc/<file>": gọi bằng token
+    DANH_MUC_TOKEN_GHI (cần quyền Actions: Read and write ở danh-muc); việc đó đang chạy / đang chờ máy Mac → không gọi.
+  • 20:05 hằng ngày: kiểm hạn token repo kín (DANH_MUC_TOKEN_GHI) – còn < 14 ngày → nhắn Telegram.
   • Giám sát 5 phút / lần: workflow trên main vừa LỖI → workflow dữ liệu / trang (CHAY_LAI – chạy lại không gửi tin
     trùng) tự chạy lại job lỗi 1 lần; còn lại, hoặc chạy lại vẫn lỗi → nhắn Telegram NGAY (không đợi tin 🩺 19:55).
 Chỉ dùng thư viện chuẩn (không cần pip). Log chỉ in tên workflow / giờ.
@@ -61,7 +63,12 @@ LICH = [
     ("boi_so_nganh.yml", "13 3 * * 7", {}, 600),
     ("backtest_quy_b.yml", "13 9 1 * *", {}, 1440),
     ("backtest.yml", "17 2 2 * *", {}, 1440),
+    # repo kín danh-muc – chạy trên máy Mac (như may_mac/bat_vong.sh): Mac ngủ thì lần chạy chờ, Mac thức là chạy
+    ("danh-muc/dnse_dong_bo.yml", "35 8 * * 1-5", {"vong": "true"}, 360),     # vòng đồng bộ DNSE 10' / lần tới 15:05
+    ("danh-muc/dat_lenh.yml", "40 8 * * 1-5", {}, 20),                       # xin mã giao dịch (Smart OTP)
+    ("danh-muc/dnse_dong_bo.yml", "47 12 * * 1-5", {"vong": "true"}, 120),    # vòng chết buổi trưa → bật lại
 ]
+BO_NEU_DANG_CHAY = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml"}   # đang chạy / chờ máy Mac → không gọi thêm
 # lỗi lần đầu → tự chạy lại job lỗi 1 lần (dựng dữ liệu / trang: lỗi hay do nguồn chập chờn, chạy lại không gửi tin trùng)
 CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_bctn.yml", "loc_quy_b.yml",
             "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml"}
@@ -208,9 +215,18 @@ def gac(gh, wf, lich_gh, bay_gio, run_id=None):
 
 # ---------------------------------------------------------------- đồng hồ
 class DongHo:
-    def __init__(self, gh, lich=None, in_ra=print, thu=False):
+    def __init__(self, gh, lich=None, in_ra=print, thu=False, gh_khac=None):
         self.gh, self.lich, self.in_ra, self.thu = gh, lich or LICH, in_ra, thu
+        self.gh_khac = gh_khac or {}                                # "danh-muc" → GitHub(repo kín, token)
         self.xong = set()                                           # (wf, lịch, mốc) đã xét trong lượt chạy này
+        self.da_bao = set()
+
+    def _may(self, wf):
+        """'danh-muc/x.yml' → (client repo kín | None, 'x.yml'); 'x.yml' → (client repo này, 'x.yml')."""
+        if "/" not in wf:
+            return self.gh, wf
+        repo, ten = wf.split("/", 1)
+        return self.gh_khac.get(repo), ten
 
     def buoc(self, bay_gio):
         """Xét mọi dòng lịch tại bay_gio → [(wf, inputs, mốc)] đã gọi."""
@@ -219,17 +235,32 @@ class DongHo:
             moc = moc_gan_nhat(lich, bay_gio, tre)
             if moc is None or (wf, lich, moc) in self.xong:
                 continue
+            gh, ten = self._may(wf)
+            if gh is None:                                          # chưa có token repo kín → bỏ (báo 1 lần)
+                self.xong.add((wf, lich, moc))
+                if wf not in self.da_bao:
+                    self.da_bao.add(wf)
+                    self.in_ra(f"::warning::{wf}: thiếu secret DANH_MUC_TOKEN_GHI – không gọi được việc ở repo kín")
+                continue
             try:
-                if not da_chay_tu(self.gh.lan_chay(wf), moc):
+                ds = gh.lan_chay(ten)
+                if wf in BO_NEU_DANG_CHAY and any(r.get("status") != "completed" for r in ds):
+                    self.xong.add((wf, lich, moc))                  # đang chạy / đang chờ máy Mac → để yên
+                    continue
+                if not da_chay_tu(ds, moc):
                     if not self.thu:
-                        self.gh.goi(wf, {k: str(v) for k, v in inputs.items()})
+                        gh.goi(ten, {k: str(v) for k, v in inputs.items()})
                     da_goi.append((wf, inputs, moc))
                     tre_phut = int((bay_gio - moc).total_seconds() // 60)
                     self.in_ra(f"{bay_gio:%d/%m %H:%M} gọi {wf} {inputs or ''} (mốc {moc:%H:%M}"
                                + (f", bù trễ {tre_phut}'" if tre_phut > 1 else "") + ")")
                 self.xong.add((wf, lich, moc))
             except urllib.error.HTTPError as e:
-                if 400 <= e.code < 500 and e.code not in (403, 408, 429):   # 404 / 422 (input sai…): thử lại cũng vậy
+                if "/" in wf and e.code in (401, 403, 404):           # token repo kín thiếu quyền Actions / hết hạn
+                    self.xong.add((wf, lich, moc))
+                    self.in_ra(f"::warning::{bay_gio:%H:%M} {wf}: GitHub {e.code} – token DANH_MUC_TOKEN_GHI cần quyền "
+                               "Actions: Read and write ở repo danh-muc (hoặc đã hết hạn)")
+                elif 400 <= e.code < 500 and e.code not in (403, 408, 429):   # 404 / 422 (input sai…): thử lại cũng vậy
                     self.xong.add((wf, lich, moc))
                     self.in_ra(f"::warning::{bay_gio:%H:%M} {wf}: GitHub {e.code} – bỏ mốc {moc:%H:%M}")
                 else:
@@ -322,7 +353,7 @@ def nhan_tele(noi_dung):
 def kiem_token(bay_gio, in_ra=print):
     """Token repo kín sắp / đã hết hạn → Telegram (tên secret + ngày; không in token)."""
     canh = []
-    for ten in ("DANH_MUC_TOKEN_GHI", "DANH_MUC_TOKEN_DOC"):
+    for ten in ("DANH_MUC_TOKEN_GHI",):
         h = han_token(os.environ.get(ten))
         if h is None:
             continue
@@ -384,7 +415,9 @@ def main(argv=None):
     gh = GitHub(repo, os.environ["GH_TOKEN"])
     if luot_khac_dang_chay(gh, run_id):
         return 0
-    dh = DongHo(gh)
+    tk_dm = os.environ.get("DANH_MUC_TOKEN_GHI", "").strip()
+    gh_khac = {"danh-muc": GitHub(os.environ.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc", tk_dm)} if tk_dm else {}
+    dh = DongHo(gh, gh_khac=gh_khac)
     gs = GiamSat(gh, datetime.now(timezone.utc) - timedelta(minutes=10))   # phủ khoảng nối giữa 2 lượt đồng hồ
     bat_dau, da_kiem, lan_gs = time.time(), None, 0.0
     print(f"Đồng hồ chạy {a.phut:.0f} phút, {len(LICH)} dòng lịch", flush=True)
