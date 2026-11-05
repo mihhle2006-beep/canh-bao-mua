@@ -19,7 +19,7 @@ on:
         default: ""
       phut:
         description: "Giới hạn phút cho phần doanh nghiệp"
-        default: "30"
+        default: "40"
 
 permissions:
   contents: read
@@ -81,8 +81,8 @@ jobs:
         working-directory: .
         env:
           MA: ${{ inputs.ma }}
-          PHUT: ${{ inputs.phut || '30' }}
-        run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut "$PHUT" ${MA:+--ma "$MA"}
+          PHUT: ${{ inputs.phut || '40' }}
+        run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut "$PHUT" --luong 8 ${MA:+--ma "$MA"}
 
       - name: Lưu dữ liệu (cache cho Bang thi truong)
         uses: actions/cache/save@v5
