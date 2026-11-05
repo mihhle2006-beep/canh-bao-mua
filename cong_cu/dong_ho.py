@@ -133,7 +133,8 @@ class GitHub:
     def _goi(self, duong, du_lieu=None, phuong=None):
         req = urllib.request.Request(f"{API}/repos/{self.repo}/{duong}", method=phuong or ("POST" if du_lieu else "GET"),
                                      data=json.dumps(du_lieu).encode() if du_lieu is not None else None,
-                                     headers={"Authorization": f"Bearer {self.token}", "Accept": "application/vnd.github+json",
+                                     headers={**({"Authorization": f"Bearer {self.token}"} if self.token else {}),
+                                              "Accept": "application/vnd.github+json",
                                               "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "dong-ho"})
         with urllib.request.urlopen(req, timeout=30) as r:
             nd = r.read()
