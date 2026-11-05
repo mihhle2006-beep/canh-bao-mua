@@ -442,9 +442,12 @@ function goc_he_thong(ma, k, x, gn) {
     const rs = rsi(c.slice(-120));
     const e12 = ema(c, 12), e26 = ema(c, 26), mc = e12.map((v, i) => v - e26[i]), sg = ema(mc, 9);
     d.push(["RSI 14 · MACD", `<span class="${rs >= 70 ? "g" : rs <= 30 ? "t" : ""}">${so(rs, 0)}${rs >= 70 ? " (quá mua)" : rs <= 30 ? " (quá bán)" : ""}</span> · MACD <span class="${mc[L] > sg[L] ? "t" : "g"}">${mc[L] > sg[L] ? "trên" : "dưới"} tín hiệu</span>`]);
-    const nn = x.nn || [], s5 = nn.slice(-5).reduce((a, v) => a + (v || 0), 0), s20 = nn.slice(-20).reduce((a, v) => a + (v || 0), 0);
+    const nn = x.nn || [];
+    if (nn.some(v => v != null)) {
+    const s5 = nn.slice(-5).reduce((a, v) => a + (v || 0), 0), s20 = nn.slice(-20).reduce((a, v) => a + (v || 0), 0);
     let chuoi = 0; for (let i = nn.length - 1; i >= 0 && nn[i] && Math.sign(nn[i]) === Math.sign(nn[nn.length - 1]); i--) chuoi++;
     d.push(["Khối ngoại ròng 5 / 20 phiên", `<span class="${mau(s5)}">${so(s5, 1)}</span> / <span class="${mau(s20)}">${so(s20, 1)}</span> tỷ${chuoi >= 3 ? ` · ${nn[nn.length - 1] > 0 ? "mua" : "bán"} ròng ${chuoi} phiên liền` : ""}`]);
+    }
     const td = k.g?.td; if (td) { const t5 = td.slice(-5).reduce((a, v) => a + (v || 0), 0), t20 = td.slice(-20).reduce((a, v) => a + (v || 0), 0);
       d.push(["Tự doanh ròng 5 / 20 phiên", `<span class="${mau(t5)}">${so(t5, 1)}</span> / <span class="${mau(t20)}">${so(t20, 1)}</span> tỷ`]); }
   }
@@ -629,6 +632,7 @@ function lich_su(ma, k) {
   if (!g?.d?.length) return the("Lịch sử giá", "", `<div class="trong">Chưa có lịch sử giá.</div>`);
   const N = g.d.length, i0 = Math.max(0, N - ST.ls_n), idx = []; for (let i = N - 1; i >= i0; i--) idx.push(i);
   let tieu, dong, chart = "";
+  if ((ST.ls === "nn" && !g.nn) || (ST.ls === "cc" && !g.dat_m) || (ST.ls === "td" && !g.td)) ST.ls = "gia";
   const sl = Math.min(N, 60), nhan = g.d.slice(-sl).map(d => ngay_vn(d).slice(0, 5));
   if (ST.ls === "nn") {
     tieu = ["Ngày", "Mua (tỷ)", "Bán (tỷ)", "Ròng (tỷ)", "% sở hữu"];
@@ -648,8 +652,8 @@ function lich_su(ma, k) {
     dong = i => { const d = i > 0 ? g.c[i] - g.c[i - 1] : null, p = i > 0 ? g.c[i] / g.c[i - 1] - 1 : null;
       return [ngay_vn(g.d[i]), `<b class="${mau(d)}">${so(g.c[i], 2)}</b>`, `<span class="${mau(d)}">${d != null ? (d > 0 ? "+" : "") + so(d, 2) : ""} (${pt(p, 2)})</span>`, so(g.o[i], 2), so(g.h[i], 2), so(g.l[i], 2), so(g.v[i], 0), so(g.gt[i], 1), g.tt?.[i] ? so(g.tt[i], 1) : ""]; };
   }
-  const tabs = [["gia", "Giá"], ["nn", "Nước ngoài"], ["cc", "Cung cầu"]].concat(g.td ? [["td", "Tự doanh"]] : []);
-  return the("Lịch sử giá", "giá đã điều chỉnh · nghìn đồng", (chart ? `<div class="bieu" style="padding:6px 8px">${chart}</div>` : "") +
+  const tabs = [["gia", "Giá"]].concat(g.nn ? [["nn", "Nước ngoài"]] : [], g.dat_m ? [["cc", "Cung cầu"]] : [], g.td ? [["td", "Tự doanh"]] : []);
+  return the("Lịch sử giá", g.du_phong ? "nghìn đồng · nguồn dự phòng (chưa có khối ngoại / cung cầu – cập nhật ở lượt sau)" : "giá đã điều chỉnh · nghìn đồng", (chart ? `<div class="bieu" style="padding:6px 8px">${chart}</div>` : "") +
     `<div class="bang-boc"><table><thead><tr>${tieu.map((t, j) => `<th class="${j ? "" : "trai"}">${t}</th>`).join("")}</tr></thead><tbody>${idx.map(i => `<tr>${dong(i).map((c, j) => `<td class="${j ? "" : "trai"}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>` +
     (i0 > 0 ? `<button class="them" id="ls-them">Xem thêm 30 phiên</button>` : ""), nut(tabs, ST.ls, "ls"));
 }
