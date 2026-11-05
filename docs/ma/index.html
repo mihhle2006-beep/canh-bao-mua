@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6feb'/%3E%3Crect x='7' y='14' width='4' height='11' rx='1' fill='%23fff'/%3E%3Crect x='14' y='8' width='4' height='17' rx='1' fill='%23fff'/%3E%3Crect x='21' y='11' width='4' height='14' rx='1' fill='%23fff'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tra cứu mã</title>
 <meta name="description" content="Tra cứu cổ phiếu HOSE / HNX: biểu đồ nến, báo cáo tài chính đầy đủ, định giá, cổ đông, cổ tức, lịch sử giá, tin & báo cáo CTCK, hồ sơ, phân tích hệ thống.">
@@ -172,6 +173,17 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .chu-bd{position:absolute;left:8px;top:6px;z-index:3;font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
 .chu-bd b{font-weight:650}
 .cham-song{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tang);margin-right:5px;vertical-align:middle}
+.dai-cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+.cs-o{display:flex;flex-direction:column;gap:2px;background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:10px 14px;color:inherit}
+.cs-o:hover{text-decoration:none;border-color:var(--nhan)}.cs-o .n{font-size:12px;color:var(--mo)}.cs-o b{font-size:18px;font-variant-numeric:tabular-nums}
+.cs-o span:last-child{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.luoi-dau{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;align-items:start}
+.o-dau{margin:0;padding:14px 16px 12px}.o-rong{grid-column:1/-1}
+.o-tieu{display:flex;align-items:center;gap:8px}.o-tieu h3{margin:0;font-size:14.5px;font-weight:650}
+.so-o{font-size:11.5px;font-weight:650;color:var(--nhan);background:var(--nhan-nen);border-radius:10px;padding:0 7px}
+.o-phu{margin:3px 0 8px;font-size:12px;color:var(--mo)}.o-nhom{font-size:12px;color:var(--chu2);margin:8px 0 2px;font-weight:600}
+.lien a.dang{color:var(--chu);font-weight:650;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
+@media (max-width:600px){.luoi-dau{grid-template-columns:minmax(0,1fr)}.dai-cs{grid-template-columns:repeat(2,minmax(0,1fr))}.cs-o b{font-size:16px}}
 .ss-nganh tr.nay td{background:var(--nhan-nen)}.ss-nganh tr.tv td{border-top:2px solid var(--vien)}
 .sk-nhan{font-size:12px;font-weight:600;border-radius:10px;padding:1px 8px;white-space:nowrap;background:var(--nhat)}
 .sk-tien{background:#e3f5ea;color:#0f6b3a}.sk-cp{background:#e8eefc;color:#1f4fbf}.sk-dh{background:#fdf1dc;color:#8a5a00}
@@ -893,34 +905,40 @@ function he_thong(ma, k) {
 function gia_h(r) { const l = LIVE[r.ma]; return l && l.gia ? l.gia * 1000 : r.gia; }
 function hien_dau() {
   document.title = "Tra cứu mã";
-  const chip = m => `<a class="chip" href="#${esc(m)}">${esc(m)}</a>`;
   const tang = DS.filter(r => r.ln_yoy != null && r.ln_q >= 50 && r.lien >= 2).sort((a, b) => b.ln_yoy - a.ln_yoy).slice(0, 20).map(r => r.ma);
   const re = DS.filter(r => r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
   const f = DS.filter(r => r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
-  const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 24).map(r => r.ma);
-  const vA = DS.filter(r => (r.vgm || "").endsWith("A") && r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 24).map(r => r.ma);
+  const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 20).map(r => r.ma);
+  const vA = DS.filter(r => (r.vgm || "").endsWith("A") && r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 20).map(r => r.ma);
   const chip_pt = m => { const l = LIVE[m], p = l?.pt != null ? l.pt / 100 : null;
     return `<a class="chip" href="#${esc(m)}">${esc(m)}${p != null ? `<span class="pt ${mau(p)}">${pt(p, 1)}</span>` : ""}</a>`; };
   const du_tk = MKT?.loc?.du_tk ?? 2, lv = Object.values(LIVE).filter(l => MA_OK(l.ma) && (l.gt20 ?? l.gt ?? 0) >= du_tk);
-  const loc_tk = (dk, sx) => lv.filter(dk).sort(sx || ((a, b) => (b.gt ?? 0) - (a.gt ?? 0))).slice(0, 16).map(l => l.ma);
-  const tk = [["Vượt đỉnh 52 tuần", loc_tk(l => l.bit & 1)], ["Khối lượng đột biến ≥ 2× TB20, giá tăng", loc_tk(l => l.kl_x >= 2 && l.pt > 0, (a, b) => b.kl_x - a.kl_x)],
+  const loc_tk = (dk, sx) => lv.filter(dk).sort(sx || ((a, b) => (b.gt ?? 0) - (a.gt ?? 0))).slice(0, 12).map(l => l.ma);
+  const tk = [["Vượt đỉnh 52 tuần", loc_tk(l => l.bit & 1)], ["KL đột biến ≥ 2× TB20, giá tăng", loc_tk(l => l.kl_x >= 2 && l.pt > 0, (a, b) => b.kl_x - a.kl_x)],
     ["Thủng đáy 52 tuần", loc_tk(l => l.bit & 2)]].filter(x => x[1].length);
+  // thẻ: tiêu đề · mô tả ngắn · số mã · danh sách mã kèm % trong phiên
+  const o = (tieu, phu, ds, them = "") => ds.length ? `<section class="the o-dau"><div class="o-tieu"><h3>${tieu}</h3><span class="so-o">${ds.length}</span></div>
+    ${phu ? `<p class="o-phu">${phu}</p>` : ""}<div class="nhom-chip">${ds.map(chip_pt).join("")}</div>${them}</section>` : "";
+  const cs_dai = (MKT?.chi_so || []).filter(x => x.ma !== "VN30F1M").map(x => { const p = x.pt != null ? x.pt / 100 : null;
+    return `<a class="cs-o" href="../thi_truong/"><span class="n">${esc(x.ten)}</span><b>${so(x.gia, 2)}</b><span class="${mau(p)}">${x.td > 0 ? "+" : ""}${so(x.td, 2)} (${pt(p, 2)})</span></a>`; }).join("");
+  const m = META.canslim?.m;
   let h = `<div class="dau-chinh"><h2>Tra cứu mã</h2><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
     placeholder="Nhập mã cổ phiếu – VD V, HPG" aria-label="Tìm mã cổ phiếu" maxlength="10" autocomplete="off"
     spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-    <p>${DS.length} mã HOSE · HNX · UPCoM – giá, tài chính, cổ đông, định giá, CANSLIM</p></div><div class="the"><div class="than nhom-chip">`;
-  if (TD.size) h += `<h3>Danh sách theo dõi của bạn <span class="m" style="text-transform:none;font-weight:400">· lưu trong trình duyệt này · bấm "+ Theo dõi" ở trang mã để thêm</span></h3>${[...TD].sort().map(chip_pt).join("")}`;
-  if (GIU.size) h += `<h3>Danh mục đang giữ</h3>${[...GIU].sort().map(chip).join("")}`;
-  if (Object.keys(BOT).length) h += `<h3>Bot đang khuyến nghị mua</h3>${Object.keys(BOT).map(chip).join("")}`;
-  h += `<h3>Vốn hoá lớn nhất</h3>${DS.slice(0, 30).map(r => chip(r.ma)).join("")}`;
-  if (tang.length) h += `<h3>LNST quý tăng mạnh (≥ 2 quý liền, quý ≥ 50 tỷ)</h3>${tang.map(chip).join("")}`;
-  if (re.length) h += `<h3>Rẻ so giá trị hợp lý (vốn hoá ≥ 1.000 tỷ)</h3>${re.map(chip).join("")}`;
-  if (f.length) h += `<h3>F-Score ≥ 8 (sức khoẻ tài chính tốt, vốn hoá ≥ 1.000 tỷ)</h3>${f.map(chip).join("")}`;
-  if (tk.length) h += `<h3>Tín hiệu kỹ thuật trong phiên <span class="m" style="text-transform:none;font-weight:400">· ${esc(MKT?.cap_nhat || "")} · GTGD ≥ ${so(du_tk, 0)} tỷ</span></h3>` + tk.map(([t, ds]) => `<div class="m" style="font-size:12.5px;margin:6px 0 2px">${esc(t)} (${ds.length})</div>${ds.map(chip_pt).join("")}`).join("");
-  if (vA.length) h += `<h3>Xếp hạng A (kiểu VGM: giá trị · tăng trưởng · động lượng, vốn hoá ≥ 500 tỷ)</h3>${vA.map(chip).join("")}`;
-  if (cs.length) { const m = META.canslim?.m;
-    h += `<h3>CANSLIM ≥ 4/5 (C·A·N·S·L, vốn hoá ≥ 500 tỷ, xếp theo RS)${m ? ` · thị trường (M): <span class="${m === "tăng" ? "t" : m === "giảm" ? "g" : ""}">${esc(m)}</span>` : ""}</h3>${cs.map(chip).join("")}`; }
-  $("#noi-dung").innerHTML = h + `</div></div>`;
+    <p>${DS.length} mã HOSE · HNX · UPCoM – giá, tài chính, cổ đông, định giá, CANSLIM, xếp hạng VGM</p></div>`
+    + (cs_dai ? `<div class="dai-cs">${cs_dai}</div>` : "") + `<div class="luoi-dau">`;
+  h += o("Danh sách theo dõi", `lưu trong trình duyệt này · bấm "+ Theo dõi" ở trang mã`, [...TD].sort());
+  h += o("Danh mục đang giữ", "", [...GIU].sort());
+  h += o("Bot khuyến nghị mua", "danh sách mua phiên tới", Object.keys(BOT));
+  if (tk.length) h += `<section class="the o-dau o-rong"><div class="o-tieu"><h3>Tín hiệu kỹ thuật trong phiên</h3><span class="so-o">${tk.reduce((a, x) => a + x[1].length, 0)}</span></div>
+    <p class="o-phu">${esc(MKT?.cap_nhat || "")} · GTGD ≥ ${so(du_tk, 0)} tỷ</p>` + tk.map(([t, ds]) => `<div class="o-nhom">${esc(t)}</div><div class="nhom-chip">${ds.map(chip_pt).join("")}</div>`).join("") + `</section>`;
+  h += o("Vốn hoá lớn nhất", "", DS.slice(0, 20).map(r => r.ma));
+  h += o("Xếp hạng A (VGM)", "giá trị · tăng trưởng · động lượng · vốn hoá ≥ 500 tỷ", vA);
+  h += o("CANSLIM ≥ 4/5", `C·A·N·S·L · xếp theo RS${m ? ` · thị trường (M) <span class="${m === "tăng" ? "t" : m === "giảm" ? "g" : ""}">${esc(m)}</span>` : ""}`, cs);
+  h += o("LNST quý tăng mạnh", "≥ 2 quý liền · quý ≥ 50 tỷ", tang);
+  h += o("Rẻ so giá trị hợp lý", "vốn hoá ≥ 1.000 tỷ", re);
+  h += o("F-Score ≥ 8", "sức khoẻ tài chính tốt · vốn hoá ≥ 1.000 tỷ", f);
+  $("#noi-dung").innerHTML = h + `</div>`;
   const lon = gan_tim($("#tim-lon"));
   if (matchMedia("(min-width: 820px)").matches) lon.focus({preventScroll: true});
   $("#cuoi").textContent = `${DS.length} mã · BCTC tới ${(META.quy || []).slice(-1)[0] || ""} · cập nhật ${META.cap_nhat || ""}`;
@@ -986,7 +1004,7 @@ async function hien_nganh() {
   if (!NG) NG = (await lay(DL + "nganh.json", false)) || {ds: []};
   $("#noi-dung").innerHTML = the("Bội số ngành", `năm kiểm toán gần nhất · P/E, P/B gia quyền vốn hoá · ROE, tăng LNST trung vị · cập nhật ${esc(NG.cap_nhat || "")}`,
     `<div class="bang-boc"><table><thead><tr><th class="trai">Ngành</th><th>Số mã</th><th>P/E</th><th>P/B</th><th>ROE</th><th>Tăng LNST</th><th>Vốn hoá (tỷ)</th><th class="trai">Mã lớn nhất</th></tr></thead><tbody>` +
-    (NG.ds || []).map(x => `<tr><td class="trai"><b>${esc(x.nganh)}</b></td><td>${x.so_ma}</td><td>${x.pe ? so(x.pe, 1) : "–"}</td><td>${x.pb ? so(x.pb, 2) : "–"}</td><td>${x.roe != null ? so(x.roe, 1) + "%" : "–"}</td><td class="${mau(x.tang)}">${x.tang != null ? so(x.tang, 1) + "%" : "–"}</td><td>${so(x.von_hoa, 0)}</td><td class="trai">${(x.ma || []).slice(0, 6).map(m => `<a href="#${esc(m)}">${esc(m)}</a>`).join(" ")}</td></tr>`).join("") + `</tbody></table></div>`);
+    (NG.ds || []).map(x => `<tr><td class="trai"><a href="#loc" data-loc-nganh="${esc(x.nganh)}"><b>${esc(x.nganh)}</b></a></td><td>${x.so_ma}</td><td>${x.pe ? so(x.pe, 1) : "–"}</td><td>${x.pb ? so(x.pb, 2) : "–"}</td><td>${x.roe != null ? so(x.roe, 1) + "%" : "–"}</td><td class="${mau(x.tang)}">${x.tang != null ? so(x.tang, 1) + "%" : "–"}</td><td>${so(x.von_hoa, 0)}</td><td class="trai">${(x.ma || []).slice(0, 6).map(m => `<a href="#${esc(m)}">${esc(m)}</a>`).join(" ")}</td></tr>`).join("") + `</tbody></table></div>`);
   $("#cuoi").textContent = "";
 }
 
@@ -1069,6 +1087,7 @@ function dinh_tuyen() {
   const [a, b] = decodeURIComponent(location.hash.slice(1)).split("/"), h = (a || "").toUpperCase();
   const dat = v => { $("#o-tim").value = v; $("#tim-dau").classList.toggle("co", !!v); };
   document.body.classList.toggle("o-dau", !h);
+  document.querySelectorAll(".lien a").forEach(a => a.classList.toggle("dang", a.getAttribute("href") === "#" + (h || "").toLowerCase()));
   if (h === "LOC") { dat(""); return hien_loc(); }
   if (h === "NGANH") { dat(""); return hien_nganh(); }
   if (h === "LICH") { dat(""); return hien_lich(); }
@@ -1105,6 +1124,7 @@ function gan_tim(o, di) {
   return inp;
 }
 gan_tim($("#tim-dau"));
+document.addEventListener("click", e => { const n = e.target.closest("[data-loc-nganh]"); if (n) { LOC.nganh = n.dataset.locNganh; LOC.tim = ""; } });
 document.addEventListener("click", e => { const b = e.target.closest("[data-td]"); if (!b) return;
   doi_td(b.dataset.td); const co = TD.has(b.dataset.td); b.setAttribute("aria-pressed", co); b.textContent = co ? "✓ Đang theo dõi" : "+ Theo dõi"; });
 let MA_TRUOC = "";

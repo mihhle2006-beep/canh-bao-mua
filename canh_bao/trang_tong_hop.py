@@ -21,6 +21,9 @@ import pandas as pd
 from . import cau_hinh as C
 
 FILE_RIENG = "trang_tong_hop_rieng.html"
+FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' "
+           "rx='7' fill='%232e7d32'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' stroke='%23fff' stroke-width='3.2' fill='none' "
+           "stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
 
 
 def a4(trang):
@@ -331,6 +334,7 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
     than = "".join(f'<section id="{i}"{lop.get(i, "")}><h2>{_e(t)}</h2>{k}</section>' for i, t, k in muc)
     trang = (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
              f'<meta name="viewport" content="width=device-width,initial-scale=1">'
+             f'<link rel="icon" href="{FAVICON}">'
              f'<title>Bảng tổng hợp{" (riêng)" if giu else ""}</title><style>{CSS}</style></head><body><main>'
              f'<header><h1>Bảng tổng hợp cảnh báo</h1><p>Cập nhật '
              f'{f"{luc:%H:%M %d/%m/%Y}" if luc is not None else "–"} (giờ VN)'
