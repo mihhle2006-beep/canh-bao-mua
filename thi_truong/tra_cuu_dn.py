@@ -32,14 +32,17 @@ CAFEF_TIN = ("https://cafef.vn/du-lieu/Ajax/Events_RelatedNews_New.aspx?symbol={
              "&PageSize={so}&Type=2")
 MAU_CAU_TRUC = {"CT": "HPG", "NH": "TCB", "CK": "SSI", "BH": "BVH"}         # loại DN (comTypeCode Vietcap) → mã mẫu
 SO_PHIEN = 500
-SO_PHAN_DN = 10                                                    # ct cc cd sk nb cs tin bc kbs sz
-# chỉ số Vietcap statistics-financial giữ lại (khoá → tên ngắn trong file)
-CHI_SO_LS = {"pe": "pe", "pb": "pb", "ps": "ps", "evToEbitda": "ev_ebitda", "roe": "roe", "roa": "roa",
-             "grossMargin": "bien_gop", "afterTaxProfitMargin": "bien_rong", "debtToEquity": "no_vcsh",
-             "currentRatio": "tt_hh", "dividendYield": "co_tuc", "netInterestMargin": "nim", "npl": "no_xau",
-             "cir": "cir", "ldrLoanDepositRatio": "ldr", "casaRatio": "casa", "loansGrowth": "tang_td",
-             "loansLossReservesToNPLs": "bao_no_xau", "marketCap": "von_hoa", "assetTurnover": "vong_quay_ts",
-             "daysInventoryOutstanding": "ngay_tk", "daySaleOutstanding": "ngay_pt"}
+SO_PHAN_DN = 12                                                    # ct cc cd sk nb cs tin bc kbs sz nn_nam tl
+# chỉ số Vietcap statistics-financial giữ lại (đủ bộ – trang tự đặt tên / nhóm); giá trị tiền → tỷ đồng
+CHI_SO_KHOA = ("pe", "pb", "ps", "priceToCashFlow", "evToEbitda", "dividendYield", "marketCap", "roe", "roa", "roic",
+               "grossMargin", "ebitMargin", "preTaxProfitMargin", "afterTaxProfitMargin", "assetTurnover",
+               "fixedAssetTurnover", "daySaleOutstanding", "daysInventoryOutstanding", "daysPayableOutstanding", "cashCycle",
+               "currentRatio", "quickRatio", "cashRatio", "debtToEquity", "debtPerEquity", "financialLeverage",
+               "ownersEquity", "ebit", "ebitda", "netInterestMargin", "averageYieldOnEarningAssets",
+               "averageCostOfFinancing", "nonAndInterestIncome", "cir", "costToIncome", "ldrLoanDepositRatio", "casaRatio",
+               "npl", "loansLossReservesToNPLs", "loansLossReserveToLoans", "provisionToOutstandingLoans", "loansGrowth",
+               "depositGrowth", "equityToLoans", "totalEquityTotalAsset", "equityToLiabilities", "car")
+CHI_SO_TIEN = {"marketCap", "ebit", "ebitda"}
 
 
 _TK, _KHOA = {}, threading.Lock()
@@ -279,13 +282,46 @@ def gon_noi_bo(ds, so=40):
 
 
 def gon_chi_so(ds):
-    """statistics-financial (quý, cũ → mới) → {"ky": ["Q2.18", …], tên ngắn: [...]}; chỉ giữ chỉ số có số ≠ 0."""
+    """statistics-financial (quý, cũ → mới) → {"ky": ["Q2.18", …], khoá Vietcap: [...]}; chỉ giữ chỉ số có số ≠ 0; tiền →
+    tỷ đồng."""
     dong = sorted((x for x in ds or [] if x.get("year") and x.get("quarter")), key=lambda x: (int(x["year"]), int(x["quarter"])))
     out = {"ky": [f"Q{int(x['quarter'])}.{int(x['year']) % 100:02d}" for x in dong]}
-    for a, b in CHI_SO_LS.items():
-        v = [_r(x.get(a), 4) for x in dong]
+    for a in CHI_SO_KHOA:
+        v = [_r(x.get(a), 5) for x in dong]
         if any(x not in (None, 0) for x in v):
-            out[b] = [_r(x / 1e9, 0) if (a == "marketCap" and x is not None) else x for x in v]
+            out[a] = [_r(x / 1e9, 1) if (a in CHI_SO_TIEN and x is not None) else x for x in v]
+    return out
+
+
+def nn_cuoi_nam(ma):
+    """% sở hữu nước ngoài cuối mỗi năm (IQ price-history ONE_YEAR) → [[năm, %]] cũ → mới."""
+    out = {}
+    for x in iq(f"company/{ma}/price-history?timeFrame=ONE_YEAR&page=0&size=30") or []:
+        if x.get("foreignOwnedPercentage") is not None and x.get("tradingDate"):
+            out[str(x["tradingDate"])[:4]] = _r(x["foreignOwnedPercentage"] * 100, 3)
+    return [[k, out[k]] for k in sorted(out)]
+
+
+CAFEF_TL = "https://cafef.vn/du-lieu/Ajax/PageNew/FileBCTC.ashx?Symbol={ma}&Type={loai}&Year=0"
+LOAI_TL = ((1, "BCTC", 48), (3, "Báo cáo thường niên", 12), (4, "Nghị quyết HĐQT", 12), (5, "Báo cáo quản trị", 6))
+
+
+def tai_lieu(ma):
+    """File gốc trên CafeF: BCTC (quý / năm, hợp nhất / mẹ, kiểm toán), BCTN, nghị quyết HĐQT, báo cáo quản trị →
+    [{loai, ten, nam, ky, link}] (link PDF / trang gốc – không tải về)."""
+    out = []
+    for loai, ten, so in LOAI_TL:
+        j = nguon.goi(CAFEF_TL.format(ma=ma, loai=loai), so_lan=2, timeout=20,
+                      headers={"Referer": "https://cafef.vn/", "Origin": "https://cafef.vn"})
+        n = 0
+        for x in (j or {}).get("Data") or []:
+            if not str(x.get("Link") or "").startswith("http"):
+                continue
+            out.append({"loai": ten, "ten": re.sub(r"\s+", " ", str(x.get("Name") or "")).strip()[:200],
+                        "nam": str(x.get("Year") or ""), "ky": str(x.get("Time") or ""), "link": x["Link"]})
+            n += 1
+            if n >= so:
+                break
     return out
 
 
@@ -395,7 +431,9 @@ def bao_cao_ctck(ma, so=25):
 
 
 # hạn làm mới (ngày) từng phần dn – ít đổi thì làm thưa để bớt lượt gọi (IQ chặn khi gọi dồn)
-HAN_PHAN = {"ct": 7, "cc": 7, "cd": 7, "cs": 7, "kbs": 14, "sz": 30, "sk": 2, "nb": 2, "tin": 1, "bc": 3}
+PHIEN_BAN_DN = 2                                                   # đổi định dạng phần nào → tăng để làm mới hết
+HAN_PHAN = {"ct": 7, "cc": 7, "cd": 7, "cs": 7, "kbs": 14, "sz": 30, "sk": 2, "nb": 2, "tin": 1, "bc": 3, "nn_nam": 30,
+            "tl": 3}
 
 
 def lay_dn(ma, cu=None, hom_nay=None):
@@ -403,7 +441,7 @@ def lay_dn(ma, cu=None, hom_nay=None):
     ghi ngày làm mới từng phần."""
     cu = cu or {}
     hom_nay = hom_nay or date.today().isoformat()
-    ngay_phan = dict(cu.get("ngay_phan") or {})
+    ngay_phan = dict(cu.get("ngay_phan") or {}) if cu.get("phien_ban") == PHIEN_BAN_DN else {}
     phan = {
         "ct": lambda: gon_chi_tiet(iq(f"company/{ma}")),
         "cc": lambda: gon_co_cau(iq(f"company/{ma}/shareholder-structure")),
@@ -416,6 +454,8 @@ def lay_dn(ma, cu=None, hom_nay=None):
         "bc": lambda: bao_cao_ctck(ma),
         "kbs": lambda: ho_so_kbs(ma),
         "sz": lambda: tom_tat_simplize(ma),
+        "nn_nam": lambda: nn_cuoi_nam(ma),
+        "tl": lambda: tai_lieu(ma),
     }
     out, loi = {}, []
     for k, f in phan.items():
@@ -435,7 +475,7 @@ def lay_dn(ma, cu=None, hom_nay=None):
                 out[k] = cu[k]
             if "HTTP 403" in str(e) or "HTTP 429" in str(e):
                 time.sleep(3)
-    out["ngay_phan"] = ngay_phan
+    out["ngay_phan"], out["phien_ban"] = ngay_phan, PHIEN_BAN_DN
     return out, loi
 
 
@@ -532,6 +572,25 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
     return xong, loi, con
 
 
+def chi_so_nganh(ra, ds):
+    """Trung vị chỉ số kỳ gần nhất (statistics-financial trong dn/<MÃ>.json) theo ngành của ds.json → chi_so_nganh.json
+    {ngành: {khoá: [trung vị, số mã]}} – trang so sánh mã với ngành ở mục Chỉ số."""
+    import statistics
+    gom = {}
+    for r in ds:
+        cs = (_doc(os.path.join(ra, "dn", f"{r['ma']}.json")) or {}).get("cs") or {}
+        if not r.get("nganh") or not cs.get("ky"):
+            continue
+        g = gom.setdefault(r["nganh"], {})
+        for k in CHI_SO_KHOA:
+            v = cs.get(k)
+            if v and v[-1] is not None:
+                g.setdefault(k, []).append(v[-1])
+    out = {ng: {k: [round(statistics.median(v), 5), len(v)] for k, v in g.items() if len(v) >= 3} for ng, g in gom.items()}
+    _ghi(out, os.path.join(ra, "chi_so_nganh.json"))
+    return out
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="Dữ liệu doanh nghiệp cho trang Tra cứu mã")
     p.add_argument("--ra", default="docs/ma/du_lieu")
@@ -547,6 +606,8 @@ def main(argv=None):
         _ghi(ct, os.path.join(a.ra, "cau_truc_bctc.json"))
     print(f"Cấu trúc BCTC: {', '.join(sorted(ct)) or 'lỗi – dùng thứ tự kho'}")
     chay(ma, a.ra, san, a.phut, a.luong)
+    ng = chi_so_nganh(a.ra, ds)
+    print(f"Chỉ số ngành: {len(ng)} ngành")
     return 0
 
 
