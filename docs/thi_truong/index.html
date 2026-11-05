@@ -201,13 +201,13 @@ tbody tr{background:var(--the)}
       </div>
       <div class="the">
         <div class="khoi-dau"><h2>Tác động</h2><span class="phu">VN-Index · 10 mã kéo / đè mạnh nhất</span>
-          <span class="phu so" style="margin-left:auto" id="td-rong"></span></div>
+          <span class="phu so" style="margin-left:auto" id="td-rong"></span><div class="nut" id="tac-n" style="margin-left:8px"></div></div>
         <div class="bieu" id="tac"></div>
       </div>
     </div>
     <div class="the" style="margin-top:16px">
-      <div class="khoi-dau"><h2>Dòng tiền theo ngành</h2><span class="phu">toàn thị trường · % giá gia quyền GTGD 20 phiên · GTGD so TB 20 phiên · khối ngoại ròng · bấm ngành để lọc</span></div>
-      <div class="bang-boc"><table class="dtn"><thead><tr><th class="trai">Ngành</th><th>% giá</th><th>Tăng / giảm</th><th>GTGD</th><th class="trai">So TB20</th><th>Khối ngoại ròng</th></tr></thead><tbody id="dtn"></tbody></table></div>
+      <div class="khoi-dau"><h2>Dòng tiền theo ngành</h2><span class="phu" id="dtn-phu">toàn thị trường · bấm ngành để lọc</span><div class="nut" id="dtn-n"></div></div>
+      <div class="bang-boc"><table class="dtn"><thead><tr><th class="trai">Ngành</th><th>% giá</th><th>Tăng / giảm</th><th id="dtn-gt">GTGD</th><th class="trai" id="dtn-so">So TB20</th><th>Khối ngoại ròng</th></tr></thead><tbody id="dtn"></tbody></table></div>
     </div>
   </section>
   <section id="loc" hidden>
@@ -551,25 +551,36 @@ function cot_nho(ls, w = 150, h = 30) {
     el("rect", {x: i * bw + 1, y: x >= 0 ? h / 2 - hh : h / 2, width: Math.max(bw - 2, 1), height: hh, fill: x >= 0 ? MAU.tang : MAU.giam, opacity: i === v.length - 1 ? 1 : .55}, s); });
   return s;
 }
+const KY_N = [["1", "1 phiên"], ["5", "5"], ["10", "10"], ["20", "20 phiên"]];
+function nut_n(id, gt, doi) {               // nút chọn số phiên (1 · 5 · 10 · 20 – như FiinTrade)
+  const h = $("#" + id); if (!h) return;
+  h.innerHTML = KY_N.map(([v, t]) => `<button data-n="${v}" aria-pressed="${String(gt) === v}">${t}</button>`).join("");
+  h.querySelectorAll("button").forEach(b => b.onclick = () => { doi(+b.dataset.n); luu_st(); ve_tat(); });
+}
 // DÒNG TIỀN THEO NGÀNH (kiểu FiinTrade): gộp dòng lọc (mọi mã có ngành) – % giá gia quyền GTGD 20 phiên, số mã tăng /
 // giảm, GTGD phiên so trung bình 20 phiên, khối ngoại ròng; xếp theo GTGD; bấm ngành → tab Lọc mã lọc ngành đó
 function ve_dtn() {
   const t = $("#dtn"); if (!t || !L) return;
+  const n = [1, 5, 10, 20].includes(ST.dtn_n) ? ST.dtn_n : 1, kp = n === 1 ? "pt" : "p" + n, kn = n === 1 ? "nn" : "nn" + n;
+  nut_n("dtn-n", n, v => ST.dtn_n = v);
+  $("#dtn-phu").textContent = `toàn thị trường · ${n === 1 ? "phiên này" : n + " phiên gần nhất"} · % giá gia quyền GTGD 20 phiên · bấm ngành để lọc`;
+  $("#dtn-gt").textContent = n === 1 ? "GTGD" : "GTGD TB20"; $("#dtn-so").textContent = n === 1 ? "So TB20" : "";
   const g = {};
   for (const r of L) {
     if (r.nganh == null || !D.nganh?.[r.nganh]) continue;
-    const x = g[r.nganh] || (g[r.nganh] = {n: r.nganh, w: 0, wp: 0, tang: 0, giam: 0, gt: 0, gt20: 0, nn: 0});
-    const w = r.gt20 ?? r.gt ?? 0;
-    if (r.pt != null) { x.w += w; x.wp += w * r.pt; if (r.pt > 0) x.tang++; else if (r.pt < 0) x.giam++; }
-    x.gt += r.gt || 0; x.gt20 += r.gt20 || 0; x.nn += r.nn || 0;
+    const x = g[r.nganh] || (g[r.nganh] = {n: r.nganh, w: 0, wp: 0, tang: 0, giam: 0, gt: 0, gt20: 0, nn: 0, co_nn: 0});
+    const w = r.gt20 ?? r.gt ?? 0, p = r[kp];
+    if (p != null) { x.w += w; x.wp += w * p; if (p > 0) x.tang++; else if (p < 0) x.giam++; }
+    x.gt += r.gt || 0; x.gt20 += r.gt20 || 0;
+    if (r[kn] != null) { x.nn += r[kn]; x.co_nn++; }
   }
-  const ds = Object.values(g).filter(x => x.gt > 0).sort((a, b) => b.gt - a.gt);
+  const ds = Object.values(g).filter(x => x.gt > 0 || x.gt20 > 0).sort((a, b) => n === 1 ? b.gt - a.gt : b.gt20 - a.gt20);
   const mx = Math.max(...ds.map(x => x.gt20 ? x.gt / x.gt20 : 0), 1.5);
   t.innerHTML = ds.map(x => { const p = x.w ? x.wp / x.w : null, k = x.gt20 ? x.gt / x.gt20 : null;
     return `<tr data-n="${x.n}"><td class="trai"><b>${esc(D.nganh[x.n])}</b></td><td class="so ${p > 0 ? "t" : p < 0 ? "g" : "d"}">${p == null ? "–" : dau(p) + "%"}</td>
-      <td class="so"><span class="t">${x.tang}</span> / <span class="g">${x.giam}</span></td><td class="so">${nf(x.gt, 0)} tỷ</td>
-      <td class="trai so">${k == null ? "–" : `<span class="vach" style="width:${Math.round(k / mx * 90)}px"></span>${nf(k, 2)}×`}</td>
-      <td class="so ${x.nn > 0 ? "t" : x.nn < 0 ? "g" : ""}">${ty(x.nn, 1)}</td></tr>`; }).join("") || `<tr><td class="trai" colspan="6">Chưa có dữ liệu</td></tr>`;
+      <td class="so"><span class="t">${x.tang}</span> / <span class="g">${x.giam}</span></td><td class="so">${nf(n === 1 ? x.gt : x.gt20, 0)} tỷ</td>
+      <td class="trai so">${n > 1 || k == null ? "" : `<span class="vach" style="width:${Math.round(k / mx * 90)}px"></span>${nf(k, 2)}×`}</td>
+      <td class="so ${x.nn > 0 ? "t" : x.nn < 0 ? "g" : ""}">${x.co_nn ? ty(x.nn, 1) : "–"}</td></tr>`; }).join("") || `<tr><td class="trai" colspan="6">Chưa có dữ liệu</td></tr>`;
   t.onclick = e => { const tr = e.target.closest("tr[data-n]"); if (!tr) return;
     ST.nganh = tr.dataset.n; ST.so_dong = 100; luu_st(); const s = $("#loc-nganh"); if (s) s.value = tr.dataset.n; doi_tab("loc"); };
 }
@@ -606,8 +617,10 @@ function ve_tk() {
 // ---------- tác động ----------
 function ve_tac() {
   const hop = $("#tac"); hop.innerHTML = "";
-  const tac = D.tac_dong, ds = (tac.xuong || []).slice().sort((a, b) => a[1] - b[1]).concat((tac.len || []).slice().sort((a, b) => a[1] - b[1]));
-  $("#td-rong").innerHTML = `Ròng <b class="${lop(tac.rong)}">${dau(tac.rong)} điểm</b>`;
+  const co_n = D.tac_dong?.n && Object.keys(D.tac_dong.n).length, n = co_n && [5, 10, 20].includes(ST.tac_n) ? ST.tac_n : 1;
+  if (co_n) nut_n("tac-n", n, v => ST.tac_n = v); else $("#tac-n").innerHTML = "";
+  const tac = n === 1 ? D.tac_dong : (D.tac_dong.n[String(n)] || {}), ds = (tac.xuong || []).slice().sort((a, b) => a[1] - b[1]).concat((tac.len || []).slice().sort((a, b) => a[1] - b[1]));
+  $("#td-rong").innerHTML = n === 1 ? `Ròng <b class="${lop(tac.rong)}">${dau(tac.rong)} điểm</b>` : `VN-Index ${n} phiên <b class="${lop(tac.rong)}">${dau(tac.rong)} điểm</b>`;
   if (!ds.length) return;
   const W = Math.max(hop.clientWidth - 16, 280);
   // mã quá lớn (VD 1 mã gấp > 2,2 lần mã thứ 2) → cắt cột, vẽ dấu gãy, nhãn vẫn ghi đúng giá trị

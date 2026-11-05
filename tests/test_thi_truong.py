@@ -134,6 +134,13 @@ def test_chup_dung_du_lieu_mau(tmp_path, monkeypatch):
     assert set(loc) == {"VIC", "AAA"} and loc["VIC"]["mcd"] == 75.0 and loc["VIC"]["gia"] == 237.6
     assert loc["VIC"]["chuoi"] == 1 and loc["VIC"]["nn5"] == round(22.2685772 - 0.4, 2)
     assert loc["AAA"]["gt20"] is None and loc["AAA"]["kl_x"] is None and loc["AAA"]["san"] == "HNX"
+    # nhiều phiên (FiinTrade 5 · 10 · 20): % so đóng cửa n phiên trước, khối ngoại 10 phiên; tác động VN-Index n phiên
+    assert loc["VIC"]["p5"] == loc["VIC"]["p20"] == round((237600 / 230000 - 1) * 100, 2) and loc["AAA"]["p5"] is None
+    assert loc["VIC"]["nn10"] == loc["VIC"]["nn5"]
+    t5 = d["tac_dong"]["n"]["5"]
+    assert t5["len"][0][0] == "VIC" and t5["len"][0][1] == round(7600 / 237600 * 1740.36, 2) and t5["xuong"] == []
+    assert t5["rong"] is None                                          # chưa đủ 5 phiên VN-Index trong mẫu
+    assert round(dung.doi_n_phien([10.0, 11.0], 12.0, 2), 6) == 20.0 and dung.doi_n_phien([10.0], 12.0, 5) is None
     assert d["tin_hieu"] == {"hieu_luc": "2026-11-05", "ma": [["AAA", "Mua mới", 9.8, 10.3, 9.38, 10.62, 11.85, "MACD"]]}
     assert dung.tin_hieu_bot(str(tmp_path / "khong_co.json")) is None
     assert d["danh_muc"] == []                                         # không có MA_GIU_FILE → không có mã đang giữ
@@ -459,6 +466,8 @@ def test_workflow_tra_cuu_web_co_canslim():
     i_cs = next(i for i, r in enumerate(buoc) if "thi_truong.canslim_web" in r)
     i_vgm = next(i for i, r in enumerate(buoc) if "thi_truong.xep_hang_web" in r)
     i_luu = next(i for i, s in enumerate(d["jobs"]["dung"]["steps"]) if "cache/save" in str(s.get("uses", "")))
+    i_sk = next(i for i, r in enumerate(buoc) if "thi_truong.su_kien_web" in r)
+    assert i_dn < i_sk < i_luu and "|| echo" in buoc[i_sk]           # sau dn/ (sự kiện từng mã), trước lưu cache
     assert i_dn < i_cs < i_vgm < i_luu and "|| echo" in buoc[i_cs] and "|| echo" in buoc[i_vgm]   # sau giá + CANSLIM (rs),
                                                                     # trước lưu cache; lỗi không làm hỏng lượt
 
@@ -483,3 +492,23 @@ def test_xep_hang_vgm():
     assert v["M01"].split()[0] == "A" and v["M00"].split()[0] != "A"      # rẻ nhất (P/E dương thấp) / lỗ
     tong = [x.split()[3] for k, x in v.items() if k != "THIEU"]
     assert all(tong.count(c) == 4 for c in "ABCDF")                     # 20 mã → mỗi chữ 4 mã
+
+
+
+def test_lich_su_kien():
+    """Lịch sự kiện toàn thị trường: phân loại cổ tức tiền / cổ phiếu / ĐHCĐ / khác, chỉ trong cửa sổ ngày, bỏ trùng."""
+    from datetime import date
+
+    from thi_truong import su_kien_web as SK
+    assert SK.nhom({"ma_sk": "DIV"}) == "tien" and SK.nhom({"ma_sk": "ISS", "ten": "Phát hành"}) == "cp"
+    assert SK.nhom({"ma_sk": "AGME", "loai": "Đại hội cổ đông thường niên"}) == "dh"
+    assert SK.nhom({"ma_sk": "", "ten": "Trả cổ tức bằng cổ phiếu 10%"}) == "cp" and SK.nhom({"ma_sk": "XYZ"}) == "khac"
+    dn = {"AAA": {"sk": [{"ngay": "2026-11-20", "ma_sk": "DIV", "ten": "Cổ tức 500 đ/CP", "chot": "2026-11-21",
+                          "thuc_hien": "2026-12-05", "gia_tri": 500},
+                         {"ngay": "2026-11-20", "ma_sk": "DIV", "ten": "Cổ tức 500 đ/CP"},          # trùng → bỏ
+                         {"ngay": "2025-01-01", "ma_sk": "DIV", "ten": "cũ"}]},                     # ngoài cửa sổ
+          "BBB": {"sk": [{"ngay": "2026-11-01", "ma_sk": "ISS", "ten": "Phát hành 10%", "ty_le": 0.1}]}, "CCC": None}
+    dong, tu, den = SK.gom(["AAA", "BBB", "CCC", "DDD"], dn.get, date(2026, 11, 6))
+    assert (tu, den) == ("2026-10-23", "2027-03-06")
+    assert [r[:3] for r in dong] == [["2026-11-01", "BBB", "cp"], ["2026-11-20", "AAA", "tien"]]
+    assert dong[1][4:7] == ["2026-11-21", "2026-12-05", 500] and dong[0][7] == 0.1

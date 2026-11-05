@@ -172,6 +172,9 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .chu-bd{position:absolute;left:8px;top:6px;z-index:3;font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
 .chu-bd b{font-weight:650}
 .cham-song{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tang);margin-right:5px;vertical-align:middle}
+.ss-nganh tr.nay td{background:var(--nhan-nen)}.ss-nganh tr.tv td{border-top:2px solid var(--vien)}
+.sk-nhan{font-size:12px;font-weight:600;border-radius:10px;padding:1px 8px;white-space:nowrap;background:var(--nhat)}
+.sk-tien{background:#e3f5ea;color:#0f6b3a}.sk-cp{background:#e8eefc;color:#1f4fbf}.sk-dh{background:#fdf1dc;color:#8a5a00}
 .nut-td{font-size:12.5px;font-weight:600;border:1px solid var(--vien);background:var(--the);border-radius:14px;padding:2px 11px;margin-left:8px;vertical-align:middle;color:var(--nhan)}
 .nut-td[aria-pressed=true]{background:var(--nhan-nen);border-color:transparent}
 .chip .pt{font-size:12px;margin-left:5px}
@@ -188,7 +191,7 @@ tr.chon td{background:var(--nhan-nen)}
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-  <div class="lien"><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="../thi_truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
+  <div class="lien"><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="../thi_truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
 </div></header>
 <main>
   <div id="noi-dung"><div class="trong">Đang tải dữ liệu…</div></div>
@@ -501,6 +504,7 @@ function tong_quan(ma, k) {
     o_so("EPS 4 quý", r.eps ? so(r.eps, 0) + " đ" : "–") + o_so("BVPS", r.bvps ? so(r.bvps, 0) + " đ" : "–") +
     o_so("ROE", r.ts?.chi_so?.ROE ? pt(r.ts.chi_so.ROE.v, 1, false) : "–") + o_so("PEG", r.peg ? so(r.peg, 2) : "–") + `</div>`) +
     the("Góc hệ thống", "kỹ thuật · dòng tiền · định giá", goc_he_thong(ma, k, x, gn)) + `</div>`;
+  h += so_sanh_nganh(ma);
   const ho = n.sz?.linh_vuc || ct.ho_so;
   if (ho) h += the("Giới thiệu", `<a href="#${esc(ma)}/ho-so">hồ sơ đầy đủ</a>`, `<div class="than van">${esc(ho.slice(0, 700))}${ho.length > 700 ? "…" : ""}</div>`);
   return h;
@@ -543,6 +547,56 @@ function canslim_dong(r) {                     // C · A · N · S · L (+ M th�
     ok(r.kl_x >= 1.2, ng.S || "", `S ${r.kl_x != null ? so(r.kl_x, 1) + "×" : "–"}`), ok(r.rs >= 70, ng.L || "", `L RS ${r.rs ?? "–"}`)];
   const m = cs.m ? ` · <span class="${cs.m === "tăng" ? "t" : cs.m === "giảm" ? "g" : ""}" title="${esc(ng.M || "")}">M ${esc(cs.m)}</span>` : "";
   return `<b>${r.cs}/5</b> · ${o.join(" ")}${m}`;
+}
+
+// SO SÁNH CÙNG NGÀNH (kiểu FireAnt / FiinTrade): mã này + tối đa 9 mã cùng ngành vốn hoá lớn nhất; hàng trung vị cả ngành
+function so_sanh_nganh(ma) {
+  const r0 = dong_ds(ma); if (!r0.nganh) return "";
+  const cung = DS.filter(r => r.nganh === r0.nganh);
+  if (cung.length < 3) return "";
+  for (const r of cung) { r.gia_h = gia_h(r); r.pe_h = r.eps > 0 && r.gia_h ? r.gia_h / r.eps : null; r.pb_h = r.bvps > 0 && r.gia_h ? r.gia_h / r.bvps : null; }
+  const ds = cung.slice().sort((a, b) => (b.von || 0) - (a.von || 0)).filter(r => r.ma !== ma).slice(0, 9);
+  ds.push(r0); ds.sort((a, b) => (b.von || 0) - (a.von || 0));
+  const tv = k => { const v = cung.map(r => r[k]).filter(v => v != null && isFinite(v) && (!["pe_h", "pb_h"].includes(k) || v > 0)).sort((a, b) => a - b);
+    return v.length ? v[Math.floor(v.length / 2)] : null; };
+  const COT_SS = [["pe_h", "P/E", v => v > 0 ? so(v, 1) : "–"], ["pb_h", "P/B", v => v > 0 ? so(v, 2) : "–"], ["roe", "ROE", v => v != null ? pt(v, 1, false) : "–"],
+    ["ln_yoy", "LN quý YoY", v => `<span class="${mau(v)}">${pt(v)}</span>`], ["ln4_yoy", "LN 4Q YoY", v => `<span class="${mau(v)}">${pt(v)}</span>`],
+    ["bien", "Biên gộp", v => v != null ? pt(v, 1, false) : "–"], ["von", "Vốn hoá (tỷ)", v => v != null ? so(v, 0) : "–"]];
+  const vgm = r => r.vgm ? `<b class="${r.vgm.endsWith("A") ? "t" : r.vgm.endsWith("F") ? "g" : ""}">${esc(r.vgm.split(" ")[3])}</b>` : "–";
+  const hang = (r, la) => `<tr class="${la ? "nay" : "bam"}"${la ? "" : ` data-ma="${esc(r.ma)}"`}><td class="trai">${la ? `<b>${esc(r.ma)}</b>` : `<a href="#${esc(r.ma)}">${esc(r.ma)}</a>`}</td>`
+    + COT_SS.map(([k, , f]) => `<td>${f(r[k])}</td>`).join("") + `<td>${vgm(r)}</td></tr>`;
+  return the("So sánh cùng ngành", `${esc(r0.nganh)} · ${cung.length} mã · giá trong phiên · trung vị cả ngành ở dòng cuối`,
+    `<div class="bang-boc"><table class="ss-nganh"><thead><tr><th class="trai">Mã</th>${COT_SS.map(([, t]) => `<th>${esc(t)}</th>`).join("")}<th>VGM</th></tr></thead><tbody>`
+    + ds.map(r => hang(r, r.ma === ma)).join("")
+    + `<tr class="tv"><td class="trai m">Trung vị ngành</td>${COT_SS.map(([k, , f]) => `<td class="m">${k === "von" ? "–" : f(tv(k))}</td>`).join("")}<td></td></tr></tbody></table></div>`);
+}
+
+// LỊCH SỰ KIỆN TOÀN THỊ TRƯỜNG (#lich – thi_truong/su_kien_web.py): GDKHQ cổ tức tiền / cổ phiếu, phát hành, ĐHCĐ
+let SK = null;
+const NHOM_SK = {tien: "Cổ tức tiền", cp: "Phát hành / cổ tức CP", dh: "Đại hội cổ đông", khac: "Khác"};
+const LICH = {nhom: "", td: false, cu: false};
+async function hien_lich() {
+  document.title = "Lịch sự kiện – Tra cứu mã";
+  if (!SK) SK = (await lay(DL + "su_kien.json", false)) || {dong: [], cot: []};
+  const c = SK.cot || [], ds0 = (SK.dong || []).map(r => Object.fromEntries(c.map((k, i) => [k, r[i]])));
+  const nay = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const ds = ds0.filter(r => (!LICH.nhom || r.nhom === LICH.nhom) && (!LICH.td || TD.has(r.ma) || GIU.has(r.ma)) && (LICH.cu || r.ngay >= nay));
+  const thu = d => ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"][new Date(d + "T00:00:00Z").getUTCDay()];
+  const nhom_ngay = {}; for (const r of ds) (nhom_ngay[r.ngay] = nhom_ngay[r.ngay] || []).push(r);
+  const dong = r => `<tr class="bam" data-ma="${esc(r.ma)}"><td class="trai ma"><a href="#${esc(r.ma)}/co-tuc"><b>${esc(r.ma)}</b></a>${GIU.has(r.ma) ? '<span class="the-chu giu">giữ</span>' : TD.has(r.ma) ? '<span class="the-chu bot">theo dõi</span>' : ""}</td>
+    <td class="trai"><span class="sk-nhan sk-${esc(r.nhom)}">${esc(NHOM_SK[r.nhom] || r.nhom)}</span></td><td class="trai">${esc(r.ten)}</td>
+    <td>${r.chot ? ngay_vn(r.chot) : "–"}</td><td>${r.thuc_hien ? ngay_vn(r.thuc_hien) : "–"}</td></tr>`;
+  const bo = [["", "Tất cả"], ...Object.entries(NHOM_SK)].map(([k, t]) => `<button class="bat" data-sk="${k}" aria-pressed="${LICH.nhom === k}">${esc(t)}</button>`).join("");
+  $("#noi-dung").innerHTML = `<div class="loc-dau">${bo}<button class="bat" id="sk-td" aria-pressed="${LICH.td}">Chỉ mã theo dõi / đang giữ</button>
+    <button class="bat" id="sk-cu" aria-pressed="${LICH.cu}">Cả 14 ngày qua</button><span class="dem">${ds.length} sự kiện</span></div>`
+    + (Object.keys(nhom_ngay).length ? Object.entries(nhom_ngay).map(([d, x]) => the(`${thu(d)}, ${ngay_vn(d)}`, d === nay ? "hôm nay" : d < nay ? "đã qua" : "ngày GDKHQ / sự kiện",
+      `<div class="bang-boc"><table class="sk"><thead><tr><th class="trai">Mã</th><th class="trai">Loại</th><th class="trai">Nội dung</th><th>Chốt quyền</th><th>Thực hiện</th></tr></thead><tbody>${x.map(dong).join("")}</tbody></table></div>`)).join("")
+      : `<div class="the"><div class="trong">Không có sự kiện phù hợp.</div></div>`);
+  document.querySelectorAll("[data-sk]").forEach(b => b.onclick = () => { LICH.nhom = b.dataset.sk; hien_lich(); });
+  $("#sk-td").onclick = () => { LICH.td = !LICH.td; hien_lich(); };
+  $("#sk-cu").onclick = () => { LICH.cu = !LICH.cu; hien_lich(); };
+  document.querySelectorAll("table.sk tbody").forEach(tb => tb.onclick = e => { const tr = e.target.closest("tr[data-ma]"); if (tr && !e.target.closest("a")) location.hash = tr.dataset.ma + "/co-tuc"; });
+  $("#cuoi").textContent = `Lịch từ ${SK.tu ? ngay_vn(SK.tu) : ""} tới ${SK.den ? ngay_vn(SK.den) : ""} · cập nhật ${SK.cap_nhat || ""} · nguồn Vietcap IQ (sự kiện từng mã)`;
 }
 
 // ---------------------------------------------------------------- TÀI CHÍNH
@@ -1017,6 +1071,7 @@ function dinh_tuyen() {
   document.body.classList.toggle("o-dau", !h);
   if (h === "LOC") { dat(""); return hien_loc(); }
   if (h === "NGANH") { dat(""); return hien_nganh(); }
+  if (h === "LICH") { dat(""); return hien_lich(); }
   if (MA_OK(h)) { dat(h); return hien_ma(h, TAB.some(t => t[0] === b) ? b : "tong-quan"); }
   dat(""); return hien_dau();
 }
