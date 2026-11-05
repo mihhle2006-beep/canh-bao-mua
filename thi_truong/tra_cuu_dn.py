@@ -511,16 +511,17 @@ def _ghi(obj, duong):
 
 
 def thu_tu(ds_ma, ra, hom_nay=None, lam_moi=False):
-    """Mã cần làm, cũ nhất trước: chưa có file → trước hết; rồi theo ngày cập nhật gia / dn; cùng độ cũ giữ thứ tự ds_ma
-    (ds.json xếp vốn hoá lớn trước)."""
+    """Mã cần làm, cũ nhất trước: chưa có file → trước hết; rồi theo ngày cập nhật gia / dn; cùng độ cũ: file định dạng cũ
+    (phien_ban) trước, rồi thứ tự ds_ma (ds.json xếp vốn hoá lớn trước). lam_moi: thêm cả mã đã cập nhật hôm nay nhưng
+    file còn định dạng cũ (chạy nối sau khi đổi định dạng – không làm lại mã đã xong)."""
     hom_nay = hom_nay or date.today().isoformat()
 
     def tuoi(m):
         g = (_doc(os.path.join(ra, "gia", f"{m}.json")) or {}).get("cap_nhat") or ""
-        d = (_doc(os.path.join(ra, "dn", f"{m}.json")) or {}).get("cap_nhat") or ""
-        return min(g, d)
-    ds = [(tuoi(m), i, m) for i, m in enumerate(ds_ma)]
-    return [m for t, i, m in sorted(ds) if lam_moi or t < hom_nay]
+        dn = _doc(os.path.join(ra, "dn", f"{m}.json")) or {}
+        return min(g, dn.get("cap_nhat") or ""), dn.get("phien_ban") == PHIEN_BAN_DN
+    ds = [(*tuoi(m), i, m) for i, m in enumerate(ds_ma)]
+    return [m for t, moi, i, m in sorted(ds) if t < hom_nay or (lam_moi and not moi)]
 
 
 def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print, lam_moi=False):
