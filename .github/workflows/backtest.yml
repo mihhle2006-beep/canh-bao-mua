@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
     inputs:
       ro:
-        description: "hose_hnx = toàn sàn HOSE + HNX (mặc định, chỉ cách vào 15') · chien_luoc = 41 mã (đủ phần: điểm bán, mua thêm)"
+        description: "hose_hnx = toàn sàn HOSE + HNX (mặc định, chỉ cách vào 15') · chien_luoc = 41 mã (đủ phần: điểm bán, mua thêm) · da_khung = cách vào nến 5' + 15' + 60'"
         default: hose_hnx
         type: choice
-        options: [hose_hnx, chien_luoc]
+        options: [hose_hnx, chien_luoc, da_khung]
 
 permissions:
   contents: write

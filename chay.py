@@ -39,8 +39,9 @@ def main(argv=None):
                    help="CHỈ xem mã này (VD FPT hoặc FPT,HPG) theo chiến lược – không ghi trạng thái / danh sách mua")
     p.add_argument("--gio", default=None, help="giả lập thời điểm (giờ VN), VD '2026-10-08 10:30'")
     p.add_argument("--khong_gui", action="store_true")
-    p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "hose_hnx"],
-                   help="backtest: 41 mã chiến lược (đủ phần) hoặc hose_hnx = toàn sàn HOSE + HNX (chỉ cách vào 15')")
+    p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "hose_hnx", "da_khung"],
+                   help="backtest: 41 mã chiến lược (đủ phần) · hose_hnx = toàn sàn HOSE + HNX (chỉ cách vào 15') · "
+                        "da_khung = cách vào nến 5' + 15' + 60' (41 mã + top 100 GTGD, nến 1' Vietcap)")
     p.add_argument("--khong_ban", action="store_true", help="bỏ danh mục / cảnh báo bán")
     p.add_argument("--khong_chien_luoc", action="store_true", help="(giữ cho tương thích – không còn tác dụng)")
     a = p.parse_args(argv)
@@ -62,7 +63,9 @@ def main(argv=None):
         from canh_bao.backtest_bot import tai_nen_15p
         return 0 if tai_nen_15p() else 1
     if che_do == "backtest":
-        from canh_bao.backtest_bot import chay_backtest, ro_hose_hnx
+        from canh_bao.backtest_bot import chay_backtest, chay_da_khung, ro_hose_hnx
+        if a.ro == "da_khung":                                      # cách vào đa khung 5' + 15' + 60' → file riêng
+            return chay_da_khung(bay_gio)
         if a.ro == "hose_hnx":
             # chỉ phần cách vào 15' → file riêng (ket_qua_backtest.json của rổ chiến lược còn phần điểm bán / mua thêm)
             return chay_backtest(bay_gio, a.khong_gui, ds_ma=ro_hose_hnx(), chi_diem_vao=True,

@@ -126,6 +126,107 @@ def _dinh_gia(ct, gia):
         return None
 
 
+def tai_nen_5p(ma, tu=None, cua_so=20, nghi=0.2):
+    """Nến 5' dài cho backtest đa khung: nến 1' Vietcap (có từ 11/09/2023) tải lùi từng cửa sổ `cua_so` ngày (mốc 0h UTC
+    = 7h giờ VN – không cắt ngang phiên) rồi gộp 5' ngay → cache gọn cache_gia/<MÃ>_5tu1_lich_su.csv (lần sau chỉ tải
+    phần mới). Trả DataFrame (nghìn đồng) hoặc None."""
+    import os
+    import time
+
+    from ptcp.diem_vao_15p import nen_tu_phut
+
+    from . import du_lieu
+    tu = pd.Timestamp(tu or C.BACKTEST_15P_TU)
+    path = du_lieu._cache(f"{ma}_5tu1_lich_su")
+    cu = None
+    if os.path.exists(path):
+        try:
+            cu = pd.read_csv(path, index_col=0, parse_dates=True).astype(float)
+        except (OSError, ValueError):
+            cu = None
+    moc = max(tu, cu.index[-1].normalize() - pd.Timedelta(days=2)) if cu is not None and len(cu) else tu
+    den = int(pd.Timestamp.now(tz="UTC").normalize().timestamp()) + 2 * 86400
+    phan, rong = [], 0
+    while den > int(moc.timestamp()) and rong < 3:
+        t_tu = max(den - cua_so * 86400, int(moc.timestamp()) // 86400 * 86400)
+        try:
+            d1 = du_lieu.chuan_hoa(du_lieu.tu_vci(ma, t_tu, den, "1"))
+        except Exception:                                           # noqa: BLE001 – cửa sổ không có dữ liệu
+            d1 = None
+        if d1 is not None and len(d1):
+            phan.append(nen_tu_phut(d1, 5))
+            rong = 0
+        else:
+            rong += 1
+        den = t_tu
+        time.sleep(nghi)
+    if cu is not None:
+        phan.append(cu)
+    if not phan:
+        return None
+    out = pd.concat(phan).sort_index()
+    out = out[~out.index.duplicated(keep="first")]                  # bản mới tải (đủ nến) trước bản cache
+    try:
+        out.to_csv(path)
+    except OSError:
+        pass
+    return out[out.index >= tu]
+
+
+def ro_da_khung():
+    """Rổ backtest đa khung: 41 mã chiến lược + top 100 GTGD hiện tại (Quỹ Bứt Phá chỉ mua top 100) – nến 1' nặng nên
+    không chạy toàn sàn."""
+    ds = list(C.MA_CHIEN_LUOC)
+    try:
+        from ptcp import loc_quy_b
+        hang = (loc_quy_b.doc(han_ngay=None) or {}).get("hang_gtgd", {})
+        ds += sorted((m for m, h in hang.items() if h <= 100), key=lambda m: hang[m])
+    except ImportError:
+        pass
+    return list(dict.fromkeys(ds))
+
+
+def chay_da_khung(bay_gio, ds_ma=None, file_ra="ket_qua_backtest_da_khung.json"):
+    """ĐIỂM VÀO ĐA KHUNG 5' + 15' + 60' (05/11/2026): khuyến nghị quá khứ của chiến lược × cách vào đang dùng (15P+GIO,
+    15P+GIO+ATC, ATO) và cách vào nến 5' (ptcp.diem_vao_15p.BIEN_THE_5P), nến 5' / 15' dựng từ CÙNG nến 1' Vietcap →
+    lãi/lỗ theo hệ thoát + theo năm + mô phỏng Quỹ Bứt Phá. Chỉ thống kê → file riêng (KHÔNG đổi cách vào bot đang dùng)."""
+    from ptcp.diem_vao_15p import backtest_da_khung, quy_b_theo_cach_vao, theo_nam, tin_hieu_qua_khu
+
+    from . import du_lieu
+    ds_ma = ds_ma or ro_da_khung()
+    print(f"=== BACKTEST ĐA KHUNG 5' + 15' + 60' | {pd.Timestamp(bay_gio):%Y-%m-%d %H:%M} | {len(ds_ma)} mã ===", flush=True)
+    vni = du_lieu.tai("VNINDEX", "D", C.BACKTEST_TU, chi_so=True)
+    gia = {m: d for m, d in _tai_song_song(lambda m: du_lieu.tai(m, "D", C.BACKTEST_TU), ds_ma).items() if len(d) >= 260}
+    print(f"  giá ngày: {len(gia)}/{len(ds_ma)} mã · tải nến 1' Vietcap → 5'…", flush=True)
+    n5 = _tai_song_song(tai_nen_5p, list(gia), luong=6)
+    if vni is None or not n5:
+        print("Thiếu dữ liệu → dừng.")
+        return 1
+    tu = min(d.index[0] for d in n5.values()).normalize()
+    den = max(d.index[-1] for d in n5.values())
+    print(f"  nến 5': {len(n5)} mã, {tu:%d/%m/%Y} → {den:%d/%m/%Y}, {sum(len(d) for d in n5.values()):,} nến", flush=True)
+    ds, xs = tin_hieu_qua_khu({m: gia[m] for m in n5}, vni, tu - pd.Timedelta(days=3))
+    k = backtest_da_khung(ds, n5, xs)
+    b, nam = k["bang"], theo_nam(k["chi_tiet"])
+    with pd.option_context("display.width", 250, "display.max_columns", 30, "display.max_rows", 200):
+        print(f"\nĐA KHUNG – {k['so_tin_hieu']} khuyến nghị (lãi sau phí, hệ thoát gốc):")
+        print(b.drop(columns=["Mô tả"]).round(2).to_string(index=False))
+        print("\nTheo năm (TB / tín hiệu tính cả lệnh không khớp = 0):")
+        print(nam.round(2).unstack(0).to_string())
+    q = quy_b_theo_cach_vao(k["chi_tiet"], gia, vni, dg=_dinh_gia(k["chi_tiet"], gia))
+    if q is not None and len(q):
+        with pd.option_context("display.width", 250, "display.max_columns", 30):
+            print("\nQuỹ Bứt Phá (luật vốn thật, top GTGD) theo cách vào:")
+            print(q.sort_values("Calmar", ascending=False).round(2).to_string(index=False))
+    ra = {"ngay_chay": f"{pd.Timestamp(bay_gio):%Y-%m-%d %H:%M}", "so_ma": len(n5),
+          "mo_ta": f"{len(n5)} mã, nến 5' {tu:%d/%m/%Y}–{den:%d/%m/%Y}, {k['so_tin_hieu']} khuyến nghị",
+          "bang": _ban_ghi(b), "theo_nam": _ban_ghi(nam.reset_index()), "quy_b": _ban_ghi(q)}
+    with open(file_ra, "w", encoding="utf-8") as f:
+        json.dump(ra, f, ensure_ascii=False, indent=1)
+    print(f"Đã lưu {file_ra}")
+    return 0
+
+
 def tai_nen_15p(ds_ma=None):
     """Chỉ tải phần nến 15' mới cho rổ backtest (workflow hằng tuần): giữ cache không bị GitHub xoá (7 ngày không
     dùng) và tích luỹ lịch sử dài hơn giới hạn ~1 năm của nguồn. Trả số mã có dữ liệu."""
