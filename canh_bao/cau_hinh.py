@@ -95,6 +95,11 @@ CACH_VAO_15P = "15P+GIO"           # 19/10/2026: backtest quỹ Bứt Phá theo 
                                    # LO+ATC (cố định 10/2026, rổ chiến lược 41 mã);
                                    # "tu_dong": cách vào tốt nhất của lần backtest gần nhất (FILE_BACKTEST);
                                    # chưa backtest → "15P+ATC". Hoặc đặt cố định: ATO | 15P | 15P+ATC | 15P+GIO | VWAP | LO …
+                                   # 05/11/2026 ĐA KHUNG 5' + 15' + 60' (chay.py --ro da_khung; 100 mã, nến 1' Vietcap
+                                   # 09/2023–11/2026, 5.431 khuyến nghị): nến 5' KHÔNG thêm gì – 5P+15P+GIO+ATC 1,90%/tín hiệu
+                                   # = 15P+GIO+ATC 1,89% (từng năm chênh ≤ 0,04 điểm); 5P+GIO vào sớm nhiều tín hiệu giả
+                                   # (3,74 vs 5,30 %/lệnh khớp); chờ 5' vượt đỉnh nến 15' chỉ khớp 5,7%. Quỹ: Calmar 1,27 /
+                                   # 1,19 – trong nhiễu đường đi (von92) → giữ 15P+GIO (vòng lặp 15', không cần nến 5').
 GIO_ATC = "14:25"                  # từ giờ này, cách vào "+ATC" chưa có điểm vào → báo đặt ATC nếu giá còn trong vùng
 QUET_DANH_MUC_CU = True            # trong phiên: quét cả danh_muc_cu.csv (repo danh-muc) – chạm / sát cắt lỗ đề xuất
 GAN_CAT_LO_PCT = 2.0               # trong phiên: mã đang giữ cách cắt lỗ ≤ 2% → nhắc chuẩn bị lệnh bán (1 lần/ngày)
