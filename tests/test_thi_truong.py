@@ -210,10 +210,14 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     import re
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert "<script src" not in h and "@import" not in h and "fonts.googleapis" not in h
+    ngoai = set(re.findall(r'\.src = "(https://[^"/]+)', h))                 # script tải động: chỉ TradingView + SheetJS
+    assert ngoai == {"https://s3.tradingview.com", "https://cdnjs.cloudflare.com"}, ngoai
     assert 'const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json"' in h
-    for tab in ("tong-quan", "tai-chinh", "dinh-gia", "co-dong", "co-tuc", "lich-su", "tin", "ho-so", "he-thong"):
+    for tab in ("tong-quan", "tin", "ho-so", "lanh-dao", "co-dong", "co-tuc", "tai-chinh", "chi-so", "dinh-gia", "lich-su",
+                "bao-cao", "tai-lieu", "he-thong"):
         assert f'["{tab}",' in h, tab
     assert not re.search(r"fetch\(\s*['\"]https?:", h)
+    assert not re.search("[\U0001F300-\U0001FAFF\u2605\u2B50]", h)                     # không emoji / sticker
     assert "const esc = " in h and "const url = u => /^https?:" in h
     t = open("docs/thi_truong/index.html", encoding="utf-8").read()
     assert 'href="../ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t
@@ -233,7 +237,7 @@ def test_tra_cuu_dn_gon(tmp_path):
     assert "td" not in T.gon_gia(ds)
     cs = T.gon_chi_so([{"year": 2026, "quarter": 2, "pe": 8.0, "roe": 0.2, "npl": 0, "marketCap": 5e12},
                        {"year": 2025, "quarter": 4, "pe": 9.0, "roe": 0.18, "npl": 0, "marketCap": 4e12}])
-    assert cs["ky"] == ["Q4.25", "Q2.26"] and cs["pe"] == [9.0, 8.0] and "no_xau" not in cs and cs["von_hoa"] == [4000, 5000]
+    assert cs["ky"] == ["Q4.25", "Q2.26"] and cs["pe"] == [9.0, 8.0] and "npl" not in cs and cs["marketCap"] == [4000, 5000]
     sk = T.gon_su_kien([{"exrightDate": "2026-05-19T00:00:00", "eventCode": "DIV", "eventTitleVi": "Cổ tức", "valuePerShare": 700},
                         {"publicDate": "2026-10-01", "eventCode": "ISS", "exerciseRatio": 0.5}, {"eventCode": "X"}])
     assert [x["ngay"] for x in sk] == ["2026-10-01", "2026-05-19"] and sk[1]["gia_tri"] == 700
@@ -276,7 +280,7 @@ def test_tra_cuu_dn_nguon(monkeypatch):
     assert bc[0]["ctck"] == "SSI" and bc[0]["mt"] == 37.5 and bc[0]["link"] == "https://x/a.pdf"     # gộp trùng SSI cùng ngày
     assert len(bc) == 2 and bc[1]["ctck"] == "VCBS"
     dn, loi = T.lay_dn("TCB", {"ct": {"cu": 1}})
-    assert set(loi) == {"ct", "cc", "cd", "sk", "nb", "cs", "tin"} and dn["ct"] == {"cu": 1} and "kbs" in dn
+    assert set(loi) == {"ct", "cc", "cd", "sk", "nb", "cs", "tin", "nn_nam", "tl"} and dn["ct"] == {"cu": 1} and "kbs" in dn
 
 
 def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
@@ -313,7 +317,7 @@ def test_tra_cuu_dn_cau_dao_va_han(monkeypatch):
     except ValueError:
         pass
     goi = []
-    phan = ("ct", "cc", "cd", "sk", "nb", "cs", "tin", "bc", "kbs", "sz")
+    phan = ("ct", "cc", "cd", "sk", "nb", "cs", "tin", "bc", "kbs", "sz", "nn_nam", "tl")
 
     def gia_lap(*a, **k):
         goi.append(1)
@@ -323,14 +327,18 @@ def test_tra_cuu_dn_cau_dao_va_han(monkeypatch):
     monkeypatch.setattr(T, "bao_cao_ctck", gia_lap)
     monkeypatch.setattr(T, "ho_so_kbs", gia_lap)
     monkeypatch.setattr(T, "tom_tat_simplize", gia_lap)
+    monkeypatch.setattr(T, "tai_lieu", gia_lap)
     cu = {k: {"cu": k} for k in phan}
-    cu["ngay_phan"] = {k: "2026-11-04" for k in phan}
+    cu["ngay_phan"], cu["phien_ban"] = {k: "2026-11-04" for k in phan}, T.PHIEN_BAN_DN
     dn, loi = T.lay_dn("AAA", cu, "2026-11-05")
     assert sorted(loi) == ["tin"] and len(goi) == 1                 # chỉ tin (hạn 1 ngày) phải làm lại
     assert dn["ct"] == {"cu": "ct"} and dn["ngay_phan"]["tin"] == "2026-11-04"
     goi.clear()
-    dn, loi = T.lay_dn("AAA", cu, "2026-11-20")                    # 16 ngày: quá hạn mọi phần trừ sz (30 ngày)
-    assert len(goi) == len(phan) - 1 and dn["kbs"] == {"cu": "kbs"} and "sz" not in loi
+    dn, loi = T.lay_dn("AAA", cu, "2026-11-20")                    # 16 ngày: quá hạn mọi phần trừ sz, nn_nam (30 ngày)
+    assert len(goi) == len(phan) - 2 and dn["kbs"] == {"cu": "kbs"} and "sz" not in loi and "nn_nam" not in loi
+    goi.clear()
+    T.lay_dn("AAA", {**cu, "phien_ban": 1}, "2026-11-05")           # định dạng cũ → làm mới hết
+    assert len(goi) == len(phan)
 
 
 def test_tra_cuu_dn_gia_du_phong(monkeypatch):
@@ -345,3 +353,23 @@ def test_tra_cuu_dn_gia_du_phong(monkeypatch):
         raise ValueError("chặn")
     monkeypatch.setattr(T, "iq", iq_loi)
     assert T.lay_gia("AAA")["du_phong"]
+
+
+
+def test_tra_cuu_dn_tai_lieu_va_nganh(tmp_path, monkeypatch):
+    from thi_truong import tra_cuu_dn as T
+
+    def goi(url, **k):
+        if "Type=1" in url:
+            return {"Data": [{"Name": "BCTC hợp nhất  kiểm toán", "Year": 2025, "Time": "CN", "Link": "https://x/a.pdf"},
+                             {"Name": "x", "Link": "javascript:alert(1)"}]}
+        return {"Data": []}
+    monkeypatch.setattr(T.nguon, "goi", goi)
+    tl = T.tai_lieu("AAA")
+    assert tl == [{"loai": "BCTC", "ten": "BCTC hợp nhất kiểm toán", "nam": "2025", "ky": "CN", "link": "https://x/a.pdf"}]
+    ra = str(tmp_path)
+    for m, pe in (("AAA", 8.0), ("BBB", 10.0), ("CCC", 12.0), ("DDD", 30.0)):
+        T._ghi({"cs": {"ky": ["Q2.26"], "pe": [pe], "roe": [0.1]}}, f"{ra}/dn/{m}.json")
+    ds = [{"ma": "AAA", "nganh": "X"}, {"ma": "BBB", "nganh": "X"}, {"ma": "CCC", "nganh": "X"}, {"ma": "DDD", "nganh": "Y"}]
+    ng = T.chi_so_nganh(ra, ds)
+    assert ng == {"X": {"pe": [10.0, 3], "roe": [0.1, 3]}, "Y": {}} and T._doc(f"{ra}/chi_so_nganh.json") == ng
