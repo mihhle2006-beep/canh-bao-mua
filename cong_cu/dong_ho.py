@@ -357,9 +357,55 @@ def nhan_tele(noi_dung):
         return False
 
 
+REPO_KIN = "mihhle2006-beep/danh-muc"
+WF_THU_QUYEN = "dnse_dong_bo.yml"
+
+
+def _ma_http(token, phuong, duong):
+    """Mã trạng thái HTTP của 1 lời gọi API GitHub bằng token (không đọc / in nội dung)."""
+    req = urllib.request.Request(f"{API}/{duong}", method=phuong, data=b"" if phuong in ("PUT", "POST") else None,
+                                 headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+                                          "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "dong-ho"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status
+    except urllib.error.HTTPError as e:
+        return e.code
+    except (urllib.error.URLError, OSError):
+        return None
+
+
+def kiem_quyen(token, repo=None, goi=None):
+    """Token repo kín đủ quyền chưa? → {"doc_code", "doc_actions", "ghi_actions": True / False / None (lỗi mạng)}.
+    Ghi Actions thử bằng PUT …/enable workflow vòng đồng bộ DNSE ĐANG bật (không đổi gì, cần Actions: Read and write)."""
+    repo = repo or os.environ.get("DANH_MUC_REPO") or REPO_KIN
+    goi = goi or (lambda ph, d: _ma_http(token, ph, d))
+    thu = {"doc_code": ("GET", f"repos/{repo}/commits?per_page=1"),
+           "doc_actions": ("GET", f"repos/{repo}/actions/workflows/{WF_THU_QUYEN}/runs?per_page=1"),
+           "ghi_actions": ("PUT", f"repos/{repo}/actions/workflows/{WF_THU_QUYEN}/enable")}
+    out = {}
+    for k, (ph, d) in thu.items():
+        m = goi(ph, d)
+        out[k] = None if m is None else 200 <= m < 300
+    return out
+
+
+TEN_QUYEN = {"doc_code": "Contents (đọc / ghi danh mục)", "doc_actions": "Actions – đọc (tin 🩺 máy Mac)",
+             "ghi_actions": "Actions – ghi (đồng hồ bật vòng DNSE 08:35)"}
+
+
 def kiem_token(bay_gio, in_ra=print):
-    """Token repo kín sắp / đã hết hạn → Telegram (tên secret + ngày; không in token)."""
+    """Token repo kín sắp / đã hết hạn hoặc thiếu quyền → Telegram (tên secret + ngày / quyền; không in token)."""
     canh = []
+    tk = os.environ.get("DANH_MUC_TOKEN_GHI", "").strip()
+    if tk:
+        q = kiem_quyen(tk)
+        thieu = [TEN_QUYEN[k] for k, v in q.items() if v is False]
+        in_ra("Quyền DANH_MUC_TOKEN_GHI: " + " · ".join(f"{TEN_QUYEN[k]} {'OK' if v else 'THIẾU' if v is False else '?'}"
+                                                         for k, v in q.items()))
+        if thieu:
+            canh.append("• DANH_MUC_TOKEN_GHI thiếu quyền: " + ", ".join(thieu)
+                        + " → GitHub → Settings → Developer settings → Fine-grained tokens → token này → Edit → Add permissions")
     for ten in ("DANH_MUC_TOKEN_GHI",):
         h = han_token(os.environ.get(ten))
         if h is None:
@@ -399,7 +445,19 @@ def main(argv=None):
     p.add_argument("--thu", default="", help="'YYYY-MM-DD HH:MM' giờ VN: chỉ in workflow sẽ gọi (không gọi)")
     p.add_argument("--gac", default="", help="tên file workflow: job gac – in 'chay=true|false' (ghi vào GITHUB_OUTPUT)")
     p.add_argument("--lich", default="", help="với --gac: chuỗi cron GitHub của lần chạy (github.event.schedule)")
+    p.add_argument("--kiem_quyen", action="store_true", help="thử quyền + hạn token DANH_MUC_TOKEN_GHI (chỉ in mã / kết quả)")
     a = p.parse_args(argv)
+    if a.kiem_quyen:
+        tk = os.environ.get("DANH_MUC_TOKEN_GHI", "").strip()
+        if not tk:
+            print("Thiếu secret DANH_MUC_TOKEN_GHI")
+            return 1
+        q = kiem_quyen(tk)
+        for k, v in q.items():
+            print(f"{'✔' if v else '✘' if v is False else '?'} {TEN_QUYEN[k]}: {'OK' if v else 'THIẾU QUYỀN' if v is False else 'lỗi mạng'}")
+        h = han_token(tk)
+        print(f"Hạn token: {f'{h:%d/%m/%Y}' if h else 'không hạn / không đọc được'}")
+        return 0 if all(q.values()) else 1
     if a.gac:
         chay, ly_do = True, "không phải lịch → chạy"
         if a.lich:

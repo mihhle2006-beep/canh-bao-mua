@@ -1,0 +1,24 @@
+# THỬ QUYỀN TOKEN repo kín (bấm tay): DANH_MUC_TOKEN_GHI đọc code, đọc / ghi Actions ở danh-muc được chưa + ngày hết hạn.
+# Ghi Actions thử bằng "bật" workflow vòng đồng bộ DNSE đang bật sẵn (không đổi gì, không chạy gì trên máy Mac).
+# Log chỉ in ✔ / ✘ từng quyền – không in token. Hằng ngày 20:05 đồng hồ (dong_ho.yml) cũng tự thử, thiếu → Telegram.
+name: Kiem quyen token
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kiem:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: cong_cu
+          persist-credentials: false
+      - name: Thử quyền DANH_MUC_TOKEN_GHI
+        env:
+          DANH_MUC_TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+        run: python3 cong_cu/dong_ho.py --kiem_quyen
