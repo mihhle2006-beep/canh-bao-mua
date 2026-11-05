@@ -76,13 +76,22 @@ Ví dụ (giá tính bằng nghìn đồng), mỗi mã 3 dòng:
 
 ## 📊 Bảng thị trường (web)
 
-Trang `docs/thi_truong/` (GitHub Pages, cùng site với Bảng tổng hợp) – chỉ dữ liệu thị trường công khai, không có danh mục:
+Trang `docs/thi_truong/` (GitHub Pages, cùng site với Bảng tổng hợp) – dữ liệu thị trường công khai + mục 💼 CHỈ mã đang giữ:
 chỉ số + VN-Index trong phiên (1D…1Y), bản đồ nhiệt HOSE theo ngành (vốn hoá / GTGD / nước ngoài / tự doanh), thống kê
 phiên (độ rộng, GTGD & dự kiến cả phiên so TB20, khối ngoại, tự doanh), 10 mã kéo / đè VN-Index, và **Lọc mã** (biến động,
 dòng tiền, khối ngoại gom / xả ≥ 5 phiên, vượt đỉnh / thủng đáy 52 tuần, cắt MA20 / MA50, RSI).
 Workflow `Bang thi truong`: 5' một lần trong giờ giao dịch + 15:10, chuẩn bị dữ liệu lúc 19:07 (`python -m thi_truong`).
 **Bật 1 lần:** Settings → Pages → Build and deployment → Source: **GitHub Actions** → trang ở
 `https://<tài khoản>.github.io/canh-bao-mua/thi_truong/`.
+
+## 🔎 Tra cứu mã (web)
+
+Trang `docs/ma/` (`…/canh-bao-mua/ma/#HPG`) – ~750 mã HOSE / HNX có BCTC trong kho: giá trong phiên (từ Bảng thị trường),
+P/E · P/B · EPS · BVPS · PEG, giá trị hợp lý + RẺ / HỢP LÝ / ĐẮT, dự phóng LNST năm, doanh thu / LNST 9 quý + YoY, LNST 4
+năm, chỉ số tài chính (ROE, nợ / VCSH, NIM, nợ xấu…), kế hoạch ĐHCĐ + % hoàn thành, bất thường BCTC + lời giải thích từ
+BCTN, chiến lược doanh nghiệp theo năm; tab **Lọc KQKD** (lọc / sắp xếp cả sàn) và **Ngành** (bội số ngành). Bấm mã ở
+Bảng thị trường → mở trang tra cứu. Dữ liệu: workflow `Du lieu tra cuu` (06:41 T2–T7, danh-muc `ptcp/web_tra_cuu.py` – cùng
+số với file KQKD quý, chỉ số liệu công bố công khai) → cache → `Bang thi truong` gói cùng khi triển khai.
 
 ## Cài đặt
 
