@@ -1,0 +1,127 @@
+# BẢNG THỊ TRƯỜNG (trang web docs/thi_truong/ – GitHub Pages): chỉ số, VN-Index trong phiên, bản đồ nhiệt HOSE, thống kê
+# phiên, tác động lên VN-Index, lọc mã. CHỈ dữ liệu thị trường công khai (không lấy repo danh-muc, không có danh mục).
+#   • 5' một lần trong giờ giao dịch (bỏ nghỉ trưa) + 15:10 chốt phiên: chụp bảng giá → du_lieu.json → triển khai Pages.
+#   • 19:07: chuẩn bị cho phiên sau (lịch sử 260 phiên, khối ngoại / tự doanh, ngành, hồ sơ thanh khoản) → cache.
+# Cần bật 1 lần: Settings → Pages → Build and deployment → Source: "GitHub Actions". Chưa bật → chỉ dựng, bỏ qua triển khai.
+name: Bang thi truong
+
+on:
+  schedule:
+    - cron: "*/5 2-3 * * 1-5"      # 9:00–10:55 giờ VN
+    - cron: "0-30/5 4 * * 1-5"     # 11:00–11:30
+    - cron: "*/5 6-7 * * 1-5"      # 13:00–14:55
+    - cron: "10 8 * * 1-5"         # 15:10 chốt phiên
+    - cron: "7 12 * * 1-5"         # 19:07 chuẩn bị phiên sau
+  push:
+    branches: [main]
+    paths: ["docs/**", "thi_truong/**", ".github/workflows/bang_thi_truong.yml"]   # giao diện / code đổi → triển khai ngay
+  workflow_dispatch:
+    inputs:
+      chuan_bi:
+        description: "Dựng lại dữ liệu chuẩn bị (lịch sử, ngành…) trước khi chụp"
+        type: boolean
+        default: false
+      ghi_nhanh:
+        description: "(thử nghiệm) đẩy du_lieu.json về nhánh đang chạy"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bang-thi-truong
+  cancel-in-progress: false
+
+jobs:
+  dung:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write              # chỉ dùng khi ghi_nhanh (nhánh thử nghiệm)
+    outputs:
+      pages: ${{ steps.pages.outputs.bat }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Cache thư viện Python (bỏ bước cài ~30 giây khi requirements không đổi)
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
+      - name: Cài thư viện
+        if: steps.cache_py.outputs.cache-hit != 'true'
+        run: pip install -r requirements.txt
+
+      - name: Khôi phục dữ liệu chuẩn bị
+        uses: actions/cache/restore@v5
+        with:
+          path: cache_thi_truong
+          key: tt-${{ github.run_id }}
+          restore-keys: tt-
+
+      - name: Dựng dữ liệu
+        env:
+          CHUAN_BI: ${{ (github.event.schedule == '7 12 * * 1-5' || inputs.chuan_bi) && '--chuan_bi' || '' }}
+        run: |
+          mkdir -p cache_thi_truong
+          T0=$(stat -c %Y cache_thi_truong/chuan_bi.json 2>/dev/null || echo 0)
+          python -m thi_truong $CHUAN_BI
+          T1=$(stat -c %Y cache_thi_truong/chuan_bi.json 2>/dev/null || echo 0)
+          if [ "$T1" != "$T0" ]; then echo "LUU_CACHE=1" >> "$GITHUB_ENV"; fi
+
+      - name: Lưu dữ liệu chuẩn bị
+        if: env.LUU_CACHE == '1'
+        uses: actions/cache/save@v5
+        with:
+          path: cache_thi_truong
+          key: tt-${{ github.run_id }}
+
+      - name: (thử nghiệm) đẩy du_lieu.json về nhánh
+        if: inputs.ghi_nhanh && github.ref != 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -f docs/thi_truong/du_lieu.json
+          git commit -m "Bảng thị trường: dữ liệu mẫu [skip ci]" || exit 0
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
+
+      - name: Pages đã bật chưa
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          MA=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
+               "https://api.github.com/repos/$GITHUB_REPOSITORY/pages")
+          if [ "$MA" = "200" ]; then echo "bat=1" >> "$GITHUB_OUTPUT"
+          else echo "::notice::GitHub Pages chưa bật (HTTP $MA) – Settings → Pages → Source: GitHub Actions. Bỏ qua triển khai."
+               echo "bat=0" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Gói trang
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        run: mkdir -p _site && cp -r docs/. _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        with:
+          path: _site
+
+  trien_khai:
+    needs: dung
+    if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.dp.outputs.page_url }}thi_truong/
+    steps:
+      - id: dp
+        uses: actions/deploy-pages@v4

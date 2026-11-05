@@ -74,6 +74,16 @@ Ví dụ (giá tính bằng nghìn đồng), mỗi mã 3 dòng:
 - Backtest 2013–2026 (B + Trứng vàng, khớp như bot): thêm độ rộng ×½ và hệ bắt đáy nâng Calmar từ 1,18 lên 1,29,
   MDD từ −16,1% còn −15,1%.
 
+## 📊 Bảng thị trường (web)
+
+Trang `docs/thi_truong/` (GitHub Pages, cùng site với Bảng tổng hợp) – chỉ dữ liệu thị trường công khai, không có danh mục:
+chỉ số + VN-Index trong phiên (1D…1Y), bản đồ nhiệt HOSE theo ngành (vốn hoá / GTGD / nước ngoài / tự doanh), thống kê
+phiên (độ rộng, GTGD & dự kiến cả phiên so TB20, khối ngoại, tự doanh), 10 mã kéo / đè VN-Index, và **Lọc mã** (biến động,
+dòng tiền, khối ngoại gom / xả ≥ 5 phiên, vượt đỉnh / thủng đáy 52 tuần, cắt MA20 / MA50, RSI).
+Workflow `Bang thi truong`: 5' một lần trong giờ giao dịch + 15:10, chuẩn bị dữ liệu lúc 19:07 (`python -m thi_truong`).
+**Bật 1 lần:** Settings → Pages → Build and deployment → Source: **GitHub Actions** → trang ở
+`https://<tài khoản>.github.io/canh-bao-mua/thi_truong/`.
+
 ## Cài đặt
 
 Vào **Settings → Secrets and variables → Actions**:
