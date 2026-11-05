@@ -1,0 +1,444 @@
+# -*- coding: utf-8 -*-
+"""
+DỮ LIỆU DOANH NGHIỆP CHO TRANG TRA CỨU MÃ (docs/ma/ – công khai; dò nguồn 05/11/2026 "Chan doan nguon" --trang_ma):
+  gia/<MÃ>.json  lịch sử ngày ~2 năm (Vietcap IQ price-history): OHLC điều chỉnh, giá đóng cửa gốc, KL / GT khớp, thoả
+                 thuận, khối ngoại mua / bán / ròng + % sở hữu, cung cầu (KL đặt mua / bán), tự doanh ròng (HOSE)
+  dn/<MÃ>.json   hồ sơ + khuyến nghị Vietcap, cơ cấu sở hữu, cổ đông lớn, sự kiện (cổ tức, phát hành, ĐHCĐ…), giao dịch
+                 nội bộ, chỉ số tài chính theo quý (P/E, P/B, ROE, NIM, nợ xấu…), tin CafeF, báo cáo CTCK (Simplize / CafeF),
+                 hồ sơ KBS (thành lập, niêm yết, vốn điều lệ, giá chào sàn, công ty con – liên kết, lãnh đạo), tóm tắt Simplize
+  cau_truc_bctc.json  cây chỉ tiêu BCTC Vietcap (cấp, tên) cho 4 loại DN – trang dựng bảng BCTC đầy đủ có thụt cấp
+Vietcap hay làm chậm / chặn máy chủ GitHub → XOAY VÒNG: mã cũ nhất trước, dừng nhận mã mới khi hết giờ (--phut); mã chưa
+tới lượt / lỗi GIỮ file cũ (cache). Chỉ số liệu công bố công khai, không đụng danh mục.
+  python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu [--ma HPG,FPT] [--phut 25]
+"""
+import argparse
+import html
+import json
+import os
+import re
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date
+
+from . import nguon
+
+IQ = nguon.IQ
+SIMPLIZE_BC = "https://api.simplize.vn/api/company/analysis-report/list?ticker={ma}&page=0&size=30"
+CAFEF_BC = "https://cafef.vn/du-lieu/Ajax/PageNew/BaoCaoPhanTich.ashx?Symbol={ma}&PageIndex=1&PageSize=30"
+KBS_HO_SO = "https://kbbuddywts.kbsec.com.vn/iis-server/investment/stockinfo/profile/{ma}?l=1"
+SIMPLIZE_TOM_TAT = "https://api.simplize.vn/api/company/summary/{ma}"
+CAFEF_TIN = ("https://cafef.vn/du-lieu/Ajax/Events_RelatedNews_New.aspx?symbol={ma}&floorID=0&configID=0&PageIndex=1"
+             "&PageSize={so}&Type=2")
+MAU_CAU_TRUC = {"CT": "HPG", "NH": "TCB", "CK": "SSI", "BH": "BVH"}         # loại DN (comTypeCode Vietcap) → mã mẫu
+SO_PHIEN = 500
+SO_PHAN_DN = 10                                                    # ct cc cd sk nb cs tin bc kbs sz
+# chỉ số Vietcap statistics-financial giữ lại (khoá → tên ngắn trong file)
+CHI_SO_LS = {"pe": "pe", "pb": "pb", "ps": "ps", "evToEbitda": "ev_ebitda", "roe": "roe", "roa": "roa",
+             "grossMargin": "bien_gop", "afterTaxProfitMargin": "bien_rong", "debtToEquity": "no_vcsh",
+             "currentRatio": "tt_hh", "dividendYield": "co_tuc", "netInterestMargin": "nim", "npl": "no_xau",
+             "cir": "cir", "ldrLoanDepositRatio": "ldr", "casaRatio": "casa", "loansGrowth": "tang_td",
+             "loansLossReservesToNPLs": "bao_no_xau", "marketCap": "von_hoa", "assetTurnover": "vong_quay_ts",
+             "daysInventoryOutstanding": "ngay_tk", "daySaleOutstanding": "ngay_pt"}
+
+
+def _r(x, le=2):
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    return round(v, le) if v == v and abs(v) != float("inf") else None
+
+
+def _ngay(x):
+    return str(x or "")[:10] or None
+
+
+def _noi_dung(j):
+    d = j.get("data", j) if isinstance(j, dict) else j
+    if isinstance(d, dict) and "content" in d:
+        return d["content"] or []
+    return d
+
+
+def iq(duong, so_lan=2):
+    return _noi_dung(nguon.goi(f"{IQ}/{duong}", so_lan=so_lan, timeout=40))
+
+
+# ---------------------------------------------------------------- giá
+def gon_gia(ds, td=None):
+    """price-history (mới → cũ) + tự doanh {ngày: ròng tỷ} → cột (cũ → mới). Giá NGHÌN đồng, giá trị TỶ đồng."""
+    dong = sorted((x for x in ds or [] if x.get("tradingDate")), key=lambda x: x["tradingDate"])
+    k = lambda x, a, b=None: x.get(a) if x.get(a) is not None else (x.get(b) if b else None)   # noqa: E731
+    out = {"d": [], "o": [], "h": [], "l": [], "c": [], "c0": [], "v": [], "gt": [], "tt": [], "nn_m": [], "nn_b": [],
+           "nn": [], "nn_pt": [], "dat_m": [], "dat_b": [], "td": []}
+    for x in dong:
+        c = k(x, "closePriceAdjusted", "closePrice")
+        if not c:
+            continue
+        out["d"].append(_ngay(x["tradingDate"]))
+        for ten, a, b in (("o", "openPriceAdjusted", "openPrice"), ("h", "highestPriceAdjusted", "highestPrice"),
+                          ("l", "lowestPriceAdjusted", "lowestPrice")):
+            out[ten].append(_r((k(x, a, b) or c) / 1000))
+        out["c"].append(_r(c / 1000))
+        out["c0"].append(_r((x.get("closePrice") or c) / 1000))
+        out["v"].append(int(x.get("totalMatchVolume") or 0))
+        out["gt"].append(_r((x.get("totalValue") or x.get("totalMatchValue") or 0) / 1e9))
+        out["tt"].append(_r((x.get("totalDealValue") or 0) / 1e9))
+        out["nn_m"].append(_r((x.get("foreignBuyValueTotal") or 0) / 1e9))
+        out["nn_b"].append(_r((x.get("foreignSellValueTotal") or 0) / 1e9))
+        nn = x.get("foreignNetValueTotal")
+        if nn is None:
+            nn = (x.get("foreignBuyValueTotal") or 0) - (x.get("foreignSellValueTotal") or 0)
+        out["nn"].append(_r(nn / 1e9))
+        out["nn_pt"].append(_r((x.get("foreignOwnedPercentage") or 0) * 100))
+        out["dat_m"].append(int(x.get("totalBuyTradeVolume") or 0))
+        out["dat_b"].append(int(x.get("totalSellTradeVolume") or 0))
+        out["td"].append((td or {}).get(out["d"][-1]))
+    if not any(v is not None for v in out["td"]):
+        del out["td"]
+    return out
+
+
+def lay_gia(ma, san=""):
+    ds = iq(f"company/{ma}/price-history?timeFrame=ONE_DAY&page=0&size={SO_PHIEN}")
+    td = {}
+    if san in ("HOSE", "HSX"):
+        try:
+            for x in iq(f"company/{ma}/proprietary-history?timeFrame=ONE_DAY&page=0&size=250", so_lan=1) or []:
+                if x.get("tradingDate") is not None:
+                    td[_ngay(x["tradingDate"])] = _r((x.get("totalTradeNetValue") or 0) / 1e9)
+        except Exception:                                           # noqa: BLE001 – tự doanh là phần phụ
+            td = {}
+    g = gon_gia(ds, td)
+    if not g["d"]:
+        raise ValueError("không có lịch sử giá")
+    return g
+
+
+# ---------------------------------------------------------------- doanh nghiệp
+def chu_html(x, toi_da=4000):
+    """HTML hồ sơ Vietcap → chữ thường (bỏ thẻ, giải mã &…;)."""
+    t = re.sub(r"<(br|/p|/div|/li)[^>]*>", "\n", str(x or ""), flags=re.I)
+    t = html.unescape(re.sub(r"<[^>]+>", " ", t))
+    t = re.sub(r"[ \t\r\f\v]+", " ", t)
+    t = re.sub(r"\s*\n\s*", "\n", t).strip()
+    return t[:toi_da]
+
+
+def gon_chi_tiet(d):
+    if not d:
+        return None
+    k = ("viOrganName", "viOrganShortName", "sectorVn", "comTypeCode", "rating", "ratingAsOf", "analyst")
+    out = {x: d.get(x) for x in k if d.get(x) not in (None, "")}
+    for a, b, h in (("targetPrice", "muc_tieu", 1e-3), ("currentPrice", "gia", 1e-3), ("marketCap", "von_hoa", 1e-9),
+                    ("numberOfSharesMktCap", "so_cp", 1), ("issueShare", "cp_niem_yet", 1),
+                    ("highestPrice1Year", "cao_1n", 1e-3), ("lowestPrice1Year", "thap_1n", 1e-3),
+                    ("foreignerPercentage", "nn_pt", 100), ("maximumForeignPercentage", "room_pt", 100),
+                    ("averageMatchValue1Month", "gt_tb_1t", 1e-9), ("averageMatchVolume1Month", "kl_tb_1t", 1),
+                    ("upsideToTargetPercent", "upside_pt", 100), ("dividendPerShareTsr", "co_tuc_tsr", 1),
+                    ("projectedTSRPercentage", "tsr_pt", 100), ("statePercentage", "nha_nuoc_pt", 100)):
+        if d.get(a) is not None:
+            out[b] = _r(float(d[a]) * h, 4)
+    out["ho_so"] = chu_html(d.get("profile"))
+    return out
+
+
+def gon_co_cau(d):
+    if not d:
+        return None
+    return {k: _r((d.get(a) or 0) * 100, 3) for k, a in (("nha_nuoc", "statePercentage"), ("nuoc_ngoai", "foreignPercentage"),
+                                                           ("hdqt", "bodPercentage"), ("to_chuc", "institutionPercentage"),
+                                                           ("khac", "otherPercentage"))} | {"tong_cp": d.get("totalShares")}
+
+
+def gon_co_dong(ds, so=40):
+    out = []
+    for x in sorted(ds or [], key=lambda x: -(x.get("percentage") or 0))[:so]:
+        out.append({"ten": x.get("ownerName") or "", "ma": x.get("ownerCode") or "", "cv": x.get("positionName") or "",
+                    "sl": x.get("quantity"), "pt": _r((x.get("percentage") or 0) * 100, 3),
+                    "loai": {"CORPORATE": "Tổ chức", "INDIVIDUAL": "Cá nhân"}.get(x.get("ownerType"), x.get("ownerType") or ""),
+                    "ngay": _ngay(x.get("publicDate") or x.get("updateDate"))})
+    return out
+
+
+def gon_su_kien(ds, so=80):
+    out = []
+    for x in ds or []:
+        ngay = _ngay(x.get("exrightDate") or x.get("issueDate") or x.get("publicDate") or x.get("displayDate1"))
+        if not ngay:
+            continue
+        out.append({"ngay": ngay, "cong_bo": _ngay(x.get("publicDate")), "chot": _ngay(x.get("recordDate")),
+                    "thuc_hien": _ngay(x.get("issueDate") or x.get("payoutDate")), "ma_sk": x.get("eventCode") or "",
+                    "loai": x.get("eventNameVi") or "", "ten": x.get("eventTitleVi") or "", "nhom": x.get("category") or "",
+                    "ty_le": _r(x.get("exerciseRatio"), 4), "gia_tri": _r(x.get("valuePerShare"), 2)})
+    out.sort(key=lambda r: r["ngay"], reverse=True)
+    return out[:so]
+
+
+def gon_noi_bo(ds, so=40):
+    out = []
+    for x in (ds or [])[:so]:
+        out.append({"ngay": _ngay(x.get("publicDate") or x.get("displayDate2")), "tu": _ngay(x.get("startDate")),
+                    "den": _ngay(x.get("endDate")), "ten": x.get("traderNameVi") or "", "cv": x.get("traderPositionVi") or "",
+                    "lien_quan": x.get("relativeNameVi") if x.get("relativeNameVi") != x.get("traderNameVi") else "",
+                    "hd": x.get("actionTypeVi") or "", "dk": x.get("shareRegister"), "kq": x.get("shareAcquire"),
+                    "truoc": x.get("shareBeforeTrade"), "sau": x.get("shareAfterTrade"),
+                    "sau_pt": _r((x.get("ownershipAfterTrade") or 0) * 100, 3), "tt": x.get("tradeStatusVi") or ""})
+    return out
+
+
+def gon_chi_so(ds):
+    """statistics-financial (quý, cũ → mới) → {"ky": ["Q2.18", …], tên ngắn: [...]}; chỉ giữ chỉ số có số ≠ 0."""
+    dong = sorted((x for x in ds or [] if x.get("year") and x.get("quarter")), key=lambda x: (int(x["year"]), int(x["quarter"])))
+    out = {"ky": [f"Q{int(x['quarter'])}.{int(x['year']) % 100:02d}" for x in dong]}
+    for a, b in CHI_SO_LS.items():
+        v = [_r(x.get(a), 4) for x in dong]
+        if any(x not in (None, 0) for x in v):
+            out[b] = [_r(x / 1e9, 0) if (a == "marketCap" and x is not None) else x for x in v]
+    return out
+
+
+def tin_cafef(ma, so=15):
+    """Tin liên quan CafeF (HTML) → [{ngay, tieu_de, link}]."""
+    r = nguon._phien().get(CAFEF_TIN.format(ma=ma, so=so), timeout=30,
+                           headers={**nguon.H, "Referer": "https://cafef.vn/", "Origin": "https://cafef.vn",
+                                    "Accept": "text/html,*/*"})
+    if r.status_code != 200:
+        raise ValueError(f"CafeF HTTP {r.status_code}")
+    return tach_tin(r.text, so)
+
+
+def tach_tin(t, so=15):
+    """HTML tin CafeF → [{ngay, tieu_de, link}]: mỗi mốc "dd/mm/yyyy [HH:MM]" lấy liên kết đầu tiên ngay sau nó."""
+    out, da = [], set()
+    for m in re.finditer(r"(\d{2})/(\d{2})/(\d{4})(?:\s+(\d{2}:\d{2}))?", t):
+        a = re.search(r'<a[^>]+href="([^"]+)"[^>]*>(.*?)</a>', t[m.end():m.end() + 2000], re.S)
+        if not a:
+            continue
+        tieu = html.unescape(re.sub(r"<[^>]+>|\s+", " ", a.group(2))).strip()
+        link = a.group(1)
+        link = "https://cafef.vn" + link if link.startswith("/") else link
+        if not tieu or not link.startswith("http") or link in da:
+            continue
+        da.add(link)
+        out.append({"ngay": f"{m.group(3)}-{m.group(2)}-{m.group(1)}" + (f" {m.group(4)}" if m.group(4) else ""),
+                    "tieu_de": tieu[:300], "link": link})
+        if len(out) >= so:
+            break
+    return out
+
+
+def ho_so_kbs(ma):
+    """KBS: ngày thành lập / niêm yết, vốn điều lệ (tỷ), mệnh giá, giá chào sàn, ngành nghề, công ty con – liên kết (% sở
+    hữu), ban lãnh đạo → dict gọn (mọi danh sách khác KBS trả về giữ nguyên ≤ 60 dòng)."""
+    d = nguon.goi(KBS_HO_SO.format(ma=ma), so_lan=2, headers={"Referer": "https://kbbuddy.kbsec.com.vn/",
+                                                              "Origin": "https://kbbuddy.kbsec.com.vn"})
+    if not isinstance(d, dict) or not d:
+        raise ValueError("KBS rỗng")
+    out = {"thanh_lap": d.get("FD"), "niem_yet": d.get("LD"), "von_dl": d.get("CC"), "menh_gia": d.get("FV"),
+           "san": d.get("EX"), "gia_chao_san": d.get("LP"), "kl_niem_yet": d.get("VL"), "nhan_vien": d.get("HM"),
+           "nganh_nghe": chu_html(d.get("SM"), 3000)}
+    cty = []
+    for x in d.get("Subsidiaries") or []:
+        cty.append({"ten": x.get("NM") or "", "so_huu": _r(x.get("OR")), "von": x.get("CC") if (x.get("CC") or 0) > 0 else None,
+                    "ngay": _ngay(x.get("D")), "ghi_chu": x.get("CR") or ""})
+    out["cong_ty"] = cty
+    out["lanh_dao"] = [{"ten": x.get("NM") or "", "cv": x.get("PI") or x.get("PN") or "", "cv_day_du": x.get("PO") or "",
+                        "tu": x.get("FD") or ""} for x in d.get("Leaders") or []]
+    for k, v in d.items():                                          # danh sách khác (nếu KBS có) – giữ để trang hiện
+        if isinstance(v, list) and k not in ("Subsidiaries", "Leaders") and v:
+            out.setdefault("khac", {})[k] = v[:60]
+    return out
+
+
+def tom_tat_simplize(ma):
+    j = nguon.goi(SIMPLIZE_TOM_TAT.format(ma=ma), so_lan=2, headers={"Referer": "https://simplize.vn/",
+                                                                     "Origin": "https://simplize.vn"})
+    d = (j or {}).get("data") or {}
+    if not d:
+        raise ValueError("Simplize rỗng")
+    return {"ten": d.get("nameVi") or d.get("name") or "", "website": d.get("website") or "",
+            "nganh": d.get("industryActivity") or "", "nhom": d.get("bcEconomicSectorName") or "",
+            "loai": d.get("bcIndustryGroupType") or "", "dich_vu": chu_html(d.get("mainService"), 2500),
+            "linh_vuc": chu_html(d.get("businessLine"), 3000), "chien_luoc": chu_html(d.get("businessStrategy"), 3000),
+            "rui_ro": chu_html(d.get("businessRisk"), 2500)}
+
+
+def bao_cao_ctck(ma, so=25):
+    """Báo cáo phân tích CTCK (Simplize – có link PDF + giá mục tiêu; CafeF – tiêu đề + link) → [{ngay, ctck, kn, mt
+    (nghìn đ), tieu_de, link, nguon}] mới → cũ, gộp trùng (CTCK, ngày). Chỉ tiêu đề / link – không lưu PDF."""
+    out = []
+    try:
+        for x in nguon._ds(nguon.goi(SIMPLIZE_BC.format(ma=ma), so_lan=2, headers={"Referer": "https://simplize.vn/",
+                                                                                   "Origin": "https://simplize.vn"})):
+            d = str(x.get("issueDate") or "")
+            ngay = f"{d[6:10]}-{d[3:5]}-{d[:2]}" if re.fullmatch(r"\d{2}/\d{2}/\d{4}", d) else _ngay(d)
+            mt = x.get("targetPrice")
+            out.append({"ngay": ngay, "ctck": str(x.get("source") or "").upper(), "kn": x.get("recommend") or "",
+                        "mt": _r(float(mt) / 1000, 2) if mt else None, "tieu_de": x.get("title") or x.get("name") or "",
+                        "link": x.get("attachedLink") or "", "nguon": "Simplize"})
+    except Exception:                                               # noqa: BLE001
+        pass
+    try:
+        j = nguon.goi(CAFEF_BC.format(ma=ma), so_lan=2, headers={"Referer": "https://cafef.vn/", "Origin": "https://cafef.vn"})
+        for x in (j or {}).get("Data") or []:
+            m = re.search(r"\d{10,}", str(x.get("DateDeploy") or ""))
+            ngay = date.fromtimestamp(int(m.group(0)) / 1000).isoformat() if m else None
+            lk = ("https://cafefnew.mediacdn.vn/Images/Uploaded/DuLieuDownload/PhanTichBaoCao/" + str(x["FileName"])
+                  if x.get("FileName") else "")
+            out.append({"ngay": ngay, "ctck": str(x.get("ResourceCode") or "").upper(), "kn": "", "mt": None,
+                        "tieu_de": str(x.get("Title") or "").strip(), "link": lk, "nguon": "CafeF"})
+    except Exception:                                               # noqa: BLE001
+        pass
+    gop, da = [], {}
+    for x in sorted((x for x in out if x["ngay"]), key=lambda x: (x["ngay"], x["nguon"] == "Simplize"), reverse=True):
+        k = (x["ctck"], x["ngay"])
+        if k in da:
+            g = da[k]
+            for c in ("kn", "mt", "link"):
+                g[c] = g[c] or x[c]
+            continue
+        da[k] = x
+        gop.append(x)
+    return gop[:so]
+
+
+def lay_dn(ma, cu=None):
+    """Mọi phần doanh nghiệp; phần lỗi giữ bản cũ (cu)."""
+    cu = cu or {}
+    phan = {
+        "ct": lambda: gon_chi_tiet(iq(f"company/{ma}")),
+        "cc": lambda: gon_co_cau(iq(f"company/{ma}/shareholder-structure")),
+        "cd": lambda: gon_co_dong(iq(f"company/{ma}/shareholder")),
+        "sk": lambda: gon_su_kien(iq(f"events?ticker={ma}&fromDate=20120101&toDate={date.today().year + 1}1231"
+                                     f"&page=0&size=300")),
+        "nb": lambda: gon_noi_bo(iq(f"company/{ma}/insider-transaction?page=0&size=40")),
+        "cs": lambda: gon_chi_so(iq(f"company/{ma}/statistics-financial")),
+        "tin": lambda: tin_cafef(ma),
+        "bc": lambda: bao_cao_ctck(ma),
+        "kbs": lambda: ho_so_kbs(ma),
+        "sz": lambda: tom_tat_simplize(ma),
+    }
+    out, loi = {}, []
+    for k, f in phan.items():
+        try:
+            out[k] = f()
+        except Exception as e:                                      # noqa: BLE001 – 1 phần lỗi không bỏ cả mã
+            loi.append(k)
+            if k in cu:
+                out[k] = cu[k]
+            if "HTTP 403" in str(e) or "HTTP 429" in str(e):
+                time.sleep(3)
+    return out, loi
+
+
+def cau_truc_bctc():
+    """{loại DN: {"cd" | "kd" | "lc": [[field, level, tên], …]}} từ financial-statement/metrics của mã mẫu."""
+    ten = {"BALANCE_SHEET": "cd", "INCOME_STATEMENT": "kd", "CASH_FLOW": "lc"}
+    out = {}
+    for loai, ma in MAU_CAU_TRUC.items():
+        try:
+            d = iq(f"company/{ma}/financial-statement/metrics")
+        except Exception:                                           # noqa: BLE001
+            continue
+        out[loai] = {ten[k]: [[x.get("field"), x.get("level") or 1, x.get("titleVi") or x.get("fullTitleVi") or ""]
+                              for x in v or [] if x.get("field")] for k, v in (d or {}).items() if k in ten}
+    return out
+
+
+# ---------------------------------------------------------------- chạy
+def _doc(duong):
+    try:
+        with open(duong, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def _ghi(obj, duong):
+    os.makedirs(os.path.dirname(duong), exist_ok=True)
+    tam = duong + ".tam"
+    with open(tam, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
+    os.replace(tam, duong)
+
+
+def thu_tu(ds_ma, ra, hom_nay=None):
+    """Mã cần làm, cũ nhất trước: chưa có file → trước hết; rồi theo ngày cập nhật gia / dn."""
+    hom_nay = hom_nay or date.today().isoformat()
+
+    def tuoi(m):
+        g = (_doc(os.path.join(ra, "gia", f"{m}.json")) or {}).get("cap_nhat") or ""
+        d = (_doc(os.path.join(ra, "dn", f"{m}.json")) or {}).get("cap_nhat") or ""
+        return min(g, d)
+    ds = [(tuoi(m), m) for m in ds_ma]
+    return [m for t, m in sorted(ds) if t < hom_nay]
+
+
+def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
+    """Lấy giá + doanh nghiệp cho ds_ma (xoay vòng, giới hạn phút) → (số mã xong, số mã lỗi, số mã còn lại)."""
+    san = san or {}
+    bat_dau = time.time()
+    viec = thu_tu(ds_ma, ra)
+    hom_nay = date.today().isoformat()
+    xong, loi, con = 0, 0, 0
+
+    def mot(m):
+        """True khi có ít nhất 1 phần mới (giá hoặc doanh nghiệp)."""
+        ok = True
+        try:
+            _ghi({**lay_gia(m, san.get(m, "")), "cap_nhat": hom_nay}, os.path.join(ra, "gia", f"{m}.json"))
+        except Exception:                                           # noqa: BLE001
+            ok = False
+        dn_cu = _doc(os.path.join(ra, "dn", f"{m}.json")) or {}
+        dn, hong = lay_dn(m, dn_cu)
+        if len(hong) < SO_PHAN_DN:
+            _ghi({**dn, "cap_nhat": hom_nay if len(hong) <= 1 else dn_cu.get("cap_nhat", ""), "loi": hong},
+                 os.path.join(ra, "dn", f"{m}.json"))
+        return ok or len(hong) < SO_PHAN_DN
+
+    with ThreadPoolExecutor(luong) as ex:
+        tuong_lai = {}
+        for m in viec:
+            if time.time() - bat_dau > phut * 60:
+                con += 1
+                continue
+            tuong_lai[ex.submit(mot, m)] = m
+            while len(tuong_lai) >= luong * 2:
+                for f in as_completed(list(tuong_lai)):
+                    del tuong_lai[f]
+                    try:
+                        xong += bool(f.result())
+                    except Exception:                               # noqa: BLE001
+                        loi += 1
+                    break
+        for f in as_completed(list(tuong_lai)):
+            try:
+                xong += bool(f.result())
+            except Exception:                                       # noqa: BLE001
+                loi += 1
+    in_ra(f"Doanh nghiệp: {xong}/{len(viec)} mã cập nhật · lỗi {loi} · hết giờ chưa làm {con} · "
+          f"{(time.time() - bat_dau) / 60:.1f} phút")
+    return xong, loi, con
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description="Dữ liệu doanh nghiệp cho trang Tra cứu mã")
+    p.add_argument("--ra", default="docs/ma/du_lieu")
+    p.add_argument("--ma", default="", help="danh sách mã (trống = mọi mã trong <ra>/ds.json)")
+    p.add_argument("--phut", type=float, default=25)
+    p.add_argument("--luong", type=int, default=6)
+    a = p.parse_args(argv)
+    ds = (_doc(os.path.join(a.ra, "ds.json")) or {}).get("ds") or []
+    san = {r["ma"]: r.get("san", "") for r in ds}
+    ma = [m.strip().upper() for m in a.ma.split(",") if m.strip()] or [r["ma"] for r in ds]
+    ct = cau_truc_bctc()
+    if ct:
+        _ghi(ct, os.path.join(a.ra, "cau_truc_bctc.json"))
+    print(f"Cấu trúc BCTC: {', '.join(sorted(ct)) or 'lỗi – dùng thứ tự kho'}")
+    chay(ma, a.ra, san, a.phut, a.luong)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -42,10 +42,6 @@ on:
         description: "Dò nguồn bảng thị trường (bảng giá, chỉ số, khối ngoại, tự doanh, ngành)"
         type: boolean
         default: false
-      trang_ma:
-        description: "(tạm) Dò nguồn trang Tra cứu mã"
-        type: boolean
-        default: false
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc (trống = main)"
         default: ""
@@ -98,5 +94,4 @@ jobs:
           MA_VND: ${{ inputs.ma_vnd && '--ma_vnd' || '' }}
           NEN_15P: ${{ inputs.nen_15p && '--nen_15p' || '' }}
           BANG_TT: ${{ inputs.bang_thi_truong && '--bang_thi_truong' || '' }}
-          TRANG_MA: ${{ inputs.trang_ma && '--trang_ma' || '' }}
-        run: python -m ptcp.chan_doan --ma "$MA" $CTCK $GIA $BCTC_CU $KHOP_VND $SO_VND $MA_VND $NEN_15P $BANG_TT $TRANG_MA
+        run: python -m ptcp.chan_doan --ma "$MA" $CTCK $GIA $BCTC_CU $KHOP_VND $SO_VND $MA_VND $NEN_15P $BANG_TT
