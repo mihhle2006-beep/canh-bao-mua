@@ -279,11 +279,18 @@ class GiamSat:
         self.da = set()
 
     def buoc(self):
-        ds = self.gh._goi("actions/runs?branch=main&status=completed&per_page=50").get("workflow_runs") or []
+        ds = [r for r in self.gh._goi("actions/runs?branch=main&per_page=60").get("workflow_runs") or [] if _tren_main(r)]
         tin = []
         for r in sorted(ds, key=lambda r: r.get("updated_at") or ""):
             wf = (r.get("path") or "").split("/")[-1]
-            if r.get("conclusion") not in LOI or wf in KHONG_BAO or not r.get("updated_at") or not _tren_main(r):
+            if r.get("status") != "completed" or wf in KHONG_BAO or not r.get("updated_at"):
+                continue
+            huy = r.get("conclusion") == "cancelled"
+            # bị huỷ mà KHÔNG có lần chạy mới hơn thay thế (huỷ vì concurrency luôn có) → quá giờ (timeout) / huỷ tay → coi là lỗi
+            if huy and any(x.get("path") == r.get("path") and (x.get("created_at") or "") > (r.get("created_at") or "")
+                           for x in ds):
+                continue
+            if not huy and r.get("conclusion") not in LOI:
                 continue
             luc = _thoi_diem(r["updated_at"])
             lan = int(r.get("run_attempt") or 1)
@@ -291,11 +298,11 @@ class GiamSat:
                 continue
             self.da.add((r.get("id"), lan))
             luc = luc.astimezone(VN)
-            them = " – đã tự chạy lại 1 lần, vẫn lỗi" if lan > 1 else ""
+            them = (" (bị huỷ – quá giờ?)" if huy else "") + (" – đã tự chạy lại 1 lần, vẫn lỗi" if lan > 1 else "")
             if wf in CHAY_LAI and lan == 1:
                 try:
-                    self.gh._goi(f"actions/runs/{r['id']}/rerun-failed-jobs", {}, "POST")
-                    self.in_ra(f"giám sát: {wf} lỗi {luc:%H:%M} → tự chạy lại job lỗi")
+                    self.gh._goi(f"actions/runs/{r['id']}/{'rerun' if huy else 'rerun-failed-jobs'}", {}, "POST")
+                    self.in_ra(f"giám sát: {wf} {'bị huỷ' if huy else 'lỗi'} {luc:%H:%M} → tự chạy lại")
                     continue
                 except Exception as e:
                     them = f" – không tự chạy lại được ({type(e).__name__})"
