@@ -28,7 +28,8 @@ header.dau{background:var(--the);border-bottom:1px solid var(--vien);position:st
 /* ô tìm kiểu Google: bo tròn, bóng khi rê / gõ, gợi ý thả xuống (mã · tên · sàn), ↑↓ Enter Esc */
 .gg{position:relative;flex:1 1 300px;max-width:560px}
 .gg input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;height:40px;border:1px solid #dfe1e5;border-radius:20px;
-  padding:0 40px 0 18px;background:#fff;color:inherit;outline:0;transition:box-shadow .15s}
+  padding:0 40px 0 18px;background:#fff;color:inherit;outline:0;transition:box-shadow .15s;text-transform:uppercase;letter-spacing:.3px}
+.gg input::placeholder{text-transform:none;letter-spacing:0}
 .gg input:hover,.gg input:focus,.gg.mo input{box-shadow:0 1px 6px rgba(32,33,36,.28);border-color:transparent}
 .gg.mo input{border-radius:20px 20px 0 0}
 .gg .xoa{position:absolute;right:8px;top:0;height:40px;width:32px;border:0;background:none;font-size:22px;line-height:1;color:#70757a;display:none}
@@ -181,8 +182,8 @@ tr.chon td{background:var(--nhan-nen)}
 <body>
 <header class="dau"><div class="dau-trong">
   <h1><a href="#">Tra cứu mã</a></h1>
-  <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã hoặc tên công ty" aria-label="Tìm mã cổ phiếu"
-    maxlength="40" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
+  <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
+    maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
   <div class="lien"><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="../thi_truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
 </div></header>
@@ -828,7 +829,7 @@ function hien_dau() {
   const f = DS.filter(r => r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
   const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 24).map(r => r.ma);
   let h = `<div class="dau-chinh"><h2>Tra cứu mã</h2><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
-    placeholder="Nhập mã hoặc tên công ty – VD HPG, Hoà Phát, ngân hàng" aria-label="Tìm mã cổ phiếu" maxlength="40" autocomplete="off"
+    placeholder="Nhập mã cổ phiếu – VD V, HPG" aria-label="Tìm mã cổ phiếu" maxlength="10" autocomplete="off"
     spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div>
     <p>${DS.length} mã HOSE · HNX · UPCoM – giá, tài chính, cổ đông, định giá, CANSLIM</p></div><div class="the"><div class="than nhom-chip">`;
   if (GIU.size) h += `<h3>Danh mục đang giữ</h3>${[...GIU].sort().map(chip).join("")}`;
@@ -993,10 +994,11 @@ function dinh_tuyen() {
 // ---------------------------------------------------------------- ô tìm kiểu Google (gợi ý theo mã rồi theo tên, bỏ dấu)
 const BO_DAU = s => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toUpperCase();
 const ten_ma = r => r.ten || MKT?.ten?.[r.ma] || "";          // ds.json chưa có tên → tên từ Bảng thị trường
-function goi_y_ma(q) {
-  q = BO_DAU(q.trim()); if (!q || !DS) return [];
-  const dau = DS.filter(r => r.ma.startsWith(q)), ten = DS.filter(r => !r.ma.startsWith(q) && (BO_DAU(ten_ma(r)).includes(q) || BO_DAU(r.nganh).includes(q)));
-  return dau.concat(ten).slice(0, 8);
+function goi_y_ma(q) {                        // CHỈ theo mã: "V" → VIC, VHM, VCB… (vốn hoá lớn trước – DS đã xếp)
+  q = (q || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, ""); if (!q || !DS) return [];
+  const ds = DS.filter(r => r.ma.startsWith(q)), dung = ds.findIndex(r => r.ma === q);
+  if (dung > 0) ds.unshift(ds.splice(dung, 1)[0]);
+  return ds.slice(0, 10);
 }
 function gan_tim(o, di) {
   const inp = o.querySelector("input"), ul = o.querySelector("ul");
@@ -1005,14 +1007,14 @@ function gan_tim(o, di) {
     o.classList.toggle("mo", kq.length > 0); };
   const dong = () => { kq = []; i = -1; ve(); };
   const goi = () => { o.classList.toggle("co", !!inp.value); kq = goi_y_ma(inp.value); i = kq.length ? 0 : -1; ve(); };
-  const chon = m => { dong(); inp.blur(); const t = tim_ma(m); if (t) location.hash = t; };
+  const chon = m => { dong(); inp.blur(); location.hash = m; };
   inp.addEventListener("input", goi);
   inp.addEventListener("focus", () => { inp.select(); if (inp.value && !MA_OK(inp.value.trim().toUpperCase())) goi(); });
   inp.addEventListener("blur", () => setTimeout(dong, 120));
   inp.addEventListener("keydown", e => {
     if ((e.key === "ArrowDown" || e.key === "ArrowUp") && kq.length) { e.preventDefault(); i = (i + (e.key === "ArrowDown" ? 1 : -1) + kq.length) % kq.length; ve(); }
     else if (e.key === "Escape") { dong(); inp.blur(); }
-    else if (e.key === "Enter") { e.preventDefault(); const m = i >= 0 && kq[i] ? kq[i].ma : inp.value; if (m.trim()) chon(m); }
+    else if (e.key === "Enter") { e.preventDefault(); const m = i >= 0 && kq[i] ? kq[i].ma : inp.value.trim().toUpperCase(); if (MA_OK(m)) chon(m); }
   });
   ul.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); chon(li.dataset.ma); } });
   o.querySelector(".xoa").addEventListener("click", () => { inp.value = ""; o.classList.remove("co"); dong(); inp.focus(); });
