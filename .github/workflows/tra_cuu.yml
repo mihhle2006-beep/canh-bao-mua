@@ -17,6 +17,9 @@ on:
         description: "Gửi kết quả qua Telegram"
         type: boolean
         default: true
+      lich:
+        description: "Đồng hồ (dong_ho.yml) gọi THAY lịch: chuỗi cron UTC – tự kiểm nguồn như lịch. Bấm tay để trống"
+        default: ""
   schedule:
     - cron: "53 0 * * 6"           # 07:53 thứ Bảy giờ VN – tự kiểm nguồn (trước lịch sử 09:07 & tổng kết tuần)
 
@@ -24,7 +27,17 @@ permissions:
   contents: read
 
 jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml)
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: tra_cuu.yml
+    permissions:
+      actions: read
+      contents: read
   tra_cuu:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -66,7 +79,7 @@ jobs:
           MA: ${{ inputs.ma }}
           GUI: ${{ inputs.gui_telegram && '--gui' || '' }}
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ -n "${{ inputs.lich }}" ]; then   # đồng hồ gọi thay lịch → như lịch
             python -m ptcp.tra_cuu --kiem
           else
             python -m ptcp.tra_cuu --ma "$MA" $GUI

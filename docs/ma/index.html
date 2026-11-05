@@ -147,8 +147,10 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .sub button[aria-pressed=true]{background:var(--nhan);border-color:var(--nhan);color:#fff;font-weight:600}
 .nut-tai{border:1px solid var(--nhan);color:var(--nhan);background:var(--the);border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:600}
 .nut-tai:hover{background:var(--nhan-nen)}
-.tv{height:520px;padding:0 8px 8px}.tv>div{height:100%}
-@media (max-width:600px){.tv{height:420px}}
+.bd-gia{position:relative;height:480px;margin:0 8px 8px}
+@media (max-width:600px){.bd-gia{height:380px}}
+.chu-bd{position:absolute;left:8px;top:6px;z-index:3;font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
+.chu-bd b{font-weight:650}
 .cham-song{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tang);margin-right:5px;vertical-align:middle}
 .the-chu{display:inline-block;font-size:10.5px;font-weight:700;border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:middle}
 .the-chu.giu{background:var(--dung-nen);color:#6b5200}.the-chu.bot{background:var(--nhan-nen);color:var(--nhan)}
@@ -179,7 +181,7 @@ const TAB = [["tong-quan", "Tổng quan"], ["tin", "Tin tức"], ["ho-so", "Hồ
   ["bao-cao", "Báo cáo CTCK"], ["tai-lieu", "Tài liệu"], ["he-thong", "Hệ thống"]];
 let DS = null, META = {}, NG = null, MKT = null, LIVE = {}, BOT = {}, GIU = new Set(), CT_BCTC = null, TEN_CT = null;
 const KHO = {};                     // mã → {r, g, n, b}
-const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", bd: "tv", tc: "bc", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC"};
+const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", tc: "bc", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC"};
 let CS_NGANH = null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -278,57 +280,6 @@ function hien_gy(e, html) { gy.innerHTML = html; gy.style.display = "block";
   const w = gy.offsetWidth, x = Math.min(e.clientX + 14, innerWidth - w - 8); gy.style.left = x + scrollX + "px"; gy.style.top = e.clientY + scrollY + 14 + "px"; gy.style.position = "absolute"; }
 function an_gy() { gy.style.display = "none"; }
 
-function ve_nen(cv, x, opt) {
-  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
-  cv.width = W * dpr; cv.height = H * dpr;
-  const c = cv.getContext("2d"); c.scale(dpr, dpr); c.clearRect(0, 0, W, H);
-  const n = x.c.length, tu = Math.max(0, n - opt.so), N = n - tu;
-  const R = 52, T = 8, B = 20, Hv = opt.kl ? (H - T - B) * .2 : 0, Hp = H - T - B - Hv - (opt.kl ? 6 : 0);
-  const cw = (W - R - 4) / N;
-  const ma = {}; for (const m of opt.ma_tb) ma[m] = sma(x.c, m);
-  let hi = -Infinity, lo = Infinity, vmax = 0;
-  for (let i = tu; i < n; i++) { hi = Math.max(hi, x.h[i]); lo = Math.min(lo, x.l[i]); vmax = Math.max(vmax, x.v[i] || 0);
-    for (const m of opt.ma_tb) if (ma[m][i] != null) { hi = Math.max(hi, ma[m][i]); lo = Math.min(lo, ma[m][i]); } }
-  const pad = (hi - lo) * .06 || 1; hi += pad; lo -= pad;
-  const Y = v => T + (hi - v) / (hi - lo) * Hp, X = i => 2 + (i - tu + .5) * cw;
-  c.font = "11px system-ui,sans-serif"; c.fillStyle = "#7a8494"; c.strokeStyle = "#edf0f4"; c.lineWidth = 1;
-  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v); c.beginPath(); c.moveTo(0, y); c.lineTo(W - R, y); c.stroke();
-    c.fillText(so(v, v >= 100 ? 1 : 2), W - R + 4, y + 4); }
-  let thang = null;
-  for (let i = tu; i < n; i++) { const m = x.d[i].slice(0, 7);
-    if (m !== thang && i > tu) { const xx = X(i); c.beginPath(); c.moveTo(xx, T); c.lineTo(xx, H - B); c.strokeStyle = "#f2f4f7"; c.stroke();
-      if ((N <= 300 || m.endsWith("01") || m.endsWith("07")) && xx < W - R - 34) c.fillText(m.slice(5) + "/" + m.slice(2, 4), xx + 2, H - 6); }
-    thang = m; }
-  const bw = Math.max(1, cw * .7);
-  for (let i = tu; i < n; i++) {
-    const tang = x.c[i] >= x.o[i], col = tang ? "#0f8a4a" : "#d1342b", xx = X(i);
-    c.strokeStyle = col; c.fillStyle = col; c.beginPath(); c.moveTo(xx, Y(x.h[i])); c.lineTo(xx, Y(x.l[i])); c.stroke();
-    const y1 = Y(Math.max(x.o[i], x.c[i])), y2 = Y(Math.min(x.o[i], x.c[i]));
-    c.fillRect(xx - bw / 2, y1, bw, Math.max(1, y2 - y1));
-    if (opt.kl && x.v[i]) { c.globalAlpha = .35; const h = x.v[i] / vmax * Hv; c.fillRect(xx - bw / 2, H - B - h, bw, h); c.globalAlpha = 1; }
-  }
-  opt.ma_tb.forEach((m, j) => { c.strokeStyle = ["#e8710a", "#1f6feb", "#9b3fd1", "#0e9fb3"][j % 4]; c.lineWidth = 1.3; c.beginPath(); let bd = false;
-    for (let i = tu; i < n; i++) { const v = ma[m][i]; if (v == null) continue; bd ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v)); bd = true; } c.stroke(); });
-  c.lineWidth = 1;
-  if (x.tam) { c.fillStyle = "#7a8494"; c.fillText("hôm nay (tạm)", Math.max(2, X(n - 1) - 80), T + 10); }
-  return {tu, n, X, Y, cw, R, W, H, T, B, ma};
-}
-function gan_nen(cv, x, opt, ds) {
-  let hq = ve_nen(cv, x, opt);
-  const ve_lai = () => { hq = ve_nen(cv, x, opt); };
-  cv.onpointermove = e => {
-    const r = cv.getBoundingClientRect(), mx = e.clientX - r.left;
-    const i = Math.min(hq.n - 1, Math.max(hq.tu, Math.floor((mx - 2) / hq.cw) + hq.tu));
-    ve_lai(); const c = cv.getContext("2d"); c.save(); c.strokeStyle = "#9aa3b2"; c.setLineDash([3, 3]);
-    c.beginPath(); c.moveTo(hq.X(i), hq.T); c.lineTo(hq.X(i), hq.H - hq.B); c.stroke(); c.restore();
-    const ch = i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
-    hien_gy(e, `<b>${ngay_vn(x.d[i])}</b> <span style="color:${ch >= 0 ? "#7ee2a8" : "#ff9c94"}">${pt(ch, 2)}</span><br>
-      M ${so(x.o[i], 2)} · C ${so(x.h[i], 2)} · T ${so(x.l[i], 2)} · Đ <b>${so(x.c[i], 2)}</b><br>KL ${kl(x.v[i])}${x.nn?.[i] != null ? ` · NN ${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ` : ""}
-      ${opt.ma_tb.map(m => hq.ma[m][i] != null ? `<br>MA${m} ${so(hq.ma[m][i], 2)}` : "").join("")}`);
-  };
-  cv.onpointerleave = () => { an_gy(); ve_lai(); };
-  return ve_lai;
-}
 function ve_ket_hop(nhan, cot, duong, o = {}) {      // cột (≤ 3 chuỗi, trục trái) + đường (trục phải, %)
   const W = o.w || (innerWidth < 700 ? 400 : 640), H = o.h || 240, L = 54, R = duong ? 46 : 10, T = 16, B = 26, n = nhan.length;
   const tat = cot.flatMap(s => s.v).filter(v => v != null && isFinite(v));
@@ -408,13 +359,55 @@ const nut = (ds, gt, ten) => ds.map(([v, t]) => `<button data-${ten}="${v}" aria
 
 // ---------------------------------------------------------------- TradingView, Excel
 function ma_tv(ma, k) { const s = String(k?.r?.san || LIVE[ma]?.san || "HOSE").toUpperCase(); return (s.startsWith("HN") ? "HNX" : s.startsWith("UP") ? "UPCOM" : "HOSE") + ":" + ma; }
-function gan_tv(el, sym) {
-  el.innerHTML = '<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';
-  const sc = document.createElement("script");
-  sc.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"; sc.async = true;
-  sc.textContent = JSON.stringify({autosize: true, symbol: sym, interval: "D", timezone: "Asia/Ho_Chi_Minh", theme: "light", style: "1",
-    locale: "vi_VN", allow_symbol_change: true, calendar: false, hide_volume: false, withdateranges: true, details: false, support_host: "https://www.tradingview.com"});
-  el.firstChild.appendChild(sc);
+let LWC_P = null;
+function tai_lwc() {                                   // TradingView Lightweight Charts (Apache 2.0) – kèm trang: lib/
+  LWC_P = LWC_P || new Promise((ok, loi) => { const sc = document.createElement("script");
+    sc.src = "lib/lightweight-charts.standalone.production.js"; sc.onload = () => ok(window.LightweightCharts); sc.onerror = loi; document.head.appendChild(sc); });
+  return LWC_P;
+}
+function gop_khung(x, khung) {                          // nến ngày → tuần / tháng (OHLC, KL, NN cộng dồn)
+  if (khung === "D") return x;
+  const o = {d: [], o: [], h: [], l: [], c: [], v: [], nn: []};
+  const khoa = d => { if (khung === "M") return d.slice(0, 7); const t = new Date(d + "T00:00:00Z"), th = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - th); return t.toISOString().slice(0, 10); };
+  let k0 = null;
+  x.d.forEach((d, i) => { const k = khoa(d);
+    if (k !== k0) { o.d.push(d); o.o.push(x.o[i]); o.h.push(x.h[i]); o.l.push(x.l[i]); o.c.push(x.c[i]); o.v.push(x.v[i] || 0); o.nn.push(x.nn?.[i] ?? null); k0 = k; return; }
+    const j = o.d.length - 1; o.d[j] = d; o.h[j] = Math.max(o.h[j], x.h[i]); o.l[j] = Math.min(o.l[j], x.l[i]); o.c[j] = x.c[i]; o.v[j] += x.v[i] || 0;
+    if (x.nn?.[i] != null) o.nn[j] = (o.nn[j] || 0) + x.nn[i]; });
+  return o;
+}
+let BD_GIA = null;
+async function ve_bd_gia(el, x0) {
+  const LW = await tai_lwc();
+  if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
+  const x = gop_khung(x0, ST.khung), n = x.d.length;
+  const ch = LW.createChart(el, {autoSize: true, layout: {background: {color: "#ffffff"}, textColor: "#4b5565", fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", fontSize: 11},
+    grid: {vertLines: {color: "#f2f4f7"}, horzLines: {color: "#f2f4f7"}}, rightPriceScale: {borderColor: "#e3e7ee"},
+    timeScale: {borderColor: "#e3e7ee", rightOffset: 4, minBarSpacing: 1}, crosshair: {mode: LW.CrosshairMode.Normal},
+    localization: {locale: "vi-VN", priceFormatter: p => so(p, 2)}});
+  BD_GIA = ch;
+  const nen = ch.addCandlestickSeries({upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false, wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineColor: "#7a8494"});
+  nen.setData(x.d.map((d, i) => ({time: d, open: x.o[i], high: x.h[i], low: x.l[i], close: x.c[i]})));
+  nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}});
+  const MAU_MA = {10: "#e8710a", 20: "#1f6feb", 50: "#9b3fd1", 200: "#0e9fb3"}, ma = {};
+  for (const m of ST.ma_tb) { const v = sma(x.c, m); ma[m] = v;
+    const l = ch.addLineSeries({color: MAU_MA[m], lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+    l.setData(x.d.map((d, i) => v[i] == null ? null : {time: d, value: v[i]}).filter(Boolean)); }
+  const duoi = ch.addHistogramSeries({priceScaleId: "duoi", priceFormat: ST.duoi === "kl" ? {type: "volume"} : {type: "price", precision: 1, minMove: .1}, lastValueVisible: false, priceLineVisible: false});
+  ch.priceScale("duoi").applyOptions({scaleMargins: {top: .8, bottom: 0}});
+  duoi.setData(x.d.map((d, i) => { const v = ST.duoi === "kl" ? x.v[i] : x.nn?.[i];
+    if (v == null) return null; const tang = ST.duoi === "kl" ? x.c[i] >= x.o[i] : v >= 0;
+    return {time: d, value: v, color: tang ? "#0f8a4a66" : "#d1342b66"}; }).filter(Boolean));
+  const so_nen = ST.khung === "D" ? ST.nen : ST.khung === "W" ? Math.ceil(ST.nen / 5) : Math.ceil(ST.nen / 21);
+  ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: n + 3});
+  const cg = document.createElement("div"); cg.className = "chu-bd"; el.appendChild(cg);
+  const viet = i => { if (i == null || i < 0 || i >= n) return; const p = i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
+    cg.innerHTML = `${ngay_vn(x.d[i])}${x.tam && i === n - 1 ? " (tạm)" : ""} · M <b>${so(x.o[i], 2)}</b> C <b>${so(x.h[i], 2)}</b> T <b>${so(x.l[i], 2)}</b> Đ <b class="${mau(p)}">${so(x.c[i], 2)}</b> <span class="${mau(p)}">${pt(p, 2)}</span>` +
+      `<br>KL ${kl(x.v[i])}${x.nn?.[i] != null ? ` · NN ${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ` : ""}` +
+      ST.ma_tb.map(m => ma[m][i] != null ? ` · <span style="color:${MAU_MA[m]}">MA${m} ${so(ma[m][i], 2)}</span>` : "").join(""); };
+  viet(n - 1);
+  const vi = new Map(x.d.map((d, i) => [d, i]));
+  ch.subscribeCrosshairMove(e => { if (!e || !e.time) return viet(n - 1); const t = typeof e.time === "string" ? e.time : `${e.time.year}-${String(e.time.month).padStart(2, "0")}-${String(e.time.day).padStart(2, "0")}`; viet(vi.get(t)); });
 }
 let XLSX_P = null;
 function tai_xlsx(ten, sheets) {                       // sheets: [[tên sheet, [[ô…]…]]] – SheetJS tải khi bấm
@@ -435,16 +428,14 @@ function tong_quan(ma, k) {
     const nam = String(x.d[L]).slice(0, 4), dn = x.d.findIndex(d => d.startsWith(nam));
     const hs = [["1 ngày", ve(L - 1)], ["1 tuần", ve(L - 5)], ["1 tháng", ve(L - 21)], ["3 tháng", ve(L - 63)], ["6 tháng", ve(L - 126)],
       ["1 năm", ve(L - 250)], ["Từ đầu năm", dn > 0 ? c[L] / c[dn - 1] - 1 : null]];
-    h += ST.bd === "tv" ? the("Biểu đồ giá", `TradingView · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở toàn màn hình</a>`,
-      `<div class="tv" id="tv"></div><p class="m" style="font-size:12px;margin:0;padding:0 14px 8px">TradingView không hiện mã? Chọn <b>Biểu đồ hệ thống</b> (có khối ngoại, giá điều chỉnh).</p><div class="hieu-suat">${hs.map(([t, v]) => `<div><div class="n">${t}</div><b class="${mau(v)}">${pt(v, 2)}</b></div>`).join("")}</div>`,
-      nut([["tv", "TradingView"], ["ht", "Biểu đồ hệ thống"]], ST.bd, "bd")) : the("Biểu đồ giá", `đã điều chỉnh cổ tức / chia tách · ${x.d.length} phiên`,
-      `<div class="nen-dk"><span class="nut">${nut([["tv", "TradingView"], ["ht", "Biểu đồ hệ thống"]], ST.bd, "bd")}</span>${["MA10", "MA20", "MA50", "MA200"].map(m => `<label><input type="checkbox" data-ma="${m.slice(2)}"${ST.ma_tb.includes(+m.slice(2)) ? " checked" : ""}>${m}</label>`).join("")}
-       <label><input type="checkbox" id="c-kl"${ST.kl ? " checked" : ""}>Khối lượng</label></div>
-       <div class="nen-khung"><canvas id="nen" aria-label="Biểu đồ nến ${esc(ma)}"></canvas></div>
-       ${chu_giai(ST.ma_tb.map((m, j) => ["MA" + m, ["#e8710a", "#1f6feb", "#9b3fd1", "#0e9fb3"][j % 4]]))}
+    h += the("Biểu đồ giá", `giá điều chỉnh cổ tức / chia tách · ${x.d.length} phiên · kéo / cuộn để xem · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`,
+      `<div class="nen-dk"><span class="nut">${nut([["D", "Ngày"], ["W", "Tuần"], ["M", "Tháng"]], ST.khung, "khung")}</span>
+       ${["10", "20", "50", "200"].map(m => `<label><input type="checkbox" data-ma="${m}"${ST.ma_tb.includes(+m) ? " checked" : ""}>MA${m}</label>`).join("")}
+       <span class="nut">${nut([["kl", "Khối lượng"]].concat(x.nn?.some(v => v != null) ? [["nn", "Khối ngoại"]] : []), ST.duoi, "duoi")}</span></div>
+       <div class="bd-gia" id="bd-gia"></div>
        <div class="hieu-suat">${hs.map(([t, v]) => `<div><div class="n">${t}</div><b class="${mau(v)}">${pt(v, 2)}</b></div>`).join("")}</div>`,
       nut([[22, "1T"], [66, "3T"], [130, "6T"], [250, "1N"], [9999, "Tất cả"]], ST.nen, "nen"));
-  } else h += the("Biểu đồ giá", `TradingView · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở toàn màn hình</a>`, `<div class="tv" id="tv"></div>`);
+  } else h += the("Biểu đồ giá", `<a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`, `<div class="trong">Chưa có lịch sử giá cho mã này (cập nhật xoay vòng mỗi sáng).</div>`);
   // thống kê giá
   const g = k.g, L = g?.c?.length ? g.c.length - 1 : -1;
   const c52 = g ? Math.max(...g.h.slice(-250)) : ct.cao_1n, t52 = g ? Math.min(...g.l.slice(-250)) : ct.thap_1n;
@@ -892,7 +883,6 @@ function xlsx_chi_so(ma, k) {
 }
 
 // ---------------------------------------------------------------- điều hướng
-let VE_NEN = null;
 async function hien_ma(ma, tab) {
   const nd = $("#noi-dung");
   if (!KHO[ma]?.r && !KHO[ma]?.p) nd.innerHTML = `<div class="trong">Đang tải ${esc(ma)}…</div>`;
@@ -914,27 +904,26 @@ function gan_su_kien(ma, k, tab) {
   const ve_lai = () => hien_ma(ma, tab);
   document.querySelectorAll("[data-nen]").forEach(b => b.onclick = () => { ST.nen = +b.dataset.nen; ve_lai(); });
   document.querySelectorAll("[data-ma]").forEach(b => b.onchange = () => { const m = +b.dataset.ma; ST.ma_tb = b.checked ? [...new Set([...ST.ma_tb, m])].sort((a, c) => a - c) : ST.ma_tb.filter(x => x !== m); ve_lai(); });
-  if ($("#c-kl")) $("#c-kl").onchange = e => { ST.kl = e.target.checked; ve_lai(); };
   document.querySelectorAll("[data-ky]").forEach(b => b.onclick = () => { ST.ky = b.dataset.ky; ve_lai(); });
   document.querySelectorAll("[data-bang]").forEach(b => b.onclick = () => { ST.bang = b.dataset.bang; ve_lai(); });
   document.querySelectorAll("[data-ls]").forEach(b => b.onclick = () => { ST.ls = b.dataset.ls; ST.ls_n = 30; ve_lai(); });
   document.querySelectorAll("[data-sk]").forEach(b => b.onclick = () => { ST.sk = b.dataset.sk; ve_lai(); });
   if ($("#ls-them")) $("#ls-them").onclick = () => { ST.ls_n += 30; ve_lai(); };
-  document.querySelectorAll("[data-bd]").forEach(b => b.onclick = () => { ST.bd = b.dataset.bd; ve_lai(); });
+  document.querySelectorAll("[data-khung]").forEach(b => b.onclick = () => { ST.khung = b.dataset.khung; ve_lai(); });
+  document.querySelectorAll("[data-duoi]").forEach(b => b.onclick = () => { ST.duoi = b.dataset.duoi; ve_lai(); });
   document.querySelectorAll("[data-tc]").forEach(b => b.onclick = () => { ST.tc = b.dataset.tc; ve_lai(); });
   document.querySelectorAll("[data-cd]").forEach(b => b.onclick = () => { ST.cd = b.dataset.cd; ve_lai(); });
   document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { ST.tl = b.dataset.tl; ve_lai(); });
   document.querySelectorAll("[data-csn]").forEach(b => b.onclick = () => { ST.cs = +b.dataset.csn; ST.cs_chon = null; ve_lai(); });
   document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { ST.cs_chon = b.dataset.cs; ve_lai(); });
-  const tv = $("#tv"); if (tv) gan_tv(tv, ma_tv(ma, k));
   if ($("#tai-bctc")) $("#tai-bctc").onclick = () => xlsx_bctc(ma);
   if ($("#tai-so-huu")) $("#tai-so-huu").onclick = () => xlsx_so_huu(ma, k);
   if ($("#tai-cs")) $("#tai-cs").onclick = () => xlsx_chi_so(ma, k);
   const bb = $("#bang-bctc"); if (bb) bb.scrollLeft = bb.scrollWidth;
-  const cv = $("#nen");
-  if (cv) { const x = chuoi_gia(k, ma); VE_NEN = gan_nen(cv, x, {so: ST.nen, ma_tb: ST.ma_tb, kl: ST.kl}); } else VE_NEN = null;
+  const bd = $("#bd-gia");
+  if (bd) ve_bd_gia(bd, chuoi_gia(k, ma)).catch(() => { bd.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
+  else if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
 }
-addEventListener("resize", () => { clearTimeout(window._rz); window._rz = setTimeout(() => VE_NEN && VE_NEN(), 150); });
 function tim_ma(q) {
   q = (q || "").trim().toUpperCase(); if (!q) return null;
   if (DS.some(r => r.ma === q) || (MA_OK(q) && LIVE[q])) return q;

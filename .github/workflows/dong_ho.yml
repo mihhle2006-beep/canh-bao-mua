@@ -1,0 +1,36 @@
+# ĐỒNG HỒ – gọi các workflow ĐÚNG GIỜ VN thay cho lịch cron GitHub (05/11/2026 trễ 4–8 giờ: Lọc quỹ 06:07 chạy 10:24,
+# Danh mục 08:30 chạy 15:18, Kiểm thử 07:41 chạy 14:22, Quét bộ lọc 14:20 chạy 22:37). Bảng giờ + logic: cong_cu/dong_ho.py.
+#   • 1 lượt ≈ 5 giờ 40 phút, xét lịch mỗi phút, hết lượt tự gọi lượt sau (chạy liên tục 24/7, không cần bấm tay)
+#   • chuỗi đứt (GitHub lỗi / hủy) → lịch dự phòng 2 giờ / lần dưới đây khởi động lại; đang có đồng hồ chạy → lượt mới tự thoát
+#   • 20:05 hằng ngày kiểm hạn token repo kín – còn < 14 ngày → nhắn Telegram cách gia hạn
+# Log chỉ in tên workflow / giờ gọi (repo công khai).
+name: Dong ho
+
+on:
+  schedule:
+    - cron: "11 */2 * * *"         # dự phòng khởi động lại chuỗi
+  workflow_dispatch:
+
+permissions:
+  actions: write                   # gọi workflow_dispatch (GITHUB_TOKEN gọi dispatch vẫn tạo lần chạy mới)
+  contents: read
+
+jobs:
+  dong_ho:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355           # job GitHub tối đa 6 giờ; đồng hồ chạy 340 phút rồi gọi lượt sau
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: cong_cu
+          persist-credentials: false
+      - name: Đồng hồ (gọi workflow đúng giờ VN, hết lượt tự gọi lượt sau)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DANH_MUC_TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}     # chỉ đọc ngày hết hạn (header), không in
+          DANH_MUC_TOKEN_DOC: ${{ secrets.DANH_MUC_TOKEN_DOC }}
+          PYTHONUNBUFFERED: "1"
+        run: python3 cong_cu/dong_ho.py --phut 340

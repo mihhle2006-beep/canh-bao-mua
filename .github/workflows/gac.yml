@@ -1,0 +1,48 @@
+# GÁC LỊCH – job dùng chung (workflow_call) cho các workflow có lịch: lịch cron của GitHub tới TRỄ (05/11/2026 trễ 4–8
+# giờ) mà đồng hồ (dong_ho.yml) / bấm tay / lịch trùng đã chạy workflow đó từ mốc lịch → chay=false, job chính bỏ qua
+# (không gửi Telegram / commit lặp). Workflow gọi:
+#   gac:
+#     if: github.event_name == 'schedule'          # chỉ lịch mới cần gác – bấm tay / đồng hồ gọi thì job này bỏ qua
+#     uses: ./.github/workflows/gac.yml
+#     with: {wf: <tên file>.yml}
+#     permissions: {actions: read, contents: read}
+#   <job chính>:
+#     needs: gac
+#     if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}   # gác bỏ qua / lỗi → vẫn chạy
+# Logic + test: cong_cu/dong_ho.py (gac), tests/test_dong_ho.py.
+name: Gac lich
+
+on:
+  workflow_call:
+    inputs:
+      wf:
+        description: "Tên file workflow gọi (VD loc_quy_b.yml)"
+        required: true
+        type: string
+    outputs:
+      chay:
+        description: "true = chạy; false = lịch trễ, đã có lần chạy từ mốc → bỏ"
+        value: ${{ jobs.gac.outputs.chay }}
+
+jobs:
+  gac:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      chay: ${{ steps.g.outputs.chay }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: cong_cu
+          persist-credentials: false
+      - id: g
+        name: Lịch tới trễ mà đã chạy từ mốc? (lỗi → vẫn chạy)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LICH: ${{ github.event.schedule }}
+          WF: ${{ inputs.wf }}
+        run: |
+          kq=$(python3 cong_cu/dong_ho.py --gac "$WF" --lich "$LICH" | tail -1) || kq=""
+          case "$kq" in chay=true|chay=false) ;; *) kq="chay=true" ;; esac
+          echo "$kq" >> "$GITHUB_OUTPUT"
+          echo "→ $kq"
