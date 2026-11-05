@@ -30,6 +30,9 @@ on:
           - "Người ngoài"
           - "Nội bộ"
         default: "Người ngoài"
+      lich:
+        description: "Đồng hồ (dong_ho.yml) gọi THAY lịch: chuỗi cron UTC – chạy y như lịch (chờ 15:02, gửi theo biến repo, tổng kết). Bấm tay để trống"
+        default: ""
 
 permissions:
   contents: write
@@ -40,12 +43,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml)
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: quet_dinh_ky.yml
+    permissions:
+      actions: read
+      contents: read
   quet:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - name: Chờ tới 15:02 giờ VN (lịch hẹn sớm để không trễ)
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || inputs.lich
         run: |
           con=$(( $(TZ=Asia/Ho_Chi_Minh date -d "15:02" +%s) - $(date +%s) ))
           if [ "$con" -gt 0 ]; then echo "Chờ $con giây"; sleep "$con"; fi
@@ -88,7 +101,7 @@ jobs:
         env:
           MPLBACKEND: Agg
           # mặc định toàn sàn HOSE + HNX (Quỹ Bứt Phá mua cả HNX từ 17/10/2026); đổi bằng biến repo BO_LOC_THAM_SO (VD "--nhom vn30")
-          THAM_SO: ${{ inputs.tham_so || vars.BO_LOC_THAM_SO || '--nhom hose_hnx' }}
+          THAM_SO: ${{ (github.event_name == 'schedule' || inputs.lich) && vars.BO_LOC_THAM_SO || inputs.tham_so || vars.BO_LOC_THAM_SO || '--nhom hose_hnx' }}
         run: python -m bo_loc.quet_dinh_ky --chien_luoc "${{ inputs.chien_luoc || 'quy_b,xu_huong' }}" $THAM_SO
 
       - name: Lưu kết quả chi tiết (Excel / HTML)
@@ -104,16 +117,16 @@ jobs:
       # Bản HTML: mặc định bản NGƯỜI NGOÀI (không khối lượng/NAV, điểm, tiêu chí lọc); chọn "Nội bộ" khi bấm Run,
       # hoặc đặt biến repo BO_LOC_HTML = noi_bo cho lịch tự động.
       - name: Gửi kết quả lọc qua Telegram
-        if: (inputs.gui_telegram && inputs.gui_telegram != 'Không gửi') || (github.event_name == 'schedule' && (vars.BO_LOC_GUI_HTML == 'html' || vars.BO_LOC_GUI_HTML == 'ma'))
+        if: (inputs.gui_telegram && inputs.gui_telegram != 'Không gửi') || ((github.event_name == 'schedule' || inputs.lich) && (vars.BO_LOC_GUI_HTML == 'html' || vars.BO_LOC_GUI_HTML == 'ma'))
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          CHE_DO: ${{ (inputs.gui_telegram == 'Chỉ file HTML' || (github.event_name == 'schedule' && vars.BO_LOC_GUI_HTML == 'html')) && '--chi_html' || '' }}
-          BAN_HTML: ${{ (inputs.ban_html == 'Nội bộ' || (github.event_name == 'schedule' && vars.BO_LOC_HTML == 'noi_bo')) && 'noi_bo' || 'ngoai' }}
+          CHE_DO: ${{ (inputs.gui_telegram == 'Chỉ file HTML' || ((github.event_name == 'schedule' || inputs.lich) && vars.BO_LOC_GUI_HTML == 'html')) && '--chi_html' || '' }}
+          BAN_HTML: ${{ (inputs.ban_html == 'Nội bộ' || ((github.event_name == 'schedule' || inputs.lich) && vars.BO_LOC_HTML == 'noi_bo')) && 'noi_bo' || 'ngoai' }}
         run: python -m bo_loc.gui_html --chien_luoc "${{ inputs.chien_luoc || 'quy_b,xu_huong' }}" $CHE_DO --che_do "$BAN_HTML" || true
 
       - name: Báo cáo hiệu quả bộ lọc (1 lần / tháng – mã MUA sau 20 & 60 phiên so VN-Index)
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || inputs.lich
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -133,7 +146,7 @@ jobs:
       # Quét xong (~15:05–15:10) → chạy NGAY tổng kết (không chờ lịch 15:20 hay trễ). Lịch 15:20 của canh_bao.yml chỉ còn
       # là dự phòng: tổng kết đã gửi thì nó không gửi lại (chay.ma_moi_tong_ket).
       - name: Chạy tổng kết ngay sau khi quét
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || inputs.lich
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run canh_bao.yml --ref main -f che_do=tong_ket -R "$GITHUB_REPOSITORY"

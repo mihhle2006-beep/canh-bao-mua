@@ -43,7 +43,17 @@ env:
   CONG_KHAI: "1"
 
 jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml)
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: doc_bctn.yml
+    permissions:
+      actions: read
+      contents: read
   chuan_bi:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
     outputs:
       nhom: ${{ steps.chia.outputs.nhom }}
@@ -86,7 +96,7 @@ jobs:
 
   doc:
     needs: chuan_bi
-    if: needs.chuan_bi.outputs.nhom != '[]'
+    if: ${{ !cancelled() && needs.chuan_bi.result == 'success' && needs.chuan_bi.outputs.nhom != '[]' }}   # gac bỏ qua (bấm tay) không làm job này bỏ theo
     runs-on: ubuntu-24.04
     timeout-minutes: 350
     strategy:

@@ -19,6 +19,10 @@ on:
     - cron: "30 1 * * 1-5"        # 01:30 UTC = 8:30 giờ VN (đầu phiên): CHỈ chạy nếu nhap.txt ở danh-muc
                                   # có lệnh chưa áp (cuối phiên: lần 15:02 ở trên luôn chạy và áp lệnh)
   workflow_dispatch:
+    inputs:
+      lich:
+        description: "Đồng hồ (dong_ho.yml) gọi THAY lịch: chuỗi cron UTC – chạy y như lịch đó. Bấm tay để trống"
+        default: ""
 
 permissions:
   contents: read
@@ -37,14 +41,14 @@ jobs:
           TOKEN_DM: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
           REPO_DM: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
         run: |
-          if [ "${{ github.event.schedule }}" = "50 7 * * 1-5" ]; then      # DỰ PHÒNG cho lượt vòng quét chiều gọi lúc 15:02:
+          if [ "${{ github.event.schedule || inputs.lich }}" = "50 7 * * 1-5" ]; then      # DỰ PHÒNG cho lượt vòng quét chiều gọi lúc 15:02:
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt 1503 ]; do sleep 30; done   # chờ giá đóng cửa + lượt 15:02
             da=$(gh api "repos/${{ github.repository }}/actions/workflows/danh_muc.yml/runs?per_page=10" --jq \
                  "[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.created_at >= \"$(date -u +%F)T07:55:00Z\")] | length" \
                  2>/dev/null || echo 0)
             if [ "$da" != 0 ]; then echo "chay=false" >> "$GITHUB_OUTPUT"; echo "Danh mục hôm nay đã chạy (gọi lúc 15:02)"; exit 0; fi
           fi
-          if [ "${{ github.event.schedule }}" != "30 1 * * 1-5" ]; then echo "chay=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "${{ github.event.schedule || inputs.lich }}" != "30 1 * * 1-5" ]; then echo "chay=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           dang=$(gh api "repos/${{ github.repository }}/actions/workflows/danh_muc.yml/runs?per_page=20" \
                  --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.status != \"completed\")] | length" \
                  2>/dev/null || echo 0)
@@ -122,7 +126,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           GIA_LAP_DIR: ${{ github.workspace }}/gia_lap
-          TONG_KET_TUAN: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}   # thứ Sáu tự có; chạy tay → có
+          TONG_KET_TUAN: ${{ github.event_name == 'workflow_dispatch' && !inputs.lich && '1' || '' }}   # thứ Sáu tự có; chạy tay → có (đồng hồ thay lịch → như lịch)
           VNSTOCK_API_KEY: ${{ secrets.VNSTOCK_API_KEY }}   # phân rã hiệu suất: tải giá mã giả lập chưa có trong cache
         run: |
           gui=0; python tom_tat_danh_muc.py > /tmp/tom_tat.txt 2>&1 || gui=$?

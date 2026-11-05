@@ -190,20 +190,53 @@ def gia_du_phong(ma):
     return out
 
 
-def lay_gia(ma, san=""):
-    try:
-        ds = iq(f"company/{ma}/price-history?timeFrame=ONE_DAY&page=0&size={SO_PHIEN}")
-    except Exception:                                               # noqa: BLE001 – IQ chặn → nến gap-chart
-        return gia_du_phong(ma)
+def _lay_gia_iq(ma, san, so):
+    ds = iq(f"company/{ma}/price-history?timeFrame=ONE_DAY&page=0&size={so}")
     td = {}
     if san in ("HOSE", "HSX"):
         try:
-            for x in iq(f"company/{ma}/proprietary-history?timeFrame=ONE_DAY&page=0&size=250", so_lan=1) or []:
+            for x in iq(f"company/{ma}/proprietary-history?timeFrame=ONE_DAY&page=0&size={min(so, 250)}", so_lan=1) or []:
                 if x.get("tradingDate") is not None:
                     td[_ngay(x["tradingDate"])] = _r((x.get("totalTradeNetValue") or 0) / 1e9)
         except Exception:                                           # noqa: BLE001 – tự doanh là phần phụ
             td = {}
-    g = gon_gia(ds, td)
+    return gon_gia(ds, td)
+
+
+def noi_gia(cu, moi, so=SO_PHIEN):
+    """Ghép lịch sử cũ + các phiên mới tải (moi đè ngày trùng) → giữ so phiên gần nhất; None khi giá cũ đã bị điều chỉnh
+    lại (cổ tức / chia tách – giá đóng cửa điều chỉnh ngày trùng lệch > 0,2 %) hoặc không có ngày trùng → phải tải đủ."""
+    chung = [d for d in moi["d"] if d in set(cu["d"])]
+    if not chung:
+        return None
+    d0 = chung[0]
+    a, b = cu["c"][cu["d"].index(d0)], moi["c"][moi["d"].index(d0)]
+    if not a or not b or abs(a / b - 1) > 0.002:
+        return None
+    giu = [i for i, d in enumerate(cu["d"]) if d < moi["d"][0]]
+    khoa = [k for k in dict.fromkeys(list(moi) + list(cu)) if isinstance(moi.get(k, cu.get(k)), list)]
+    out = {k: [(cu.get(k) or [None] * len(cu["d"]))[i] for i in giu] + (moi.get(k) or [None] * len(moi["d"])) for k in khoa}
+    if all(v is None for v in out.get("td", [None])):
+        out.pop("td", None)
+    return {k: v[-so:] for k, v in out.items()}
+
+
+def lay_gia(ma, san="", cu=None):
+    """Lịch sử giá: đã có file (không phải nguồn dự phòng) → CHỈ tải các phiên mới rồi nối (nhanh, ít lượt gọi IQ); giá
+    cũ bị điều chỉnh / thiếu ngày trùng → tải đủ SO_PHIEN; IQ lỗi → nến gap-chart (dự phòng) khi chưa có file."""
+    cu = cu if cu and cu.get("d") and not cu.get("du_phong") else None
+    try:
+        if cu:
+            ngay = (date.today() - date.fromisoformat(cu["d"][-1])).days
+            moi = _lay_gia_iq(ma, san, min(SO_PHIEN, max(5, ngay * 5 // 7 + 5)))
+            ghep = noi_gia(cu, moi) if moi["d"] else cu
+            if ghep is not None:
+                return ghep
+        g = _lay_gia_iq(ma, san, SO_PHIEN)
+    except Exception:                                               # noqa: BLE001 – IQ chặn
+        if cu:
+            raise                                                   # giữ file cũ (đủ khối ngoại) – lượt sau làm lại
+        return gia_du_phong(ma)
     if not g["d"]:
         raise ValueError("không có lịch sử giá")
     return g
@@ -536,7 +569,8 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print, lam_moi=False):
         """True khi có ít nhất 1 phần mới (giá hoặc doanh nghiệp)."""
         ok, t0 = True, time.time()
         try:
-            _ghi({**lay_gia(m, san.get(m, "")), "cap_nhat": hom_nay}, os.path.join(ra, "gia", f"{m}.json"))
+            g_cu = _doc(os.path.join(ra, "gia", f"{m}.json"))
+            _ghi({**lay_gia(m, san.get(m, ""), g_cu), "cap_nhat": hom_nay}, os.path.join(ra, "gia", f"{m}.json"))
         except Exception:                                           # noqa: BLE001
             ok = False
         _do("gia", ok, time.time() - t0)

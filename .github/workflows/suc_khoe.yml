@@ -13,7 +13,17 @@ permissions:
   actions: read
 
 jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml)
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: suc_khoe.yml
+    permissions:
+      actions: read
+      contents: read
   kiem:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     defaults:

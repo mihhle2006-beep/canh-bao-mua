@@ -189,7 +189,8 @@ def test_workflow_tra_cuu_web():
     import yaml
     d = yaml.safe_load(open(".github/workflows/tra_cuu_web.yml", encoding="utf-8"))
     assert d["permissions"] == {"contents": "read", "actions": "write"}
-    (job,) = d["jobs"].values()
+    assert set(d["jobs"]) == {"gac", "dung"}                     # gac: lịch tới trễ mà đồng hồ đã gọi → bỏ (test_dong_ho)
+    job = d["jobs"]["dung"]
     assert job["env"]["CONG_KHAI"] == "1"
     t = json.dumps(job, ensure_ascii=False)
     assert "rm -f danh_muc*.csv" in t and "upload-artifact" not in t and "git push" not in t and "git commit" not in t
@@ -210,8 +211,12 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     import re
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert "<script src" not in h and "@import" not in h and "fonts.googleapis" not in h
-    ngoai = set(re.findall(r'\.src = "(https://[^"/]+)', h))                 # script tải động: chỉ TradingView + SheetJS
-    assert ngoai == {"https://s3.tradingview.com", "https://cdnjs.cloudflare.com"}, ngoai
+    ngoai = set(re.findall(r'\.src = "(https://[^"/]+)', h))                 # script tải động ngoài: chỉ SheetJS
+    assert ngoai == {"https://cdnjs.cloudflare.com"}, ngoai
+    assert 'sc.src = "lib/lightweight-charts.standalone.production.js"' in h       # biểu đồ: thư viện kèm trang
+    lib = open("docs/ma/lib/lightweight-charts.standalone.production.js", encoding="utf-8").read(400)
+    assert "TradingView Lightweight Charts" in lib and "Apache License 2.0" in lib
+    assert "Apache License" in open("docs/ma/lib/LICENSE-lightweight-charts.txt", encoding="utf-8").read()
     assert 'const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json"' in h
     for tab in ("tong-quan", "tin", "ho-so", "lanh-dao", "co-dong", "co-tuc", "tai-chinh", "chi-so", "dinh-gia", "lich-su",
                 "bao-cao", "tai-lieu", "he-thong"):
@@ -300,7 +305,7 @@ def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
     T._ghi({"cap_nhat": "2026-01-01"}, f"{ra}/dn/ZZZ.json")
     T._ghi({"cap_nhat": "2026-01-01"}, f"{ra}/gia/ZZZ.json")
     assert T.thu_tu(["AAA", "ZZZ"], ra, "2026-03-01") == ["ZZZ", "AAA"]                  # cùng độ cũ: định dạng cũ trước
-    monkeypatch.setattr(T, "lay_gia", lambda m, san="": {"d": ["2026-11-05"], "c": [1.0]})
+    monkeypatch.setattr(T, "lay_gia", lambda m, san="", cu=None: {"d": ["2026-11-05"], "c": [1.0]})
     monkeypatch.setattr(T, "lay_dn", lambda m, cu=None, *a: ({"ct": {"m": m}}, []) if m != "BBB" else ({}, ["ct"] * T.SO_PHAN_DN))
     xong, loi, con = T.chay(["AAA", "BBB", "CCC"], ra, phut=5, luong=2, in_ra=lambda *_: None)
     assert (xong, loi, con) == (3, 0, 0)
@@ -380,3 +385,40 @@ def test_tra_cuu_dn_tai_lieu_va_nganh(tmp_path, monkeypatch):
     ds = [{"ma": "AAA", "nganh": "X"}, {"ma": "BBB", "nganh": "X"}, {"ma": "CCC", "nganh": "X"}, {"ma": "DDD", "nganh": "Y"}]
     ng = T.chi_so_nganh(ra, ds)
     assert ng == {"X": {"pe": [10.0, 3], "roe": [0.1, 3]}, "Y": {}} and T._doc(f"{ra}/chi_so_nganh.json") == ng
+
+
+
+def test_tra_cuu_dn_gia_noi(monkeypatch):
+    """Giá chạy nối: chỉ tải phiên mới rồi ghép; giá cũ bị điều chỉnh → tải đủ; IQ lỗi khi đã có file → giữ file cũ."""
+    from datetime import date as _d, timedelta
+    from thi_truong import tra_cuu_dn as T
+    hom = _d.today()
+    ngay = [(hom - timedelta(days=k)).isoformat() for k in range(6, -1, -1)]          # 7 ngày, cũ → mới
+    cu = {"d": ngay[:5], "o": [1] * 5, "h": [1] * 5, "l": [1] * 5, "c": [10.0, 10.1, 10.2, 10.3, 10.4], "c0": [1] * 5,
+          "v": [1] * 5, "nn": [0.1] * 5}
+    goi = []
+
+    def gia(ma, san, so):
+        goi.append(so)
+        d = ngay[3:] if so < T.SO_PHIEN else ngay
+        c = {ngay[3]: 10.3 * he, ngay[4]: 10.4 * he, ngay[5]: 10.5, ngay[6]: 10.6}
+        c = [c.get(x, 9.0) for x in d]
+        return {"d": d, "o": c, "h": c, "l": c, "c": c, "c0": c, "v": [2] * len(d), "nn": [0.5] * len(d)}
+    monkeypatch.setattr(T, "_lay_gia_iq", gia)
+    he = 1.0
+    g = T.lay_gia("AAA", "HOSE", cu)
+    assert goi[0] < T.SO_PHIEN and len(goi) == 1                              # chỉ tải phiên mới
+    assert g["d"] == ngay and g["c"] == [10.0, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6] and g["nn"][:3] == [0.1] * 3
+    goi.clear()
+    he = 0.9                                                                   # cổ tức → giá cũ điều chỉnh
+    g = T.lay_gia("AAA", "HOSE", cu)
+    assert goi == [goi[0], T.SO_PHIEN] and g["d"] == ngay                      # tải đủ lại
+
+    def loi(*a, **k):
+        raise ValueError("chặn")
+    monkeypatch.setattr(T, "_lay_gia_iq", loi)
+    try:
+        T.lay_gia("AAA", "HOSE", cu)
+        assert False, "có file cũ → không thay bằng dự phòng"
+    except ValueError:
+        pass
