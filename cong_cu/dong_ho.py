@@ -10,6 +10,8 @@ chạy 10:24, Danh mục 08:30 chạy 15:18, Kiểm thử 07:41 chạy 14:22, Qu
   • Chạy liên tục: mỗi lượt ≈ 5 giờ 40 phút rồi tự gọi lượt sau (GITHUB_TOKEN gọi workflow_dispatch vẫn tạo lần chạy mới);
     đứt chuỗi → lịch dự phòng của dong_ho.yml (2 giờ / lần) khởi động lại; lượt đến sau thấy lượt cũ còn chạy → thoát.
   • 20:05 hằng ngày: kiểm hạn token repo kín (DANH_MUC_TOKEN_*) – còn < 14 ngày → nhắn Telegram.
+  • Giám sát 5 phút / lần: workflow trên main vừa LỖI → workflow dữ liệu / trang (CHAY_LAI – chạy lại không gửi tin
+    trùng) tự chạy lại job lỗi 1 lần; còn lại, hoặc chạy lại vẫn lỗi → nhắn Telegram NGAY (không đợi tin 🩺 19:55).
 Chỉ dùng thư viện chuẩn (không cần pip). Log chỉ in tên workflow / giờ.
   python cong_cu/dong_ho.py --phut 340            # trên Actions (GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID)
   python cong_cu/dong_ho.py --thu "2026-11-06 06:43"   # in workflow sẽ gọi ở thời điểm đó (không gọi thật)
@@ -48,7 +50,7 @@ LICH = [
     ("gia_lap.yml", "30 16 * * 1-5", {}, 50),
     ("gia_lap.yml", "30 17 * * 1-5", {}, 50),
     ("gia_lap.yml", "53 18 * * 1-5", {}, 60),
-    ("suc_khoe.yml", "55 19 * * 1-5", {}, 120),
+    ("suc_khoe.yml", "55 19 * * 1-5", {}, 240),
     ("tong_ket_tuan.yml", "17 20 * * 5", {}, 240),
     ("bctc_moi_dem.yml", "13 22 * * *", {}, 300),
     ("doc_bctn.yml", "17 22 * * *", {}, 300),
@@ -60,6 +62,13 @@ LICH = [
     ("backtest_quy_b.yml", "13 9 1 * *", {}, 1440),
     ("backtest.yml", "17 2 2 * *", {}, 1440),
 ]
+# lỗi lần đầu → tự chạy lại job lỗi 1 lần (dựng dữ liệu / trang: lỗi hay do nguồn chập chờn, chạy lại không gửi tin trùng)
+CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_bctn.yml", "loc_quy_b.yml",
+            "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml"}
+KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu tự nhắn khi lỗi
+             "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml"}     # công cụ bấm tay – người bấm tự xem
+LOI = ("failure", "timed_out", "startup_failure")
+GIAM_SAT_GIAY = 300
 KIEM_TOKEN = "5 20 * * *"                                           # giờ VN kiểm hạn token
 TOKEN_CON_NGAY = 14
 
@@ -230,6 +239,43 @@ class DongHo:
         return da_goi
 
 
+class GiamSat:
+    """Lần chạy trên main vừa lỗi (cập nhật từ `tu`) → CHAY_LAI lần đầu: chạy lại job lỗi; còn lại → 1 tin Telegram gộp.
+    Mỗi (lần chạy, lượt) xét 1 lần. Log chỉ in tên workflow (repo công khai)."""
+
+    def __init__(self, gh, tu, gui=None, in_ra=print):
+        self.gh, self.tu, self.gui, self.in_ra = gh, tu, gui or nhan_tele, in_ra
+        self.da = set()
+
+    def buoc(self):
+        ds = self.gh._goi("actions/runs?branch=main&status=completed&per_page=50").get("workflow_runs") or []
+        tin = []
+        for r in sorted(ds, key=lambda r: r.get("updated_at") or ""):
+            wf = (r.get("path") or "").split("/")[-1]
+            if r.get("conclusion") not in LOI or wf in KHONG_BAO or not r.get("updated_at") or not _tren_main(r):
+                continue
+            luc = _thoi_diem(r["updated_at"])
+            lan = int(r.get("run_attempt") or 1)
+            if luc < self.tu or (r.get("id"), lan) in self.da:
+                continue
+            self.da.add((r.get("id"), lan))
+            luc = luc.astimezone(VN)
+            them = " – đã tự chạy lại 1 lần, vẫn lỗi" if lan > 1 else ""
+            if wf in CHAY_LAI and lan == 1:
+                try:
+                    self.gh._goi(f"actions/runs/{r['id']}/rerun-failed-jobs", {}, "POST")
+                    self.in_ra(f"giám sát: {wf} lỗi {luc:%H:%M} → tự chạy lại job lỗi")
+                    continue
+                except Exception as e:
+                    them = f" – không tự chạy lại được ({type(e).__name__})"
+            self.in_ra(f"giám sát: {wf} lỗi {luc:%H:%M}{them} → nhắn Telegram")
+            tin.append(f"❌ {r.get('name') or wf} lỗi lúc {luc:%H:%M}{them}\n{r.get('html_url', '')}")
+        if tin:
+            self.gui("🚨 Workflow lỗi (đồng hồ báo ngay):\n" + "\n".join(tin)
+                     + "\n→ bấm link xem log · chạy lại: nút Re-run jobs trên trang đó")
+        return tin
+
+
 def han_token(token):
     """Ngày hết hạn token (header github-authentication-token-expiration) → datetime | None (không hạn / lỗi)."""
     if not token:
@@ -339,7 +385,8 @@ def main(argv=None):
     if luot_khac_dang_chay(gh, run_id):
         return 0
     dh = DongHo(gh)
-    bat_dau, da_kiem = time.time(), None
+    gs = GiamSat(gh, datetime.now(timezone.utc) - timedelta(minutes=10))   # phủ khoảng nối giữa 2 lượt đồng hồ
+    bat_dau, da_kiem, lan_gs = time.time(), None, 0.0
     print(f"Đồng hồ chạy {a.phut:.0f} phút, {len(LICH)} dòng lịch", flush=True)
     while time.time() - bat_dau < a.phut * 60:
         bay_gio = datetime.now(VN)
@@ -349,6 +396,9 @@ def main(argv=None):
             if m and m != da_kiem:
                 da_kiem = m
                 kiem_token(bay_gio)
+            if time.time() - lan_gs >= GIAM_SAT_GIAY:
+                lan_gs = time.time()
+                gs.buoc()
         except Exception as e:                                      # lỗi lạ: in rồi chạy tiếp phút sau
             print(f"⚠ {type(e).__name__}: {str(e)[:100]}")
         sys.stdout.flush()
