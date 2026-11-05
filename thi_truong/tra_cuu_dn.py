@@ -78,8 +78,54 @@ def _noi_dung(j):
     return d
 
 
-def iq(duong, so_lan=2):
-    return _noi_dung(nguon.goi(f"{IQ}/{duong}", so_lan=so_lan, timeout=20))
+class CauDao:
+    """Nhịp + cầu dao cho 1 nguồn hay chặn (Vietcap IQ chặn IP khi gọi dồn – 05/11/2026: ~250 lượt rồi mọi lượt treo tới
+    hết thời gian chờ): ≤ moi_giay lượt / giây cho mọi luồng; nguong lỗi liên tiếp → nghỉ `nghi` giây; nghỉ quá toi_da lần
+    → tắt nguồn tới hết lượt chạy (phần đó giữ bản cũ / nguồn dự phòng)."""
+
+    def __init__(self, moi_giay=2.0, nguong=6, nghi=90, toi_da=3):
+        self.cach, self.nguong, self.nghi, self.toi_da = 1.0 / moi_giay, nguong, nghi, toi_da
+        self.khoa, self.ke_tiep, self.lien, self.so_nghi, self.nghi_toi, self.tat = threading.Lock(), 0.0, 0, 0, 0.0, False
+
+    def cho(self):
+        if self.tat:
+            raise ValueError("nguồn đã tắt (bị chặn)")
+        while time.time() < self.nghi_toi:
+            time.sleep(1)
+            if self.tat:
+                raise ValueError("nguồn đã tắt (bị chặn)")
+        with self.khoa:
+            t = max(time.time(), self.ke_tiep)
+            self.ke_tiep = t + self.cach
+        time.sleep(max(0.0, t - time.time()))
+
+    def ok(self):
+        with self.khoa:
+            self.lien = 0
+
+    def loi(self):
+        with self.khoa:
+            self.lien += 1
+            if self.lien >= self.nguong and time.time() >= self.nghi_toi:
+                self.lien, self.so_nghi = 0, self.so_nghi + 1
+                if self.so_nghi > self.toi_da:
+                    self.tat = True
+                else:
+                    self.nghi_toi = time.time() + self.nghi
+
+
+VAN_IQ = CauDao()
+
+
+def iq(duong, so_lan=1):
+    VAN_IQ.cho()
+    try:
+        kq = _noi_dung(nguon.goi(f"{IQ}/{duong}", so_lan=so_lan, timeout=15))
+    except Exception:
+        VAN_IQ.loi()
+        raise
+    VAN_IQ.ok()
+    return kq
 
 
 # ---------------------------------------------------------------- giá
@@ -117,8 +163,35 @@ def gon_gia(ds, td=None):
     return out
 
 
+def gia_du_phong(ma):
+    """Nến ngày gap-chart (trading.vietcap – máy chủ khác IQ) → cùng dạng gon_gia, thiếu khối ngoại / cung cầu."""
+    from datetime import datetime as _dt
+    n = nguon.nen(ma, "ONE_DAY", SO_PHIEN) or {}
+    out = {"d": [], "o": [], "h": [], "l": [], "c": [], "c0": [], "v": [], "gt": [], "du_phong": True}
+    for i, t in enumerate(n.get("t") or []):
+        c = _r(n["c"][i])
+        if not c:
+            continue
+        out["d"].append(_dt.utcfromtimestamp(int(float(t)) + 7 * 3600).strftime("%Y-%m-%d"))
+        for k in ("o", "h", "l"):
+            out[k].append(_r(n[k][i]) or c)
+        out["c"].append(c)
+        out["c0"].append(c)
+        out["v"].append(int(float(n["v"][i] or 0)))
+        out["gt"].append(None)
+    if not out["d"]:
+        raise ValueError("gap-chart rỗng")
+    if max(out["c"]) > 1000:                                       # đồng → nghìn đồng
+        for k in ("o", "h", "l", "c", "c0"):
+            out[k] = [_r(x / 1000) for x in out[k]]
+    return out
+
+
 def lay_gia(ma, san=""):
-    ds = iq(f"company/{ma}/price-history?timeFrame=ONE_DAY&page=0&size={SO_PHIEN}")
+    try:
+        ds = iq(f"company/{ma}/price-history?timeFrame=ONE_DAY&page=0&size={SO_PHIEN}")
+    except Exception:                                               # noqa: BLE001 – IQ chặn → nến gap-chart
+        return gia_du_phong(ma)
     td = {}
     if san in ("HOSE", "HSX"):
         try:
@@ -321,9 +394,16 @@ def bao_cao_ctck(ma, so=25):
     return gop[:so]
 
 
-def lay_dn(ma, cu=None):
-    """Mọi phần doanh nghiệp; phần lỗi giữ bản cũ (cu)."""
+# hạn làm mới (ngày) từng phần dn – ít đổi thì làm thưa để bớt lượt gọi (IQ chặn khi gọi dồn)
+HAN_PHAN = {"ct": 7, "cc": 7, "cd": 7, "cs": 7, "kbs": 14, "sz": 30, "sk": 2, "nb": 2, "tin": 1, "bc": 3}
+
+
+def lay_dn(ma, cu=None, hom_nay=None):
+    """Mọi phần doanh nghiệp; phần còn hạn giữ nguyên, phần lỗi giữ bản cũ (cu). → (dn, phần lỗi) – dn["ngay_phan"]
+    ghi ngày làm mới từng phần."""
     cu = cu or {}
+    hom_nay = hom_nay or date.today().isoformat()
+    ngay_phan = dict(cu.get("ngay_phan") or {})
     phan = {
         "ct": lambda: gon_chi_tiet(iq(f"company/{ma}")),
         "cc": lambda: gon_co_cau(iq(f"company/{ma}/shareholder-structure")),
@@ -339,9 +419,14 @@ def lay_dn(ma, cu=None):
     }
     out, loi = {}, []
     for k, f in phan.items():
+        n = ngay_phan.get(k)
+        if k in cu and n and (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days < HAN_PHAN.get(k, 1):
+            out[k] = cu[k]
+            continue
         t0 = time.time()
         try:
             out[k] = f()
+            ngay_phan[k] = hom_nay
             _do(k, True, time.time() - t0)
         except Exception as e:                                      # noqa: BLE001 – 1 phần lỗi không bỏ cả mã
             _do(k, False, time.time() - t0)
@@ -350,6 +435,7 @@ def lay_dn(ma, cu=None):
                 out[k] = cu[k]
             if "HTTP 403" in str(e) or "HTTP 429" in str(e):
                 time.sleep(3)
+    out["ngay_phan"] = ngay_phan
     return out, loi
 
 
@@ -385,15 +471,16 @@ def _ghi(obj, duong):
 
 
 def thu_tu(ds_ma, ra, hom_nay=None):
-    """Mã cần làm, cũ nhất trước: chưa có file → trước hết; rồi theo ngày cập nhật gia / dn."""
+    """Mã cần làm, cũ nhất trước: chưa có file → trước hết; rồi theo ngày cập nhật gia / dn; cùng độ cũ giữ thứ tự ds_ma
+    (ds.json xếp vốn hoá lớn trước)."""
     hom_nay = hom_nay or date.today().isoformat()
 
     def tuoi(m):
         g = (_doc(os.path.join(ra, "gia", f"{m}.json")) or {}).get("cap_nhat") or ""
         d = (_doc(os.path.join(ra, "dn", f"{m}.json")) or {}).get("cap_nhat") or ""
         return min(g, d)
-    ds = [(tuoi(m), m) for m in ds_ma]
-    return [m for t, m in sorted(ds) if t < hom_nay]
+    ds = [(tuoi(m), i, m) for i, m in enumerate(ds_ma)]
+    return [m for t, i, m in sorted(ds) if t < hom_nay]
 
 
 def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
@@ -413,7 +500,7 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
             ok = False
         _do("gia", ok, time.time() - t0)
         dn_cu = _doc(os.path.join(ra, "dn", f"{m}.json")) or {}
-        dn, hong = lay_dn(m, dn_cu)
+        dn, hong = lay_dn(m, dn_cu, hom_nay)
         if len(hong) < SO_PHAN_DN:
             _ghi({**dn, "cap_nhat": hom_nay if len(hong) <= 1 else dn_cu.get("cap_nhat", ""), "loi": hong},
                  os.path.join(ra, "dn", f"{m}.json"))
@@ -440,7 +527,8 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
             except Exception:                                       # noqa: BLE001
                 loi += 1
     in_ra(f"Doanh nghiệp: {xong}/{len(viec)} mã cập nhật · lỗi {loi} · hết giờ chưa làm {con} · "
-          f"{(time.time() - bat_dau) / 60:.1f} phút\n  nguồn (được/lần · giây): {bang_thong_ke()}")
+          f"{(time.time() - bat_dau) / 60:.1f} phút · Vietcap IQ nghỉ {VAN_IQ.so_nghi} lần{' – TẮT (bị chặn)' if VAN_IQ.tat else ''}"
+          f"\n  nguồn (được/lần · giây): {bang_thong_ke()}")
     return xong, loi, con
 
 

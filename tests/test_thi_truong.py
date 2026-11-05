@@ -287,12 +287,61 @@ def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
     T._ghi({"cap_nhat": "2026-02-01"}, f"{ra}/gia/BBB.json")
     T._ghi({"cap_nhat": "2026-02-01"}, f"{ra}/dn/BBB.json")
     assert T.thu_tu(["BBB", "AAA", "CCC"], ra, "2026-03-01") == ["CCC", "AAA", "BBB"]     # chưa có → cũ nhất trước
+    assert T.thu_tu(["ZZZ", "CCC"], ra, "2026-03-01") == ["ZZZ", "CCC"]                     # cùng độ cũ: giữ thứ tự (vốn hoá)
     assert T.thu_tu(["BBB"], ra, "2026-02-01") == []                                      # đã cập nhật hôm nay
     monkeypatch.setattr(T, "lay_gia", lambda m, san="": {"d": ["2026-11-05"], "c": [1.0]})
-    monkeypatch.setattr(T, "lay_dn", lambda m, cu=None: ({"ct": {"m": m}}, []) if m != "BBB" else ({}, ["ct"] * T.SO_PHAN_DN))
+    monkeypatch.setattr(T, "lay_dn", lambda m, cu=None, *a: ({"ct": {"m": m}}, []) if m != "BBB" else ({}, ["ct"] * T.SO_PHAN_DN))
     xong, loi, con = T.chay(["AAA", "BBB", "CCC"], ra, phut=5, luong=2, in_ra=lambda *_: None)
     assert (xong, loi, con) == (3, 0, 0)
     assert T._doc(f"{ra}/dn/AAA.json")["ct"] == {"m": "AAA"} and T._doc(f"{ra}/dn/BBB.json") == {"cap_nhat": "2026-02-01"}
     assert T._doc(f"{ra}/gia/CCC.json")["c"] == [1.0]
     _, _, con = T.chay(["DDD", "EEE"], ra, phut=0, in_ra=lambda *_: None)                   # hết giờ → không nhận mã mới
     assert con == 2
+
+
+
+def test_tra_cuu_dn_cau_dao_va_han(monkeypatch):
+    from thi_truong import tra_cuu_dn as T
+    v = T.CauDao(moi_giay=1000, nguong=2, nghi=0.05, toi_da=1)
+    v.cho(); v.loi(); v.loi()                                  # 2 lỗi liền → nghỉ lần 1
+    assert v.so_nghi == 1 and not v.tat
+    v.cho(); v.ok(); v.loi(); v.loi()                          # lại 2 lỗi → quá số lần nghỉ → tắt
+    assert v.tat
+    try:
+        v.cho()
+        assert False, "phải báo nguồn đã tắt"
+    except ValueError:
+        pass
+    goi = []
+    phan = ("ct", "cc", "cd", "sk", "nb", "cs", "tin", "bc", "kbs", "sz")
+
+    def gia_lap(*a, **k):
+        goi.append(1)
+        raise ValueError("HTTP 404")
+    monkeypatch.setattr(T, "iq", gia_lap)
+    monkeypatch.setattr(T, "tin_cafef", gia_lap)
+    monkeypatch.setattr(T, "bao_cao_ctck", gia_lap)
+    monkeypatch.setattr(T, "ho_so_kbs", gia_lap)
+    monkeypatch.setattr(T, "tom_tat_simplize", gia_lap)
+    cu = {k: {"cu": k} for k in phan}
+    cu["ngay_phan"] = {k: "2026-11-04" for k in phan}
+    dn, loi = T.lay_dn("AAA", cu, "2026-11-05")
+    assert sorted(loi) == ["tin"] and len(goi) == 1                 # chỉ tin (hạn 1 ngày) phải làm lại
+    assert dn["ct"] == {"cu": "ct"} and dn["ngay_phan"]["tin"] == "2026-11-04"
+    goi.clear()
+    dn, loi = T.lay_dn("AAA", cu, "2026-11-20")                    # 16 ngày: quá hạn mọi phần trừ sz (30 ngày)
+    assert len(goi) == len(phan) - 1 and dn["kbs"] == {"cu": "kbs"} and "sz" not in loi
+
+
+def test_tra_cuu_dn_gia_du_phong(monkeypatch):
+    from thi_truong import tra_cuu_dn as T
+    monkeypatch.setattr(T.nguon, "nen", lambda ma, k, n: {"t": ["1762300800", "1762387200"], "o": [21000, 21500],
+                                                          "h": [22000, 22000], "l": [20500, 21000], "c": [21500, 0],
+                                                          "v": [1e6, 2e6]})
+    g = T.gia_du_phong("AAA")
+    assert g["d"] == ["2025-11-05"] and g["c"] == [21.5] and g["o"] == [21.0] and g["du_phong"]
+
+    def iq_loi(*a, **k):
+        raise ValueError("chặn")
+    monkeypatch.setattr(T, "iq", iq_loi)
+    assert T.lay_gia("AAA")["du_phong"]
