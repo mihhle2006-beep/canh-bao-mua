@@ -510,7 +510,7 @@ def _ghi(obj, duong):
     os.replace(tam, duong)
 
 
-def thu_tu(ds_ma, ra, hom_nay=None):
+def thu_tu(ds_ma, ra, hom_nay=None, lam_moi=False):
     """Mã cần làm, cũ nhất trước: chưa có file → trước hết; rồi theo ngày cập nhật gia / dn; cùng độ cũ giữ thứ tự ds_ma
     (ds.json xếp vốn hoá lớn trước)."""
     hom_nay = hom_nay or date.today().isoformat()
@@ -520,14 +520,14 @@ def thu_tu(ds_ma, ra, hom_nay=None):
         d = (_doc(os.path.join(ra, "dn", f"{m}.json")) or {}).get("cap_nhat") or ""
         return min(g, d)
     ds = [(tuoi(m), i, m) for i, m in enumerate(ds_ma)]
-    return [m for t, i, m in sorted(ds) if t < hom_nay]
+    return [m for t, i, m in sorted(ds) if lam_moi or t < hom_nay]
 
 
-def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
+def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print, lam_moi=False):
     """Lấy giá + doanh nghiệp cho ds_ma (xoay vòng, giới hạn phút) → (số mã xong, số mã lỗi, số mã còn lại)."""
     san = san or {}
     bat_dau = time.time()
-    viec = thu_tu(ds_ma, ra)
+    viec = thu_tu(ds_ma, ra, lam_moi=lam_moi)
     hom_nay = date.today().isoformat()
     xong, loi, con = 0, 0, 0
 
@@ -597,6 +597,7 @@ def main(argv=None):
     p.add_argument("--ma", default="", help="danh sách mã (trống = mọi mã trong <ra>/ds.json)")
     p.add_argument("--phut", type=float, default=25)
     p.add_argument("--luong", type=int, default=6)
+    p.add_argument("--lam_moi", action="store_true", help="làm cả mã đã cập nhật hôm nay (cũ nhất trước)")
     a = p.parse_args(argv)
     ds = (_doc(os.path.join(a.ra, "ds.json")) or {}).get("ds") or []
     san = {r["ma"]: r.get("san", "") for r in ds}
@@ -605,7 +606,7 @@ def main(argv=None):
     if ct:
         _ghi(ct, os.path.join(a.ra, "cau_truc_bctc.json"))
     print(f"Cấu trúc BCTC: {', '.join(sorted(ct)) or 'lỗi – dùng thứ tự kho'}")
-    chay(ma, a.ra, san, a.phut, a.luong)
+    chay(ma, a.ra, san, a.phut, a.luong, lam_moi=a.lam_moi)
     ng = chi_so_nganh(a.ra, ds)
     print(f"Chỉ số ngành: {len(ng)} ngành")
     return 0

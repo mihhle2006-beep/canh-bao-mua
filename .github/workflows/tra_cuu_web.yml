@@ -20,6 +20,10 @@ on:
       phut:
         description: "Giới hạn phút cho phần doanh nghiệp"
         default: "40"
+      lam_moi:
+        description: "Làm cả mã đã cập nhật hôm nay (VD sau khi đổi định dạng dữ liệu)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -82,7 +86,8 @@ jobs:
         env:
           MA: ${{ inputs.ma }}
           PHUT: ${{ inputs.phut || '40' }}
-        run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut "$PHUT" --luong 8 ${MA:+--ma "$MA"}
+          LAM_MOI: ${{ inputs.lam_moi && '--lam_moi' || '' }}
+        run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut "$PHUT" --luong 8 $LAM_MOI ${MA:+--ma "$MA"}
 
       - name: Lưu dữ liệu (cache cho Bang thi truong)
         uses: actions/cache/save@v5
