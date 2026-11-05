@@ -4,6 +4,7 @@
 # + thi_truong/tra_cuu_dn.py (repo này): lịch sử giá ~2 năm, hồ sơ, cổ đông, sự kiện, giao dịch nội bộ, chỉ số theo quý, tin,
 # báo cáo CTCK từ Vietcap IQ / CafeF / Simplize – xoay vòng mã cũ nhất trước trong giới hạn phút (Vietcap hay chặn).
 # + thi_truong/canslim_web.py: điểm CANSLIM (C·A·N·S·L, RS kiểu IBD trong mọi mã, M VN-Index) ghi thêm vào ds.json.
+# + thi_truong/xep_hang_web.py: xếp hạng A–F kiểu VGM (FiinTrade) – giá trị · tăng trưởng · động lượng.
 # Kết quả → cache "tra-cuu-*" (không commit vào repo; lấy lại cache cũ trước để mã chưa tới lượt giữ file) → "Bang thi
 # truong" lấy cache khi gói trang → gọi triển khai ngay.
 #   • 06:41 giờ VN T2–T7: sau "BCTC moi hang dem" (04:15) – BCTC / bất thường / định giá mới nhất
@@ -103,6 +104,10 @@ jobs:
       - name: CANSLIM (C·A từ BCTC, N·S·L từ giá mọi mã, M VN-Index) → ds.json
         working-directory: .
         run: python -m thi_truong.canslim_web --ra docs/ma/du_lieu || echo "::warning::CANSLIM lỗi – trang giữ dữ liệu khác"
+
+      - name: Xếp hạng A–F kiểu VGM (giá trị · tăng trưởng · động lượng) → ds.json
+        working-directory: .
+        run: python -m thi_truong.xep_hang_web --ra docs/ma/du_lieu || echo "::warning::Xếp hạng VGM lỗi – trang giữ dữ liệu khác"
 
       - name: Lưu dữ liệu (cache cho Bang thi truong)
         uses: actions/cache/save@v5

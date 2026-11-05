@@ -118,6 +118,8 @@ main{max-width:1440px;margin:0 auto;padding:16px}
 @media (max-width:860px){.ben{display:none}#loc-nhom{display:block}}
 @media (max-width:600px){.cot-nganh{display:none}.loc-dau input{flex:1 1 100%}}
 .bang-boc{overflow-x:auto}
+.dtn td,.dtn th{padding:7px 12px}.dtn tbody tr{cursor:pointer}.dtn tbody tr:hover{background:var(--nhat,#f7f9fc)}
+.dtn .vach{display:inline-block;height:8px;border-radius:4px;background:var(--nhan);vertical-align:middle;margin-right:6px;opacity:.55}
 table{border-collapse:collapse;width:100%;font-size:13px}
 thead th{position:sticky;top:0;background:var(--the);color:var(--mo);font-weight:600;font-size:11.5px;text-transform:uppercase;
   letter-spacing:.03em;text-align:right;padding:8px 10px;border-bottom:1px solid var(--vien);white-space:nowrap;cursor:pointer;user-select:none}
@@ -202,6 +204,10 @@ tbody tr{background:var(--the)}
           <span class="phu so" style="margin-left:auto" id="td-rong"></span></div>
         <div class="bieu" id="tac"></div>
       </div>
+    </div>
+    <div class="the" style="margin-top:16px">
+      <div class="khoi-dau"><h2>Dòng tiền theo ngành</h2><span class="phu">toàn thị trường · % giá gia quyền GTGD 20 phiên · GTGD so TB 20 phiên · khối ngoại ròng · bấm ngành để lọc</span></div>
+      <div class="bang-boc"><table class="dtn"><thead><tr><th class="trai">Ngành</th><th>% giá</th><th>Tăng / giảm</th><th>GTGD</th><th class="trai">So TB20</th><th>Khối ngoại ròng</th></tr></thead><tbody id="dtn"></tbody></table></div>
     </div>
   </section>
   <section id="loc" hidden>
@@ -545,6 +551,28 @@ function cot_nho(ls, w = 150, h = 30) {
     el("rect", {x: i * bw + 1, y: x >= 0 ? h / 2 - hh : h / 2, width: Math.max(bw - 2, 1), height: hh, fill: x >= 0 ? MAU.tang : MAU.giam, opacity: i === v.length - 1 ? 1 : .55}, s); });
   return s;
 }
+// DÒNG TIỀN THEO NGÀNH (kiểu FiinTrade): gộp dòng lọc (mọi mã có ngành) – % giá gia quyền GTGD 20 phiên, số mã tăng /
+// giảm, GTGD phiên so trung bình 20 phiên, khối ngoại ròng; xếp theo GTGD; bấm ngành → tab Lọc mã lọc ngành đó
+function ve_dtn() {
+  const t = $("#dtn"); if (!t || !L) return;
+  const g = {};
+  for (const r of L) {
+    if (r.nganh == null || !D.nganh?.[r.nganh]) continue;
+    const x = g[r.nganh] || (g[r.nganh] = {n: r.nganh, w: 0, wp: 0, tang: 0, giam: 0, gt: 0, gt20: 0, nn: 0});
+    const w = r.gt20 ?? r.gt ?? 0;
+    if (r.pt != null) { x.w += w; x.wp += w * r.pt; if (r.pt > 0) x.tang++; else if (r.pt < 0) x.giam++; }
+    x.gt += r.gt || 0; x.gt20 += r.gt20 || 0; x.nn += r.nn || 0;
+  }
+  const ds = Object.values(g).filter(x => x.gt > 0).sort((a, b) => b.gt - a.gt);
+  const mx = Math.max(...ds.map(x => x.gt20 ? x.gt / x.gt20 : 0), 1.5);
+  t.innerHTML = ds.map(x => { const p = x.w ? x.wp / x.w : null, k = x.gt20 ? x.gt / x.gt20 : null;
+    return `<tr data-n="${x.n}"><td class="trai"><b>${esc(D.nganh[x.n])}</b></td><td class="so ${p > 0 ? "t" : p < 0 ? "g" : "d"}">${p == null ? "–" : dau(p) + "%"}</td>
+      <td class="so"><span class="t">${x.tang}</span> / <span class="g">${x.giam}</span></td><td class="so">${nf(x.gt, 0)} tỷ</td>
+      <td class="trai so">${k == null ? "–" : `<span class="vach" style="width:${Math.round(k / mx * 90)}px"></span>${nf(k, 2)}×`}</td>
+      <td class="so ${x.nn > 0 ? "t" : x.nn < 0 ? "g" : ""}">${ty(x.nn, 1)}</td></tr>`; }).join("") || `<tr><td class="trai" colspan="6">Chưa có dữ liệu</td></tr>`;
+  t.onclick = e => { const tr = e.target.closest("tr[data-n]"); if (!tr) return;
+    ST.nganh = tr.dataset.n; ST.so_dong = 100; luu_st(); const s = $("#loc-nganh"); if (s) s.value = tr.dataset.n; doi_tab("loc"); };
+}
 function ve_tk() {
   const v = D.chi_so.find(x => x.ma === "VNINDEX") || {}, tk = D.thanh_khoan, kn = D.khoi_ngoai, tdo = D.tu_doanh;
   const tong = (v.tang || 0) + (v.dung || 0) + (v.giam || 0) || 1;
@@ -767,7 +795,7 @@ function ve_tat() {
   const cu = D.dang_gd && tuoi > 12;
   $("#cham").className = "cham" + (D.dang_gd && !cu ? " song" : "");
   $("#trang-thai").textContent = `Phiên ${ngay_vn(D.phien)}/${D.phien.slice(0, 4)} · ${D.dang_gd ? (cu ? `dữ liệu cách đây ${Math.round(tuoi)} phút` : "đang giao dịch") : "đã đóng cửa"} · cập nhật ${D.cap_nhat.slice(11, 16)}`;
-  if (ST.tab === "tq") { ve_the(); ve_theo_doi(); ve_bieu_do(); ve_ban_do(); ve_tk(); ve_tac(); }
+  if (ST.tab === "tq") { ve_the(); ve_theo_doi(); ve_bieu_do(); ve_ban_do(); ve_tk(); ve_tac(); ve_dtn(); }
   else ve_loc();
 }
 async function tai() {
