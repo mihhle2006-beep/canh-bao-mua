@@ -337,12 +337,28 @@ def test_dong_ho_yml():
     assert "print(os.environ" not in open(os.path.join(GOC, "cong_cu", "dong_ho.py"), encoding="utf-8").read()
 
 
+def test_kiem_quyen_token():
+    """Thử quyền token repo kín bằng mã HTTP: đọc commit, đọc lần chạy Actions, PUT enable (ghi Actions, không đổi gì)."""
+    goi_ds = []
+
+    def gia(ma_ghi):
+        def goi(ph, d):
+            goi_ds.append((ph, d))
+            return ma_ghi if ph == "PUT" else 200
+        return goi
+    assert dong_ho.kiem_quyen("x", "o/r", gia(204)) == {"doc_code": True, "doc_actions": True, "ghi_actions": True}
+    assert goi_ds[-1] == ("PUT", "repos/o/r/actions/workflows/dnse_dong_bo.yml/enable")
+    assert dong_ho.kiem_quyen("x", "o/r", gia(403))["ghi_actions"] is False
+    assert dong_ho.kiem_quyen("x", "o/r", lambda ph, d: None) == {"doc_code": None, "doc_actions": None, "ghi_actions": None}
+
+
 def test_kiem_token_canh_bao(monkeypatch):
     het = datetime(2026, 11, 15, tzinfo=UTC)
     monkeypatch.setattr(dong_ho, "han_token", lambda tk: het if tk == "a" else None)
     gui = []
     monkeypatch.setattr(dong_ho, "nhan_tele", gui.append)
     monkeypatch.setenv("DANH_MUC_TOKEN_GHI", "a")
+    monkeypatch.setattr(dong_ho, "kiem_quyen", lambda tk: {"doc_code": True, "doc_actions": True, "ghi_actions": True})
     monkeypatch.delenv("DANH_MUC_TOKEN_DOC", raising=False)
     log = []
     canh = dong_ho.kiem_token(datetime(2026, 11, 6, 20, 5, tzinfo=VN), in_ra=log.append)
