@@ -168,14 +168,14 @@ def gon_gia(ds, td=None):
 
 def gia_du_phong(ma):
     """Nến ngày gap-chart (trading.vietcap – máy chủ khác IQ) → cùng dạng gon_gia, thiếu khối ngoại / cung cầu."""
-    from datetime import datetime as _dt
+    from datetime import datetime as _dt, timezone as _tz
     n = nguon.nen(ma, "ONE_DAY", SO_PHIEN) or {}
     out = {"d": [], "o": [], "h": [], "l": [], "c": [], "c0": [], "v": [], "gt": [], "du_phong": True}
     for i, t in enumerate(n.get("t") or []):
         c = _r(n["c"][i])
         if not c:
             continue
-        out["d"].append(_dt.utcfromtimestamp(int(float(t)) + 7 * 3600).strftime("%Y-%m-%d"))
+        out["d"].append(_dt.fromtimestamp(int(float(t)) + 7 * 3600, _tz.utc).strftime("%Y-%m-%d"))
         for k in ("o", "h", "l"):
             out[k].append(_r(n[k][i]) or c)
         out["c"].append(c)

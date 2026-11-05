@@ -245,6 +245,44 @@ def test_workflow_co_gac_dung_cach():
     assert "dong_ho.py --gac" in run and "chay=true" in run                 # lỗi → chạy
 
 
+def test_giam_sat_loi_tu_chay_lai_hoac_bao_ngay():
+    tu = datetime(2026, 11, 6, 8, 0, tzinfo=UTC)
+
+    def r(id_, wf, phut, kq="failure", lan=1, nhanh="main"):
+        return {"id": id_, "path": f".github/workflows/{wf}", "name": wf.split(".")[0], "conclusion": kq, "run_attempt": lan,
+                "head_branch": nhanh, "updated_at": (tu + timedelta(minutes=phut)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "html_url": f"https://x/{id_}"}
+
+    class GH:
+        def __init__(self):
+            self.runs, self.post = [], []
+
+        def _goi(self, duong, du_lieu=None, phuong=None):
+            if phuong == "POST":
+                self.post.append(duong)
+                return {}
+            return {"workflow_runs": self.runs}
+
+    gh, gui, log = GH(), [], []
+    gs = dong_ho.GiamSat(gh, tu, gui=gui.append, in_ra=log.append)
+    gh.runs = [r(1, "tra_cuu_web.yml", 5),                     # dữ liệu → tự chạy lại, không nhắn
+               r(2, "danh_muc.yml", 6),                        # → nhắn ngay
+               r(3, "quet_dinh_ky.yml", 7, "success"),
+               r(4, "canh_bao.yml", 8, "cancelled"),           # hủy (concurrency) → bỏ qua
+               r(5, "kiem_thu.yml", 9),                        # tự nhắn
+               r(6, "canh_bao.yml", 9, nhanh="claude/x"),      # nhánh thử
+               r(7, "gia_lap.yml", -30)]                       # trước lúc đồng hồ chạy
+    tin = gs.buoc()
+    assert gh.post == ["actions/runs/1/rerun-failed-jobs"]
+    assert len(tin) == 1 and "danh_muc lỗi lúc 15:06" in tin[0] and len(gui) == 1
+    assert all("tra_cuu_web" not in x for x in gui)
+    assert gs.buoc() == [] and len(gui) == 1                  # đã xét → không nhắn / chạy lại lặp
+    gh.runs = [r(1, "tra_cuu_web.yml", 30, lan=2)]            # chạy lại vẫn lỗi → nhắn
+    tin = gs.buoc()
+    assert len(tin) == 1 and "đã tự chạy lại 1 lần, vẫn lỗi" in tin[0] and gh.post == ["actions/runs/1/rerun-failed-jobs"]
+    assert not any("http" in x for x in log)                  # log công khai: chỉ tên workflow
+
+
 def test_dong_ho_yml():
     d = _yml("dong_ho.yml")
     assert d["permissions"]["actions"] == "write"
