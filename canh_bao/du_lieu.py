@@ -89,8 +89,9 @@ def tu_dnse(ma, tu, den, khung, chi_so=False):
 
 
 SSI_KHUNG = {"D": "1D", "60": "60", "30": "30", "15": "15", "5": "5"}
-VCI_KHUNG = {"D": "ONE_DAY", "60": "ONE_HOUR", "15": "FIFTEEN_MINUTES"}   # 15': từ 11/09/2023 (nguồn khác chỉ ~1 năm)
-VCI_NEN_NGAY = {"D": 1, "60": 7, "15": 20}
+VCI_KHUNG = {"D": "ONE_DAY", "60": "ONE_HOUR", "15": "FIFTEEN_MINUTES",   # 15' / 1': từ 11/09/2023 (nguồn khác ~1 năm)
+             "1": "ONE_MINUTE"}                                   # 1' chỉ dùng backtest đa khung (gộp 5' – backtest_bot)
+VCI_NEN_NGAY = {"D": 1, "60": 7, "15": 20, "1": 250}
 
 
 def tu_ssi(ma, tu, den, khung, chi_so=False):
