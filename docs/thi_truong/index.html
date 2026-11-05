@@ -125,6 +125,7 @@ tbody tr{background:var(--the)}
 [hidden]{display:none!important}
 .sao{border:0;background:none;padding:0 4px 0 0;font-size:14px;color:#c4cad4;line-height:1}
 .sao[aria-pressed=true]{color:#e0a800}
+.lk-ma{color:inherit;text-decoration:none}.lk-ma:hover{color:var(--nhan);text-decoration:underline}
 .td-the{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;align-items:stretch}
 .td-the button{flex:0 0 auto;border:1px solid var(--vien);background:var(--the);border-radius:8px;padding:6px 10px;text-align:left;min-width:96px}
 .td-the b{display:block;font-size:13px}
@@ -144,7 +145,7 @@ tbody tr{background:var(--the)}
       <button role="tab" id="tab-loc" aria-selected="false" data-tab="loc">Lọc mã</button>
     </div>
     <div class="tt-phien"><span class="cham" id="cham"></span><span id="trang-thai">Đang tải…</span>
-      <a href="../">Bảng tổng hợp</a></div>
+      <a href="../ma/">🔎 Tra cứu mã</a><a href="../">Bảng tổng hợp</a></div>
   </div>
 </header>
 <main>
@@ -682,7 +683,7 @@ function dong_html(r) {
   const nn = v => `<span class="${lop(v)}">${v == null ? "–" : dau(v, Math.abs(v) >= 100 ? 0 : 1)}</span>`;
   const co = TD.includes(r.ma), giu = GIU.includes(r.ma);
   return `<tr><td class="ma trai" title="${esc(r.ten)}">${giu ? `<span class="sao" title="Đang giữ (danh mục)">💼</span>`
-    : `<button class="sao" aria-pressed="${co}" data-ma="${esc(r.ma)}" aria-label="${co ? "Bỏ" : "Thêm"} theo dõi ${esc(r.ma)}">${co ? "★" : "☆"}</button>`}${esc(r.ma)}${r.san !== "HSX" ? `<span class="nhan-san">${r.san === "UPCOM" ? "UPC" : r.san}</span>` : ""}</td>
+    : `<button class="sao" aria-pressed="${co}" data-ma="${esc(r.ma)}" aria-label="${co ? "Bỏ" : "Thêm"} theo dõi ${esc(r.ma)}">${co ? "★" : "☆"}</button>`}<a class="lk-ma" href="../ma/#${esc(r.ma)}" title="Tra cứu ${esc(r.ma)}">${esc(r.ma)}</a>${r.san !== "HSX" ? `<span class="nhan-san">${r.san === "UPCOM" ? "UPC" : r.san}</span>` : ""}</td>
     <td class="trai cot-nganh" style="color:var(--chu2)">${esc(D.nganh[r.nganh] || "")}</td>
     <td class="so ${lop_gia(r)}">${nf(r.gia)}</td>
     <td class="so"><span class="o-pt ${lop_gia(r)}" style="background:${nen_pt(r)}">${dau(r.pt)}%</span></td>

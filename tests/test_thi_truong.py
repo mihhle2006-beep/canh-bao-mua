@@ -181,3 +181,35 @@ def test_workflow_nhip_goi_bang_thi_truong():
     assert "checkout" not in t and "danh-muc" not in t and "DANH_MUC" not in t
     assert "workflows/bang_thi_truong.yml/dispatches" in t and '{\\"ref\\":\\"main\\"}' in t
     assert job["timeout-minutes"] <= 360
+
+
+def test_workflow_tra_cuu_web():
+    """Trang Tra cứu mã: workflow dựng dữ liệu xoá file danh mục thật, chỉ ghi cache docs/ma/du_lieu (không commit, không
+    artifact); Bang thi truong lấy cache đó khi gói trang (chỉ main)."""
+    import yaml
+    d = yaml.safe_load(open(".github/workflows/tra_cuu_web.yml", encoding="utf-8"))
+    assert d["permissions"] == {"contents": "read", "actions": "write"}
+    (job,) = d["jobs"].values()
+    assert job["env"]["CONG_KHAI"] == "1"
+    t = json.dumps(job, ensure_ascii=False)
+    assert "rm -f danh_muc*.csv" in t and "upload-artifact" not in t and "git push" not in t and "git commit" not in t
+    luu = [s for s in job["steps"] if "cache/save" in str(s.get("uses", ""))]
+    assert len(luu) == 1 and luu[0]["with"]["path"] == "docs/ma/du_lieu" and luu[0]["with"]["key"].startswith("tra-cuu-")
+    assert "ptcp.web_tra_cuu" in t and "bang_thi_truong.yml/dispatches" in t
+    b = yaml.safe_load(open(".github/workflows/bang_thi_truong.yml", encoding="utf-8"))
+    lay = [s for s in b["jobs"]["dung"]["steps"] if s.get("with", {}).get("path") == "docs/ma/du_lieu"]
+    assert len(lay) == 1 and "cache/restore" in lay[0]["uses"] and lay[0]["with"]["restore-keys"] == "tra-cuu-"
+    assert "refs/heads/main" in lay[0]["if"]
+    assert "docs/ma/du_lieu/" in open(".gitignore", encoding="utf-8").read()
+
+
+def test_trang_tra_cuu_khong_tai_ngoai():
+    """docs/ma/index.html: không script / font ngoài, chỉ tải JSON cùng site; chuỗi từ dữ liệu luôn qua esc()."""
+    import re
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    assert "<script src" not in h and "@import" not in h and "fonts.googleapis" not in h
+    assert 'const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json"' in h
+    assert not re.search(r"fetch\(\s*['\"]https?:", h)
+    assert "const esc = " in h and "const url = u => /^https?:" in h
+    t = open("docs/thi_truong/index.html", encoding="utf-8").read()
+    assert 'href="../ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t

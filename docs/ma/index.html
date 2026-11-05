@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tra cứu mã</title>
+<meta name="description" content="Tra cứu cổ phiếu HOSE / HNX: kết quả kinh doanh 9 quý, định giá, dự phóng, kế hoạch ĐHCĐ, bất thường BCTC, chiến lược doanh nghiệp, bội số ngành.">
+<style>
+:root{
+  --nen:#f3f5f8;--the:#fff;--vien:#e3e7ee;--luoi:#edf0f4;
+  --chu:#1d2430;--chu2:#4b5565;--mo:#7a8494;
+  --tang:#0f8a4a;--giam:#d1342b;--dung:#b88a00;
+  --tang-nen:#e3f4ea;--giam-nen:#fde8e6;--dung-nen:#fbf3d6;
+  --nhan:#1f6feb;--nhan-nen:#e8f0fe;--dt:#9db7e0;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--nen);color:var(--chu);
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+a{color:var(--nhan);text-decoration:none}a:hover{text-decoration:underline}
+.so{font-variant-numeric:tabular-nums}
+.t{color:var(--tang)}.g{color:var(--giam)}.d{color:var(--dung)}.m{color:var(--mo)}
+button{font:inherit;color:inherit;cursor:pointer}
+header{background:var(--the);border-bottom:1px solid var(--vien);position:sticky;top:0;z-index:20}
+.dau{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:14px;min-height:52px;flex-wrap:wrap}
+.dau h1{font-size:17px;margin:0;font-weight:650;white-space:nowrap}
+.tab{display:flex;gap:2px;align-self:stretch}
+.tab a{display:flex;align-items:center;padding:0 12px;font-weight:500;color:var(--chu2);border-bottom:2px solid transparent;text-decoration:none}
+.tab a[aria-current=page]{color:var(--chu);border-bottom-color:var(--nhan)}
+.lien{margin-left:auto;display:flex;gap:12px;font-size:13px;flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.the{background:var(--the);border:1px solid var(--vien);border-radius:10px;margin-bottom:14px}
+.khoi-dau{display:flex;align-items:baseline;gap:10px;padding:12px 14px;border-bottom:1px solid var(--luoi);flex-wrap:wrap}
+.khoi-dau h2{font-size:15px;margin:0;font-weight:650}
+.khoi-dau .phu{color:var(--mo);font-size:12.5px}
+.than{padding:12px 14px}
+.tim{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tim input{font:inherit;font-size:16px;border:1px solid var(--vien);border-radius:10px;padding:10px 14px;flex:1 1 260px;
+  background:var(--the);text-transform:uppercase}
+.tim input::placeholder{text-transform:none}
+.tim button{border:1px solid var(--nhan);background:var(--nhan);color:#fff;border-radius:10px;padding:10px 18px;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--vien);border-radius:999px;padding:3px 10px;
+  margin:0 6px 6px 0;background:var(--the);font-size:13px;color:var(--chu)}
+a.chip:hover{border-color:var(--nhan);text-decoration:none}
+.nhom-chip h3{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mo);margin:10px 0 6px;font-weight:650}
+.dau-ma{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;padding:14px}
+.dau-ma .ten{flex:1 1 300px}
+.dau-ma h2{margin:0;font-size:24px}
+.dau-ma .phu{color:var(--chu2);font-size:13px}
+.dau-ma .gia{text-align:right}
+.dau-ma .gia b{font-size:26px}
+.nhan-san{display:inline-block;font-size:11px;font-weight:600;color:var(--mo);border:1px solid var(--vien);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:middle}
+.huy{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:2px 8px;margin:6px 6px 0 0}
+.huy.re{background:var(--tang-nen);color:var(--tang)}.huy.dat{background:var(--giam-nen);color:var(--giam)}
+.huy.hl{background:var(--luoi);color:var(--chu2)}.huy.bot{background:var(--nhan-nen);color:var(--nhan)}
+.huy.giu{background:var(--dung-nen);color:#6b5200}
+.luoi-so{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.luoi-so>div{padding:10px 14px;box-shadow:inset -1px -1px 0 var(--luoi)}
+.luoi-so .n{color:var(--mo);font-size:12px}
+.luoi-so .v{font-size:17px;font-weight:650}
+.luoi-so .c{color:var(--mo);font-size:11.5px}
+.nhan-xet{margin:0;padding:10px 14px;background:var(--dung-nen);color:#5c4700;font-size:13px;border-top:1px solid var(--luoi)}
+.nhan-xet:empty{display:none}
+.hai{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:860px){.hai{grid-template-columns:minmax(0,1fr)}}
+.bieu svg{display:block;width:100%;height:auto}
+.bang-boc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{color:var(--mo);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;text-align:right;
+  padding:7px 10px;border-bottom:1px solid var(--vien);white-space:nowrap;background:var(--the)}
+th:first-child,th.trai,td.trai{text-align:left}
+td{padding:6px 10px;border-bottom:1px solid var(--luoi);text-align:right;white-space:nowrap}
+#bang-loc th{position:sticky;top:0;cursor:pointer;user-select:none}
+#bang-loc th[aria-sort]::after{content:" ▾";color:var(--nhan)}
+#bang-loc th[aria-sort=ascending]::after{content:" ▴"}
+#bang-loc tbody tr{cursor:pointer}#bang-loc tbody tr:hover{background:#f7f9fc}
+td.ma{font-weight:650}
+.bt{padding:10px 14px;border-bottom:1px solid var(--luoi)}
+.bt:last-child{border-bottom:0}
+.bt .muc{font-size:11.5px;font-weight:700;border-radius:4px;padding:1px 6px;margin-right:6px}
+.bt .muc.rr{background:var(--giam-nen);color:var(--giam)}.bt .muc.cy{background:var(--dung-nen);color:#6b5200}
+.bt .muc.ok{background:var(--tang-nen);color:var(--tang)}
+.bt p{margin:4px 0 0;font-size:13px;color:var(--chu2)}
+.bt blockquote{margin:6px 0 0;padding:6px 10px;border-left:3px solid var(--vien);color:var(--chu2);font-size:12.5px;background:#fafbfc}
+details{padding:10px 14px;border-bottom:1px solid var(--luoi)}details:last-child{border-bottom:0}
+summary{cursor:pointer;font-weight:600}
+details p{font-size:13px;color:var(--chu2);margin:8px 0 0}
+.trong{padding:14px;color:var(--mo)}
+.loc-dau{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.loc-dau input,.loc-dau select{font:inherit;border:1px solid var(--vien);border-radius:8px;padding:6px 10px;background:var(--the)}
+.bat{border:1px solid var(--vien);border-radius:8px;padding:6px 10px;background:var(--the)}
+.bat[aria-pressed=true]{background:var(--nhan-nen);border-color:var(--nhan);color:var(--nhan);font-weight:600}
+.loc-dau .dem{margin-left:auto;color:var(--mo);font-size:12.5px}
+.chu-giai{display:flex;gap:12px;font-size:11.5px;color:var(--mo);padding:0 14px 10px;flex-wrap:wrap}
+.chu-giai i{display:inline-block;width:12px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.cuoi{color:var(--mo);font-size:12px;margin:18px 0}
+@media (max-width:600px){.dau-ma .gia{text-align:left}.an-dt{display:none}.lien{margin-left:0;width:100%;padding-bottom:6px}}
+</style>
+</head>
+<body>
+<header><div class="dau">
+  <h1>🔎 Tra cứu mã</h1>
+  <nav class="tab" aria-label="Phần">
+    <a href="#" id="t-ma">Mã</a><a href="#loc" id="t-loc">Lọc KQKD</a><a href="#nganh" id="t-nganh">Ngành</a>
+  </nav>
+  <div class="lien"><a href="../thi_truong/">📊 Bảng thị trường</a><a href="../">🏠 Tổng hợp</a></div>
+</div></header>
+<main>
+  <form class="tim" id="f-tim" autocomplete="off">
+    <input id="o-tim" list="ds-ma" placeholder="Nhập mã hoặc tên (VD HPG, Hoà Phát)…" aria-label="Mã cổ phiếu" maxlength="40">
+    <datalist id="ds-ma"></datalist>
+    <button type="submit">Tra cứu</button>
+  </form>
+  <div id="noi-dung"><div class="trong">Đang tải dữ liệu…</div></div>
+  <p class="cuoi" id="cuoi"></p>
+</main>
+<script>
+"use strict";
+const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json";
+let DS = null, META = {}, NG = null, MKT = null, LIVE = {}, BOT = {}, GIU = new Set(), BANG = {};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const url = u => /^https?:\/\//i.test(u || "") ? esc(u) : "";
+const so = (v, l = 0) => v == null || !isFinite(v) ? "–" : Number(v).toLocaleString("vi-VN", {minimumFractionDigits: l, maximumFractionDigits: l});
+const ty = v => v == null ? "–" : Math.abs(v) >= 1000 ? so(v, 0) : Math.abs(v) >= 100 ? so(v, 0) : so(v, 1);
+const pt = (v, l = 0, dau = true) => v == null || !isFinite(v) ? "–" : (dau && v > 0 ? "+" : "") + so(v * 100, l) + "%";
+const mau = v => v == null ? "" : v > 0 ? "t" : v < 0 ? "g" : "";
+const MA_OK = m => /^[A-Z0-9]{3,8}$/.test(m || "");
+
+async function lay(u) {
+  const r = await fetch(u + (u.includes("?") ? "&" : "?") + "t=" + Math.floor(Date.now() / 60000), {cache: "no-store"});
+  if (!r.ok) throw new Error(r.status + " " + u);
+  return r.json();
+}
+
+async function tai_thi_truong() {
+  try {
+    MKT = await lay(TT);
+    const c = MKT.loc?.cot || [];
+    for (const r of MKT.loc?.dong || []) { const o = {}; c.forEach((k, i) => o[k] = r[i]); LIVE[o.ma] = o; }
+    for (const r of MKT.tin_hieu?.ma || []) BOT[r[0]] = r;
+    GIU = new Set((MKT.danh_muc || []).filter(MA_OK));
+  } catch (e) { MKT = null; }
+}
+
+function gia_hien(r) {            // đồng – ưu tiên bảng giá trong phiên (nghìn đ), không có thì giá BCTC / VNDirect
+  const l = LIVE[r.ma];
+  return l && l.gia ? l.gia * 1000 : r.gia;
+}
+
+// ---------------------------------------------------------------- biểu đồ cột (âm / dương)
+function cot_svg(v, nhan, mau_duong, mau_am, tieu_de) {
+  const W = innerWidth < 860 ? Math.max(300, Math.min(560, innerWidth - 62)) : 520, H = 190, T = 22, B = 30, n = v.length, bw = W / n;
+  const ok = v.filter(x => x != null);
+  if (!ok.length) return `<div class="trong">Chưa có số liệu</div>`;
+  const mx = Math.max(0, ...ok), mn = Math.min(0, ...ok), rg = (mx - mn) || 1;
+  const y = x => T + (mx - x) / rg * (H - T - B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(tieu_de)}">`;
+  s += `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="#cfd6e0"/>`;
+  v.forEach((x, i) => {
+    const cx = i * bw + bw * .18, w = bw * .64;
+    if (x != null) {
+      const y0 = y(Math.max(x, 0)), h = Math.max(1, Math.abs(y(x) - y(0)));
+      s += `<rect x="${cx}" y="${y0}" width="${w}" height="${h}" rx="2" fill="${x >= 0 ? mau_duong : mau_am}"><title>${esc(nhan[i])}: ${ty(x)} tỷ</title></rect>`;
+      s += `<text x="${cx + w / 2}" y="${x >= 0 ? y0 - 4 : y0 + h + 11}" text-anchor="middle" font-size="10.5" fill="#4b5565">${ty(x)}</text>`;
+    }
+    s += `<text x="${cx + w / 2}" y="${H - 10}" text-anchor="middle" font-size="10.5" fill="#7a8494">${esc(nhan[i])}</text>`;
+  });
+  return s + "</svg>";
+}
+
+// ---------------------------------------------------------------- trang 1 mã
+async function hien_ma(ma) {
+  const nd = $("#noi-dung");
+  nd.innerHTML = `<div class="trong">Đang tải ${esc(ma)}…</div>`;
+  let r;
+  try { r = await lay(DL + "ma/" + encodeURIComponent(ma) + ".json"); }
+  catch (e) {
+    const l = LIVE[ma];
+    nd.innerHTML = `<div class="the"><div class="trong">Không có dữ liệu BCTC cho <b>${esc(ma)}</b>${l ? ` (giá ${so(l.gia, 2)} · ${pt(l.pt / 100, 2)})` : ""}. ` +
+      `Trang có ${DS ? DS.length : 0} mã HOSE / HNX (+ UPCoM hệ thống theo dõi) có BCTC trong kho.</div></div>`;
+    return;
+  }
+  document.title = `${ma} – Tra cứu mã`;
+  const l = LIVE[ma], g = gia_hien(r);
+  const pe = r.eps > 0 && g ? g / r.eps : null, pb = r.bvps > 0 && g ? g / r.bvps : null;
+  const dg = r.gia_tri && g ? r.gia_tri / g - 1 : null;
+  const re = dg == null ? "" : dg >= .2 ? "RẺ" : dg <= -.2 ? "ĐẮT" : "HỢP LÝ";
+  const pe_f = r.eps_f > 0 && g ? g / r.eps_f : null;
+  const b = BOT[ma];
+  let h = `<div class="the"><div class="dau-ma"><div class="ten"><h2>${esc(ma)}<span class="nhan-san">${esc(r.san)}</span></h2>
+    <div class="phu">${esc(r.ten || (MKT?.ten || {})[ma] || "")}${r.nganh ? " · " + esc(r.nganh) : ""}</div><div>`;
+  if (GIU.has(ma)) h += `<span class="huy giu">💼 Danh mục đang giữ</span>`;
+  if (b) h += `<span class="huy bot" title="${esc(b[7])}">★ Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)} · cắt lỗ ${so(b[4], 2)}</span>`;
+  if (re) h += `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)} so giá</span>`;
+  h += `</div></div><div class="gia">`;
+  if (l) h += `<b class="so ${mau(l.pt)}">${so(l.gia, 2)}</b> <span class="so ${mau(l.pt)}">${pt(l.pt / 100, 2)}</span>
+    <div class="phu">GTGD ${so(l.gt, 1)} tỷ${l.nn ? ` · NN ${l.nn > 0 ? "+" : ""}${so(l.nn, 1)} tỷ` : ""}${l.rsi != null ? ` · RSI ${so(l.rsi, 0)}` : ""}</div>
+    <div class="phu">${esc(MKT?.cap_nhat || "")}</div>`;
+  else h += `<b class="so">${g ? so(g / 1000, 2) : "–"}</b><div class="phu">giá ${esc(r.ngay_gia || "")}</div>`;
+  h += `</div></div>`;
+  const o = (n, v, c = "") => `<div><div class="n">${n}</div><div class="v so">${v}</div>${c ? `<div class="c">${c}</div>` : ""}</div>`;
+  h += `<div class="luoi-so">` +
+    o("P/E", pe ? so(pe, 1) : "–", r.pe_nganh ? "ngành " + so(r.pe_nganh, 1) : "") +
+    o("P/B", pb ? so(pb, 2) : "–") +
+    o("EPS 4 quý", r.eps ? so(r.eps, 0) + " đ" : "–") +
+    o("BVPS", r.bvps ? so(r.bvps, 0) + " đ" : "–") +
+    o("Vốn hoá", r.slcp && g ? so(g * r.slcp / 1e9, 0) + " tỷ" : "–") +
+    o("PEG", r.peg ? so(r.peg, 2) : "–", r.cagr != null ? "LNST CAGR 3 năm " + pt(r.cagr) : "") +
+    o("Giá trị hợp lý", r.gia_tri ? so(r.gia_tri / 1000, 2) : "–", esc(r.cach_dg || "")) +
+    o("LNST năm dự phóng", r.lnst_f ? so(r.lnst_f, 0) + " tỷ" : "–", pe_f ? "P/E dự phóng " + so(pe_f, 1) : "") +
+    o("Hoàn thành kế hoạch", r.ht_kh ? pt(r.ht_kh, 0, false) : "–", "lũy kế năm") +
+    `</div><p class="nhan-xet">${esc([(r.nhan_xet || "").split(" · ").filter(x => !/so giá\)$/.test(x)).join(" · "),
+      r.ghi_f ? "dự phóng LNST " + r.ghi_f : "", r.chu].filter(Boolean).join(" · "))}</p></div>`;
+
+  // KQKD 9 quý
+  const yoy = (a, i) => i >= 4 && a[i] != null && a[i - 4] != null && a[i - 4] > 0 ? a[i] / a[i - 4] - 1 : null;
+  h += `<div class="hai"><div class="the"><div class="khoi-dau"><h2>Doanh thu theo quý</h2><span class="phu">tỷ đồng</span></div>
+    <div class="bieu">${cot_svg(r.dt || [], r.cot || [], "#9db7e0", "#e9a39d", "Doanh thu theo quý")}</div></div>
+    <div class="the"><div class="khoi-dau"><h2>LNST cổ đông mẹ theo quý</h2><span class="phu">tỷ đồng · kỳ mới nhất ${esc(r.ky)}</span></div>
+    <div class="bieu">${cot_svg(r.ln || [], r.cot || [], "#3aa56b", "#d1342b", "LNST theo quý")}</div></div></div>`;
+  h += `<div class="the"><div class="khoi-dau"><h2>Kết quả kinh doanh</h2><span class="phu">tỷ đồng · YoY so cùng kỳ · LNST = cổ đông công ty mẹ</span></div><div class="bang-boc"><table class="so">
+    <thead><tr><th class="trai">Quý</th>${(r.cot || []).map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>
+    <tr><td class="trai">Doanh thu</td>${(r.dt || []).map(v => `<td>${ty(v)}</td>`).join("")}</tr>
+    <tr><td class="trai m">YoY</td>${(r.dt || []).map((v, i) => { const y = yoy(r.dt, i); return `<td class="${mau(y)}">${y == null ? "" : pt(y)}</td>`; }).join("")}</tr>
+    <tr><td class="trai">Biên gộp</td>${(r.dt || []).map((v, i) => `<td>${r.lg?.[i] != null && v ? pt(r.lg[i] / v, 1, false) : "–"}</td>`).join("")}</tr>
+    <tr><td class="trai">LNST</td>${(r.ln || []).map(v => `<td class="${v < 0 ? "g" : ""}">${ty(v)}</td>`).join("")}</tr>
+    <tr><td class="trai m">YoY</td>${(r.ln || []).map((v, i) => { const y = yoy(r.ln, i); return `<td class="${mau(y)}">${y == null ? "" : pt(y)}</td>`; }).join("")}</tr>
+    </tbody></table></div>
+    <div class="bang-boc"><table class="so"><thead><tr><th class="trai">Năm (kiểm toán)</th>${(r.nam || []).map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead>
+    <tbody><tr><td class="trai">LNST</td>${(r.lnn || []).map(v => `<td class="${v < 0 ? "g" : ""}">${ty(v)}</td>`).join("")}</tr></tbody></table></div></div>`;
+
+  // chỉ số tài chính
+  const cs = r.ts?.chi_so || {};
+  if (Object.keys(cs).length) {
+    h += `<div class="the"><div class="khoi-dau"><h2>Chỉ số tài chính</h2><span class="phu">4 quý gần nhất tới ${esc(r.ts.ky)} · Vietcap</span></div><div class="luoi-so">` +
+      Object.entries(cs).map(([k, x]) => o(esc(k), x.pt ? pt(x.v, 1, false) : so(x.v, 2))).join("") + `</div></div>`;
+  }
+  // kế hoạch ĐHCĐ
+  const kh = r.ke_hoach || [];
+  h += `<div class="the"><div class="khoi-dau"><h2>Kế hoạch ĐHCĐ</h2><span class="phu">tỷ đồng · % hoàn thành = thực tế năm ÷ kế hoạch</span></div>`;
+  if (kh.length) {
+    const ht = (x, k) => x.ht?.[k] != null ? `<br><span class="${x.ht[k] >= 100 ? "t" : "g"}">${so(x.ht[k], 0)}%</span>` : "";
+    h += `<div class="bang-boc"><table class="so"><thead><tr><th class="trai">Năm</th><th>Doanh thu</th><th>LNTT</th><th>LNST</th><th class="trai">Nguồn</th></tr></thead><tbody>` +
+      kh.map(x => `<tr><td class="trai">${esc(x.nam)}</td><td>${ty(x.dt)}${ht(x, "dt")}</td><td>${ty(x.lntt)}${ht(x, "lntt")}</td><td>${ty(x.lnst)}${ht(x, "lnst")}</td>
+        <td class="trai">${url(x.link) ? `<a href="${url(x.link)}" target="_blank" rel="noopener">${esc(x.nguon || "tài liệu")}</a>` : esc(x.nguon)}</td></tr>`).join("") +
+      `</tbody></table></div>`;
+  } else h += `<div class="trong">Chưa có kế hoạch ĐHCĐ đã đọc cho mã này.</div>`;
+  h += `</div>`;
+  // bất thường BCTC
+  const bt = r.bat_thuong;
+  h += `<div class="the"><div class="khoi-dau"><h2>Bất thường BCTC</h2><span class="phu">${bt && bt.ky ? `kỳ ${esc(bt.ky)} · ` : ""}${bt && bt.cap_nhat ? `đọc ${esc(bt.cap_nhat)} · ` : ""}dò số liệu rồi đọc BCTN / BCTC kiểm toán tìm lời giải thích</span></div>`;
+  if (bt && bt.ds.length) {
+    h += bt.ds.map(x => {
+      const c = x.muc === "RỦI RO" ? "rr" : x.muc === "CHÚ Ý" ? "cy" : "ok";
+      return `<div class="bt"><span class="muc ${c}">${esc(x.muc || "–")}</span><b>${esc(x.loai)}</b> <span class="m">· ${esc(x.ky || x.nam)}</span>
+        <p>${esc(x.mo_ta)}${x.so_lieu ? ` <span class="m">(${esc(x.so_lieu)})</span>` : ""}</p>
+        ${x.ket_luan ? `<p><b>Kết luận:</b> ${esc(x.ket_luan)}</p>` : ""}${x.trich ? `<blockquote>${esc(x.trich)}</blockquote>` : ""}</div>`;
+    }).join("");
+  } else h += `<div class="trong">${bt ? "Không có bất thường." : "Chưa dò bất thường cho mã này."}</div>`;
+  h += `</div>`;
+  // chiến lược DN
+  const cl = r.chien_luoc || [];
+  h += `<div class="the"><div class="khoi-dau"><h2>Chiến lược doanh nghiệp</h2><span class="phu">từ báo cáo thường niên (OCR) – chủ đề & đoạn định hướng</span></div>`;
+  if (cl.length) {
+    h += cl.map((x, i) => `<details${i === 0 ? " open" : ""}><summary>${esc(x.nam)}${x.doi?.length ? ` <span class="g">· đổi: ${esc(x.doi.join(", "))}</span>` : ""}</summary>
+      <div style="margin-top:6px">${(x.chu_de || []).map(c => `<span class="chip">${esc(c)}</span>`).join("")}</div>
+      ${x.doan ? `<p>${esc(x.doan)}</p>` : ""}${url(x.pdf) ? `<p><a href="${url(x.pdf)}" target="_blank" rel="noopener">📄 Báo cáo thường niên ${esc(x.nam)}</a></p>` : ""}</details>`).join("");
+  } else h += `<div class="trong">Chưa đọc báo cáo thường niên cho mã này.</div>`;
+  h += `</div>`;
+  nd.innerHTML = h;
+  $("#cuoi").textContent = `Số liệu BCTC cập nhật ${r.cap_nhat || ""} · giá trong phiên từ Bảng thị trường (5' một lần) · không phải khuyến nghị đầu tư.`;
+}
+
+// ---------------------------------------------------------------- trang đầu
+function hien_dau() {
+  document.title = "Tra cứu mã";
+  const chip = m => `<a class="chip" href="#${esc(m)}">${esc(m)}</a>`;
+  const top = DS.slice(0, 30).map(r => r.ma);
+  const tang = DS.filter(r => r.ln_yoy != null && r.ln_q >= 50 && r.lien >= 2).sort((a, b) => b.ln_yoy - a.ln_yoy).slice(0, 20).map(r => r.ma);
+  const re = DS.filter(r => r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
+  let h = `<div class="the"><div class="than nhom-chip">`;
+  if (GIU.size) h += `<h3>💼 Danh mục đang giữ</h3>${[...GIU].sort().map(chip).join("")}`;
+  if (Object.keys(BOT).length) h += `<h3>★ Bot đang khuyến nghị mua</h3>${Object.keys(BOT).map(chip).join("")}`;
+  h += `<h3>Vốn hoá lớn nhất</h3>${top.map(chip).join("")}`;
+  if (tang.length) h += `<h3>LNST quý tăng mạnh (≥ 2 quý liền, quý ≥ 50 tỷ)</h3>${tang.map(chip).join("")}`;
+  if (re.length) h += `<h3>Rẻ so giá trị hợp lý (vốn hoá ≥ 1.000 tỷ)</h3>${re.map(chip).join("")}`;
+  h += `</div></div>`;
+  $("#noi-dung").innerHTML = h;
+  $("#cuoi").textContent = `${DS.length} mã · BCTC tới ${(META.quy || []).slice(-1)[0] || ""} · cập nhật ${META.cap_nhat || ""}`;
+}
+
+// ---------------------------------------------------------------- lọc KQKD
+const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["pe_h", "P/E"], ["pb_h", "P/B"], ["peg", "PEG"],
+  ["ln_q", "LNST quý"], ["ln_yoy", "LN quý YoY"], ["ln4_yoy", "LN 4Q YoY"], ["dt_yoy", "DT YoY"], ["bien", "Biên gộp"],
+  ["lien", "Quý tăng liền"], ["dg_h", "So giá trị HL"], ["von", "Vốn hoá"], ["rui_ro_bctc", "Rủi ro BCTC"]];
+const LOC = {tim: "", san: "", nganh: "", sx: "von", tang: false, bat: new Set()};
+const BAT = {tang: ["LN quý tăng > 20%", r => r.ln_yoy > .2], toc: ["Tăng tốc", r => r.tang_toc === "Có"],
+  re: ["Rẻ", r => r.dg_h >= .2], pe: ["P/E < 12", r => r.pe_h > 0 && r.pe_h < 12], sach: ["Không rủi ro BCTC", r => !r.rui_ro_bctc],
+  lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000]};
+function o_loc(r, k) {
+  switch (k) {
+    case "ma": return `<td class="trai ma"><a href="#${esc(r.ma)}">${esc(r.ma)}</a>${GIU.has(r.ma) ? " 💼" : ""}${BOT[r.ma] ? " ★" : ""}</td>`;
+    case "nganh": return `<td class="trai an-dt">${esc(r.nganh)}</td>`;
+    case "gia_h": return `<td>${r.gia_h ? so(r.gia_h / 1000, 2) : "–"}</td>`;
+    case "pe_h": return `<td>${r.pe_h > 0 ? so(r.pe_h, 1) : "–"}</td>`;
+    case "pb_h": return `<td>${r.pb_h > 0 ? so(r.pb_h, 2) : "–"}</td>`;
+    case "peg": return `<td>${r.peg ? so(r.peg, 2) : "–"}</td>`;
+    case "ln_q": return `<td class="${r.ln_q < 0 ? "g" : ""}">${ty(r.ln_q)}</td>`;
+    case "bien": return `<td>${r.bien != null ? pt(r.bien, 1, false) : "–"}</td>`;
+    case "lien": return `<td>${r.lien || ""}</td>`;
+    case "von": return `<td>${so(r.von, 0)}</td>`;
+    case "rui_ro_bctc": return `<td class="${r.rui_ro_bctc ? "g" : ""}">${r.rui_ro_bctc || ""}</td>`;
+    default: return `<td class="${mau(r[k])}">${pt(r[k])}</td>`;
+  }
+}
+function hien_loc() {
+  document.title = "Lọc KQKD – Tra cứu mã";
+  for (const r of DS) {
+    r.gia_h = gia_hien(r);
+    r.pe_h = r.eps > 0 && r.gia_h ? r.gia_h / r.eps : null;
+    r.pb_h = r.bvps > 0 && r.gia_h ? r.gia_h / r.bvps : null;
+    r.dg_h = r.gia_tri && r.gia_h ? r.gia_tri / r.gia_h - 1 : null;
+  }
+  const san = [...new Set(DS.map(r => r.san))].filter(Boolean).sort();
+  const ng = [...new Set(DS.map(r => r.nganh))].filter(Boolean).sort((a, b) => a.localeCompare(b, "vi"));
+  $("#noi-dung").innerHTML = `<div class="loc-dau">
+    <input id="l-tim" placeholder="Lọc mã / ngành…" value="${esc(LOC.tim)}">
+    <select id="l-san"><option value="">Mọi sàn</option>${san.map(s => `<option${s === LOC.san ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
+    <select id="l-nganh"><option value="">Mọi ngành</option>${ng.map(s => `<option${s === LOC.nganh ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
+    ${Object.entries(BAT).map(([k, [t]]) => `<button class="bat" data-bat="${k}" aria-pressed="${LOC.bat.has(k)}">${esc(t)}</button>`).join("")}
+    <span class="dem" id="l-dem"></span></div>
+    <div class="the"><div class="bang-boc"><table id="bang-loc" class="so"><thead><tr>${COT.map(([k, t, tr]) =>
+      `<th data-k="${k}" class="${tr ? "trai" : ""}${k === "nganh" ? " an-dt" : ""}">${esc(t)}</th>`).join("")}</tr></thead><tbody></tbody></table></div></div>
+    <p class="m" style="font-size:12px">Giá, P/E, P/B, so giá trị hợp lý theo giá trong phiên. LNST quý tỷ đồng. Rủi ro BCTC = số bất thường mức RỦI RO chưa được giải thích. Bấm tiêu đề cột để sắp xếp, bấm mã để xem chi tiết.</p>`;
+  $("#l-tim").oninput = e => { LOC.tim = e.target.value.trim().toUpperCase(); ve_loc(); };
+  $("#l-san").onchange = e => { LOC.san = e.target.value; ve_loc(); };
+  $("#l-nganh").onchange = e => { LOC.nganh = e.target.value; ve_loc(); };
+  document.querySelectorAll("[data-bat]").forEach(b => b.onclick = () => {
+    const k = b.dataset.bat; LOC.bat.has(k) ? LOC.bat.delete(k) : LOC.bat.add(k);
+    b.setAttribute("aria-pressed", LOC.bat.has(k)); ve_loc();
+  });
+  document.querySelectorAll("#bang-loc th").forEach(th => th.onclick = () => {
+    const k = th.dataset.k; LOC.tang = LOC.sx === k ? !LOC.tang : (k === "ma" || k === "nganh" || k === "pe_h" || k === "pb_h" || k === "peg");
+    LOC.sx = k; ve_loc();
+  });
+  ve_loc();
+  $("#cuoi").textContent = `BCTC tới ${(META.quy || []).slice(-1)[0] || ""} · cập nhật ${META.cap_nhat || ""}`;
+}
+function ve_loc() {
+  let ds = DS.filter(r => (!LOC.san || r.san === LOC.san) && (!LOC.nganh || r.nganh === LOC.nganh)
+    && (!LOC.tim || r.ma.includes(LOC.tim) || (r.nganh || "").toUpperCase().includes(LOC.tim) || (r.ten || "").toUpperCase().includes(LOC.tim))
+    && [...LOC.bat].every(k => BAT[k][1](r)));
+  const k = LOC.sx, d = LOC.tang ? 1 : -1;
+  ds.sort((a, b) => {
+    const x = a[k], y = b[k];
+    if (x == null || x === "") return 1; if (y == null || y === "") return -1;
+    return (typeof x === "string" ? x.localeCompare(y, "vi") : x - y) * d;
+  });
+  document.querySelectorAll("#bang-loc th").forEach(th => th.dataset.k === k ? th.setAttribute("aria-sort", LOC.tang ? "ascending" : "descending") : th.removeAttribute("aria-sort"));
+  $("#l-dem").textContent = `${ds.length} / ${DS.length} mã`;
+  $("#bang-loc tbody").innerHTML = ds.slice(0, 400).map(r => `<tr data-ma="${esc(r.ma)}">${COT.map(([c]) => o_loc(r, c)).join("")}</tr>`).join("")
+    + (ds.length > 400 ? `<tr><td class="trai m" colspan="${COT.length}">… còn ${ds.length - 400} mã – lọc hẹp hơn để xem</td></tr>` : "");
+  $("#bang-loc tbody").onclick = e => { const tr = e.target.closest("tr[data-ma]"); if (tr && !e.target.closest("a")) location.hash = tr.dataset.ma; };
+}
+
+// ---------------------------------------------------------------- ngành
+async function hien_nganh() {
+  document.title = "Ngành – Tra cứu mã";
+  if (!NG) { try { NG = await lay(DL + "nganh.json"); } catch (e) { NG = {ds: []}; } }
+  $("#noi-dung").innerHTML = `<div class="the"><div class="khoi-dau"><h2>Bội số ngành</h2><span class="phu">năm kiểm toán gần nhất · P/E, P/B gia quyền vốn hoá · ROE, tăng LNST trung vị · cập nhật ${esc(NG.cap_nhat || "")}</span></div>
+    <div class="bang-boc"><table class="so"><thead><tr><th class="trai">Ngành</th><th>Số mã</th><th>P/E</th><th>P/B</th><th>ROE</th><th>Tăng LNST</th><th>Vốn hoá (tỷ)</th><th class="trai">Mã lớn nhất</th></tr></thead><tbody>` +
+    (NG.ds || []).map(x => `<tr><td class="trai"><b>${esc(x.nganh)}</b></td><td>${x.so_ma}</td><td>${x.pe ? so(x.pe, 1) : "–"}</td><td>${x.pb ? so(x.pb, 2) : "–"}</td>
+      <td>${x.roe != null ? so(x.roe, 1) + "%" : "–"}</td><td class="${mau(x.tang)}">${x.tang != null ? so(x.tang, 1) + "%" : "–"}</td><td>${so(x.von_hoa, 0)}</td>
+      <td class="trai">${(x.ma || []).slice(0, 6).map(m => `<a href="#${esc(m)}">${esc(m)}</a>`).join(" ")}</td></tr>`).join("") +
+    `</tbody></table></div></div>`;
+  $("#cuoi").textContent = "";
+}
+
+// ---------------------------------------------------------------- điều hướng
+function tim_ma(q) {
+  q = (q || "").trim().toUpperCase();
+  if (!q) return null;
+  if (DS.some(r => r.ma === q) || MA_OK(q) && LIVE[q]) return q;
+  const k = q.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/Đ/g, "D");
+  const r = DS.find(r => r.ma.startsWith(q)) || DS.find(r => (r.ten || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/Đ/g, "D").includes(k));
+  return r ? r.ma : MA_OK(q) ? q : null;
+}
+function dinh_tuyen() {
+  const h = decodeURIComponent(location.hash.slice(1)).toUpperCase();
+  for (const [id, on] of [["t-ma", h !== "LOC" && h !== "NGANH"], ["t-loc", h === "LOC"], ["t-nganh", h === "NGANH"]])
+    on ? $("#" + id).setAttribute("aria-current", "page") : $("#" + id).removeAttribute("aria-current");
+  if (h === "LOC" || h === "NGANH") $("#o-tim").value = "";
+  if (h === "LOC") return hien_loc();
+  if (h === "NGANH") return hien_nganh();
+  if (MA_OK(h)) { $("#o-tim").value = h; return hien_ma(h); }
+  $("#o-tim").value = ""; return hien_dau();
+}
+$("#f-tim").onsubmit = e => {
+  e.preventDefault();
+  const m = tim_ma($("#o-tim").value);
+  if (m) { location.hash = m; $("#o-tim").blur(); }
+};
+addEventListener("hashchange", () => { dinh_tuyen(); scrollTo(0, 0); });
+
+(async () => {
+  try {
+    const [d] = await Promise.all([lay(DL + "ds.json"), tai_thi_truong()]);
+    DS = d.ds || []; META = d;
+    $("#ds-ma").innerHTML = DS.map(r => `<option value="${esc(r.ma)}">${esc(r.ten || r.nganh || "")}</option>`).join("");
+  } catch (e) {
+    $("#noi-dung").innerHTML = `<div class="the"><div class="trong">Chưa có dữ liệu tra cứu (workflow "Du lieu tra cuu" chưa chạy xong). Thử lại sau ít phút.</div></div>`;
+    return;
+  }
+  dinh_tuyen();
+  setInterval(async () => {                                  // giá trong phiên: tải lại 1 phút / lần khi đang xem
+    if (document.hidden || !MKT?.dang_gd) return;
+    await tai_thi_truong();
+    const h = decodeURIComponent(location.hash.slice(1)).toUpperCase();
+    if (MA_OK(h) && h !== "LOC") hien_ma(h);
+  }, 60000);
+})();
+</script>
+</body>
+</html>

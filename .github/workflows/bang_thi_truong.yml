@@ -2,6 +2,7 @@
 # phiên, tác động lên VN-Index, lọc mã. Dữ liệu thị trường công khai + RIÊNG cột mã đang giữ (mục 💼, xem bước bên dưới).
 #   • Trong giờ giao dịch: nhip_thi_truong.yml gọi 5' một lần (lịch "*/5" của GitHub hay trễ / bỏ hẳn – 05/11/2026 không
 #     chạy lần nào) + 15:10 chốt phiên dự phòng: chụp bảng giá → du_lieu.json → triển khai Pages.
+#   • Trang Tra cứu mã docs/ma/: dữ liệu từ workflow "Du lieu tra cuu" (cache tra-cuu-*), gói cùng mỗi lần triển khai.
 #   • 19:07: chuẩn bị cho phiên sau (lịch sử 260 phiên, khối ngoại / tự doanh, ngành, hồ sơ thanh khoản) → cache.
 # Cần bật 1 lần: Settings → Pages → Build and deployment → Source: "GitHub Actions". Chưa bật → chỉ dựng, bỏ qua triển khai.
 name: Bang thi truong
@@ -116,6 +117,14 @@ jobs:
           if [ "$MA" = "200" ]; then echo "bat=1" >> "$GITHUB_OUTPUT"
           else echo "::notice::GitHub Pages chưa bật (HTTP $MA) – Settings → Pages → Source: GitHub Actions. Bỏ qua triển khai."
                echo "bat=0" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Lấy dữ liệu trang Tra cứu mã (workflow "Du lieu tra cuu" – cache mới nhất)
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        uses: actions/cache/restore@v5
+        with:
+          path: docs/ma/du_lieu
+          key: tra-cuu-${{ github.run_id }}
+          restore-keys: tra-cuu-
 
       - name: Gói trang
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'

@@ -14,3 +14,4 @@ du_lieu
 # bảng thị trường: dữ liệu dựng mỗi lần chạy (không commit)
 docs/thi_truong/du_lieu.json
 cache_thi_truong/
+docs/ma/du_lieu/

@@ -4,11 +4,10 @@
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
 # ở danh-muc ptcp/cau_hinh.py), von55–von84 (28–29/10/2026), von85 + von87–von99 (01/11/2026 – "không cải thiện được gì
-# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
+# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026), nganh_nn / gian_luoc (05/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
-#   gian_luoc – (thử 05/11/2026) tháo từng luật phụ trên nền hiện tại: thừa / có ích (luật đặt trước C1 20/20 + C2 4/4)
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -47,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, gian_luoc]
+        phan: [chuan]
     runs-on: ubuntu-24.04
     defaults:
       run:
