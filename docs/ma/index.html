@@ -243,12 +243,23 @@ function chuoi_gia(k, ma) {                    // lịch sử + nến hôm nay (
   const g = k.g;
   if (!g?.d?.length) return null;
   const x = {d: [...g.d], o: [...g.o], h: [...g.h], l: [...g.l], c: [...g.c], v: [...g.v], nn: [...(g.nn || [])]};
-  const l = LIVE[ma], ph = MKT?.phien;
-  if (l && l.gia && ph && ph > x.d[x.d.length - 1] && l.co_gd) {
+  const l = LIVE[ma], ph = MKT?.phien, cuoi = x.d[x.d.length - 1];
+  if (l && l.gia && ph && ph > cuoi && l.co_gd) {
+    const c0 = x.c[x.c.length - 1];
+    if (phien_sau(cuoi) !== ph) x.cu = cuoi;                     // lịch sử giá chưa cập nhật tới phiên trước
+    else if (l.tc && c0 && Math.abs(l.tc / c0 - 1) > .01 && !/UPCOM/i.test(k.r?.san || "")) {   // ngày GDKHQ (cổ tức / tách):
+                                                                 // tham chiếu đã điều chỉnh (UPCoM: tham chiếu = giá BQ, bỏ)
+      const k = l.tc / c0; for (const a of [x.o, x.h, x.l, x.c]) for (let i = 0; i < a.length; i++) if (a[i] != null) a[i] *= k;
+      x.dc = k;
+    }
     x.d.push(ph); x.o.push(l.tc || l.gia); x.h.push(l.cao || l.gia); x.l.push(l.thap || l.gia); x.c.push(l.gia); x.v.push(null); x.nn.push(l.nn);
-    x.tam = true;
+    x.tam = true; x.tc = l.tc || null;
   }
   return x;
+}
+function phien_sau(d) {                        // phiên làm việc kế tiếp (bỏ T7 / CN; lễ coi như ngày thường)
+  const t = new Date(d + "T00:00:00Z"); do t.setUTCDate(t.getUTCDate() + 1); while ([0, 6].includes(t.getUTCDay()));
+  return t.toISOString().slice(0, 10);
 }
 const sma = (c, n) => c.map((_, i) => i + 1 < n ? null : tb(c.slice(i + 1 - n, i + 1)));
 function ema(c, n) { const k = 2 / (n + 1); let e = null; return c.map(v => (e = e == null ? v : v * k + e * (1 - k))); }
@@ -401,7 +412,7 @@ async function ve_bd_gia(el, x0) {
   const so_nen = ST.khung === "D" ? ST.nen : ST.khung === "W" ? Math.ceil(ST.nen / 5) : Math.ceil(ST.nen / 21);
   ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: n + 3});
   const cg = document.createElement("div"); cg.className = "chu-bd"; el.appendChild(cg);
-  const viet = i => { if (i == null || i < 0 || i >= n) return; const p = i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
+  const viet = i => { if (i == null || i < 0 || i >= n) return; const p = x.tam && i === n - 1 && x.tc ? x.c[i] / x.tc - 1 : i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
     cg.innerHTML = `${ngay_vn(x.d[i])}${x.tam && i === n - 1 ? " (tạm)" : ""} · M <b>${so(x.o[i], 2)}</b> C <b>${so(x.h[i], 2)}</b> T <b>${so(x.l[i], 2)}</b> Đ <b class="${mau(p)}">${so(x.c[i], 2)}</b> <span class="${mau(p)}">${pt(p, 2)}</span>` +
       `<br>KL ${kl(x.v[i])}${x.nn?.[i] != null ? ` · NN ${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ` : ""}` +
       ST.ma_tb.map(m => ma[m][i] != null ? ` · <span style="color:${MAU_MA[m]}">MA${m} ${so(ma[m][i], 2)}</span>` : "").join(""); };
@@ -426,9 +437,9 @@ function tong_quan(ma, k) {
   if (x) {
     const c = x.c, L = c.length - 1, ve = (i) => i >= 0 ? c[L] / c[i] - 1 : null;
     const nam = String(x.d[L]).slice(0, 4), dn = x.d.findIndex(d => d.startsWith(nam));
-    const hs = [["1 ngày", ve(L - 1)], ["1 tuần", ve(L - 5)], ["1 tháng", ve(L - 21)], ["3 tháng", ve(L - 63)], ["6 tháng", ve(L - 126)],
+    const hs = [["1 ngày", x.tam && x.tc ? c[L] / x.tc - 1 : ve(L - 1)], ["1 tuần", ve(L - 5)], ["1 tháng", ve(L - 21)], ["3 tháng", ve(L - 63)], ["6 tháng", ve(L - 126)],
       ["1 năm", ve(L - 250)], ["Từ đầu năm", dn > 0 ? c[L] / c[dn - 1] - 1 : null]];
-    h += the("Biểu đồ giá", `giá điều chỉnh cổ tức / chia tách · ${x.d.length} phiên · kéo / cuộn để xem · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`,
+    h += the("Biểu đồ giá", `giá điều chỉnh cổ tức / chia tách · ${x.d.length} phiên${x.cu ? ` · <span class="g">lịch sử tới ${ngay_vn(x.cu)} (chưa cập nhật)</span>` : ""}${x.dc ? " · hôm nay GDKHQ – lịch sử đã điều chỉnh theo tham chiếu" : ""} · kéo / cuộn để xem · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`,
       `<div class="nen-dk"><span class="nut">${nut([["D", "Ngày"], ["W", "Tuần"], ["M", "Tháng"]], ST.khung, "khung")}</span>
        ${["10", "20", "50", "200"].map(m => `<label><input type="checkbox" data-ma="${m}"${ST.ma_tb.includes(+m) ? " checked" : ""}>MA${m}</label>`).join("")}
        <span class="nut">${nut([["kl", "Khối lượng"]].concat(x.nn?.some(v => v != null) ? [["nn", "Khối ngoại"]] : []), ST.duoi, "duoi")}</span></div>
@@ -484,7 +495,19 @@ function goc_he_thong(ma, k, x, gn) {
   if (r.gia_tri) { const g = (gn.gia || 0) * 1000, dg = g ? r.gia_tri / g - 1 : null;
     d.push(["Giá trị hợp lý", `${so(r.gia_tri / 1000, 2)} <span class="${mau(dg)}">(${pt(dg)})</span>`]); }
   if (r.lnst_f) d.push(["LNST năm dự phóng", `${so(r.lnst_f, 0)} tỷ${r.ht_kh ? ` · đã đạt ${pt(r.ht_kh, 0, false)} kế hoạch` : ""}`]);
+  const cs = canslim_dong((DS || []).find(x => x.ma === ma) || r); if (cs) d.push(["CANSLIM", cs]);
   return d.map(([a, b]) => `<div class="dong"><span class="n">${a}</span><span class="v">${b}</span></div>`).join("") || `<div class="trong">Chưa có dữ liệu</div>`;
+}
+
+function canslim_dong(r) {                     // C · A · N · S · L (+ M thị trường) – thi_truong/canslim_web.py
+  if (r.cs == null) return "";
+  const cs = META.canslim || {}, ok = (b, t, v) => `<span class="${b ? "t" : "g"}" title="${esc(t)}">${b ? "✓" : "✗"} ${v}</span>`;
+  const ng = cs.nguong || {};
+  const o = [ok(r.ln_yoy >= .25, ng.C || "", `C ${pt(r.ln_yoy, 0)}`), ok(r.ln4_yoy >= .2, ng.A || "", `A ${pt(r.ln4_yoy, 0)}`),
+    ok(r.cach52 >= -15, ng.N || "", `N ${r.cach52 != null ? so(r.cach52, 0) + "%" : "–"}`),
+    ok(r.kl_x >= 1.2, ng.S || "", `S ${r.kl_x != null ? so(r.kl_x, 1) + "×" : "–"}`), ok(r.rs >= 70, ng.L || "", `L RS ${r.rs ?? "–"}`)];
+  const m = cs.m ? ` · <span class="${cs.m === "tăng" ? "t" : cs.m === "giảm" ? "g" : ""}" title="${esc(ng.M || "")}">M ${esc(cs.m)}</span>` : "";
+  return `<b>${r.cs}/5</b> · ${o.join(" ")}${m}`;
 }
 
 // ---------------------------------------------------------------- TÀI CHÍNH
@@ -785,6 +808,7 @@ function hien_dau() {
   const tang = DS.filter(r => r.ln_yoy != null && r.ln_q >= 50 && r.lien >= 2).sort((a, b) => b.ln_yoy - a.ln_yoy).slice(0, 20).map(r => r.ma);
   const re = DS.filter(r => r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
   const f = DS.filter(r => r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
+  const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 24).map(r => r.ma);
   let h = `<div class="the"><div class="than nhom-chip">`;
   if (GIU.size) h += `<h3>Danh mục đang giữ</h3>${[...GIU].sort().map(chip).join("")}`;
   if (Object.keys(BOT).length) h += `<h3>Bot đang khuyến nghị mua</h3>${Object.keys(BOT).map(chip).join("")}`;
@@ -792,16 +816,19 @@ function hien_dau() {
   if (tang.length) h += `<h3>LNST quý tăng mạnh (≥ 2 quý liền, quý ≥ 50 tỷ)</h3>${tang.map(chip).join("")}`;
   if (re.length) h += `<h3>Rẻ so giá trị hợp lý (vốn hoá ≥ 1.000 tỷ)</h3>${re.map(chip).join("")}`;
   if (f.length) h += `<h3>F-Score ≥ 8 (sức khoẻ tài chính tốt, vốn hoá ≥ 1.000 tỷ)</h3>${f.map(chip).join("")}`;
+  if (cs.length) { const m = META.canslim?.m;
+    h += `<h3>CANSLIM ≥ 4/5 (C·A·N·S·L, vốn hoá ≥ 500 tỷ, xếp theo RS)${m ? ` · thị trường (M): <span class="${m === "tăng" ? "t" : m === "giảm" ? "g" : ""}">${esc(m)}</span>` : ""}</h3>${cs.map(chip).join("")}`; }
   $("#noi-dung").innerHTML = h + `</div></div>`;
   $("#cuoi").textContent = `${DS.length} mã · BCTC tới ${(META.quy || []).slice(-1)[0] || ""} · cập nhật ${META.cap_nhat || ""}`;
 }
 const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["pe_h", "P/E"], ["pb_h", "P/B"], ["roe", "ROE"], ["ln_q", "LNST quý"],
   ["ln_yoy", "LN quý YoY"], ["ln4_yoy", "LN 4Q YoY"], ["dt_yoy", "DT YoY"], ["bien", "Biên gộp"], ["lien", "Quý tăng liền"], ["f", "F-Score"],
-  ["dg_h", "So giá trị HL"], ["von", "Vốn hoá"], ["rui_ro_bctc", "Rủi ro BCTC"]];
+  ["dg_h", "So giá trị HL"], ["cs", "CANSLIM"], ["rs", "RS"], ["von", "Vốn hoá"], ["rui_ro_bctc", "Rủi ro BCTC"]];
 const LOC = {tim: "", san: "", nganh: "", sx: "von", tang: false, bat: new Set()};
 const BAT = {tang: ["LN quý tăng > 20%", r => r.ln_yoy > .2], toc: ["Tăng tốc", r => r.tang_toc === "Có"], re: ["Rẻ", r => r.dg_h >= .2],
   pe: ["P/E < 12", r => r.pe_h > 0 && r.pe_h < 12], roe: ["ROE > 15%", r => r.roe > .15], f: ["F-Score ≥ 7", r => r.f >= 7],
-  sach: ["Không rủi ro BCTC", r => !r.rui_ro_bctc], lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000]};
+  sach: ["Không rủi ro BCTC", r => !r.rui_ro_bctc], lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000],
+  cs: ["CANSLIM ≥ 4", r => r.cs >= 4], rs: ["RS ≥ 80", r => r.rs >= 80]};
 function o_loc(r, k) {
   switch (k) {
     case "ma": return `<td class="trai ma"><a href="#${esc(r.ma)}"><b>${esc(r.ma)}</b></a>${GIU.has(r.ma) ? '<span class="the-chu giu">giữ</span>' : ""}${BOT[r.ma] ? '<span class="the-chu bot">bot</span>' : ""}</td>`;
@@ -811,7 +838,8 @@ function o_loc(r, k) {
     case "pb_h": return `<td>${r.pb_h > 0 ? so(r.pb_h, 2) : "–"}</td>`;
     case "roe": case "bien": return `<td>${r[k] != null ? pt(r[k], 1, false) : "–"}</td>`;
     case "ln_q": return `<td class="${r.ln_q < 0 ? "g" : ""}">${ty(r.ln_q)}</td>`;
-    case "lien": case "f": return `<td>${r[k] ?? ""}</td>`;
+    case "lien": case "f": case "rs": return `<td>${r[k] ?? ""}</td>`;
+    case "cs": return `<td title="${esc(r.cs_d || "")}">${r.cs != null ? `<b class="${r.cs >= 4 ? "t" : ""}">${r.cs}</b><span class="m"> ${esc(r.cs_d || "")}</span>` : ""}</td>`;
     case "von": return `<td>${so(r.von, 0)}</td>`;
     case "rui_ro_bctc": return `<td class="${r.rui_ro_bctc ? "g" : ""}">${r.rui_ro_bctc || ""}</td>`;
     default: return `<td class="${mau(r[k])}">${pt(r[k])}</td>`;
