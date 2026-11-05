@@ -120,6 +120,7 @@ def test_chup_dung_du_lieu_mau(tmp_path, monkeypatch):
         {"ma": "AAA", "nhom": "MUA_MOI", "tu": 9.8, "den": 10.3, "cl": 9.38, "mt1": 10.62, "mt3": 11.85, "ly_do": "MACD"}]}}),
         encoding="utf-8")
     monkeypatch.setattr(dung, "FILE_CHIEN_LUOC", str(cl))
+    monkeypatch.delenv("MA_GIU_FILE", raising=False)
     ra = tmp_path / "du_lieu.json"
     out = dung.chup(cb, str(ra), luc=pd.Timestamp("2026-11-05 11:30"), in_tien_do=lambda *a: None)
     d = json.loads(ra.read_text(encoding="utf-8"))
@@ -135,11 +136,48 @@ def test_chup_dung_du_lieu_mau(tmp_path, monkeypatch):
     assert loc["AAA"]["gt20"] is None and loc["AAA"]["kl_x"] is None and loc["AAA"]["san"] == "HNX"
     assert d["tin_hieu"] == {"hieu_luc": "2026-11-05", "ma": [["AAA", "Mua mới", 9.8, 10.3, 9.38, 10.62, 11.85, "MACD"]]}
     assert dung.tin_hieu_bot(str(tmp_path / "khong_co.json")) is None
+    assert d["danh_muc"] == []                                         # không có MA_GIU_FILE → không có mã đang giữ
 
 
-def test_workflow_bang_thi_truong_khong_lay_danh_muc():
+def test_workflow_bang_thi_truong_chi_lay_ma_dang_giu():
+    """Không checkout repo kín; bước duy nhất chạm danh-muc chỉ đọc cột mã danh_muc.csv ra file tạm, chỉ trên main, log
+    chỉ in số mã."""
     import yaml
     d = yaml.safe_load(open(".github/workflows/bang_thi_truong.yml", encoding="utf-8"))
+    cham = []
     for job in d["jobs"].values():
         for st in job.get("steps") or []:
-            assert "danh-muc" not in json.dumps(st) and "DANH_MUC" not in json.dumps(st)
+            t = json.dumps(st, ensure_ascii=False)
+            assert "danh-muc" not in str((st.get("with") or {}).get("repository", ""))
+            if "DANH_MUC" in t or "danh-muc" in t:
+                cham.append(st)
+    assert len(cham) == 1
+    st = cham[0]
+    assert st["if"] == "github.ref == 'refs/heads/main'" and "contents/danh_muc.csv" in st["run"]
+    assert "x.get('ma')" in st["run"] and "RUNNER_TEMP" in st["run"] and 'cat "$F"' not in st["run"]
+
+
+def test_ma_dang_giu(tmp_path, monkeypatch):
+    f = tmp_path / "ma.txt"
+    f.write_text("bbb,AAA,\nAAA, x, CCC1\n", encoding="utf-8")
+    assert dung.ma_dang_giu(str(f)) == ["AAA", "BBB", "CCC1"]
+    monkeypatch.delenv("MA_GIU_FILE", raising=False)
+    assert dung.ma_dang_giu() == [] and dung.ma_dang_giu(str(tmp_path / "khong.txt")) == []
+    monkeypatch.setenv("MA_GIU_FILE", str(f))
+    assert dung.ma_dang_giu() == ["AAA", "BBB", "CCC1"]
+
+
+def test_workflow_nhip_goi_bang_thi_truong():
+    """Lịch "*/5" của GitHub không tin được → máy nhịp gọi bang_thi_truong.yml (main); không checkout, không chạm repo kín,
+    chỉ quyền actions; mỗi buổi có ≥ 2 mốc lịch dự phòng."""
+    import yaml
+    d = yaml.safe_load(open(".github/workflows/nhip_thi_truong.yml", encoding="utf-8"))
+    tren = d.get("on") or d.get(True)
+    assert d["permissions"] == {"actions": "write"} and "workflow_dispatch" in tren
+    lich = [int(x["cron"].split()[1]) for x in tren["schedule"]]
+    assert sum(h < 4 for h in lich) >= 2 and sum(5 <= h < 8 for h in lich) >= 2
+    (job,) = d["jobs"].values()
+    t = json.dumps(job, ensure_ascii=False)
+    assert "checkout" not in t and "danh-muc" not in t and "DANH_MUC" not in t
+    assert "workflows/bang_thi_truong.yml/dispatches" in t and '{\\"ref\\":\\"main\\"}' in t
+    assert job["timeout-minutes"] <= 360
