@@ -38,7 +38,7 @@ jobs:
       - id: k
         env:
           GH_TOKEN: ${{ github.token }}
-          TOKEN_DM: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          TOKEN_DM: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           REPO_DM: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
         run: |
           if [ "${{ github.event.schedule || inputs.lich }}" = "50 7 * * 1-5" ]; then      # DỰ PHÒNG cho lượt vòng quét chiều gọi lúc 15:02:

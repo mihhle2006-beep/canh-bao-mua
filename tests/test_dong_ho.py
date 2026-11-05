@@ -60,7 +60,8 @@ class GiaGH:
 
 
 def _run(id_, luc_vn, event="workflow_dispatch"):
-    return {"id": id_, "created_at": luc_vn.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), "event": event}
+    return {"id": id_, "created_at": luc_vn.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), "event": event,
+            "status": "completed"}
 
 
 # ---------------------------------------------------------------- lịch
@@ -85,6 +86,8 @@ def test_lich_dong_ho_khop_dung_cron_trong_workflow():
     tu, den = datetime(2026, 10, 26, tzinfo=VN), datetime(2026, 12, 8, tzinfo=VN)    # qua 2 lần đầu tháng (lịch tháng)
     sai = []
     for wf, lich, inputs, tre in dong_ho.LICH:
+        if "/" in wf:                                                   # repo kín danh-muc – test riêng
+            continue
         d = _yml(wf)
         assert "workflow_dispatch" in _on(d), wf
         assert set(inputs) <= _inputs(d), f"{wf}: input {set(inputs) - _inputs(d)} không có trong workflow_dispatch"
@@ -100,7 +103,7 @@ def test_lich_dong_ho_khop_dung_cron_trong_workflow():
 
 
 def test_workflow_phan_biet_lich_thi_dong_ho_truyen_input():
-    for ten in sorted({x[0] for x in dong_ho.LICH}):
+    for ten in sorted({x[0] for x in dong_ho.LICH if "/" not in x[0]}):
         d = _yml(ten)
         jobs = {k: v for k, v in (d.get("jobs") or {}).items() if k != "gac"}
         nd = yaml.safe_dump(jobs, allow_unicode=True)
@@ -172,6 +175,36 @@ def test_doc_han_token():
     assert dong_ho.doc_han("xx") is None
 
 
+def test_dong_ho_viec_repo_kin_danh_muc():
+    """Vòng đồng bộ DNSE / xin OTP ở danh-muc (máy Mac): gọi bằng token repo kín; đang chạy / chờ Mac → không gọi; token
+    thiếu quyền (403) → bỏ mốc, cảnh báo; chưa có token → bỏ, cảnh báo 1 lần."""
+    import urllib.error
+    lich = [("danh-muc/dnse_dong_bo.yml", "35 8 * * 1-5", {"vong": "true"}, 360)]
+    luc = datetime(2026, 11, 6, 9, 10, tzinfo=VN)
+    dm = GiaGH({"dnse_dong_bo.yml": [_run(1, datetime(2026, 11, 6, 5, 35, tzinfo=VN))]})
+    cb = GiaGH()
+    da = dong_ho.DongHo(cb, lich=lich, in_ra=lambda *_: None, gh_khac={"danh-muc": dm}).buoc(luc)
+    assert len(da) == 1 and dm.goi_ds == [("dnse_dong_bo.yml", {"vong": "true"})] and cb.goi_ds == []
+    dang = GiaGH({"dnse_dong_bo.yml": [{**_run(2, datetime(2026, 11, 6, 6, 0, tzinfo=VN)), "status": "queued"}]})
+    assert dong_ho.DongHo(cb, lich=lich, in_ra=lambda *_: None, gh_khac={"danh-muc": dang}).buoc(luc) == []
+    assert dang.goi_ds == []
+
+    class Cam(GiaGH):
+        def goi(self, wf, inputs=None, ref="main"):
+            raise urllib.error.HTTPError("u", 403, "Resource not accessible", {}, None)
+
+    log = []
+    dh = dong_ho.DongHo(cb, lich=lich, in_ra=log.append, gh_khac={"danh-muc": Cam()})
+    dh.buoc(luc)
+    assert "Actions: Read and write" in log[-1] and len(dh.xong) == 1
+    log = []
+    dh = dong_ho.DongHo(cb, lich=lich, in_ra=log.append)
+    dh.buoc(luc)
+    dh.buoc(luc + timedelta(minutes=1))
+    assert len(log) == 1 and "DANH_MUC_TOKEN_GHI" in log[0]
+    assert all(x[0].split("/")[-1] in ("dnse_dong_bo.yml", "dat_lenh.yml") for x in dong_ho.LICH if "/" in x[0])
+
+
 def test_dong_ho_thu_in_ra():
     out = io.StringIO()
     with redirect_stdout(out):
@@ -215,7 +248,7 @@ def test_gac_main_khong_phai_lich_thi_chay():
 def test_workflow_co_gac_dung_cach():
     """Workflow có lịch mà đồng hồ gọi (trừ KHONG_GAC): job gac (chỉ khi lịch) + mọi job gốc needs gac, vẫn chạy khi gac
     bỏ qua / lỗi; job sau không bị bỏ theo vì gac bị bỏ qua."""
-    can = {x[0] for x in dong_ho.LICH} - KHONG_GAC
+    can = {x[0] for x in dong_ho.LICH if "/" not in x[0]} - KHONG_GAC
     co = set()
     for f in sorted(glob.glob(os.path.join(WF, "*.yml"))):
         ten = os.path.basename(f)

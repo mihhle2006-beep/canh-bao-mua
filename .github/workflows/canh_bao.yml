@@ -90,7 +90,7 @@ jobs:
 
       - name: Lấy ptcp – MỘT nguồn duy nhất (repo danh-muc)
         env:
-          TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc (lấy ptcp, đọc danh mục)
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc (lấy ptcp, đọc danh mục)
           REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO }}          # mặc định: chính repo danh-muc
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}  # thư mục ptcp trong repo đó
           NHANH: ${{ inputs.nhanh_ptcp }}
@@ -105,20 +105,24 @@ jobs:
           key: gia-${{ github.run_id }}
           restore-keys: gia-
 
+      # khoá mã hoá CỐ ĐỊNH (CACHE_KEY, không có thì token bot Telegram – không hết hạn), KHÔNG theo token GitHub: gia hạn /
+      # tạo lại DANH_MUC_TOKEN_GHI không làm mất trạng thái (mất → báo bán lặp). KHOA_CU: cache cũ (trước 11/2026)
       - name: Giải mã trạng thái riêng (cache công khai chỉ giữ bản mã hoá)
         env:
-          KHOA: ${{ secrets.CACHE_KEY || secrets.DANH_MUC_TOKEN_GHI }}
+          KHOA: ${{ secrets.CACHE_KEY || secrets.TELEGRAM_TOKEN }}
+          KHOA_CU: ${{ secrets.DANH_MUC_TOKEN_GHI }}
         run: |
           [ -f cache_ptcp/rieng.enc ] || exit 0
-          openssl enc -d -aes-256-cbc -pbkdf2 -pass env:KHOA -in cache_ptcp/rieng.enc 2>/dev/null | tar -xz 2>/dev/null \
-            || echo "Không giải mã được trạng thái riêng → bắt đầu lại"
+          giai() { [ -n "${!1}" ] && openssl enc -d -aes-256-cbc -pbkdf2 -pass "env:$1" -in cache_ptcp/rieng.enc 2>/dev/null \
+                   | tar -xz 2>/dev/null; }
+          giai KHOA || giai KHOA_CU || echo "Không giải mã được trạng thái riêng → bắt đầu lại"
           rm -f cache_ptcp/rieng.enc
 
       - name: Quét & gửi cảnh báo
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc (cảnh báo BÁN)
+          DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc (cảnh báo BÁN)
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv
           GH_TOKEN: ${{ github.token }}
@@ -205,11 +209,14 @@ jobs:
       - name: Mã hoá trạng thái riêng trước khi lưu cache
         if: always()
         env:
-          KHOA: ${{ secrets.CACHE_KEY || secrets.DANH_MUC_TOKEN_GHI }}
+          KHOA: ${{ secrets.CACHE_KEY || secrets.TELEGRAM_TOKEN }}
         run: |
           ds=$(ls cache_ptcp/trang_thai_ban.json cache_ptcp/lich_su_danh_gia_rieng.csv 2>/dev/null || true)
           [ -n "$ds" ] || exit 0
-          tar -cz $ds | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:KHOA -out cache_ptcp/rieng.enc && rm -f $ds
+          # không có khoá / mã hoá lỗi → XOÁ bản rõ (không bao giờ lưu trạng thái riêng chưa mã hoá vào cache công khai)
+          [ -n "$KHOA" ] && tar -cz $ds | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:KHOA -out cache_ptcp/rieng.enc \
+            || { echo "::warning::Không mã hoá được trạng thái riêng – bỏ, lượt sau bắt đầu lại"; rm -f cache_ptcp/rieng.enc; }
+          rm -f $ds
 
       # lưu cả khi lần chạy đỏ (vòng lặp ≥ 2 lượt lỗi): trạng thái bán đã báo phải sang buổi sau, không báo lặp. Chạy thử /
       # chạy lại giờ cũ / xem mã không lưu – cache của chúng (trạng thái lúc bắt đầu) không được đè cache mới của vòng lặp

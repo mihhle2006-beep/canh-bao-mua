@@ -10,7 +10,7 @@ Nguyên tắc (11/2026): **thứ gì KÍN để ở repo riêng tư, việc CH�
 | **gia_lap** | kín | giao dịch giả lập (tài khoản ảo theo đúng luật), sức khoẻ hệ thống, tổng kết tuần |
 | Bo_Loc | kín | phần bộ lọc riêng (PTĐTTC) – không chạy từ đây |
 
-Workflow ở đây **lấy code kín lúc chạy** (token `DANH_MUC_TOKEN_GHI` / `DANH_MUC_TOKEN_DOC`), XOÁ file danh mục thật trước
+Workflow ở đây **lấy code kín lúc chạy** (token duy nhất `DANH_MUC_TOKEN_GHI` – 11/2026 gộp, bỏ `DANH_MUC_TOKEN_DOC`), XOÁ file danh mục thật trước
 khi chạy (`tests/test_workflow_bao_mat.py` kiểm), log không in danh mục (`CONG_KHAI=1`), kết quả kín gửi Telegram /
 commit về repo kín. Riêng **Danh muc hang ngay** cần file thật nên chạy KÍN (không bước nào in nội dung).
 

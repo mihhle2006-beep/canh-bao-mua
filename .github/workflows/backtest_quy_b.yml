@@ -78,7 +78,7 @@ jobs:
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           ref: ${{ inputs.nhanh_danh_muc || '' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
@@ -89,7 +89,7 @@ jobs:
         continue-on-error: true
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: gia_lap
       - uses: actions/setup-python@v6

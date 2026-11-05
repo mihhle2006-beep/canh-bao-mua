@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      TOKEN: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+      TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}
     steps:
       - name: Bỏ qua khi không có secret (PR từ fork)
         id: co
@@ -68,7 +68,7 @@ jobs:
         if: steps.co.outputs.co == '1'
         with:
           repository: ${{ vars.GIA_LAP_REPO || 'mihhle2006-beep/gia_lap' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: gia_lap
 
@@ -85,7 +85,7 @@ jobs:
         if: steps.co.outputs.co == '1'
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
-          token: ${{ secrets.DANH_MUC_TOKEN_DOC || secrets.DANH_MUC_TOKEN_GHI }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
 
