@@ -293,6 +293,7 @@ def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
     assert T.thu_tu(["BBB", "AAA", "CCC"], ra, "2026-03-01") == ["CCC", "AAA", "BBB"]     # chưa có → cũ nhất trước
     assert T.thu_tu(["ZZZ", "CCC"], ra, "2026-03-01") == ["ZZZ", "CCC"]                     # cùng độ cũ: giữ thứ tự (vốn hoá)
     assert T.thu_tu(["BBB"], ra, "2026-02-01") == []                                      # đã cập nhật hôm nay
+    assert T.thu_tu(["BBB"], ra, "2026-02-01", lam_moi=True) == ["BBB"]
     monkeypatch.setattr(T, "lay_gia", lambda m, san="": {"d": ["2026-11-05"], "c": [1.0]})
     monkeypatch.setattr(T, "lay_dn", lambda m, cu=None, *a: ({"ct": {"m": m}}, []) if m != "BBB" else ({}, ["ct"] * T.SO_PHAN_DN))
     xong, loi, con = T.chay(["AAA", "BBB", "CCC"], ra, phut=5, luong=2, in_ra=lambda *_: None)
