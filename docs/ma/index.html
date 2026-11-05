@@ -25,11 +25,30 @@ header.dau{background:var(--the);border-bottom:1px solid var(--vien);position:st
 .dau-trong{max-width:1200px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .dau-trong h1{font-size:16px;margin:0;font-weight:650;white-space:nowrap}
 .dau-trong h1 a{color:inherit}
-.tim{display:flex;gap:6px;flex:1 1 280px;max-width:460px}
-.tim input{font:inherit;font-size:15px;border:1px solid var(--vien);border-radius:9px;padding:7px 12px;flex:1;min-width:0;
-  background:var(--nhat);text-transform:uppercase}
-.tim input::placeholder{text-transform:none}
-.tim button{border:0;background:var(--nhan);color:#fff;border-radius:9px;padding:7px 14px;font-weight:600}
+/* ô tìm kiểu Google: bo tròn, bóng khi rê / gõ, gợi ý thả xuống (mã · tên · sàn), ↑↓ Enter Esc */
+.gg{position:relative;flex:1 1 300px;max-width:560px}
+.gg input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;height:40px;border:1px solid #dfe1e5;border-radius:20px;
+  padding:0 40px 0 18px;background:#fff;color:inherit;outline:0;transition:box-shadow .15s}
+.gg input:hover,.gg input:focus,.gg.mo input{box-shadow:0 1px 6px rgba(32,33,36,.28);border-color:transparent}
+.gg.mo input{border-radius:20px 20px 0 0}
+.gg .xoa{position:absolute;right:8px;top:0;height:40px;width:32px;border:0;background:none;font-size:22px;line-height:1;color:#70757a;display:none}
+.gg.co .xoa{display:block}
+.gg ul{display:none;position:absolute;left:0;right:0;top:100%;margin:0;padding:4px 0 10px;list-style:none;background:#fff;
+  border-radius:0 0 20px 20px;box-shadow:0 4px 6px rgba(32,33,36,.28);z-index:60;border-top:1px solid #e8eaed}
+.gg.mo ul{display:block}
+.gg li{padding:7px 18px;display:flex;gap:12px;align-items:baseline;cursor:pointer;white-space:nowrap}
+.gg li.chon,.gg li:hover{background:#f1f3f4}
+.gg li b{min-width:46px;font-weight:650}
+.gg li span{color:var(--mo);font-size:13.5px;overflow:hidden;text-overflow:ellipsis}
+.gg li i{margin-left:auto;font-style:normal;color:var(--mo);font-size:12px}
+.gg-lon{max-width:620px;margin:0 auto}
+.gg-lon input{height:50px;font-size:17px;border-radius:25px;padding:0 46px 0 24px}
+.gg-lon .xoa{height:50px;right:12px}
+.gg-lon.mo input{border-radius:25px 25px 0 0}.gg-lon ul{border-radius:0 0 25px 25px}.gg-lon li{padding:8px 24px}
+.dau-chinh{text-align:center;padding:42px 0 30px}
+.dau-chinh h2{font-size:30px;font-weight:650;margin:0 0 22px;letter-spacing:-.3px}
+.dau-chinh p{color:var(--mo);font-size:13px;margin:14px 0 0}
+body.o-dau .dau-trong .gg{display:none}
 .lien{margin-left:auto;display:flex;gap:12px;font-size:13px;flex-wrap:wrap}
 main{max-width:1200px;margin:0 auto;padding:14px 16px 40px}
 .the{background:var(--the);border:1px solid var(--vien);border-radius:12px;margin-bottom:14px}
@@ -62,7 +81,7 @@ main{max-width:1200px;margin:0 auto;padding:14px 16px 40px}
 .tab::-webkit-scrollbar{display:none}
 .tab a{padding:9px 10px;color:var(--chu2);font-weight:500;white-space:nowrap;border-bottom:2px solid transparent;text-decoration:none}
 .tab a[aria-current=page]{color:var(--nhan);border-bottom-color:var(--nhan);font-weight:650}
-@media (max-width:600px){.ma-dau{top:auto;position:relative}.ma-gia{text-align:left}.ma-gia .lon{font-size:24px}.an-dt{display:none}
+@media (max-width:600px){.dau-trong .gg{flex:1 1 100%;order:3}.dau-chinh{padding:22px 0 18px}.dau-chinh h2{font-size:24px}.ma-dau{top:auto;position:relative}.ma-gia{text-align:left}.ma-gia .lon{font-size:24px}.an-dt{display:none}
   .lien{margin-left:0}}
 /* lưới số */
 .luoi-so{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
@@ -162,10 +181,9 @@ tr.chon td{background:var(--nhan-nen)}
 <body>
 <header class="dau"><div class="dau-trong">
   <h1><a href="#">Tra cứu mã</a></h1>
-  <form class="tim" id="f-tim" autocomplete="off">
-    <input id="o-tim" list="ds-ma" placeholder="Mã hoặc tên (VD TCB, Hoà Phát)…" aria-label="Mã cổ phiếu" maxlength="40">
-    <datalist id="ds-ma"></datalist><button type="submit">Tìm</button>
-  </form>
+  <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã hoặc tên công ty" aria-label="Tìm mã cổ phiếu"
+    maxlength="40" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
+    aria-label="Xoá">×</button><ul role="listbox"></ul></div>
   <div class="lien"><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="../thi_truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
 </div></header>
 <main>
@@ -809,7 +827,10 @@ function hien_dau() {
   const re = DS.filter(r => r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
   const f = DS.filter(r => r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
   const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 24).map(r => r.ma);
-  let h = `<div class="the"><div class="than nhom-chip">`;
+  let h = `<div class="dau-chinh"><h2>Tra cứu mã</h2><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
+    placeholder="Nhập mã hoặc tên công ty – VD HPG, Hoà Phát, ngân hàng" aria-label="Tìm mã cổ phiếu" maxlength="40" autocomplete="off"
+    spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div>
+    <p>${DS.length} mã HOSE · HNX · UPCoM – giá, tài chính, cổ đông, định giá, CANSLIM</p></div><div class="the"><div class="than nhom-chip">`;
   if (GIU.size) h += `<h3>Danh mục đang giữ</h3>${[...GIU].sort().map(chip).join("")}`;
   if (Object.keys(BOT).length) h += `<h3>Bot đang khuyến nghị mua</h3>${Object.keys(BOT).map(chip).join("")}`;
   h += `<h3>Vốn hoá lớn nhất</h3>${DS.slice(0, 30).map(r => chip(r.ma)).join("")}`;
@@ -819,6 +840,8 @@ function hien_dau() {
   if (cs.length) { const m = META.canslim?.m;
     h += `<h3>CANSLIM ≥ 4/5 (C·A·N·S·L, vốn hoá ≥ 500 tỷ, xếp theo RS)${m ? ` · thị trường (M): <span class="${m === "tăng" ? "t" : m === "giảm" ? "g" : ""}">${esc(m)}</span>` : ""}</h3>${cs.map(chip).join("")}`; }
   $("#noi-dung").innerHTML = h + `</div></div>`;
+  const lon = gan_tim($("#tim-lon"));
+  if (matchMedia("(min-width: 820px)").matches) lon.focus({preventScroll: true});
   $("#cuoi").textContent = `${DS.length} mã · BCTC tới ${(META.quy || []).slice(-1)[0] || ""} · cập nhật ${META.cap_nhat || ""}`;
 }
 const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["pe_h", "P/E"], ["pb_h", "P/B"], ["roe", "ROE"], ["ln_q", "LNST quý"],
@@ -955,18 +978,47 @@ function gan_su_kien(ma, k, tab) {
 function tim_ma(q) {
   q = (q || "").trim().toUpperCase(); if (!q) return null;
   if (DS.some(r => r.ma === q) || (MA_OK(q) && LIVE[q])) return q;
-  const bo = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/Đ/g, "D");
-  const k = bo(q), r = DS.find(r => r.ma.startsWith(q)) || DS.find(r => bo((r.ten || "").toUpperCase()).includes(k));
+  const k = BO_DAU(q), r = DS.find(r => r.ma.startsWith(q)) || DS.find(r => BO_DAU(ten_ma(r)).includes(k));
   return r ? r.ma : MA_OK(q) ? q : null;
 }
 function dinh_tuyen() {
   const [a, b] = decodeURIComponent(location.hash.slice(1)).split("/"), h = (a || "").toUpperCase();
-  if (h === "LOC") { $("#o-tim").value = ""; return hien_loc(); }
-  if (h === "NGANH") { $("#o-tim").value = ""; return hien_nganh(); }
-  if (MA_OK(h)) { $("#o-tim").value = h; return hien_ma(h, TAB.some(t => t[0] === b) ? b : "tong-quan"); }
-  $("#o-tim").value = ""; return hien_dau();
+  const dat = v => { $("#o-tim").value = v; $("#tim-dau").classList.toggle("co", !!v); };
+  document.body.classList.toggle("o-dau", !h);
+  if (h === "LOC") { dat(""); return hien_loc(); }
+  if (h === "NGANH") { dat(""); return hien_nganh(); }
+  if (MA_OK(h)) { dat(h); return hien_ma(h, TAB.some(t => t[0] === b) ? b : "tong-quan"); }
+  dat(""); return hien_dau();
 }
-$("#f-tim").onsubmit = e => { e.preventDefault(); const m = tim_ma($("#o-tim").value); if (m) { location.hash = m; $("#o-tim").blur(); } };
+// ---------------------------------------------------------------- ô tìm kiểu Google (gợi ý theo mã rồi theo tên, bỏ dấu)
+const BO_DAU = s => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toUpperCase();
+const ten_ma = r => r.ten || MKT?.ten?.[r.ma] || "";          // ds.json chưa có tên → tên từ Bảng thị trường
+function goi_y_ma(q) {
+  q = BO_DAU(q.trim()); if (!q || !DS) return [];
+  const dau = DS.filter(r => r.ma.startsWith(q)), ten = DS.filter(r => !r.ma.startsWith(q) && (BO_DAU(ten_ma(r)).includes(q) || BO_DAU(r.nganh).includes(q)));
+  return dau.concat(ten).slice(0, 8);
+}
+function gan_tim(o, di) {
+  const inp = o.querySelector("input"), ul = o.querySelector("ul");
+  let kq = [], i = -1;
+  const ve = () => { ul.innerHTML = kq.map((r, j) => `<li role="option" class="${j === i ? "chon" : ""}" data-ma="${esc(r.ma)}"><b>${esc(r.ma)}</b><span>${esc(ten_ma(r) || r.nganh || "")}</span><i>${esc(r.san || "")}</i></li>`).join("");
+    o.classList.toggle("mo", kq.length > 0); };
+  const dong = () => { kq = []; i = -1; ve(); };
+  const goi = () => { o.classList.toggle("co", !!inp.value); kq = goi_y_ma(inp.value); i = kq.length ? 0 : -1; ve(); };
+  const chon = m => { dong(); inp.blur(); const t = tim_ma(m); if (t) location.hash = t; };
+  inp.addEventListener("input", goi);
+  inp.addEventListener("focus", () => { inp.select(); if (inp.value && !MA_OK(inp.value.trim().toUpperCase())) goi(); });
+  inp.addEventListener("blur", () => setTimeout(dong, 120));
+  inp.addEventListener("keydown", e => {
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && kq.length) { e.preventDefault(); i = (i + (e.key === "ArrowDown" ? 1 : -1) + kq.length) % kq.length; ve(); }
+    else if (e.key === "Escape") { dong(); inp.blur(); }
+    else if (e.key === "Enter") { e.preventDefault(); const m = i >= 0 && kq[i] ? kq[i].ma : inp.value; if (m.trim()) chon(m); }
+  });
+  ul.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); chon(li.dataset.ma); } });
+  o.querySelector(".xoa").addEventListener("click", () => { inp.value = ""; o.classList.remove("co"); dong(); inp.focus(); });
+  return inp;
+}
+gan_tim($("#tim-dau"));
 let MA_TRUOC = "";
 addEventListener("hashchange", () => { const m = location.hash.split("/")[0]; dinh_tuyen(); if (m !== MA_TRUOC) scrollTo(0, 0); MA_TRUOC = m; });
 
@@ -974,7 +1026,6 @@ addEventListener("hashchange", () => { const m = location.hash.split("/")[0]; di
   try {
     const [d] = await Promise.all([lay(DL + "ds.json"), tai_thi_truong()]);
     DS = d.ds || []; META = d;
-    $("#ds-ma").innerHTML = DS.map(r => `<option value="${esc(r.ma)}">${esc(r.ten || r.nganh || "")}</option>`).join("");
   } catch (e) {
     $("#noi-dung").innerHTML = `<div class="the"><div class="trong">Chưa có dữ liệu tra cứu (workflow "Du lieu tra cuu" chưa chạy xong). Thử lại sau ít phút.</div></div>`;
     return;

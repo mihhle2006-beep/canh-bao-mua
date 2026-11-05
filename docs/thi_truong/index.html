@@ -30,6 +30,21 @@ header{background:var(--the);border-bottom:1px solid var(--vien);position:sticky
 .cham{width:8px;height:8px;border-radius:50%;background:var(--mo);display:inline-block}
 .cham.song{background:var(--tang);box-shadow:0 0 0 3px #0f8a4a22}
 .tt-phien a{color:var(--nhan);text-decoration:none}
+/* ô tìm mã kiểu Google (gợi ý mã · tên) → trang Tra cứu mã */
+.gg{position:relative;flex:0 1 280px;min-width:180px}
+.gg input{width:100%;box-sizing:border-box;font:inherit;font-size:14px;height:34px;border:1px solid #dfe1e5;border-radius:17px;
+  padding:0 34px 0 15px;background:#fff;color:inherit;outline:0;transition:box-shadow .15s}
+.gg input:hover,.gg input:focus,.gg.mo input{box-shadow:0 1px 6px rgba(32,33,36,.28);border-color:transparent}
+.gg.mo input{border-radius:17px 17px 0 0}
+.gg .xoa{position:absolute;right:6px;top:0;height:34px;width:28px;border:0;background:none;font-size:20px;line-height:1;color:#70757a;display:none}
+.gg.co .xoa{display:block}
+.gg ul{display:none;position:absolute;left:0;right:0;top:100%;margin:0;padding:4px 0 8px;list-style:none;background:#fff;
+  border-radius:0 0 17px 17px;box-shadow:0 4px 6px rgba(32,33,36,.28);z-index:60;border-top:1px solid #e8eaed}
+.gg.mo ul{display:block}
+.gg li{padding:6px 15px;display:flex;gap:10px;align-items:baseline;cursor:pointer;white-space:nowrap;font-size:13.5px}
+.gg li.chon,.gg li:hover{background:#f1f3f4}
+.gg li b{min-width:40px;font-weight:650}
+.gg li span{color:var(--mo);font-size:12.5px;overflow:hidden;text-overflow:ellipsis}
 main{max-width:1440px;margin:0 auto;padding:16px}
 .the{background:var(--the);border:1px solid var(--vien);border-radius:10px}
 .cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
@@ -42,6 +57,7 @@ main{max-width:1440px;margin:0 auto;padding:16px}
 .cs svg{grid-row:1/4;grid-column:2;align-self:center}
 .cs .phu{grid-column:1/3;font-size:11.5px;color:var(--mo);text-align:right;margin-top:-2px}
 @media (max-width:600px){
+  .gg{flex:1 1 100%;order:3;margin-bottom:6px}
   .cs{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .cs .the{grid-template-columns:minmax(0,1fr);padding:8px 10px}
   .cs svg{grid-row:auto;grid-column:1;width:100%;height:30px}
@@ -144,8 +160,11 @@ tbody tr{background:var(--the)}
       <button role="tab" id="tab-tq" aria-selected="true" data-tab="tq">Tổng quan</button>
       <button role="tab" id="tab-loc" aria-selected="false" data-tab="loc">Lọc mã</button>
     </div>
+    <div class="gg" id="tim-ma"><input placeholder="Tìm mã / tên công ty" aria-label="Tìm mã cổ phiếu" maxlength="40"
+      autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
+      aria-label="Xoá">×</button><ul role="listbox"></ul></div>
     <div class="tt-phien"><span class="cham" id="cham"></span><span id="trang-thai">Đang tải…</span>
-      <a href="../ma/">🔎 Tra cứu mã</a><a href="../">Bảng tổng hợp</a></div>
+      <a href="../ma/">Tra cứu mã</a><a href="../">Bảng tổng hợp</a></div>
   </div>
 </header>
 <main>
@@ -245,6 +264,30 @@ const dau = (v, n = 2) => v == null || !isFinite(v) ? "–" : (v > 0 ? "+" : v <
 const lop = v => v == null ? "" : v > 0 ? "t" : v < 0 ? "g" : "d";
 const ty = (v, n = 0) => v == null ? "–" : dau(v, n) + " tỷ";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+// ô tìm mã kiểu Google: gõ mã hoặc tên (bỏ dấu) → gợi ý ≤ 8 mã (mã khớp đầu trước) → Enter / bấm → Tra cứu mã
+(() => {
+  const o = document.getElementById("tim-ma"), inp = o.querySelector("input"), ul = o.querySelector("ul");
+  const BO = s => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toUpperCase();
+  let kq = [], i = -1;
+  const ve = () => { ul.innerHTML = kq.map(([m, t], j) => `<li role="option" class="${j === i ? "chon" : ""}" data-ma="${esc(m)}"><b>${esc(m)}</b><span>${esc(t)}</span></li>`).join("");
+    o.classList.toggle("mo", kq.length > 0); };
+  const dong = () => { kq = []; i = -1; ve(); };
+  const goi = () => { o.classList.toggle("co", !!inp.value); const q = BO(inp.value.trim()), ds = Object.entries((D && D.ten) || {});
+    kq = q ? ds.filter(([m]) => m.startsWith(q)).sort((a, b) => a[0].length - b[0].length || a[0].localeCompare(b[0]))
+      .concat(ds.filter(([m, t]) => !m.startsWith(q) && BO(t).includes(q))).slice(0, 8) : [];
+    i = kq.length ? 0 : -1; ve(); };
+  const di = m => { m = (m || "").trim().toUpperCase(); if (/^[A-Z0-9]{2,10}$/.test(m)) location.href = "../ma/#" + encodeURIComponent(m); };
+  inp.addEventListener("input", goi);
+  inp.addEventListener("focus", () => inp.select());
+  inp.addEventListener("blur", () => setTimeout(dong, 120));
+  inp.addEventListener("keydown", e => {
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && kq.length) { e.preventDefault(); i = (i + (e.key === "ArrowDown" ? 1 : -1) + kq.length) % kq.length; ve(); }
+    else if (e.key === "Escape") { dong(); inp.blur(); }
+    else if (e.key === "Enter") { e.preventDefault(); di(i >= 0 && kq[i] ? kq[i][0] : inp.value); }
+  });
+  ul.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); di(li.dataset.ma); } });
+  o.querySelector(".xoa").addEventListener("click", () => { inp.value = ""; o.classList.remove("co"); dong(); inp.focus(); });
+})();
 const bo_dau = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 const ngay_vn = s => s ? s.slice(8, 10) + "/" + s.slice(5, 7) : "";
 const SVGNS = "http://www.w3.org/2000/svg";
