@@ -248,4 +248,4 @@ jobs:
             git pull -q --rebase -X theirs --autostash && git push -q && exit 0
             git rebase --abort 2>/dev/null || true; sleep $((i * 5))
           done
-          echo "::error::Không đẩy được trạng thái – Settings → Actions → General → Workflow permissions: Read and write"; exit 1
+          echo "::error::Không đẩy được trạng thái sau 3 lần (xung đột với lần chạy khác hoặc thiếu quyền ghi: Settings → Actions → General → Workflow permissions: Read and write)"; exit 1

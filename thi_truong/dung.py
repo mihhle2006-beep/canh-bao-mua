@@ -152,6 +152,23 @@ def _phai_sinh(nen_f, nen_f_ngay, vn30, phien):
             "basis": _r(gia - vn30, 1) if vn30 else None, **_duong(df)}
 
 
+FILE_CHIEN_LUOC = "trang_thai_chien_luoc.json"
+TEN_NHOM_BOT = {"MUA_MOI": "Mua mới", "VAO_NHU_MOI": "Vào như lệnh mới", "VAO_NUA": "Vào ½"}
+
+
+def tin_hieu_bot(duong=None):
+    """Danh sách mua CÔNG KHAI của bot (canh-bao-mua lưu sau tổng kết 15:20) → [[mã, nhóm, từ, đến, cắt lỗ, mục tiêu 1R,
+    3R, lý do]] + ngày hiệu lực. Không có file → None."""
+    try:
+        with open(duong or FILE_CHIEN_LUOC, encoding="utf-8") as f:
+            ds = (json.load(f).get("ds_mua") or {})
+    except (OSError, ValueError):
+        return None
+    ma = [[x.get("ma"), TEN_NHOM_BOT.get(x.get("nhom"), x.get("nhom") or ""), _r(x.get("tu")), _r(x.get("den")),
+           _r(x.get("cl")), _r(x.get("mt1")), _r(x.get("mt3")), x.get("ly_do") or ""] for x in ds.get("ma") or [] if x.get("ma")]
+    return {"hieu_luc": ds.get("hieu_luc"), "ma": ma} if ma else None
+
+
 def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
     luc = luc or tinh.gio_vn()
     ma_cs = list(nguon.CHI_SO) + ["VN30F1M"]
@@ -242,7 +259,7 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
                            "tran", "san_gia", "cao", "thap", "tt", "gt20", "bit", "rsi", "co_gd"], "dong": dong,
                    "bit": BIT, "du_tk": GT_DU_THANH_KHOAN},
            "ten": {m: cb.get("ten", {}).get(m, "") for m in cp.index},
-           "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc")}
+           "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot()}
     _ghi(out, ra)
     in_tien_do(f"  xong: {ra} ({os.path.getsize(ra) / 1e3:.0f} KB) · khớp {khop:,.0f} / tổng {tong:,.0f} tỷ · "
                f"NN {nn_nay:+,.0f} tỷ · {len(dong)} mã lọc · {len(hm)} ô bản đồ")

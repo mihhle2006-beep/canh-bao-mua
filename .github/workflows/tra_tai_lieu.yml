@@ -48,7 +48,7 @@ jobs:
           sudo apt-get update -q > /dev/null
           sudo apt-get install -y -q tesseract-ocr tesseract-ocr-vie poppler-utils > /dev/null
       - name: Khôi phục đệm chữ tài liệu
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: danh-muc/cache_du_lieu/tai_lieu
           key: tai-lieu-bt-${{ github.run_id }}
@@ -80,7 +80,7 @@ jobs:
           if-no-files-found: ignore
       - name: Lưu đệm chữ tài liệu (lần sau khỏi tải / OCR lại)
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: danh-muc/cache_du_lieu/tai_lieu
           key: tai-lieu-bt-${{ github.run_id }}

@@ -90,7 +90,7 @@ jobs:
               d.to_csv(f"xuat_csv/gia_{den}.csv", index=False, date_format="%Y-%m-%d")
           PY
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: csv-gia
           path: danh-muc/xuat_csv/*.csv

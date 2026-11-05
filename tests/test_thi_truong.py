@@ -115,6 +115,11 @@ def test_chup_dung_du_lieu_mau(tmp_path, monkeypatch):
     monkeypatch.setattr(nguon, "bang_gia", lambda ds, lo=400: [x for x in (MAU_VIC, aaa) if x["listingInfo"]["symbol"] in ds])
     monkeypatch.setattr(nguon, "tac_dong", lambda *a: {"topUp": [{"symbol": "VIC", "impact": 5.77}], "topDown": []})
     monkeypatch.setattr(nguon, "buoc_gia", lambda ma: [{"accumulatedBuyVolume": 3, "accumulatedSellVolume": 1}])
+    cl = tmp_path / "trang_thai_chien_luoc.json"
+    cl.write_text(json.dumps({"ds_mua": {"hieu_luc": "2026-11-05", "ma": [
+        {"ma": "AAA", "nhom": "MUA_MOI", "tu": 9.8, "den": 10.3, "cl": 9.38, "mt1": 10.62, "mt3": 11.85, "ly_do": "MACD"}]}}),
+        encoding="utf-8")
+    monkeypatch.setattr(dung, "FILE_CHIEN_LUOC", str(cl))
     ra = tmp_path / "du_lieu.json"
     out = dung.chup(cb, str(ra), luc=pd.Timestamp("2026-11-05 11:30"), in_tien_do=lambda *a: None)
     d = json.loads(ra.read_text(encoding="utf-8"))
@@ -128,6 +133,8 @@ def test_chup_dung_du_lieu_mau(tmp_path, monkeypatch):
     assert set(loc) == {"VIC", "AAA"} and loc["VIC"]["mcd"] == 75.0 and loc["VIC"]["gia"] == 237.6
     assert loc["VIC"]["chuoi"] == 1 and loc["VIC"]["nn5"] == round(22.2685772 - 0.4, 2)
     assert loc["AAA"]["gt20"] is None and loc["AAA"]["kl_x"] is None and loc["AAA"]["san"] == "HNX"
+    assert d["tin_hieu"] == {"hieu_luc": "2026-11-05", "ma": [["AAA", "Mua mới", 9.8, 10.3, 9.38, 10.62, 11.85, "MACD"]]}
+    assert dung.tin_hieu_bot(str(tmp_path / "khong_co.json")) is None
 
 
 def test_workflow_bang_thi_truong_khong_lay_danh_muc():
