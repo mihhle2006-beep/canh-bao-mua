@@ -139,7 +139,7 @@ jobs:
     needs: dung
     if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25                # 05/11/2026: Pages chậm / kẹt > 10' (3 lần liền) – chờ tới 20' trước khi huỷ
     permissions:
       pages: write
       id-token: write
@@ -149,3 +149,5 @@ jobs:
     steps:
       - id: dp
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 1200000             # 20 phút (mặc định 10) – kẹt hẳn thì đồng hồ chạy lại / commit sau triển khai
