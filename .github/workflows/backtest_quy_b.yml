@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, canslim]
+        phan: [chuan]
     runs-on: ubuntu-24.04
     defaults:
       run:
