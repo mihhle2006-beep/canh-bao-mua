@@ -16,6 +16,7 @@ import html
 import json
 import os
 import re
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
@@ -41,6 +42,23 @@ CHI_SO_LS = {"pe": "pe", "pb": "pb", "ps": "ps", "evToEbitda": "ev_ebitda", "roe
              "daysInventoryOutstanding": "ngay_tk", "daySaleOutstanding": "ngay_pt"}
 
 
+_TK, _KHOA = {}, threading.Lock()
+
+
+def _do(ten, ok, giay):
+    """Thống kê theo nguồn: [số lần được, số lần lỗi, tổng giây, giây lâu nhất]."""
+    with _KHOA:
+        x = _TK.setdefault(ten, [0, 0, 0.0, 0.0])
+        x[0 if ok else 1] += 1
+        x[2] += giay
+        x[3] = max(x[3], giay)
+
+
+def bang_thong_ke():
+    return " · ".join(f"{k} {v[0]}/{v[0] + v[1]} TB {v[2] / max(v[0] + v[1], 1):.1f}s max {v[3]:.0f}s"
+                      for k, v in sorted(_TK.items(), key=lambda kv: -kv[1][2]))
+
+
 def _r(x, le=2):
     try:
         v = float(x)
@@ -61,7 +79,7 @@ def _noi_dung(j):
 
 
 def iq(duong, so_lan=2):
-    return _noi_dung(nguon.goi(f"{IQ}/{duong}", so_lan=so_lan, timeout=40))
+    return _noi_dung(nguon.goi(f"{IQ}/{duong}", so_lan=so_lan, timeout=20))
 
 
 # ---------------------------------------------------------------- giá
@@ -200,7 +218,7 @@ def gon_chi_so(ds):
 
 def tin_cafef(ma, so=15):
     """Tin liên quan CafeF (HTML) → [{ngay, tieu_de, link}]."""
-    r = nguon._phien().get(CAFEF_TIN.format(ma=ma, so=so), timeout=30,
+    r = nguon._phien().get(CAFEF_TIN.format(ma=ma, so=so), timeout=15,
                            headers={**nguon.H, "Referer": "https://cafef.vn/", "Origin": "https://cafef.vn",
                                     "Accept": "text/html,*/*"})
     if r.status_code != 200:
@@ -231,7 +249,7 @@ def tach_tin(t, so=15):
 def ho_so_kbs(ma):
     """KBS: ngày thành lập / niêm yết, vốn điều lệ (tỷ), mệnh giá, giá chào sàn, ngành nghề, công ty con – liên kết (% sở
     hữu), ban lãnh đạo → dict gọn (mọi danh sách khác KBS trả về giữ nguyên ≤ 60 dòng)."""
-    d = nguon.goi(KBS_HO_SO.format(ma=ma), so_lan=2, headers={"Referer": "https://kbbuddy.kbsec.com.vn/",
+    d = nguon.goi(KBS_HO_SO.format(ma=ma), so_lan=2, timeout=20, headers={"Referer": "https://kbbuddy.kbsec.com.vn/",
                                                               "Origin": "https://kbbuddy.kbsec.com.vn"})
     if not isinstance(d, dict) or not d:
         raise ValueError("KBS rỗng")
@@ -252,7 +270,7 @@ def ho_so_kbs(ma):
 
 
 def tom_tat_simplize(ma):
-    j = nguon.goi(SIMPLIZE_TOM_TAT.format(ma=ma), so_lan=2, headers={"Referer": "https://simplize.vn/",
+    j = nguon.goi(SIMPLIZE_TOM_TAT.format(ma=ma), so_lan=2, timeout=20, headers={"Referer": "https://simplize.vn/",
                                                                      "Origin": "https://simplize.vn"})
     d = (j or {}).get("data") or {}
     if not d:
@@ -269,7 +287,7 @@ def bao_cao_ctck(ma, so=25):
     (nghìn đ), tieu_de, link, nguon}] mới → cũ, gộp trùng (CTCK, ngày). Chỉ tiêu đề / link – không lưu PDF."""
     out = []
     try:
-        for x in nguon._ds(nguon.goi(SIMPLIZE_BC.format(ma=ma), so_lan=2, headers={"Referer": "https://simplize.vn/",
+        for x in nguon._ds(nguon.goi(SIMPLIZE_BC.format(ma=ma), so_lan=2, timeout=20, headers={"Referer": "https://simplize.vn/",
                                                                                    "Origin": "https://simplize.vn"})):
             d = str(x.get("issueDate") or "")
             ngay = f"{d[6:10]}-{d[3:5]}-{d[:2]}" if re.fullmatch(r"\d{2}/\d{2}/\d{4}", d) else _ngay(d)
@@ -280,7 +298,7 @@ def bao_cao_ctck(ma, so=25):
     except Exception:                                               # noqa: BLE001
         pass
     try:
-        j = nguon.goi(CAFEF_BC.format(ma=ma), so_lan=2, headers={"Referer": "https://cafef.vn/", "Origin": "https://cafef.vn"})
+        j = nguon.goi(CAFEF_BC.format(ma=ma), so_lan=2, timeout=20, headers={"Referer": "https://cafef.vn/", "Origin": "https://cafef.vn"})
         for x in (j or {}).get("Data") or []:
             m = re.search(r"\d{10,}", str(x.get("DateDeploy") or ""))
             ngay = date.fromtimestamp(int(m.group(0)) / 1000).isoformat() if m else None
@@ -321,9 +339,12 @@ def lay_dn(ma, cu=None):
     }
     out, loi = {}, []
     for k, f in phan.items():
+        t0 = time.time()
         try:
             out[k] = f()
+            _do(k, True, time.time() - t0)
         except Exception as e:                                      # noqa: BLE001 – 1 phần lỗi không bỏ cả mã
+            _do(k, False, time.time() - t0)
             loi.append(k)
             if k in cu:
                 out[k] = cu[k]
@@ -385,11 +406,12 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
 
     def mot(m):
         """True khi có ít nhất 1 phần mới (giá hoặc doanh nghiệp)."""
-        ok = True
+        ok, t0 = True, time.time()
         try:
             _ghi({**lay_gia(m, san.get(m, "")), "cap_nhat": hom_nay}, os.path.join(ra, "gia", f"{m}.json"))
         except Exception:                                           # noqa: BLE001
             ok = False
+        _do("gia", ok, time.time() - t0)
         dn_cu = _doc(os.path.join(ra, "dn", f"{m}.json")) or {}
         dn, hong = lay_dn(m, dn_cu)
         if len(hong) < SO_PHAN_DN:
@@ -418,7 +440,7 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print):
             except Exception:                                       # noqa: BLE001
                 loi += 1
     in_ra(f"Doanh nghiệp: {xong}/{len(viec)} mã cập nhật · lỗi {loi} · hết giờ chưa làm {con} · "
-          f"{(time.time() - bat_dau) / 60:.1f} phút")
+          f"{(time.time() - bat_dau) / 60:.1f} phút\n  nguồn (được/lần · giây): {bang_thong_ke()}")
     return xong, loi, con
 
 

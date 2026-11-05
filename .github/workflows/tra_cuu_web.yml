@@ -13,6 +13,13 @@ on:
   schedule:
     - cron: "41 23 * * 0-5"        # 06:41 giờ VN thứ Hai – thứ Bảy
   workflow_dispatch:
+    inputs:
+      ma:
+        description: "Chỉ lấy dữ liệu doanh nghiệp cho các mã này (trống = xoay vòng mọi mã)"
+        default: ""
+      phut:
+        description: "Giới hạn phút cho phần doanh nghiệp"
+        default: "30"
 
 permissions:
   contents: read
@@ -72,7 +79,10 @@ jobs:
 
       - name: Dữ liệu doanh nghiệp & giá (Vietcap IQ / CafeF / Simplize – xoay vòng)
         working-directory: .
-        run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut 30
+        env:
+          MA: ${{ inputs.ma }}
+          PHUT: ${{ inputs.phut || '30' }}
+        run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut "$PHUT" ${MA:+--ma "$MA"}
 
       - name: Lưu dữ liệu (cache cho Bang thi truong)
         uses: actions/cache/save@v5
