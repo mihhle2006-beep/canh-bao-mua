@@ -8,6 +8,7 @@
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
+#   gian_luoc – (thử 05/11/2026) tháo từng luật phụ trên nền hiện tại: thừa / có ích (luật đặt trước C1 20/20 + C2 4/4)
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -46,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan]
+        phan: [chuan, gian_luoc]
     runs-on: ubuntu-24.04
     defaults:
       run:
