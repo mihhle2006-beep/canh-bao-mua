@@ -422,3 +422,40 @@ def test_tra_cuu_dn_gia_noi(monkeypatch):
         assert False, "có file cũ → không thay bằng dự phòng"
     except ValueError:
         pass
+
+
+
+def test_canslim_web():
+    """CANSLIM trang Tra cứu mã: C·A từ ds.json (tỷ lệ), N cách đỉnh 52T, S KL 20 ÷ 120, L hạng RS kiểu IBD trong mọi mã;
+    M VN-Index so MA50 / MA200 (xét riêng); thiếu giá → chữ đó không đạt. Mã giả AAA / BBB / CCC."""
+    from thi_truong import canslim_web as CW
+
+    def gia(c, v=None):
+        return {"d": [str(i) for i in range(len(c))], "c": c, "v": v or [1000] * len(c)}
+    tang = [10 + i * 0.05 for i in range(300)]                          # đỉnh mới, mạnh nhất
+    giam = [30 - i * 0.05 for i in range(300)]                          # cách đỉnh xa
+    ngang = [10.0] * 300
+    kl = [1000] * 280 + [3000] * 20                                     # KL 20 phiên ×3 / TB120
+    ds = [{"ma": "AAA", "ln_yoy": 0.6, "ln4_yoy": 0.3}, {"ma": "BBB", "ln_yoy": 0.1, "ln4_yoy": -0.2},
+          {"ma": "CCC", "ln_yoy": None, "ln4_yoy": 0.5}, {"ma": "DDD", "ln_yoy": 0.9, "ln4_yoy": 0.9}]
+    vni = {"c": [1000 + i for i in range(260)]}
+    meta = CW.tinh(ds, {"AAA": gia(tang, kl), "BBB": gia(giam), "CCC": gia(ngang)}, vni)
+    a, b, c, d = ds
+    assert a["cs"] == 5 and a["cs_d"] == "C·A·N·S·L" and a["rs"] == 99 and a["cach52"] == 0
+    assert b["cs"] == 0 and b["rs"] == 0 and b["cach52"] < -15
+    assert c["cs_d"] == "A·N" and c["kl_x"] == 1.0                     # ngang: N đạt, S / L không
+    assert d["cs"] == 2 and d["rs"] is None                            # không có file giá → chỉ C·A
+    assert meta["m"] == "tăng" and meta["vni"] == 1259
+    assert CW.thi_truong_m({"c": [1000 - i for i in range(260)]})["m"] == "giảm"
+    assert CW.thi_truong_m(None) == {"m": None}
+    assert CW.chi_tieu_gia(gia([10.0] * 30)) == {"cach52": None, "kl_x": None, "ibd": None}   # < 60 phiên
+
+
+def test_workflow_tra_cuu_web_co_canslim():
+    import yaml
+    d = yaml.safe_load(open(".github/workflows/tra_cuu_web.yml", encoding="utf-8"))
+    buoc = [s.get("run", "") for s in d["jobs"]["dung"]["steps"]]
+    i_dn = next(i for i, r in enumerate(buoc) if "thi_truong.tra_cuu_dn" in r)
+    i_cs = next(i for i, r in enumerate(buoc) if "thi_truong.canslim_web" in r)
+    i_luu = next(i for i, s in enumerate(d["jobs"]["dung"]["steps"]) if "cache/save" in str(s.get("uses", "")))
+    assert i_dn < i_cs < i_luu and "|| echo" in buoc[i_cs]           # sau giá, trước lưu cache; lỗi không làm hỏng lượt
