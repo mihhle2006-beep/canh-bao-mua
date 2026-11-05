@@ -153,6 +153,21 @@ def _phai_sinh(nen_f, nen_f_ngay, vn30, phien):
 
 
 FILE_CHIEN_LUOC = "trang_thai_chien_luoc.json"
+
+
+def ma_dang_giu(duong=None):
+    """Mã đang giữ (CHỈ mã – không số lượng / giá vốn) cho mục 💼 của trang: workflow đọc cột "ma" danh_muc.csv (repo
+    danh-muc) ra file tạm ngoài repo, đường dẫn ở biến MA_GIU_FILE (chủ quỹ 05/11/2026 chọn hiện công khai). Không có → []."""
+    import re
+    duong = duong or os.environ.get("MA_GIU_FILE")
+    if not duong:
+        return []
+    try:
+        with open(duong, encoding="utf-8") as f:
+            ma = re.split(r"[^A-Za-z0-9]+", f.read())
+    except OSError:
+        return []
+    return sorted({m.upper() for m in ma if re.fullmatch(r"[A-Za-z0-9]{3,8}", m or "")})
 TEN_NHOM_BOT = {"MUA_MOI": "Mua mới", "VAO_NHU_MOI": "Vào như lệnh mới", "VAO_NUA": "Vào ½"}
 
 
@@ -259,7 +274,7 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
                            "tran", "san_gia", "cao", "thap", "tt", "gt20", "bit", "rsi", "co_gd"], "dong": dong,
                    "bit": BIT, "du_tk": GT_DU_THANH_KHOAN},
            "ten": {m: cb.get("ten", {}).get(m, "") for m in cp.index},
-           "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot()}
+           "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot(), "danh_muc": ma_dang_giu()}
     _ghi(out, ra)
     in_tien_do(f"  xong: {ra} ({os.path.getsize(ra) / 1e3:.0f} KB) · khớp {khop:,.0f} / tổng {tong:,.0f} tỷ · "
                f"NN {nn_nay:+,.0f} tỷ · {len(dong)} mã lọc · {len(hm)} ô bản đồ")

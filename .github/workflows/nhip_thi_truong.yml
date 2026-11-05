@@ -1,0 +1,51 @@
+# NHỊP BẢNG THỊ TRƯỜNG: lịch "*/5" của GitHub hay trễ / bỏ hẳn (05/11/2026: bang_thi_truong.yml KHÔNG chạy theo lịch lần
+# nào – trang đứng từ 14:16) → 1 job chạy suốt buổi, 5' một lần gọi workflow_dispatch bang_thi_truong.yml (dispatch bằng
+# GITHUB_TOKEN vẫn tạo run mới). Lịch dưới chỉ cần bắn ĐƯỢC 1 lần / buổi: nhiều mốc dự phòng; lần đến sau thấy đã có máy
+# nhịp đang chạy → thoát ngay. Sáng: tới 11:35; chiều: tới 15:12 (gọi thêm 1 lần chốt phiên sau 15:05).
+# Repo công khai → phút Actions miễn phí; job không checkout code, không đụng repo kín.
+name: Nhip bang thi truong
+
+on:
+  schedule:
+    - cron: "45 1 * * 1-5"         # 8:45 giờ VN
+    - cron: "17 2 * * 1-5"         # dự phòng 9:17
+    - cron: "7 3 * * 1-5"          # dự phòng 10:07
+    - cron: "43 5 * * 1-5"         # 12:43
+    - cron: "17 6 * * 1-5"         # dự phòng 13:17
+    - cron: "7 7 * * 1-5"          # dự phòng 14:07
+  workflow_dispatch:
+
+permissions:
+  actions: write                   # gọi bang_thi_truong.yml + xem máy nhịp khác đang chạy
+
+jobs:
+  nhip:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 290
+    steps:
+      - name: Gọi bang_thi_truong 5' một lần tới hết buổi
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          API="https://api.github.com/repos/$GITHUB_REPOSITORY/actions"
+          H=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json")
+          KHAC=$(curl -sf "${H[@]}" "$API/workflows/nhip_thi_truong.yml/runs?status=in_progress&per_page=20" \
+                 | python3 -c "import json,sys; print(sum(r['id'] != $GITHUB_RUN_ID for r in json.load(sys.stdin)['workflow_runs']))" \
+                 || echo 0)
+          if [ "${KHAC:-0}" -gt 0 ]; then echo "Đã có máy nhịp khác đang chạy → thoát"; exit 0; fi
+
+          phut() { local h m; h=$(TZ=Asia/Ho_Chi_Minh date +%H); m=$(TZ=Asia/Ho_Chi_Minh date +%M); echo $((10#$h * 60 + 10#$m)); }
+          goi() {
+            if curl -sf -X POST "${H[@]}" "$API/workflows/bang_thi_truong.yml/dispatches" -d '{"ref":"main"}'; then
+              echo "$(TZ=Asia/Ho_Chi_Minh date +%H:%M) đã gọi cập nhật"
+            else echo "::warning::$(TZ=Asia/Ho_Chi_Minh date +%H:%M) gọi bang_thi_truong lỗi"; fi
+          }
+          if [ "$(phut)" -lt 695 ]; then HET=695; else HET=912; fi      # 11:35 | 15:12
+          CHOT=0
+          while [ "$(phut)" -lt "$HET" ]; do
+            P=$(phut)
+            if { [ "$P" -ge 540 ] && [ "$P" -le 690 ]; } || { [ "$P" -ge 780 ] && [ "$P" -le 900 ]; }; then goi
+            elif [ "$P" -ge 905 ] && [ "$CHOT" = 0 ]; then goi; CHOT=1; fi     # chốt phiên (sau thoả thuận 15:00)
+            sleep $(( 300 - $(date +%s) % 300 + 5 ))                           # tới mốc 5' kế tiếp
+          done
+          echo "Hết buổi ($(TZ=Asia/Ho_Chi_Minh date +%H:%M))"
