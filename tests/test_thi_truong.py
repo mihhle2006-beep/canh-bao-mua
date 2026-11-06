@@ -573,6 +573,31 @@ def test_xep_hang_vgm():
 
 
 
+def test_xep_hang_chat_luong_phong_cach():
+    """Chất lượng (Q) và phong cách kiểu Stockopedia từ Q · V · M (cao = điểm nhóm ≥ 50); Q không vào điểm VGM tổng; nợ /
+    VCSH chỉ chấm DN thường. Mã giả M00…"""
+    from thi_truong import xep_hang_web as XH
+    ds = []
+    for i in range(16):
+        q, v, m = i & 1, (i >> 1) & 1, (i >> 2) & 1                       # 8 tổ hợp × 2 mã
+        ds.append({"ma": f"M{i:02d}", "loai": "CT", "roe": .05 + .2 * q + i / 1000, "roa": .02 + .1 * q + i / 1000,
+                   "bien_rong": .05 + .2 * q, "f": 3 + 5 * q, "z": 1 + 3 * q, "no_vcsh": 2 - 1.5 * q,
+                   "pe": 30 - 22 * v + i / 100, "pb": 4 - 3 * v + i / 100, "dinh_gia": -.3 + .6 * v,
+                   "ln_yoy": .1, "ln4_yoy": .1, "dt_yoy": .1, "dt4_yoy": .1, "rs": 10 + 80 * m + i, "cach52": -40 + 38 * m})
+    truoc = {r["ma"]: r for r in [dict(x) for x in ds]}
+    XH.tinh(ds)
+    pc = {r["ma"]: r["pc"] for r in ds}
+    for i in range(16):
+        q, v, m = i & 1, (i >> 1) & 1, (i >> 2) & 1
+        assert pc[f"M{i:02d}"] == XH.PHONG_CACH[(q, v, m)], i
+    cao = {f"M{i:02d}" for i in range(16) if i & 1}
+    assert {r["ma"] for r in ds if r["q"] in ("A", "B")} <= cao and {r["ma"] for r in ds if r["q"] in ("D", "F")}.isdisjoint(cao)
+    bank = [{"ma": "NH1", "loai": "NH", "roe": .2, "roa": .015, "no_vcsh": 10.0}, {"ma": "NH2", "loai": "NH", "roe": .1, "roa": .01, "no_vcsh": 5.0}]
+    XH.tinh(bank)
+    assert bank[0]["q"] == "A" and "pc" not in bank[0]                    # nợ / VCSH ngân hàng không chấm; thiếu V, M → không phong cách
+    assert set(XH.TEN_PC) == set(XH.PHONG_CACH.values()) and truoc
+
+
 def test_rrg_web():
     """RRG: mã mạnh dần so VN-Index → RS-Ratio > 100; ngành gia quyền vốn hoá; bỏ mã kém thanh khoản; đuôi đúng số kỳ, kỳ cuối
     trùng phiên cuối của chuẩn. Mã giả M00…"""

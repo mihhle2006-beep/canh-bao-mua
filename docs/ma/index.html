@@ -288,6 +288,12 @@ function doi_td(ma) { TD.has(ma) ? TD.delete(ma) : TD.add(ma);
   try { localStorage.setItem(KHOA_TD, JSON.stringify([...TD].sort())); localStorage.setItem("bang_tt_td_v", "2"); } catch (e) {} }
 const dong_ds = ma => (DS || []).find(x => x.ma === ma) || {};
 const VGM_TEN = ["Giá trị", "Tăng trưởng", "Động lượng", "Tổng"];
+// phong cách kiểu StockRank Styles (Stockopedia) từ Chất lượng · Giá trị · Động lượng (thi_truong/xep_hang_web.py)
+const TEN_PC = {sieu: ["Siêu cổ phiếu", "re", "chất lượng, rẻ và giá đang mạnh"], bay_cao: ["Bay cao", "re", "chất lượng, giá mạnh nhưng đắt"],
+  nguoc: ["Ngược dòng", "hl", "chất lượng, rẻ nhưng giá còn yếu"], hoi_phuc: ["Hồi phục", "hl", "rẻ, giá mạnh nhưng chất lượng thấp"],
+  bay_dl: ["Bẫy động lượng", "dat", "chỉ giá mạnh – chất lượng thấp, đắt"], bay_gt: ["Bẫy giá trị", "dat", "chỉ rẻ – chất lượng thấp, giá yếu"],
+  sao_roi: ["Sao rơi", "dat", "chất lượng nhưng đắt và giá yếu"], kem: ["Kém cả 3", "dat", "chất lượng thấp, đắt, giá yếu"]};
+const pc_html = r => r?.pc && TEN_PC[r.pc] ? `<span class="huy ${TEN_PC[r.pc][1]}" title="Phong cách: ${esc(TEN_PC[r.pc][2])}${r.q ? ` · Chất lượng ${esc(r.q)}` : ""}">${esc(TEN_PC[r.pc][0])}</span>` : "";
 function vgm_html(v) {                          // "B A C B" → Giá trị B · Tăng trưởng A · Động lượng C · Tổng B
   if (!v) return "";
   const c = v.split(" "), lop = x => x === "A" ? "t" : x === "F" ? "g" : x === "–" ? "m" : "";
@@ -491,7 +497,7 @@ function dau_ma(ma, k, tab) {
   return `<div class="ma-dau"><div class="ma-tren"><div class="ma-ten">
     <h2>${esc(ma)}<span class="nhan-san">${esc(r.san || LIVE[ma]?.san || "")}</span>${GIU.has(ma) ? `<span class="huy giu">Đang giữ</span>` : ""}<button class="nut-td" data-td="${esc(ma)}" aria-pressed="${TD.has(ma)}">${TD.has(ma) ? "✓ Đang theo dõi" : "+ Theo dõi"}</button></h2>
     <div class="ten-dd" title="${esc(ten)}">${esc(ten)}${r.nganh ? " · " + esc(r.nganh) : ""}</div>
-    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/9</a>` : ""}${sk.z ? `<a class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
+    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${pc_html(dong_ds(ma))}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/9</a>` : ""}${sk.z ? `<a class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
     <div class="ma-gia"><span class="lon ${c}">${gn.gia != null ? so(gn.gia, 2) : "–"}</span><span class="pill ${c || "d"} ${c}">${td != null ? (td > 0 ? "+" : "") + so(td, 2) : ""} (${pt(gn.pt, 2)})</span>
     <div class="nho">${gn.live ? `${MKT?.dang_gd ? "<span class=\"cham-song\"></span>trong phiên" : "đóng cửa"} · ${esc(MKT?.cap_nhat || "")}` : gn.ngay ? "phiên " + ngay_vn(gn.ngay) : ""}</div></div></div>
     <nav class="tab" aria-label="Mục">${TAB.map(([id, t]) => `<a href="#${esc(ma)}/${id}"${id === tab ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}</nav></div>`;
@@ -645,6 +651,7 @@ function goc_he_thong(ma, k, x, gn) {
   if (r.lnst_f) d.push(["LNST năm dự phóng", `${so(r.lnst_f, 0)} tỷ${r.ht_kh ? ` · đã đạt ${pt(r.ht_kh, 0, false)} kế hoạch` : ""}`]);
   const cs = canslim_dong((DS || []).find(x => x.ma === ma) || r); if (cs) d.push(["CANSLIM", cs]);
   const vg = dong_ds(ma).vgm; if (vg) d.push(["Xếp hạng VGM", vgm_html(vg)]);
+  const dd = dong_ds(ma); if (dd.q || dd.pc) d.push(["Chất lượng · phong cách", `${dd.q ? `Chất lượng <b class="${dd.q === "A" ? "t" : dd.q === "F" ? "g" : ""}">${esc(dd.q)}</b>` : ""}${dd.pc ? " · " + pc_html(dd) : ""}`]);
   return d.map(([a, b]) => `<div class="dong"><span class="n">${a}</span><span class="v">${b}</span></div>`).join("") || `<div class="trong">Chưa có dữ liệu</div>`;
 }
 
@@ -1361,6 +1368,7 @@ function hien_dau() {
   const f = DS.filter(r => r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
   const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 20).map(r => r.ma);
   const vA = DS.filter(r => (r.vgm || "").endsWith("A") && r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 20).map(r => r.ma);
+  const sieu = DS.filter(r => r.pc === "sieu" && r.von >= 1000).sort((a, b) => (b.vgm_d ?? 0) - (a.vgm_d ?? 0)).slice(0, 20).map(r => r.ma);
   const chip_pt = m => { const l = LIVE[m], p = l?.pt != null ? l.pt / 100 : null;
     return `<a class="chip" href="#${esc(m)}">${esc(m)}${p != null ? `<span class="pt ${mau(p)}">${pt(p, 1)}</span>` : ""}</a>`; };
   const du_tk = MKT?.loc?.du_tk ?? 2, lv = Object.values(LIVE).filter(l => MA_OK(l.ma) && (l.gt20 ?? l.gt ?? 0) >= du_tk);
@@ -1385,6 +1393,7 @@ function hien_dau() {
     <p class="o-phu">${esc(MKT?.cap_nhat || "")} · GTGD ≥ ${so(du_tk, 0)} tỷ</p>` + tk.map(([t, ds]) => `<div class="o-nhom">${esc(t)}</div><div class="nhom-chip">${ds.map(chip_pt).join("")}</div>`).join("") + `</section>`;
   h += o("Vốn hoá lớn nhất", "", DS.slice(0, 20).map(r => r.ma));
   h += o("Xếp hạng A (VGM)", "giá trị · tăng trưởng · động lượng · vốn hoá ≥ 500 tỷ", vA);
+  h += o("Siêu cổ phiếu", "chất lượng · giá trị · động lượng đều trên trung bình (kiểu Stockopedia) · vốn hoá ≥ 1.000 tỷ", sieu);
   h += o("CANSLIM ≥ 4/5", `C·A·N·S·L · xếp theo RS${m ? ` · thị trường (M) <span class="${m === "tăng" ? "t" : m === "giảm" ? "g" : ""}">${esc(m)}</span>` : ""}`, cs);
   h += o("LNST quý tăng mạnh", "≥ 2 quý liền · quý ≥ 50 tỷ", tang);
   h += o("Rẻ so giá trị hợp lý", "vốn hoá ≥ 1.000 tỷ", re);
@@ -1402,6 +1411,7 @@ const BAT = {tang: ["LN quý tăng > 20%", r => r.ln_yoy > .2], toc: ["Tăng t�
   pe: ["P/E < 12", r => r.pe_h > 0 && r.pe_h < 12], roe: ["ROE > 15%", r => r.roe > .15], f: ["F-Score ≥ 7", r => r.f >= 7],
   sach: ["Không rủi ro BCTC", r => !r.rui_ro_bctc], lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000],
   cs: ["CANSLIM ≥ 4", r => r.cs >= 4], rs: ["RS ≥ 80", r => r.rs >= 80], vgm: ["Hạng A (VGM)", r => (r.vgm || "").endsWith("A")],
+  sieu: ["Siêu cổ phiếu", r => r.pc === "sieu"], ko_bay: ["Không phải bẫy", r => !!r.pc && !["bay_dl", "bay_gt", "kem"].includes(r.pc)],
   td: ["Đang theo dõi", r => TD.has(r.ma)]};
 function o_loc(r, k) {
   switch (k) {
