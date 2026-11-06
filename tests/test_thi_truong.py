@@ -226,6 +226,7 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     assert "TradingView Lightweight Charts" in lib and "Apache License 2.0" in lib
     assert "Apache License" in open("docs/ma/lib/LICENSE-lightweight-charts.txt", encoding="utf-8").read()
     assert 'const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json"' in h
+    assert '<a href="#rrg">RRG</a>' in h and 'lay(DL + "rrg.json", false)' in h               # đồ thị RRG đọc rrg.json cùng site
     for tab in ("tong-quan", "tin", "ho-so", "lanh-dao", "co-dong", "co-tuc", "tai-chinh", "phan-tich", "chi-so", "dinh-gia", "lich-su",
                 "bao-cao", "tai-lieu", "he-thong"):
         assert f'["{tab}",' in h, tab
@@ -543,6 +544,8 @@ def test_workflow_tra_cuu_web_co_canslim():
     i_luu = next(i for i, s in enumerate(d["jobs"]["dung"]["steps"]) if "cache/save" in str(s.get("uses", "")))
     i_sk = next(i for i, r in enumerate(buoc) if "thi_truong.su_kien_web" in r)
     assert i_dn < i_sk < i_luu and "|| echo" in buoc[i_sk]           # sau dn/ (sự kiện từng mã), trước lưu cache
+    i_rrg = next(i for i, r in enumerate(buoc) if "thi_truong.rrg_web" in r)
+    assert i_dn < i_rrg < i_luu and "|| echo" in buoc[i_rrg]          # sau gia/ (giá từng mã), trước lưu cache
     assert i_dn < i_cs < i_vgm < i_luu and "|| echo" in buoc[i_cs] and "|| echo" in buoc[i_vgm]   # sau giá + CANSLIM (rs),
                                                                     # trước lưu cache; lỗi không làm hỏng lượt
 
@@ -568,6 +571,39 @@ def test_xep_hang_vgm():
     tong = [x.split()[3] for k, x in v.items() if k != "THIEU"]
     assert all(tong.count(c) == 4 for c in "ABCDF")                     # 20 mã → mỗi chữ 4 mã
 
+
+
+def test_rrg_web():
+    """RRG: mã mạnh dần so VN-Index → RS-Ratio > 100; ngành gia quyền vốn hoá; bỏ mã kém thanh khoản; đuôi đúng số kỳ, kỳ cuối
+    trùng phiên cuối của chuẩn. Mã giả M00…"""
+    import numpy as np
+    from thi_truong import rrg_web as R
+    rng = np.random.default_rng(3)
+    ngay = pd.bdate_range("2025-01-01", periods=300)
+    vni = pd.Series(1000 * np.cumprod(1 + rng.normal(0, .005, 300)), index=ngay)
+    d = [x.strftime("%Y-%m-%d") for x in ngay]
+    manh = list(vni.values / 50 * np.linspace(1, 1.6, 300))                    # vượt chuẩn đều → RS tăng
+    yeu = list(vni.values / 50 * np.linspace(1, 0.6, 300))
+    gia = {"M00": {"d": d, "c": manh, "v": [1e6] * 300}, "M01": {"d": d, "c": yeu, "v": [1e6] * 300},
+           "M02": {"d": d, "c": manh, "v": [1e6] * 300}, "M03": {"d": d, "c": yeu, "v": [1e6] * 300},
+           "M04": {"d": d, "c": manh, "v": [10] * 300},                         # GTGD ≈ 0 → bỏ
+           "M05": {"d": d[:40], "c": manh[:40], "v": [1e6] * 40}}               # quá ngắn → bỏ
+    ds = [{"ma": "M00", "nganh": "A", "von": 10}, {"ma": "M01", "nganh": "A", "von": 1}, {"ma": "M02", "nganh": "A", "von": 1},
+          {"ma": "M03", "nganh": "B", "von": 1}, {"ma": "M04", "nganh": "B", "von": 1}, {"ma": "M05", "nganh": "B", "von": 1}]
+    rng2 = np.random.default_rng(4)
+    for k in ("M00", "M01", "M02", "M03"):                                     # thêm nhiễu để z-score xác định
+        gia[k]["c"] = list(np.array(gia[k]["c"]) * (1 + rng2.normal(0, .003, 300)))
+    out = R.dung(ds, gia, vni)
+    for k, (n, duoi, _) in R.KHUNG.items():
+        b = out[k]
+        assert set(b["ma"]) == {"M00", "M01", "M02", "M03"} and len(b["ky"]) == duoi
+        assert all(len(v) == duoi for v in b["ma"].values())
+        assert b["ky"][-1] == d[-1]
+        assert b["ma"]["M00"][-1][0] > 100 > b["ma"]["M01"][-1][0]
+        assert set(b["nganh"]) == {"A"}                                           # ngành B chỉ còn 1 mã thanh khoản < 3 mã
+        assert b["nganh"]["A"][-1][0] > 100
+    assert R.dung(ds, gia, vni.iloc[:30]) == {}
+    assert R.vni_ngay({"t": ["1767225600", "1767312000"], "c": [1, 2]}).index[0].strftime("%Y-%m-%d") == "2026-01-01"
 
 
 def test_lich_su_kien():
