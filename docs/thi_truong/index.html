@@ -8,11 +8,11 @@
 <meta name="description" content="Tổng quan thị trường chứng khoán Việt Nam trong phiên: chỉ số, bản đồ nhiệt HOSE, thống kê phiên, tác động VN-Index, lọc mã.">
 <style>
 :root{
-  --nen:#f3f5f8;--the:#fff;--vien:#e3e7ee;--luoi:#edf0f4;
+  --nen:#f4f8f5;--the:#fff;--vien:#d9e7dc;--luoi:#ebf2ed;
   --chu:#1d2430;--chu2:#4b5565;--mo:#7a8494;
   --tang:#0f8a4a;--giam:#d1342b;--dung:#b88a00;--tran:#9b3fd1;--san:#0e9fb3;
   --tang-nen:#e3f4ea;--giam-nen:#fde8e6;--dung-nen:#fbf3d6;
-  --nhan:#1f6feb;--nhan-nen:#e8f0fe;
+  --nhan:#2E7D32;--nhan-nen:#E8F5E9;--nhan-dam:#1B5E20;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -21,16 +21,18 @@ html,body{margin:0;background:var(--nen);color:var(--chu);
 .so{font-variant-numeric:tabular-nums}
 .t{color:var(--tang)}.g{color:var(--giam)}.d{color:var(--dung)}.tr{color:var(--tran)}.sa{color:var(--san)}
 button{font:inherit;color:inherit;cursor:pointer}
-header{background:var(--the);border-bottom:1px solid var(--vien);position:sticky;top:0;z-index:20}
+/* tông XANH LÁ + TRẮNG – cùng bảng màu trang Tổng hợp (1B5E20 · 2E7D32 · 43A047 · 66BB6A · C8E6C9 · E8F5E9) */
+header{background:linear-gradient(135deg,#43A047,var(--nhan-dam));color:#fff;position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(27,94,32,.25)}
+header h1{text-shadow:0 1px 2px rgba(0,60,20,.35)}header .gg input{border-color:transparent;color:var(--chu)}header .gg ul{color:var(--chu)}
 .dau{max-width:1440px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:16px;min-height:52px;flex-wrap:wrap}
 .dau h1{font-size:17px;margin:0;font-weight:650;white-space:nowrap}
 .tab{display:flex;gap:2px;align-self:stretch}
-.tab button{background:none;border:0;border-bottom:2px solid transparent;padding:0 12px;font-weight:500;color:var(--chu2)}
-.tab button[aria-selected=true]{color:var(--chu);border-bottom-color:var(--nhan)}
-.tt-phien{margin-left:auto;color:var(--mo);font-size:12.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tab button{background:none;border:0;border-bottom:3px solid transparent;padding:0 12px;font-weight:500;color:#e8f5e9}
+.tab button[aria-selected=true]{color:#fff;font-weight:650;border-bottom-color:#fff}
+.tt-phien{margin-left:auto;color:#e8f5e9;font-size:12.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cham{width:8px;height:8px;border-radius:50%;background:var(--mo);display:inline-block}
-.cham.song{background:var(--tang);box-shadow:0 0 0 3px #0f8a4a22}
-.tt-phien a{color:var(--nhan);text-decoration:none}
+.cham.song{background:#b9f6ca;box-shadow:0 0 0 3px #ffffff40}
+.tt-phien a{color:#fff;text-decoration:none;font-weight:500}
 /* ô tìm mã kiểu Google (gợi ý mã · tên) → trang Tra cứu mã */
 .gg{position:relative;flex:0 1 280px;min-width:180px}
 .gg input{width:100%;box-sizing:border-box;font:inherit;font-size:14px;height:34px;border:1px solid #dfe1e5;border-radius:17px;
