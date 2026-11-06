@@ -4,6 +4,7 @@ từ dữ liệu mẫu (không gọi mạng)."""
 import json
 
 import numpy as np
+import pytest
 import pandas as pd
 
 from thi_truong import dung, nguon, tinh
@@ -225,7 +226,7 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     assert "TradingView Lightweight Charts" in lib and "Apache License 2.0" in lib
     assert "Apache License" in open("docs/ma/lib/LICENSE-lightweight-charts.txt", encoding="utf-8").read()
     assert 'const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json"' in h
-    for tab in ("tong-quan", "tin", "ho-so", "lanh-dao", "co-dong", "co-tuc", "tai-chinh", "chi-so", "dinh-gia", "lich-su",
+    for tab in ("tong-quan", "tin", "ho-so", "lanh-dao", "co-dong", "co-tuc", "tai-chinh", "phan-tich", "chi-so", "dinh-gia", "lich-su",
                 "bao-cao", "tai-lieu", "he-thong"):
         assert f'["{tab}",' in h, tab
     assert not re.search(r"fetch\(\s*['\"]https?:", h)
@@ -234,6 +235,80 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     t = open("docs/thi_truong/index.html", encoding="utf-8").read()
     assert 'href="../ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t
 
+
+
+def _chay_js_phan_tich(ma_js):
+    """Chạy các hàm thuần của tab Phân tích (docs/ma/index.html) trong node với BCTC giả → kết quả JSON."""
+    import re
+    import shutil
+    import subprocess
+    if not shutil.which("node"):
+        pytest.skip("không có node")
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    tro = "\n".join(re.search(rf"^const {t} = .*$", h, re.M).group(0) for t in ("esc", "so", "pt", "mau", "tb", "trung_vi"))
+    i = h.index("// ---------------------------------------------------------------- PHÂN TÍCH TÀI CHÍNH")
+    j = h.index("async function phan_tich(")
+    js = "let DS = [], LIVE = {}; const gia_h = r => r.gia;\n" + tro + "\n" + h[i:j] + "\n" + ma_js
+    kq = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert kq.returncode == 0, kq.stderr
+    return json.loads(kq.stdout)
+
+
+BCTC_GIA = {"q": [], "y": ["2021", "2022", "2023", "2024", "2025"], "loai": "CT",
+            "kd": {"isa3": [800, 900, 1000, 1100, 1300], "isa4": [-600, -680, -750, -800, -950], "isa5": [200, 220, 250, 300, 350],
+                   "isa8": [-20, -25, -30, -30, -40], "isa9": [-30, -35, -40, -45, -50], "isa10": [-20, -22, -25, -28, -30],
+                   "isa16": [100, 110, 130, 160, 200], "isa20": [80, 88, 104, 128, 160], "isa22": [76, 84, 100, 120, 150]},
+            "cd": {"bsa1": [500, 550, 600, 700, 800], "bsa9": [100, 110, 120, 130, 200], "bsa15": [150, 160, 170, 180, 200],
+                   "bsa29": [400, 420, 450, 480, 500], "bsa43": [10, 10, 10, 10, 10], "bsa53": [1000, 1100, 1200, 1350, 1500],
+                   "bsa54": [500, 540, 580, 650, 700], "bsa57": [80, 85, 90, 95, 120], "bsa78": [500, 560, 620, 700, 800],
+                   "bsa80": [300, 300, 300, 300, 360], "bsa210": [20, 22, 24, 26, 30]},
+            "lc": {"cfa2": [-40, -42, -45, -48, -50], "cfa18": [90, 100, 110, 120, 100], "cfa19": [-50, -60, -60, -70, -80],
+                   "cfa32": [-20, -25, -30, -40, -45]}}
+
+
+def test_phan_tich_dupont_6_nhan_to_va_m_score():
+    """DuPont: tích 6 nhân tố = LNST mẹ / VCSH mẹ bq, tích 5 nhân tố = LNST / VCSH bq; gánh nặng lãi vay = LNTT / (LNTT + lãi vay);
+    M-Score đúng công thức Beneish; SGR = ROE × (1 − tỷ lệ chi trả)."""
+    kq = _chay_js_phan_tich(f"const S = bctc_nam({json.dumps(BCTC_GIA)}); const dp = pt_dupont(S);"
+                            "const tt = pt_tt(S, dp, {ke_hoach: []});"
+                            "console.log(JSON.stringify({dp, m: pt_m(S), cl: pt_cl(S, false), tt}));")
+    dp = kq["dp"]
+    assert [x["nam"] for x in dp] == ["2022", "2023", "2024", "2025"]
+    c = dp[-1]
+    tich6 = c["me"] * c["thue"] * c["lai"] * c["ebit"] * c["vq"] * c["db"]
+    vcm = ((800 - 30) + (700 - 26)) / 2
+    assert c["roe"] == pytest.approx(150 / vcm) and tich6 == pytest.approx(c["roe"])
+    assert c["thue"] * c["lai"] * c["ebit"] * c["vq"] * c["db5"] == pytest.approx(c["roe5"]) == pytest.approx(160 / 750)
+    assert c["lai"] == pytest.approx(200 / 240) and c["ebit"] == pytest.approx(240 / 1300)
+    m = kq["m"]
+    v = m["v"]
+    assert v["DSRI"] == pytest.approx((200 / 1300) / (130 / 1100)) and v["SGI"] == pytest.approx(1300 / 1100)
+    assert v["TATA"] == pytest.approx((160 - 100) / 1500)
+    he = {"DSRI": .92, "GMI": .528, "AQI": .404, "SGI": .892, "DEPI": .115, "SGAI": -.172, "TATA": 4.679, "LVGI": -.327}
+    assert m["m"] == pytest.approx(-4.84 + sum(he[k] * v[k] for k in he))
+    assert m["muc"] in ("t", "d", "g") and not m["thieu"]
+    ten = {x[0]: x[2] for x in kq["cl"]["c"]}
+    assert ten["Phải thu tăng − doanh thu tăng"] == "g"                  # phải thu +54% vs doanh thu +18%
+    tt = kq["tt"]
+    tra = [45 / 120, 40 / 100, 30 / 84]
+    assert tt["tl_tra"] == pytest.approx(sum(tra) / 3) and tt["sgr"] == pytest.approx(c["roe"] * (1 - tt["tl_tra"]))
+    assert tt["cg"]["ln"] == pytest.approx((150 / 84) ** (1 / 3) - 1)
+    assert any("pha loãng" in x[1] for x in tt["co"])                     # vốn góp +20%
+
+
+def test_phan_tich_dinh_gia_trung_vi_va_phuong_phap():
+    """Định giá đa phương pháp: Graham Number đúng, trung vị các phương pháp có số, biên an toàn; mọi công cụ có Phương pháp."""
+    kq = _chay_js_phan_tich(f"const S = bctc_nam({json.dumps(BCTC_GIA)}); const tt = pt_tt(S, pt_dupont(S), {{ke_hoach: []}});"
+                            "const dg = pt_dinh_gia(S, {eps: 4000, bvps: 20000, gia_tri: 50000, nganh: 'X'}, {}, 40000, 36e6, tt, 'CT');"
+                            "console.log(JSON.stringify({dg, pp: Object.keys(PT_PP), html: pp_html('dp')}));")
+    dg = kq["dg"]
+    gn = next(x for x in dg["pp"] if x["ten"] == "Graham Number")
+    assert gn["v"] == pytest.approx((22.5 * 4000 * 20000) ** 0.5)
+    co = sorted(x["v"] for x in dg["pp"] if x["v"])
+    tv = co[len(co) // 2] if len(co) % 2 else (co[len(co) // 2 - 1] + co[len(co) // 2]) / 2
+    assert dg["tv"] == pytest.approx(tv) and dg["bien"] == pytest.approx((tv - 40000) / tv)
+    assert set(kq["pp"]) == {"z", "f", "dp", "m", "cl", "dg", "tt"}
+    assert "Gánh nặng lãi vay" in kq["html"] and "Tham khảo" in kq["html"]
 
 
 def test_tra_cuu_dn_gon(tmp_path):

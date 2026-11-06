@@ -76,6 +76,7 @@ main{max-width:1200px;margin:0 auto;padding:14px 16px 40px}
 .pill.t{background:var(--tang-nen)}.pill.g{background:var(--giam-nen)}.pill.d{background:var(--dung-nen)}
 .ma-gia .nho{color:var(--mo);font-size:12px;margin-top:2px}
 .huy{display:inline-block;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 8px;margin:4px 6px 0 0;white-space:nowrap}
+a.huy:hover{text-decoration:none;box-shadow:inset 0 0 0 1px currentColor}
 .huy.re{background:var(--tang-nen);color:var(--tang)}.huy.dat{background:var(--giam-nen);color:var(--giam)}
 .huy.hl{background:var(--luoi);color:var(--chu2)}.huy.bot{background:var(--nhan-nen);color:var(--nhan)}
 .huy.giu{background:var(--dung-nen);color:#6b5200}
@@ -159,7 +160,9 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .cty .tt{flex:1;min-width:0}.cty .tt>b{display:block}.cty .tt span{color:var(--mo);font-size:12.5px}
 .loc-dau{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .loc-dau input,.loc-dau select{font:inherit;border:1px solid var(--vien);border-radius:8px;padding:6px 10px;background:var(--the)}
-.bat{border:1px solid var(--vien);border-radius:8px;padding:6px 10px;background:var(--the)}
+.bat{border:1px solid var(--vien);border-radius:999px;padding:5px 12px;background:var(--the);font-size:13px}
+.bat:hover{border-color:var(--nhan)}
+@media (max-width:600px){.loc-dau{gap:6px}.loc-dau .bat{padding:4px 10px;font-size:12.5px}td.bo{min-width:170px}}
 .bat[aria-pressed=true]{background:var(--nhan-nen);border-color:var(--nhan);color:var(--nhan);font-weight:600}
 .loc-dau .dem{margin-left:auto;color:var(--mo);font-size:12.5px}
 .cuoi{color:var(--mo);font-size:12px;margin:18px 0}
@@ -169,8 +172,8 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .nut-tai{border:1px solid var(--nhan);color:var(--nhan);background:var(--the);border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:600}
 .nut-tai:hover{background:var(--nhan-nen)}
 .bd-gia{position:relative;height:480px;margin:0 8px 8px}
-@media (max-width:600px){.bd-gia{height:380px}}
-.chu-bd{position:absolute;left:8px;top:6px;z-index:3;font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
+@media (max-width:600px){.bd-gia{height:380px}.chu-bd{font-size:11px;line-height:1.4}}
+.chu-bd{position:absolute;left:8px;top:6px;z-index:3;max-width:calc(100% - 78px);font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
 .chu-bd b{font-weight:650}
 .cham-song{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tang);margin-right:5px;vertical-align:middle}
 .dai-cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
@@ -195,6 +198,57 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .cty .ic{font-size:13px;font-weight:700;color:var(--nhan)}
 tr.chon td{background:var(--nhan-nen)}
 .cs-ten{cursor:pointer}.cs-ten:hover{color:var(--nhan)}
+.nho{font-size:12px}
+/* phân tích tài chính */
+.khoi-dau .phai{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cham{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--mo);flex:none}
+.cham.t{background:var(--tang)}.cham.d{background:#e0a800}.cham.g{background:var(--giam)}
+.pt-dem{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--chu2)}.pt-dem .cham{margin-left:6px}
+.pt-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:14px}
+.pt-the{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--vien);border-radius:12px;background:var(--the);border-top:3px solid var(--vien);transition:box-shadow .15s,transform .15s}
+.pt-the:hover,.pt-the:focus-visible{box-shadow:0 6px 18px #1d243014;transform:translateY(-1px)}
+.pt-the.t{border-top-color:var(--tang)}.pt-the.d{border-top-color:#e0a800}.pt-the.g{border-top-color:var(--giam)}
+.pt-ten{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--mo);font-weight:650}
+.pt-so{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.pt-hoi{color:var(--chu2);font-size:12.5px;margin-top:auto;padding-top:4px;border-top:1px dashed var(--luoi)}
+.muc{align-self:flex-start;font-size:12px;font-weight:650;border-radius:999px;padding:2px 10px;background:var(--luoi);color:var(--chu2)}
+.muc.t{background:var(--tang-nen);color:var(--tang)}.muc.d{background:var(--dung-nen);color:#8a6400}.muc.g{background:var(--giam-nen);color:var(--giam)}
+.than .muc{vertical-align:middle;margin-left:6px}
+.cham-f{display:flex;gap:4px}.cham-f i{width:12px;height:12px;border-radius:50%;border:2px solid var(--tang);box-sizing:border-box}.cham-f i.co{background:var(--tang)}
+.cham-f.lon{margin-top:10px;gap:6px}.cham-f.lon i{width:16px;height:16px}
+.thanh-pt.vung{overflow:visible;height:10px}
+.dp-cay{padding:14px;display:flex;flex-direction:column;gap:12px}
+.dp-roe{display:flex;align-items:baseline;gap:10px}.dp-roe span{color:var(--mo);font-size:12.5px}.dp-roe b{font-size:28px}.dp-roe i{font-style:normal;font-size:13px;font-weight:600}
+.dp-nt{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px}
+.dp-x{align-self:center;color:var(--mo);font-weight:700}
+.dp-o{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border:1px solid var(--vien);border-radius:10px;background:var(--nhat);min-width:110px}
+.dp-o span{font-size:11.5px;color:var(--mo)}.dp-o b{font-size:17px;font-variant-numeric:tabular-nums}.dp-o i{font-style:normal;font-size:11.5px;font-weight:600}
+.cl-ds{list-style:none;margin:0;padding:6px 14px 10px}
+.cl-ds li{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--luoi)}.cl-ds li:last-child{border-bottom:0}
+.cl-t{flex:1;min-width:0}.cl-t small{display:block;color:var(--mo);font-size:11.5px}
+.cl-ds b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.dg-ds{padding:10px 14px 4px}
+.dg-dong{display:grid;grid-template-columns:minmax(150px,230px) 1fr 64px 58px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--luoi)}
+.dg-dong.tat{opacity:.55}.dg-dong b,.dg-dong>span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.dg-ten small{display:block;color:var(--mo);font-size:11px}
+.dg-ray{position:relative;height:18px;background:linear-gradient(var(--luoi),var(--luoi)) center/100% 2px no-repeat}
+.dg-ray i{position:absolute;top:3px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--giam);box-shadow:0 0 0 2px #fff}
+.dg-ray i.t{background:var(--tang)}
+.dg-ray s,.dg-chu s{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--chu);margin-left:-1px}
+.dg-ray u,.dg-chu u{position:absolute;top:-2px;bottom:-2px;width:0;border-left:2px dashed var(--nhan);margin-left:-1px}
+.dg-chu{display:flex;gap:18px;padding:6px 14px 12px;flex-wrap:wrap}.dg-chu span{position:relative;padding-left:10px}
+.dg-chu s,.dg-chu u{top:2px;bottom:2px;left:0}
+dialog#pp{border:0;border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:86vh;box-shadow:0 18px 50px #0004}
+dialog#pp::backdrop{background:#1d243066}
+.pp-than{padding:18px 22px 20px;overflow:auto;max-height:86vh;position:relative}
+.pp-than h2{margin:0 30px 8px 0;font-size:18px}
+.pp-than h4{margin:16px 0 6px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mo)}
+.pp-than p,.pp-than li{color:var(--chu2);font-size:13.5px}.pp-than p{margin:0}.pp-than ul{margin:0;padding-left:18px}
+.pp-than pre{font-family:inherit;margin:0;background:var(--nhat);border:1px solid var(--luoi);border-radius:8px;padding:10px 12px;white-space:pre-wrap;font-size:12.5px;line-height:1.6}
+.pp-doc{list-style:none;padding:0!important}.pp-doc li{display:flex;gap:10px;align-items:center;padding:4px 0}.pp-doc span{margin-left:auto;color:var(--mo);text-align:right}
+.pp-dong{position:absolute;right:12px;top:10px;border:0;background:none;font-size:24px;line-height:1;color:var(--mo);cursor:pointer}
+@media (max-width:600px){.pt-luoi{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px}.pt-the{padding:10px}.pt-so{font-size:18px}
+  .dg-dong{grid-template-columns:minmax(0,1fr) 54px 50px}.dg-ray{grid-column:1/-1;order:5}.dp-o{min-width:0;flex:1 1 40%}.dp-x{display:none}}
 </style>
 </head>
 <body>
@@ -214,7 +268,7 @@ tr.chon td{background:var(--nhan-nen)}
 "use strict";
 const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json";
 const TAB = [["tong-quan", "Tổng quan"], ["tin", "Tin tức"], ["ho-so", "Hồ sơ"], ["lanh-dao", "Lãnh đạo"], ["co-dong", "Cổ đông"],
-  ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
+  ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["phan-tich", "Phân tích"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
   ["bao-cao", "Báo cáo CTCK"], ["tai-lieu", "Tài liệu"], ["he-thong", "Hệ thống"]];
 let DS = null, META = {}, NG = null, MKT = null, LIVE = {}, BOT = {}, GIU = new Set(), CT_BCTC = null, TEN_CT = null;
 // danh sách theo dõi CÁ NHÂN – chỉ lưu trong trình duyệt này (localStorage), không gửi đi đâu
@@ -230,7 +284,7 @@ function vgm_html(v) {                          // "B A C B" → Giá trị B ·
   return c.map((x, i) => `${i === 3 ? "<b>" : ""}${VGM_TEN[i]} <span class="${lop(x)}">${esc(x)}</span>${i === 3 ? "</b>" : ""}`).join(" · ");
 }
 const KHO = {};                     // mã → {r, g, n, b}
-const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", tc: "bc", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC"};
+const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true};
 let CS_NGANH = null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -408,7 +462,7 @@ function dau_ma(ma, k, tab) {
   return `<div class="ma-dau"><div class="ma-tren"><div class="ma-ten">
     <h2>${esc(ma)}<span class="nhan-san">${esc(r.san || LIVE[ma]?.san || "")}</span>${GIU.has(ma) ? `<span class="huy giu">Đang giữ</span>` : ""}<button class="nut-td" data-td="${esc(ma)}" aria-pressed="${TD.has(ma)}">${TD.has(ma) ? "✓ Đang theo dõi" : "+ Theo dõi"}</button></h2>
     <div class="ten-dd" title="${esc(ten)}">${esc(ten)}${r.nganh ? " · " + esc(r.nganh) : ""}</div>
-    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${sk.f ? `<span class="huy hl">F-Score ${sk.f.diem}/9</span>` : ""}${sk.z ? `<span class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</span>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
+    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/9</a>` : ""}${sk.z ? `<a class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
     <div class="ma-gia"><span class="lon ${c}">${gn.gia != null ? so(gn.gia, 2) : "–"}</span><span class="pill ${c || "d"} ${c}">${td != null ? (td > 0 ? "+" : "") + so(td, 2) : ""} (${pt(gn.pt, 2)})</span>
     <div class="nho">${gn.live ? `${MKT?.dang_gd ? "<span class=\"cham-song\"></span>trong phiên" : "đóng cửa"} · ${esc(MKT?.cap_nhat || "")}` : gn.ngay ? "phiên " + ngay_vn(gn.ngay) : ""}</div></div></div>
     <nav class="tab" aria-label="Mục">${TAB.map(([id, t]) => `<a href="#${esc(ma)}/${id}"${id === tab ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}</nav></div>`;
@@ -596,7 +650,7 @@ async function hien_lich() {
   const thu = d => ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"][new Date(d + "T00:00:00Z").getUTCDay()];
   const nhom_ngay = {}; for (const r of ds) (nhom_ngay[r.ngay] = nhom_ngay[r.ngay] || []).push(r);
   const dong = r => `<tr class="bam" data-ma="${esc(r.ma)}"><td class="trai ma"><a href="#${esc(r.ma)}/co-tuc"><b>${esc(r.ma)}</b></a>${GIU.has(r.ma) ? '<span class="the-chu giu">giữ</span>' : TD.has(r.ma) ? '<span class="the-chu bot">theo dõi</span>' : ""}</td>
-    <td class="trai"><span class="sk-nhan sk-${esc(r.nhom)}">${esc(NHOM_SK[r.nhom] || r.nhom)}</span></td><td class="trai">${esc(r.ten)}</td>
+    <td class="trai"><span class="sk-nhan sk-${esc(r.nhom)}">${esc(NHOM_SK[r.nhom] || r.nhom)}</span></td><td class="trai bo">${esc(r.ten)}</td>
     <td>${r.chot ? ngay_vn(r.chot) : "–"}</td><td>${r.thuc_hien ? ngay_vn(r.thuc_hien) : "–"}</td></tr>`;
   const bo = [["", "Tất cả"], ...Object.entries(NHOM_SK)].map(([k, t]) => `<button class="bat" data-sk="${k}" aria-pressed="${LICH.nhom === k}">${esc(t)}</button>`).join("");
   $("#noi-dung").innerHTML = `<div class="loc-dau">${bo}<button class="bat" id="sk-td" aria-pressed="${LICH.td}">Chỉ mã theo dõi / đang giữ</button>
@@ -652,28 +706,11 @@ async function tai_chinh(ma, k) {
   const bang = `<div class="bang-boc" id="bang-bctc"><table class="bctc"><thead><tr><th class="trai">Tỷ đồng</th>${nhan.map(t => `<th>${esc(t)}</th>`).join("")}</tr></thead><tbody>` +
     dong.map(([c, lv, t]) => { const v = cat(co[c]); return `<tr class="${lv <= 1 ? "c1" : ""}"><td class="trai" style="padding-left:${10 + (lv - 1) * 14}px">${esc(t)}</td>${v.map(x => `<td class="${x < 0 ? "g" : ""}">${x ? ty(x) : "–"}</td>`).join("")}</tr>`; }).join("") +
     `</tbody></table></div>`;
-  const sub = `<div class="sub">${nut([["bc", "Báo cáo tài chính"], ["sk", "Sức khoẻ tài chính"]], ST.tc, "tc")}</div>`;
-  if (ST.tc === "sk") return sub + suc_khoe(r);
+  const sub = `<p class="m nho" style="margin:0 0 10px">Z-Score, F-Score, M-Score, DuPont 6 nhân tố, chất lượng lợi nhuận, định giá đa phương pháp: <a href="#${esc(ma)}/phan-tich">tab Phân tích</a></p>`;
   let h = sub + the("Báo cáo tài chính", `${({CT: "doanh nghiệp", NH: "ngân hàng", CK: "chứng khoán", BH: "bảo hiểm"})[b.loai] || ""} · ${q ? b.q.length + " quý" : b.y.length + " năm"} · Q4 khớp số kiểm toán · ${nut_tai("tai-bctc", "Tải Excel BCTC")}`,
     `<div class="than" style="padding-bottom:0"><span class="nut">${nut([["kd", "Kết quả kinh doanh"], ["cd", "Cân đối kế toán"], ["lc", "Lưu chuyển tiền tệ"]], ST.bang, "bang")}</span></div>
      <div class="bieu" style="padding:6px 8px 0">${chart}</div>${chu_giai(cg)}${bang}`, nut([["q", "Quý"], ["y", "Năm"]], ST.ky, "ky"));
   return h;
-}
-function suc_khoe(r) {
-  const s = r.suc_khoe || {};
-  let f = `<div class="trong">Chỉ tính cho doanh nghiệp thường (không áp dụng ngân hàng / chứng khoán / bảo hiểm).</div>`, z = f;
-  if (s.f) f = `<div class="than"><span class="diem-lon ${s.f.diem >= 7 ? "t" : s.f.diem <= 3 ? "g" : "d"}">${s.f.diem}</span><span class="m"> / 9 · năm ${esc(s.f.nam)}</span></div>
-    <ul class="f-ds">${s.f.tc.map(([t, ok, gc]) => `<li><span class="k ${ok ? "t" : ok === false ? "g" : "m"}">${ok ? "✓" : ok === false ? "✗" : "–"}</span><span>${esc(t)}${gc ? ` <span class="m">(${esc(gc)})</span>` : ""}</span></li>`).join("")}</ul>`;
-  if (s.z) { const v = s.z.z, p = Math.max(0, Math.min(1, v / 5));
-    z = `<div class="than"><span class="diem-lon ${s.z.vung === "An toàn" ? "t" : s.z.vung === "Nguy hiểm" ? "g" : "d"}">${so(v, 2)}</span> <b>${esc(s.z.vung)}</b><span class="m"> · năm ${esc(s.z.nam)}</span>
-      <div class="thanh-pt" style="margin:12px 0 4px;background:linear-gradient(90deg,#fde8e6 0 22%,#fbf3d6 22% 52%,#e3f4ea 52%)"><span class="vach" style="left:${p * 100}%"></span></div>
-      <div class="m" style="font-size:12px;display:flex;justify-content:space-between"><span>Nguy hiểm &lt; 1,1</span><span>Xám</span><span>An toàn &gt; 2,6</span></div>
-      <p class="m" style="font-size:12px;margin:8px 0 0">Altman Z'' (thị trường mới nổi) = 6,56·(TS ngắn hạn − nợ ngắn hạn)/TS + 3,26·LN giữ lại/TS + 6,72·EBIT/TS + 1,05·VCSH/nợ</p></div>`; }
-  const du = (s.dupont || []).filter(x => x.roe != null);
-  const dp = du.length ? `<div class="bang-boc"><table><thead><tr><th class="trai">Năm</th><th>Biên ròng</th><th>Vòng quay TS</th><th>Đòn bẩy</th><th>ROE</th></tr></thead><tbody>` +
-    du.map(x => `<tr><td class="trai">${esc(x.nam)}</td><td>${pt(x.bien_rong, 1, false)}</td><td>${so(x.vong_quay, 2)}×</td><td>${so(x.don_bay, 2)}×</td><td><b class="${mau(x.roe)}">${pt(x.roe, 1, false)}</b></td></tr>`).join("") +
-    `</tbody></table></div><p class="m" style="font-size:12px;padding:0 14px 10px;margin:6px 0 0">ROE = biên LN ròng × vòng quay tài sản × đòn bẩy (TS / VCSH bình quân)</p>` : `<div class="trong">Chưa đủ số liệu</div>`;
-  return `<div class="hai">${the("F-Score", "Piotroski – 9 tiêu chí", f)}${the("Z-Score", "Altman – nguy cơ phá sản", z)}</div>` + the("DuPont", "tách ROE 5 năm", dp);
 }
 function so_nganh(ma, k) {
   const r = DS.find(x => x.ma === ma); if (!r || !r.nganh) return "";
@@ -688,6 +725,303 @@ function so_nganh(ma, k) {
     return `<tr><td class="trai">${t}</td><td><b>${f(v)}</b></td><td>${f(trung_vi(a))}</td><td style="min-width:140px"><div class="thanh-pt"><span style="width:${hang * 100}%;background:${hang >= .66 ? "#0f8a4a" : hang <= .33 ? "#d1342b" : "#e8a400"}"></span></div></td><td>${so(hang * 100, 0)}</td></tr>`;
   }).join("");
   return dong ? the("Xếp hạng trong ngành", `${esc(r.nganh)} · ${cung.length} mã · phân vị: 100 = tốt nhất ngành`, `<div class="bang-boc"><table><thead><tr><th class="trai">Chỉ số</th><th>${esc(ma)}</th><th>Trung vị ngành</th><th></th><th>Phân vị</th></tr></thead><tbody>${dong}</tbody></table></div>`) : "";
+}
+// ---------------------------------------------------------------- PHÂN TÍCH TÀI CHÍNH – thẻ điểm 6 trụ (tính tại trình duyệt từ BCTC năm)
+const PT_CC = [["the", "Thẻ điểm"], ["z", "Z-Score"], ["f", "F-Score"], ["dp", "DuPont"], ["m", "M-Score"], ["cl", "Chất lượng LN"], ["dg", "Định giá"], ["tt", "Tăng trưởng"]];
+const BDS_RE = /bất động sản|xây dựng|xây lắp/i;
+const PT_DG = {r: 0.12, g_cuoi: 0.03, nam: 5, y_graham: 5};        // chiết khấu 12% · tăng trưởng cuối 3% · 5 năm · lợi suất tham chiếu Graham 5%
+const chia = (a, c) => a != null && c != null && c !== 0 && isFinite(a) && isFinite(c) ? a / c : null;
+const kep = (v, a, b) => v == null ? null : Math.max(a, Math.min(b, v));
+const cagr = (dau, cuoi, n) => dau > 0 && cuoi > 0 && n > 0 ? (cuoi / dau) ** (1 / n) - 1 : null;
+function bctc_nam(b) {                                      // v(bảng, mã…) → mảng theo năm · a(…) → trị tuyệt đối (chi phí âm)
+  const nq = b.q.length, Y = b.y;
+  const v = (bang, ...ma) => Y.map((_, i) => { for (const c of ma) { const x = b[bang]?.[c]?.[nq + i]; if (x != null) return x; } return null; });
+  return {Y, v, a: (bang, ...ma) => v(bang, ...ma).map(x => x == null ? null : Math.abs(x))};
+}
+const bq = (x, i) => i > 0 && x[i] != null && x[i - 1] != null ? (x[i] + x[i - 1]) / 2 : null;   // bình quân đầu – cuối năm
+
+function pt_dupont(S) {                                     // DuPont 6 nhân tố (5 nhân tố = bỏ tỷ phần cổ đông mẹ, VCSH gồm CĐ thiểu số)
+  const dt = S.v("kd", "isa3"), lntt = S.v("kd", "isa16"), lv = S.a("kd", "isa8"), ln = S.v("kd", "isa20"), lnm = S.v("kd", "isa22", "isa20");
+  const ts = S.v("cd", "bsa53"), vc = S.v("cd", "bsa78"), ks = S.v("cd", "bsa210", "bsa95");
+  const vcm = vc.map((x, i) => x == null ? null : x - (ks[i] || 0));
+  return S.Y.map((nam, i) => {
+    const ebit = lntt[i] != null ? lntt[i] + (lv[i] || 0) : null, tsb = bq(ts, i), vcb = bq(vc, i), vcmb = bq(vcm, i);
+    return {nam, me: chia(lnm[i], ln[i]), thue: lntt[i] > 0 ? chia(ln[i], lntt[i]) : null, lai: ebit > 0 ? chia(lntt[i], ebit) : null,
+      ebit: chia(ebit, dt[i]), vq: chia(dt[i], tsb), db: chia(tsb, vcmb), db5: chia(tsb, vcb), roe: chia(lnm[i], vcmb), roe5: chia(ln[i], vcb)};
+  }).filter(x => x.roe != null);
+}
+const BENEISH = [                                           // hệ số · TB nhóm thao túng (Beneish 1999, bảng 2) · ý nghĩa
+  ["DSRI", 0.920, 1.465, "Phải thu / doanh thu so năm trước"], ["GMI", 0.528, 1.193, "Biên gộp năm trước ÷ năm nay"],
+  ["AQI", 0.404, 1.254, "Tỷ trọng tài sản “khó thấy” (ngoài TSNH, TSCĐ, đầu tư)"], ["SGI", 0.892, 1.607, "Doanh thu năm nay ÷ năm trước"],
+  ["DEPI", 0.115, 1.077, "Tốc độ khấu hao năm trước ÷ năm nay"], ["SGAI", -0.172, null, "Chi phí bán hàng + QLDN / doanh thu so năm trước"],
+  ["TATA", 4.679, 0.031, "Dồn tích: (LNST − dòng tiền HĐKD) / tổng tài sản"], ["LVGI", -0.327, null, "Nợ / tổng tài sản so năm trước"]];
+function pt_m(S) {
+  const i = S.Y.length - 1, j = i - 1; if (j < 0) return null;
+  const pt_ = S.v("cd", "bsa9", "bsa8"), dt = S.v("kd", "isa3"), lg = S.v("kd", "isa5"), nh = S.v("cd", "bsa1"), cd = S.v("cd", "bsa29"), dh = S.v("cd", "bsa43");
+  const ts = S.v("cd", "bsa53"), kh = S.a("lc", "cfa2"), bh = S.a("kd", "isa9"), ql = S.a("kd", "isa10"), no = S.v("cd", "bsa54"), ln = S.v("kd", "isa20"), cfo = S.v("lc", "cfa18");
+  const aq = k => { const x = chia((nh[k] || 0) + (cd[k] || 0) + (dh[k] || 0), ts[k]); return x == null ? null : 1 - x; };
+  const kh_tl = k => kh[k] != null && cd[k] != null && kh[k] + cd[k] > 0 ? kh[k] / (kh[k] + cd[k]) : null;
+  const ty_le = (a, c) => { const x = chia(a, c); return x != null && x > 0 ? x : null; };
+  const v = {DSRI: ty_le(chia(pt_[i], dt[i]), chia(pt_[j], dt[j])), GMI: ty_le(chia(lg[j], dt[j]), chia(lg[i], dt[i])),
+    AQI: aq(i) != null && aq(j) > 0.01 ? Math.max(0, aq(i)) / aq(j) : null, SGI: ty_le(dt[i], dt[j]), DEPI: ty_le(kh_tl(j), kh_tl(i)),
+    SGAI: ty_le(chia((bh[i] || 0) + (ql[i] || 0), dt[i]), chia((bh[j] || 0) + (ql[j] || 0), dt[j])),
+    TATA: ln[i] != null && cfo[i] != null ? chia(ln[i] - cfo[i], ts[i]) : null, LVGI: ty_le(chia(no[i], ts[i]), chia(no[j], ts[j]))};
+  const thieu = BENEISH.filter(([k]) => v[k] == null || !isFinite(v[k])).map(([k]) => k);
+  if (thieu.length > 2) return {nam: S.Y[i], thieu};
+  const m = -4.84 + BENEISH.reduce((s, [k, he]) => s + he * (v[k] == null || !isFinite(v[k]) ? (k === "TATA" ? 0 : 1) : v[k]), 0);
+  return {nam: S.Y[i], v, m, thieu, muc: m > -1.78 ? "g" : m >= -2.22 ? "d" : "t"};
+}
+function pt_cl(S, bds) {                                    // chất lượng lợi nhuận: dòng tiền, dồn tích, FCF, chu kỳ tiền mặt, phải thu
+  const n = S.Y.length, ln = S.v("kd", "isa20"), cfo = S.v("lc", "cfa18"), capex = S.a("lc", "cfa19"), dt = S.v("kd", "isa3"), gv = S.a("kd", "isa4");
+  const ts = S.v("cd", "bsa53"), pt_ = S.v("cd", "bsa9", "bsa8"), hk = S.v("cd", "bsa15", "bsa16"), ptr = S.v("cd", "bsa57");
+  const nam = S.Y.map((y, i) => {
+    const d = (x, mau) => bq(x, i) != null && mau[i] > 0 ? bq(x, i) / mau[i] * 365 : null;
+    const dso = d(pt_, dt), dio = d(hk, gv), dpo = d(ptr, gv);
+    return {nam: y, cfo: cfo[i], ln: ln[i], cfo_ln: ln[i] > 0 ? chia(cfo[i], ln[i]) : null, don_tich: chia((ln[i] ?? NaN) - (cfo[i] ?? NaN), bq(ts, i)),
+      fcf: chia((cfo[i] ?? NaN) - (capex[i] || 0), dt[i]), dso, dio, dpo, ccc: dso != null && dio != null && dpo != null ? dso + dio - dpo : null};
+  }).slice(1);
+  const i = n - 1, k3 = [n - 3, n - 2, n - 1].filter(k => k >= 0);
+  const tong = (x) => k3.reduce((s, k) => x[k] == null ? NaN : s + x[k], 0);
+  const cuoi = nam[nam.length - 1] || {}, truoc = nam[nam.length - 2] || {};
+  const g_pt = n > 1 ? chia(pt_[i], pt_[i - 1]) : null, g_dt = n > 1 ? chia(dt[i], dt[i - 1]) : null;
+  const c = [];                                             // [tên, giá trị hiển thị, mức t/d/g, quy tắc]
+  const cl3 = tong(ln) > 0 ? tong(cfo) / tong(ln) : null;
+  c.push(["Dòng tiền HĐKD / LNST (3 năm)", cl3 == null ? "–" : so(cl3, 2) + "×", cl3 == null ? "" : cl3 >= 1 ? "t" : cl3 >= 0.5 ? "d" : "g", "≥ 1 tốt · < 0,5 cờ đỏ"]);
+  const dtc = cuoi.don_tich;
+  c.push(["Tỷ lệ dồn tích (Sloan)", pt(dtc, 1), dtc == null ? "" : dtc < 0.05 ? "t" : dtc <= 0.10 ? "d" : "g", "< 5% tốt · > 10% cờ đỏ"]);
+  c.push(["Biên dòng tiền tự do", pt(cuoi.fcf, 1), cuoi.fcf == null ? "" : cuoi.fcf > 0 ? "t" : "d", "> 0 tốt · âm: đang đầu tư nhiều hơn tiền làm ra"]);
+  const lech = g_pt != null && g_dt != null && dt[i] > 0 && pt_[i] / dt[i] > 0.05 ? (g_pt - 1) - (g_dt - 1) : null;
+  c.push(["Phải thu tăng − doanh thu tăng", lech == null ? "–" : (lech > 0 ? "+" : "") + so(lech * 100, 0) + " đpt", lech == null ? "" : lech <= 0.1 ? "t" : lech <= 0.2 ? "d" : "g", "> 20 đpt cờ đỏ (bán chịu để đẩy doanh thu?)"]);
+  const dccc = cuoi.ccc != null && truoc.ccc != null ? cuoi.ccc - truoc.ccc : null;
+  c.push(["Chu kỳ tiền mặt", cuoi.ccc == null ? "–" : so(cuoi.ccc, 0) + " ngày" + (dccc != null ? ` (${dccc > 0 ? "+" : ""}${so(dccc, 0)})` : ""),
+    bds || dccc == null ? "" : dccc <= 20 ? "t" : dccc <= 45 ? "d" : "g", bds ? "không chấm cho BĐS / xây lắp (tồn kho tính bằng năm)" : "tăng > 45 ngày / năm: cờ đỏ"]);
+  return {nam, c};
+}
+function pt_tt(S, dp, r) {                                  // tăng trưởng bền vững
+  const n = S.Y.length, i = n - 1, lnm = S.v("kd", "isa22", "isa20"), co_tuc = S.a("lc", "cfa32"), dt = S.v("kd", "isa3"), cp = S.v("cd", "bsa80");
+  const no = S.v("cd", "bsa54"), vc = S.v("cd", "bsa78"), ts = S.v("cd", "bsa53");
+  const tra = [i, i - 1, i - 2].filter(k => k > 0).map(k => lnm[k - 1] > 0 && co_tuc[k] != null ? kep(co_tuc[k] / lnm[k - 1], 0, 1) : null);
+  const tl_tra = tb(tra), roe = dp.length ? dp[dp.length - 1].roe : null;
+  const sgr = roe != null && tl_tra != null ? roe * (1 - tl_tra) : null;
+  const g_dt = n > 1 ? chia(dt[i], dt[i - 1]) : null, g_ln = n > 1 && lnm[i - 1] > 0 ? chia(lnm[i], lnm[i - 1]) : null;
+  const lech = g_dt != null && sgr != null ? g_dt - 1 - sgr : null;
+  const k = Math.max(0, n - 4), so_n = i - k;
+  const cg = {dt: cagr(dt[k], dt[i], so_n), ln: cagr(lnm[k], lnm[i], so_n), vc: cagr(vc[k], vc[i], so_n), ts: cagr(ts[k], ts[i], so_n), ln5: n > 5 ? cagr(lnm[i - 5], lnm[i], 5) : null};
+  const co = [];
+  const db_tang = n > 1 && chia(no[i], vc[i]) > (chia(no[i - 1], vc[i - 1]) ?? Infinity);
+  if (lech != null && lech > 0.10) co.push([db_tang ? "g" : "d", `Doanh thu tăng ${pt(g_dt - 1)} – vượt SGR ${so(lech * 100, 0)} đpt${db_tang ? ", nợ / VCSH tăng: tăng trưởng dựa vào vay" : ""}`]);
+  const g_cp = n > 1 ? chia(cp[i], cp[i - 1]) : null;
+  if (g_cp != null && g_cp > 1.10) co.push(["d", `Vốn góp tăng ${pt(g_cp - 1)} trong năm – pha loãng (phát hành / cổ tức cổ phiếu)`]);
+  if (g_ln != null && g_ln < 0.8) co.push(["g", `LNST cổ đông mẹ năm ${S.Y[i]} giảm ${pt(g_ln - 1)}`]);
+  const kh = (r.ke_hoach || []).find(x => x.nam === S.Y[i] && x.ht && x.ht.lnst != null);
+  const goc = cg.ln ?? (g_ln != null ? g_ln - 1 : null), do_ = co.filter(x => x[0] === "g").length;
+  const muc = goc == null ? "" : do_ >= 2 || goc < 0.05 ? "g" : goc >= 0.15 && !do_ ? "t" : "d";
+  return {roe, tl_tra, sgr, g_dt: g_dt == null ? null : g_dt - 1, lech, cg, so_n, co, kh, muc};
+}
+function pt_dinh_gia(S, r, n, gia_d, so_cp, tt, loai) {    // định giá đa phương pháp (đồng / CP)
+  const eps = r.eps > 0 ? r.eps : null, bvps = r.bvps > 0 ? r.bvps : null;
+  const g = kep([tt.cg.ln, tt.cg.ln5].filter(v => v != null).reduce((a, v) => Math.min(a, v), Infinity), 0, 0.15) ?? 0;
+  const pp = [];
+  const them = (ten, v, ghi) => pp.push({ten, v: v > 0 && isFinite(v) ? v : null, ghi});
+  them("Graham Number", eps && bvps ? Math.sqrt(22.5 * eps * bvps) : null, "√(22,5 × EPS × BVPS)");
+  them("Graham (1974)", eps ? eps * (8.5 + 2 * g * 100) * 4.4 / PT_DG.y_graham : null, `g ${pt(g, 1, false)} · Y ${PT_DG.y_graham}%`);
+  const nganh = DS.filter(x => x.nganh && x.nganh === r.nganh && x.ma !== r.ma);
+  const pe_n = trung_vi(nganh.map(x => { const p = gia_h(x); return x.eps > 0 && p ? p / x.eps : null; }).filter(v => v > 3 && v < 40));
+  const pb_n = trung_vi(nganh.map(x => { const p = gia_h(x); return x.bvps > 0 && p ? p / x.bvps : null; }).filter(v => v > 0.3 && v < 10));
+  them("P/E ngành × EPS", eps && pe_n && nganh.length >= 3 ? pe_n * eps : null, pe_n ? `P/E trung vị ${esc(r.nganh)} ${so(pe_n, 1)}` : "");
+  them("P/B ngành × BVPS", bvps && pb_n && nganh.length >= 3 ? pb_n * bvps : null, pb_n ? `P/B trung vị ngành ${so(pb_n, 2)}` : "");
+  const ls = key => { const x = (n?.cs?.[key] || []).slice(-20).filter(v => v > 0 && v < (key === "pe" ? 100 : 20)); return x.length >= 8 ? tb(x) : null; };
+  const pe_l = ls("pe"), pb_l = ls("pb");
+  them("P/E lịch sử × EPS", eps && pe_l ? pe_l * eps : null, pe_l ? `P/E bình quân 5 năm ${so(pe_l, 1)}` : "");
+  them("P/B lịch sử × BVPS", bvps && pb_l ? pb_l * bvps : null, pb_l ? `P/B bình quân 5 năm ${so(pb_l, 2)}` : "");
+  const chiet = (dau, g1) => { let v = 0, x = dau; for (let t = 1; t <= PT_DG.nam; t++) { x *= 1 + g1; v += x / (1 + PT_DG.r) ** t; }
+    return v + x * (1 + PT_DG.g_cuoi) / (PT_DG.r - PT_DG.g_cuoi) / (1 + PT_DG.r) ** PT_DG.nam; };
+  if (loai === "CT" && so_cp) {
+    const m = S.Y.length, cfo = S.v("lc", "cfa18"), capex = S.a("lc", "cfa19"), ct = S.a("lc", "cfa32");
+    const f3 = [m - 1, m - 2, m - 3].filter(k => k >= 0 && cfo[k] != null).map(k => cfo[k] - (capex[k] || 0));
+    const fcf = f3.length === 3 ? tb(f3) * 1e9 / so_cp : null;
+    them("DCF (dòng tiền tự do)", fcf > 0 ? chiet(fcf, g) : null, fcf > 0 ? `FCF/CP ${so(fcf, 0)} đ · g ${pt(g, 1, false)} 5 năm` : "FCF 3 năm âm – không dùng");
+    const mot_nam = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10), hom_nay = new Date().toISOString().slice(0, 10);
+    const sk_tien = (n?.sk || []).filter(x => (x.ma_sk === "DIV" || /tiền/i.test(x.loai || "")) && x.gia_tri > 0 && x.ngay >= mot_nam && x.ngay <= hom_nay);
+    const dps_lc = ct[m - 1] > 0 ? ct[m - 1] * 1e9 / so_cp : null;
+    const dps = sk_tien.length ? sk_tien.reduce((a, x) => a + x.gia_tri, 0) : dps_lc && gia_d && dps_lc >= 0.005 * gia_d ? dps_lc : null, g2 = kep(tt.sgr, 0, 0.15) ?? 0;
+    them("Chiết khấu cổ tức 2 giai đoạn", dps ? chiet(dps, g2) : null, dps ? `cổ tức tiền ${so(dps, 0)} đ/CP · g ${pt(g2, 1, false)}` : "không trả cổ tức tiền");
+  }
+  them("Giá trị hợp lý hệ thống", r.gia_tri, esc(r.cach_dg || "").slice(0, 80));
+  const co = pp.filter(x => x.v), tv = trung_vi(co.map(x => x.v));
+  const bien = tv && gia_d ? (tv - gia_d) / tv : null;
+  const pe = eps && gia_d ? gia_d / eps : null, peg = pe && tt.cg.ln > 0 ? pe / (tt.cg.ln * 100) : null;
+  return {pp, tv, bien, pe, peg, muc: bien == null ? "" : bien >= 0.15 ? "t" : bien <= -0.15 ? "g" : "d"};
+}
+
+const PT_PP = {                                             // "Phương pháp" của từng công cụ
+  z: {ten: "Z-Score của Altman", ng: "Edward Altman (1968) dùng phân tích biệt số trên các doanh nghiệp sản xuất Mỹ để dự báo phá sản trong 2 năm. Bản Z'' (1995) bỏ biến doanh thu / tài sản và giá thị trường để dùng được cho doanh nghiệp ngoài ngành sản xuất và thị trường mới nổi – là bản trang này dùng.",
+    ct: ["Z'' = 6,56·X1 + 3,26·X2 + 6,72·X3 + 1,05·X4", "X1 = (TS ngắn hạn − nợ ngắn hạn) / tổng TS   (vốn lưu động)", "X2 = LN chưa phân phối / tổng TS   (tích luỹ)", "X3 = EBIT / tổng TS   (sinh lời trên tài sản)", "X4 = VCSH / tổng nợ   (đệm vốn)"],
+    doc: [["t", "An toàn", "Z'' > 2,6"], ["d", "Vùng xám", "1,1 ≤ Z'' ≤ 2,6"], ["g", "Nguy hiểm", "Z'' < 1,1"]],
+    gh: ["Không dùng cho ngân hàng, chứng khoán, bảo hiểm (cấu trúc nợ khác hẳn).", "Doanh nghiệp chia cổ tức nhiều có LN chưa phân phối thấp → X2 thấp dù an toàn.", "Là ảnh chụp 1 năm; nên xem cùng xu hướng."],
+    tk: ["Altman, E. (1968). Financial Ratios, Discriminant Analysis and the Prediction of Corporate Bankruptcy. Journal of Finance.", "Altman, E. (2005). An emerging market credit scoring system for corporate bonds. Emerging Markets Review."]},
+  f: {ten: "F-Score của Piotroski", ng: "Joseph Piotroski (2000) chấm 9 tiêu chí nhị phân trên BCTC để tách doanh nghiệp giá trị đang khoẻ lên khỏi doanh nghiệp đang yếu đi; nhóm điểm cao vượt nhóm điểm thấp rõ rệt trong mẫu nghiên cứu.",
+    ct: ["Sinh lời (4): ROA > 0 · CFO > 0 · ROA tăng · CFO > LNST", "Đòn bẩy & thanh khoản (3): vay dài hạn / TS giảm · hệ số thanh toán hiện hành tăng · không phát hành thêm cổ phiếu", "Hiệu quả (2): biên gộp tăng · vòng quay tài sản tăng", "Mỗi tiêu chí đạt = 1 điểm, tổng 0–9 (năm kiểm toán gần nhất so năm trước)"],
+    doc: [["t", "Khoẻ", "7–9 điểm"], ["d", "Trung bình", "4–6 điểm"], ["g", "Yếu", "0–3 điểm"]],
+    gh: ["Chỉ cho doanh nghiệp thường.", "Tiêu chí “không phát hành” trừ điểm cả khi chia cổ tức bằng cổ phiếu.", "Đo xu hướng 1 năm, không đo quy mô hay định giá."],
+    tk: ["Piotroski, J. (2000). Value Investing: The Use of Historical Financial Statement Information to Separate Winners from Losers. Journal of Accounting Research."]},
+  dp: {ten: "DuPont 5 – 6 nhân tố", ng: "Công ty DuPont (thập niên 1920) tách ROE thành các tỷ số nhân với nhau để thấy lợi nhuận trên vốn đến từ đâu. Bản 5 nhân tố tách thêm gánh nặng thuế và gánh nặng lãi vay khỏi biên lợi nhuận; trang này thêm nhân tố thứ 6 – tỷ phần của cổ đông công ty mẹ – để ROE khớp đúng LNST cổ đông mẹ / VCSH cổ đông mẹ.",
+    ct: ["ROE = (LNST mẹ / LNST) × (LNST / LNTT) × (LNTT / EBIT) × (EBIT / Doanh thu) × (Doanh thu / TS bq) × (TS bq / VCSH mẹ bq)", "Tỷ phần cổ đông mẹ = LNST mẹ / LNST", "Gánh nặng thuế = LNST / LNTT   (càng gần 1 càng ít thuế)", "Gánh nặng lãi vay = LNTT / EBIT   (càng gần 1 càng ít lãi vay)", "EBIT = LNTT + chi phí lãi vay", "5 nhân tố: bỏ nhân tố đầu, đòn bẩy = TS bq / VCSH bq (gồm cổ đông thiểu số)"],
+    doc: [["t", "Hiệu quả", "ROE ≥ 15% và đòn bẩy ≤ 3 lần"], ["d", "Trung bình", "ROE 8–15%, hoặc ROE cao nhờ đòn bẩy > 3 lần"], ["g", "Kém", "ROE < 8%"]],
+    gh: ["Ngân hàng / chứng khoán / bảo hiểm: chỉ tách 3 nhân tố (biên ròng × vòng quay × đòn bẩy).", "Năm LNTT hoặc EBIT âm thì gánh nặng thuế / lãi vay không có nghĩa (để trống).", "TS và VCSH lấy bình quân đầu – cuối năm."],
+    tk: ["Bodie, Kane, Marcus. Investments – chương phân tích báo cáo tài chính.", "Soliman, M. (2008). The Use of DuPont Analysis by Market Participants. The Accounting Review."]},
+  m: {ten: "M-Score của Beneish", ng: "Messod Beneish (1999) ước lượng mô hình probit 8 biến trên các doanh nghiệp bị SEC kết luận làm sai lợi nhuận. Mô hình được biết đến rộng rãi khi một nhóm sinh viên dùng nó cảnh báo Enron từ 1998.",
+    ct: ["M = −4,84 + 0,920·DSRI + 0,528·GMI + 0,404·AQI + 0,892·SGI + 0,115·DEPI − 0,172·SGAI + 4,679·TATA − 0,327·LVGI", "Các chỉ số là tỷ lệ năm t / năm t−1; TATA = (LNST − CFO) / tổng TS năm t", "AQI dùng TSNH + TSCĐ + đầu tư dài hạn; biến thiếu số liệu đặt trung tính (1, TATA = 0)"],
+    doc: [["g", "Có dấu hiệu", "M > −1,78"], ["d", "Cần xem kỹ", "−2,22 ≤ M ≤ −1,78"], ["t", "Không có dấu hiệu", "M < −2,22"]],
+    gh: ["Mô hình xác suất: M cao là cờ cần đọc kỹ thuyết minh, không phải kết luận gian lận.", "Doanh nghiệp tăng trưởng nóng (SGI cao) dễ bị điểm cao dù lành mạnh.", "Không áp dụng cho ngân hàng / chứng khoán / bảo hiểm."],
+    tk: ["Beneish, M. (1999). The Detection of Earnings Manipulation. Financial Analysts Journal."]},
+  cl: {ten: "Chất lượng lợi nhuận", ng: "Richard Sloan (1996) cho thấy phần lợi nhuận đến từ dồn tích (không đi kèm tiền) kém bền và báo trước lợi suất cổ phiếu thấp. Bổ sung các thước đo chuyển đổi tiền mặt và vốn lưu động quen thuộc của chuyên viên phân tích.",
+    ct: ["CFO / LNST (cộng dồn 3 năm): mỗi đồng lãi thu về bao nhiêu đồng tiền", "Dồn tích = (LNST − CFO) / tổng TS bình quân", "Biên FCF = (CFO − chi mua sắm TSCĐ) / doanh thu", "Chu kỳ tiền mặt = số ngày phải thu + số ngày tồn kho − số ngày phải trả", "Lệch phải thu = tăng trưởng phải thu khách hàng − tăng trưởng doanh thu"],
+    doc: [["t", "Đáng tin", "không cờ đỏ, tối đa 1 chỉ tiêu vàng"], ["d", "Cần xem kỹ", "1 cờ đỏ hoặc ≥ 2 chỉ tiêu vàng (gồm M-Score)"], ["g", "Cờ đỏ", "≥ 2 cờ đỏ"]],
+    gh: ["Doanh nghiệp đang mở rộng mạnh có thể bị cảnh báo dù lành mạnh – xem cùng tăng trưởng.", "Bất động sản / xây lắp: tồn kho tính bằng năm nên không chấm chu kỳ tiền mặt.", "Không áp dụng cho ngân hàng / chứng khoán / bảo hiểm (dòng tiền HĐKD chịu chi phối của cho vay, tự doanh)."],
+    tk: ["Sloan, R. (1996). Do Stock Prices Fully Reflect Information in Accruals and Cash Flows about Future Earnings? The Accounting Review.", "Dechow, P., Ge, W., Schrand, C. (2010). Understanding earnings quality. Journal of Accounting and Economics."]},
+  dg: {ten: "Định giá đa phương pháp", ng: "Không có cách định giá nào đúng tuyệt đối. Trang tính nhiều cách độc lập rồi lấy trung vị làm giá trị nội tại, so với giá thị trường theo tinh thần “biên an toàn” của Benjamin Graham. Trung vị giúp một phương pháp lệch không kéo cả kết quả.",
+    ct: ["Graham Number = √(22,5 × EPS × BVPS)", "Graham 1974: V = EPS × (8,5 + 2g) × 4,4 / Y   (g = CAGR LNST mẹ thấp hơn giữa 3 năm và 5 năm – tránh năm gốc ở đáy chu kỳ – kẹp 0–15%; Y = 5%)", "P/E ngành × EPS · P/B ngành × BVPS   (trung vị ngành, bỏ bội số bất thường)", "P/E lịch sử × EPS · P/B lịch sử × BVPS   (bình quân 20 quý gần nhất)", `DCF: FCF/CP bình quân 3 năm tăng g trong 5 năm, sau đó ${PT_DG.g_cuoi * 100}%, chiết khấu ${PT_DG.r * 100}%`, `Cổ tức 2 giai đoạn: cổ tức tiền/CP 12 tháng qua (lịch sự kiện; thiếu thì từ LCTT nếu ≥ 0,5% giá) tăng theo SGR (kẹp 0–15%) 5 năm, sau đó ${PT_DG.g_cuoi * 100}%, chiết khấu ${PT_DG.r * 100}%`, "Biên an toàn = (trung vị giá trị − giá) / trung vị · PEG = P/E ÷ (CAGR LNST 3 năm × 100)"],
+    doc: [["t", "Chiết khấu", "biên an toàn ≥ 15%"], ["d", "Hợp lý", "−15% < biên an toàn < 15%"], ["g", "Đắt", "biên an toàn ≤ −15%"]],
+    gh: ["EPS 4 quý gần nhất và BVPS hiện tại; DCF / cổ tức dùng BCTC năm.", "EPS các năm ở Việt Nam thường không điều chỉnh cổ tức cổ phiếu nên g lấy theo LNST cổ đông mẹ.", "Doanh nghiệp chu kỳ (thép, phân bón…) đang ở đỉnh lợi nhuận sẽ trông rẻ – xem cùng P/E lịch sử."],
+    tk: ["Graham, B. The Intelligent Investor (bản 1973) và Security Analysis.", "Damodaran, A. Investment Valuation."]},
+  tt: {ten: "Tăng trưởng bền vững", ng: "Robert Higgins (1977) chỉ ra doanh nghiệp chỉ tăng trưởng được tối đa bằng ROE × tỷ lệ lợi nhuận giữ lại nếu không vay thêm hay phát hành thêm. Tăng nhanh hơn mức đó lâu dài thì phải trả bằng đòn bẩy hoặc pha loãng.",
+    ct: ["SGR = ROE × (1 − tỷ lệ chi trả cổ tức tiền)", "Tỷ lệ chi trả = cổ tức tiền đã trả năm t / LNST mẹ năm t−1, bình quân 3 năm", "Chênh lệch = tăng trưởng doanh thu − SGR", "CAGR n năm = (cuối / đầu)^(1/n) − 1"],
+    doc: [["t", "Tăng trưởng", "CAGR LNST 3 năm ≥ 15%, không cờ đỏ"], ["d", "Chậm", "CAGR 5–15% hoặc có cờ"], ["g", "Suy giảm", "CAGR < 5% hoặc ≥ 2 cờ đỏ"]],
+    gh: ["CAGR cần giá trị đầu và cuối dương; năm gốc lỗ thì không tính.", "Doanh nghiệp chu kỳ có CAGR dao động mạnh theo năm gốc.", "SGR không có nghĩa khi lỗ hoặc VCSH âm."],
+    tk: ["Higgins, R. (1977). How Much Growth Can a Firm Afford? Financial Management.", "Penman, S. Financial Statement Analysis and Security Valuation."]},
+};
+function pp_html(k) {
+  const p = PT_PP[k]; if (!p) return "";
+  return `<h2>${esc(p.ten)}</h2><h4>Nguồn gốc</h4><p>${esc(p.ng)}</p><h4>Công thức</h4><pre>${p.ct.map(esc).join("\n")}</pre>
+    <h4>Cách đọc</h4><ul class="pp-doc">${p.doc.map(([m, t, q]) => `<li><i class="cham ${m}"></i><b>${esc(t)}</b><span>${esc(q)}</span></li>`).join("")}</ul>
+    <h4>Giới hạn</h4><ul>${p.gh.map(x => `<li>${esc(x)}</li>`).join("")}</ul><h4>Tham khảo</h4><ul>${p.tk.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+}
+const nut_pp = k => `<button class="nut-tai" data-pp="${k}">Phương pháp</button>`;
+const the_pt = (tieu, phu, than, phai = "") => `<div class="the"><div class="khoi-dau"><h2>${tieu}</h2>${phu ? `<span class="phu">${phu}</span>` : ""}${phai ? `<span class="phai">${phai}</span>` : ""}</div>${than}</div>`;
+const nhan_muc = (m, t) => m ? `<span class="muc ${m}">${esc(t)}</span>` : `<span class="muc">${esc(t || "Chưa đủ số liệu")}</span>`;
+const vung_thanh = (v, lo, hi, a, b, dao = false) => {       // thanh 3 vùng; dao: thấp = tốt
+  const x = v2 => Math.max(0, Math.min(100, (v2 - lo) / (hi - lo) * 100)), p1 = x(a), p2 = x(b);
+  const [c1, c3] = dao ? ["#e3f4ea", "#fde8e6"] : ["#fde8e6", "#e3f4ea"];
+  return `<div class="thanh-pt vung" style="background:linear-gradient(90deg,${c1} 0 ${p1}%,#fbf3d6 ${p1}% ${p2}%,${c3} ${p2}%)">${v != null ? `<span class="vach" style="left:${x(v)}%"></span>` : ""}</div>`;
+};
+
+async function phan_tich(ma, k) {
+  const r = k.r || {}, n = k.n || {}, s = r.suc_khoe || {}, b = await tai_bctc(ma);
+  const gn = gia_nay(ma, k), gia_d = gn.gia ? gn.gia * 1000 : r.gia, loai = b?.loai || s.loai || r.loai || "CT", ct = loai === "CT";
+  const S = b ? bctc_nam(b) : null, nam = S ? S.Y[S.Y.length - 1] : (s.f?.nam || "");
+  const cp_bctc = S ? S.v("cd", "bsa80").at(-1) : null, so_cp = n.ct?.so_cp || (cp_bctc ? cp_bctc * 1e5 : null);
+  const bds = BDS_RE.test(r.nganh || "");
+  const dp = S && ct ? pt_dupont(S) : [], m = S && ct ? pt_m(S) : null, cl = S && ct ? pt_cl(S, bds) : null;
+  const du3 = (s.dupont || []).filter(x => x.roe != null).at(-1);
+  const tt = S && ct ? pt_tt(S, dp, r) : {roe: du3?.roe ?? null, cg: {ln: r.cagr ?? null}, co: [], sgr: null, muc: r.cagr == null ? "" : r.cagr >= 0.15 ? "t" : r.cagr < 0.05 ? "g" : "d"};
+  const dg = pt_dinh_gia(S || bctc_nam({q: [], y: []}), r, n, gia_d, so_cp, tt, loai);
+  // ----- thẻ điểm: mức từng trụ
+  const z = s.z, f = s.f, roe_c = dp.at(-1) || null, kad = ct ? "" : "Không áp dụng";
+  const roe = roe_c ? roe_c.roe : du3?.roe ?? null, db = roe_c ? roe_c.db : du3?.don_bay ?? null;
+  const muc_dp = roe == null ? "" : roe < 0.08 ? "g" : roe >= 0.15 && (!ct || db <= 3) ? "t" : "d";
+  const do_cl = cl ? cl.c.filter(x => x[2] === "g").length + (m?.muc === "g" ? 1 : 0) : 0, vang_cl = cl ? cl.c.filter(x => x[2] === "d").length + (m?.muc === "d" ? 1 : 0) : 0;
+  const muc_cl = !cl ? "" : do_cl >= 2 ? "g" : do_cl === 1 || vang_cl >= 2 ? "d" : "t";
+  const TRU = [
+    ["z", "An toàn", "Doanh nghiệp có nguy cơ phá sản không?", z ? (z.vung === "An toàn" ? "t" : z.vung === "Nguy hiểm" ? "g" : "d") : "", z ? z.vung : kad, z ? `Z'' ${so(z.z, 2)}` : "",
+      z ? vung_thanh(z.z, 0, 5, 1.1, 2.6) : ""],
+    ["f", "Sức khoẻ & xu hướng", "Nền tảng tài chính đang khoẻ lên hay yếu đi?", f ? (f.diem >= 7 ? "t" : f.diem <= 3 ? "g" : "d") : "", f ? (f.diem >= 7 ? "Khoẻ" : f.diem <= 3 ? "Yếu" : "Trung bình") : kad, f ? `${f.diem}/9` : "",
+      f ? `<div class="cham-f">${f.tc.map(x => `<i class="${x[1] ? "co" : ""}"></i>`).join("")}</div>` : ""],
+    ["dp", "Hiệu quả sinh lời", "ROE đến từ đâu và có bền không?", muc_dp, roe == null ? "" : muc_dp === "t" ? "Hiệu quả" : muc_dp === "g" ? "Kém" : "Trung bình", roe != null ? `ROE ${pt(roe, 1, false)}` : "",
+      db != null ? `<div class="m nho">đòn bẩy ${so(db, 2)}×${roe_c?.ebit != null ? ` · biên EBIT ${pt(roe_c.ebit, 1, false)}` : ""}</div>` : ""],
+    ["cl", "Chất lượng lợi nhuận", "Lợi nhuận có thật, có dấu hiệu làm đẹp không?", muc_cl, !cl ? kad : muc_cl === "t" ? "Đáng tin" : muc_cl === "g" ? "Cờ đỏ" : "Cần xem kỹ", cl ? cl.c[0][1] + " CFO/LNST" : "",
+      m?.m != null ? `<div class="m nho">M-Score ${so(m.m, 2)} · ${do_cl} cờ đỏ · ${vang_cl} vàng</div>` : ""],
+    ["dg", "Định giá", "Giá hiện tại đắt hay rẻ so giá trị nội tại?", dg.muc, dg.muc === "t" ? "Chiết khấu" : dg.muc === "g" ? "Đắt" : dg.muc === "d" ? "Hợp lý" : "", dg.tv ? `nội tại ${so(dg.tv / 1000, 2)}` : "",
+      dg.bien != null ? `<div class="m nho">biên an toàn <b class="${mau(dg.bien)}">${pt(dg.bien)}</b> · ${dg.pp.filter(x => x.v).length} phương pháp</div>` : ""],
+    ["tt", "Tăng trưởng bền vững", "Tăng trưởng có tự tài trợ được không?", tt.muc, tt.muc === "t" ? "Tăng trưởng" : tt.muc === "g" ? "Suy giảm" : tt.muc === "d" ? "Chậm" : "", tt.cg.ln != null ? `CAGR LN ${pt(tt.cg.ln, 1)}` : "",
+      tt.sgr != null ? `<div class="m nho">SGR ${pt(tt.sgr, 1, false)}${tt.g_dt != null ? ` · doanh thu ${pt(tt.g_dt, 1)}` : ""}</div>` : ""]];
+  const dem = m_ => TRU.filter(x => x[3] === m_).length;
+  const sub = `<div class="sub">${nut(PT_CC, ST.pt, "ptc")}</div>`;
+  const chu_dn = ct ? "" : `<p class="m" style="margin:0 0 10px;font-size:12.5px">${({NH: "Ngân hàng", CK: "Công ty chứng khoán", BH: "Doanh nghiệp bảo hiểm"})[loai] || ""}: Z-Score, F-Score, M-Score và chất lượng lợi nhuận chỉ áp dụng cho doanh nghiệp thường; DuPont tách 3 nhân tố.</p>`;
+  if (ST.pt === "the") {
+    const o = TRU.map(([id, ten, hoi, mc, nhan, so_, them]) => `<button class="pt-the ${mc}" data-ptc="${id}"><span class="pt-ten">${esc(ten)}</span>${nhan_muc(mc, nhan)}
+      <span class="pt-so">${so_ || "–"}</span>${them}<span class="pt-hoi">${esc(hoi)}</span></button>`).join("");
+    return sub + chu_dn + the_pt(`Thẻ điểm ${esc(ma)}`, `BCTC năm ${esc(nam)} · mỗi trụ một mô hình học thuật · bấm thẻ để xem chi tiết`, `<div class="pt-luoi">${o}</div>`,
+      `<span class="pt-dem"><i class="cham t"></i>${dem("t")} tốt <i class="cham d"></i>${dem("d")} theo dõi <i class="cham g"></i>${dem("g")} rủi ro</span>`);
+  }
+  const ko = `<div class="trong">Chỉ tính cho doanh nghiệp thường (không áp dụng ngân hàng / chứng khoán / bảo hiểm) hoặc chưa đủ BCTC năm.</div>`;
+  let h = "";
+  if (ST.pt === "z") {
+    const x = z?.x || [], w = [6.56, 3.26, 6.72, 1.05], ten = ["Vốn lưu động / TS", "LN chưa phân phối / TS", "EBIT / TS", "VCSH / nợ"];
+    h = the_pt("Z-Score", `Altman Z'' · năm ${esc(z?.nam || nam)}`, z ? `<div class="than"><span class="diem-lon ${TRU[0][3]}">${so(z.z, 2)}</span> ${nhan_muc(TRU[0][3], z.vung)}
+      <div style="margin:12px 0 4px">${vung_thanh(z.z, 0, 5, 1.1, 2.6)}</div><div class="m nho" style="display:flex;justify-content:space-between"><span>Nguy hiểm &lt; 1,1</span><span>Xám</span><span>An toàn &gt; 2,6</span></div></div>
+      ${x.length === 4 ? `<div class="bang-boc"><table><thead><tr><th class="trai">Thành phần</th><th>Giá trị</th><th>Hệ số</th><th>Đóng góp</th></tr></thead><tbody>${x.map((v, i) => `<tr><td class="trai">X${i + 1} · ${ten[i]}</td><td>${so(v, 3)}</td><td>${so(w[i], 2)}</td><td><b>${so(v * w[i], 2)}</b></td></tr>`).join("")}</tbody></table></div>` : ""}` : ko, nut_pp("z"));
+  } else if (ST.pt === "f") {
+    h = the_pt("F-Score", `Piotroski · năm ${esc(f?.nam || nam)}`, f ? `<div class="than"><span class="diem-lon ${TRU[1][3]}">${f.diem}</span><span class="m"> / 9</span> ${nhan_muc(TRU[1][3], TRU[1][4])}<div class="cham-f lon">${f.tc.map(x => `<i class="${x[1] ? "co" : ""}"></i>`).join("")}</div></div>
+      <ul class="f-ds">${f.tc.map(([t, ok, gc]) => `<li><span class="k ${ok ? "t" : ok === false ? "g" : "m"}">${ok ? "✓" : ok === false ? "✗" : "–"}</span><span>${esc(t)}${gc ? ` <span class="m">(${esc(gc)})</span>` : ""}</span></li>`).join("")}</ul>` : ko, nut_pp("f"));
+  } else if (ST.pt === "dp") {
+    if (dp.length) {
+      const sau = ST.dp6, c = dp.at(-1), t = dp.at(-2);
+      const NT = (sau ? [["me", "Tỷ phần cổ đông mẹ", "×"]] : []).concat([["thue", "Gánh nặng thuế", "×"], ["lai", "Gánh nặng lãi vay", "×"], ["ebit", "Biên EBIT", "%"], ["vq", "Vòng quay tài sản", "×"], [sau ? "db" : "db5", "Đòn bẩy", "×"]]);
+      const fmt = (v, d) => v == null ? "–" : d === "%" ? pt(v, 1, false) : so(v, 2) + (d === "×" && v >= 1.5 ? "×" : "");
+      const rk = sau ? "roe" : "roe5";
+      const doi = NT.map(([k_, ten]) => [ten, c[k_] > 0 && t?.[k_] > 0 ? Math.log(c[k_] / t[k_]) : null]).filter(x => x[1] != null).sort((a, b_) => Math.abs(b_[1]) - Math.abs(a[1]));
+      const chinh = doi[0], d_roe = t && c[rk] != null && t[rk] != null ? c[rk] - t[rk] : null;
+      const cay = `<div class="dp-cay"><div class="dp-roe"><span>ROE ${esc(c.nam)}</span><b class="${c[rk] >= 0.15 ? "t" : c[rk] < 0.08 ? "g" : "d"}">${pt(c[rk], 1, false)}</b>${d_roe != null ? `<i class="${mau(d_roe)}">${d_roe > 0 ? "+" : ""}${so(d_roe * 100, 1)} đpt</i>` : ""}</div><div class="dp-nt">` +
+        NT.map(([k_, ten, d], i) => { const tg = c[k_] > 0 && t?.[k_] > 0 ? c[k_] / t[k_] - 1 : null;
+          return `${i ? '<span class="dp-x">×</span>' : '<span class="dp-x">=</span>'}<div class="dp-o"><span>${ten}</span><b>${fmt(c[k_], d)}</b>${tg != null && Math.abs(tg) >= 0.005 ? `<i class="${mau(tg)}">${tg > 0 ? "▲" : "▼"} ${pt(Math.abs(tg), 0, false)}</i>` : `<i class="m">–</i>`}</div>`; }).join("") + `</div></div>`;
+      const cau = d_roe != null && chinh ? `<p class="nhan-xet">ROE ${d_roe >= 0 ? "tăng" : "giảm"} ${so(Math.abs(d_roe) * 100, 1)} điểm % so ${esc(t.nam)}; nhân tố ${chinh[1] * d_roe >= 0 ? "đóng góp" : "ngược chiều"} lớn nhất: <b>${esc(chinh[0])}</b> (${chinh[1] > 0 ? "+" : "−"}${pt(Math.abs(Math.exp(chinh[1]) - 1), 0, false)}).${c.db > 3 ? " Đòn bẩy trên 3 lần – ROE phụ thuộc nhiều vào nợ." : ""}</p>` : "";
+      const bang = `<div class="bang-boc"><table><thead><tr><th class="trai">Nhân tố</th>${dp.map(x => `<th>${esc(x.nam)}</th>`).join("")}</tr></thead><tbody>` +
+        NT.map(([k_, ten, d]) => `<tr><td class="trai">${ten}</td>${dp.map(x => `<td>${fmt(x[k_], d)}</td>`).join("")}</tr>`).join("") +
+        `<tr class="c1"><td class="trai">ROE${sau ? " (cổ đông mẹ)" : ""}</td>${dp.map(x => `<td class="${x[rk] < 0 ? "g" : ""}">${pt(x[rk], 1, false)}</td>`).join("")}</tr></tbody></table></div>`;
+      h = the_pt(`DuPont ${sau ? 6 : 5} nhân tố`, "ROE = tích các nhân tố · TS, VCSH bình quân đầu – cuối năm", cay + cau + bang,
+        `<span class="nut">${nut([["6", "6 nhân tố"], ["5", "5 nhân tố"]], sau ? "6" : "5", "dp6")}</span> ${nut_pp("dp")}`);
+    } else {
+      const du = (s.dupont || []).filter(x => x.roe != null);
+      h = the_pt("DuPont 3 nhân tố", "biên ròng × vòng quay tài sản × đòn bẩy", du.length ? `<div class="bang-boc"><table><thead><tr><th class="trai">Năm</th><th>Biên ròng</th><th>Vòng quay TS</th><th>Đòn bẩy</th><th>ROE</th></tr></thead><tbody>` +
+        du.map(x => `<tr><td class="trai">${esc(x.nam)}</td><td>${pt(x.bien_rong, 1, false)}</td><td>${so(x.vong_quay, 2)}×</td><td>${so(x.don_bay, 2)}×</td><td><b class="${mau(x.roe)}">${pt(x.roe, 1, false)}</b></td></tr>`).join("") + `</tbody></table></div>` : ko, nut_pp("dp"));
+    }
+  } else if (ST.pt === "m") {
+    h = the_pt("M-Score", `Beneish 8 biến · năm ${esc(m?.nam || nam)} so năm trước`, m?.m != null ? `<div class="than"><span class="diem-lon ${m.muc}">${so(m.m, 2)}</span> ${nhan_muc(m.muc, m.muc === "g" ? "Có dấu hiệu" : m.muc === "d" ? "Cần xem kỹ" : "Không có dấu hiệu")}
+      <span class="m nho"> · xác suất ước tính ${pt(phi(m.m), 1, false)}</span>
+      <div style="margin:12px 0 4px">${vung_thanh(m.m, -4, 0, -2.22, -1.78, true)}</div><div class="m nho" style="display:flex;justify-content:space-between"><span>−4</span><span>−2,22 · −1,78</span><span>0</span></div></div>
+      <div class="bang-boc"><table><thead><tr><th class="trai">Biến</th><th class="trai">Ý nghĩa</th><th>Giá trị</th><th>TB nhóm thao túng</th><th>Đóng góp</th></tr></thead><tbody>` +
+      BENEISH.map(([k_, he, nguong, y]) => { const v = m.v[k_], co = v != null && isFinite(v);
+        return `<tr><td class="trai"><b>${k_}</b></td><td class="trai bo">${esc(y)}</td><td class="${co && nguong != null && v > nguong ? "g" : ""}">${co ? so(v, 3) : "– (trung tính)"}</td><td>${nguong != null ? so(nguong, 3) : "–"}</td><td>${co ? so(he * v, 2) : "–"}</td></tr>`; }).join("") +
+      `</tbody></table></div><p class="m nho" style="padding:6px 14px 10px;margin:0">Giá trị đỏ: vượt trung bình nhóm doanh nghiệp làm sai lợi nhuận trong mẫu của Beneish. Hằng số −4,84.</p>` : ko, nut_pp("m"));
+  } else if (ST.pt === "cl") {
+    h = cl ? the_pt("Chất lượng lợi nhuận", `năm ${esc(nam)} · ${TRU[3][4]}`, `<ul class="cl-ds">${cl.c.map(([t, v, mc, q]) => `<li><i class="cham ${mc || "m"}"></i><span class="cl-t">${esc(t)}<small>${esc(q)}</small></span><b class="${mc}">${v}</b></li>`).join("")}
+      ${m?.m != null ? `<li><i class="cham ${m.muc}"></i><span class="cl-t">M-Score Beneish<small>&gt; −1,78 cờ đỏ · −2,22 … −1,78 vàng</small></span><b class="${m.muc}">${so(m.m, 2)}</b></li>` : ""}</ul>` +
+      `<div class="bang-boc"><table><thead><tr><th class="trai">Năm</th><th>CFO (tỷ)</th><th>LNST (tỷ)</th><th>CFO / LNST</th><th>Dồn tích</th><th>Biên FCF</th><th>Ngày phải thu</th><th>Ngày tồn kho</th><th>Ngày phải trả</th><th>Chu kỳ tiền</th></tr></thead><tbody>` +
+      cl.nam.map(x => `<tr><td class="trai">${esc(x.nam)}</td><td class="${mau(x.cfo)}">${ty(x.cfo)}</td><td>${ty(x.ln)}</td><td>${x.cfo_ln == null ? "–" : so(x.cfo_ln, 2)}</td><td>${pt(x.don_tich, 1, false)}</td><td class="${mau(x.fcf)}">${pt(x.fcf, 1, false)}</td><td>${so(x.dso, 0)}</td><td>${so(x.dio, 0)}</td><td>${so(x.dpo, 0)}</td><td><b>${so(x.ccc, 0)}</b></td></tr>`).join("") +
+      `</tbody></table></div>`, nut_pp("cl")) : the_pt("Chất lượng lợi nhuận", "", ko, nut_pp("cl"));
+  } else if (ST.pt === "dg") {
+    const co = dg.pp.filter(x => x.v), max = Math.max(...co.map(x => x.v), gia_d || 0) * 1.08, X = v => v / max * 100;
+    const ray = co.length ? `<div class="dg-ds">${dg.pp.map(x => `<div class="dg-dong${x.v ? "" : " tat"}"><span class="dg-ten">${esc(x.ten)}<small>${x.ghi || ""}</small></span>
+      <div class="dg-ray">${gia_d ? `<s style="left:${X(gia_d)}%"></s>` : ""}${dg.tv ? `<u style="left:${X(dg.tv)}%"></u>` : ""}${x.v ? `<i class="${x.v >= gia_d ? "t" : "g"}" style="left:${X(x.v)}%"></i>` : ""}</div>
+      <b>${x.v ? so(x.v / 1000, 2) : "–"}</b><span class="${x.v && gia_d ? mau(x.v / gia_d - 1) : "m"}">${x.v && gia_d ? pt(x.v / gia_d - 1) : ""}</span></div>`).join("")}</div>
+      <div class="dg-chu m nho"><span><s></s> giá hiện tại ${so((gia_d || 0) / 1000, 2)}</span><span><u></u> trung vị giá trị ${so((dg.tv || 0) / 1000, 2)}</span></div>` : ko;
+    h = the_pt("Định giá đa phương pháp", "nghìn đồng / cổ phiếu · trung vị các phương pháp có số liệu", `<div class="luoi-so">` +
+      o_so("Giá hiện tại", so((gia_d || 0) / 1000, 2)) + o_so("Giá trị nội tại (trung vị)", dg.tv ? so(dg.tv / 1000, 2) : "–", `${co.length} phương pháp`) +
+      o_so("Biên an toàn", dg.bien != null ? `<span class="${mau(dg.bien)}">${pt(dg.bien)}</span>` : "–", dg.muc === "t" ? "chiết khấu" : dg.muc === "g" ? "đắt" : dg.muc ? "hợp lý" : "") +
+      o_so("P/E · PEG", `${dg.pe ? so(dg.pe, 1) : "–"} · ${dg.peg ? so(dg.peg, 2) : "–"}`, tt.cg.ln != null ? `CAGR LNST 3 năm ${pt(tt.cg.ln, 1)}` : "") + `</div>` + ray, nut_pp("dg"));
+  } else if (ST.pt === "tt") {
+    const kh = tt.kh;
+    h = the_pt("Tăng trưởng bền vững", `BCTC năm ${esc(nam)}`, `<div class="luoi-so">` +
+      o_so("ROE (cổ đông mẹ)", pt(tt.roe, 1, false)) + o_so("Tỷ lệ chi trả cổ tức tiền", pt(tt.tl_tra, 0, false), "bình quân 3 năm") + o_so("SGR", tt.sgr != null ? `<b>${pt(tt.sgr, 1, false)}</b>` : "–", "tăng trưởng tự tài trợ") +
+      o_so("Tăng trưởng doanh thu", pt(tt.g_dt, 1), tt.lech != null ? `${tt.lech > 0 ? "vượt" : "dưới"} SGR ${so(Math.abs(tt.lech) * 100, 1)} đpt` : "") +
+      (kh ? o_so(`Hoàn thành KH LNST ${esc(kh.nam)}`, `<span class="${kh.ht.lnst >= 100 ? "t" : "g"}">${so(kh.ht.lnst, 0)}%</span>`, esc(kh.nguon || "")) : "") + `</div>` +
+      `<div class="bang-boc"><table><thead><tr><th class="trai">CAGR ${tt.so_n || 3} năm</th><th>Doanh thu</th><th>LNST cổ đông mẹ</th><th>VCSH</th><th>Tổng tài sản</th></tr></thead><tbody><tr><td class="trai">${S ? `${esc(S.Y[Math.max(0, S.Y.length - 4)])} → ${esc(nam)}` : ""}</td>${["dt", "ln", "vc", "ts"].map(k_ => `<td class="${mau(tt.cg[k_])}">${pt(tt.cg[k_], 1)}</td>`).join("")}</tr></tbody></table></div>` +
+      (tt.co.length ? `<ul class="cl-ds">${tt.co.map(([mc, t]) => `<li><i class="cham ${mc}"></i><span class="cl-t">${esc(t)}</span></li>`).join("")}</ul>` : `<p class="m nho" style="padding:8px 14px;margin:0">Không có cờ: tăng trưởng trong khả năng tự tài trợ, không pha loãng mạnh.</p>`), nut_pp("tt"));
+  }
+  return sub + chu_dn + h;
+}
+function phi(x) {                                           // hàm phân phối chuẩn (xác suất probit của M-Score)
+  const t = 1 / (1 + 0.2316419 * Math.abs(x)), d = 0.3989423 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return x > 0 ? 1 - p : p;
+}
+function mo_pp(k) {
+  let d = $("#pp");
+  if (!d) { d = document.createElement("dialog"); d.id = "pp"; document.body.appendChild(d);
+    d.addEventListener("click", e => { if (e.target === d || e.target.closest(".pp-dong")) d.close(); }); }
+  d.innerHTML = `<div class="pp-than"><button class="pp-dong" aria-label="Đóng">×</button>${pp_html(k)}</div>`;
+  d.showModal ? d.showModal() : d.setAttribute("open", "");
 }
 // ---------------------------------------------------------------- CHỈ SỐ
 const NHOM_CS = [
@@ -726,7 +1060,7 @@ function dinh_gia(ma, k) {
   const r = k.r || {}, n = k.n || {}, ct = n.ct || {}, gn = gia_nay(ma, k), g = gn.gia ? gn.gia * 1000 : r.gia;
   const pe = r.eps > 0 && g ? g / r.eps : null, pb = r.bvps > 0 && g ? g / r.bvps : null, dg = r.gia_tri && g ? r.gia_tri / g - 1 : null;
   const pe_f = r.eps_f > 0 && g ? g / r.eps_f : null;
-  let h = the("Định giá hệ thống", esc(r.cach_dg || ""), `<div class="luoi-so">` +
+  let h = the("Định giá hệ thống", esc(r.cach_dg || "") + ` · <a href="#${esc(ma)}/phan-tich" data-ptc-di="dg">định giá đa phương pháp</a>`, `<div class="luoi-so">` +
     o_so("Giá trị hợp lý", r.gia_tri ? so(r.gia_tri / 1000, 2) : "–", dg != null ? `<span class="${mau(dg)}">${pt(dg)} so giá · ${dg >= .2 ? "RẺ" : dg <= -.2 ? "ĐẮT" : "HỢP LÝ"}</span>` : "") +
     o_so("P/E hiện tại", pe ? so(pe, 1) : "–", r.pe_nganh ? "ngành " + so(r.pe_nganh, 1) : "") + o_so("P/B hiện tại", pb ? so(pb, 2) : "–") +
     o_so("LNST năm dự phóng", r.lnst_f ? so(r.lnst_f, 0) + " tỷ" : "–", esc(r.ghi_f || "")) + o_so("P/E dự phóng", pe_f ? so(pe_f, 1) : "–") +
@@ -1046,7 +1380,7 @@ async function hien_ma(ma, tab) {
     return;
   }
   document.title = `${ma} – ${TAB.find(t => t[0] === tab)?.[1] || ""} – Tra cứu mã`;
-  const ve = {"tong-quan": tong_quan, "tin": tin, "ho-so": ho_so, "lanh-dao": lanh_dao, "co-dong": co_dong, "co-tuc": co_tuc, "tai-chinh": tai_chinh,
+  const ve = {"tong-quan": tong_quan, "tin": tin, "ho-so": ho_so, "lanh-dao": lanh_dao, "co-dong": co_dong, "co-tuc": co_tuc, "tai-chinh": tai_chinh, "phan-tich": phan_tich,
     "chi-so": chi_so, "dinh-gia": dinh_gia, "lich-su": lich_su, "bao-cao": bao_cao, "tai-lieu": tai_lieu, "he-thong": he_thong}[tab] || tong_quan;
   const than = await ve(ma, k);
   nd.innerHTML = dau_ma(ma, k, tab) + than;
@@ -1064,7 +1398,10 @@ function gan_su_kien(ma, k, tab) {
   if ($("#ls-them")) $("#ls-them").onclick = () => { ST.ls_n += 30; ve_lai(); };
   document.querySelectorAll("[data-khung]").forEach(b => b.onclick = () => { ST.khung = b.dataset.khung; ve_lai(); });
   document.querySelectorAll("[data-duoi]").forEach(b => b.onclick = () => { ST.duoi = b.dataset.duoi; ve_lai(); });
-  document.querySelectorAll("[data-tc]").forEach(b => b.onclick = () => { ST.tc = b.dataset.tc; ve_lai(); });
+  document.querySelectorAll("[data-ptc-di]").forEach(a => a.onclick = () => { ST.pt = a.dataset.ptcDi; });
+  document.querySelectorAll("[data-ptc]").forEach(b => b.onclick = () => { ST.pt = b.dataset.ptc; ve_lai(); });
+  document.querySelectorAll("[data-dp6]").forEach(b => b.onclick = () => { ST.dp6 = b.dataset.dp6 === "6"; ve_lai(); });
+  document.querySelectorAll("[data-pp]").forEach(b => b.onclick = () => mo_pp(b.dataset.pp));
   document.querySelectorAll("[data-cd]").forEach(b => b.onclick = () => { ST.cd = b.dataset.cd; ve_lai(); });
   document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { ST.tl = b.dataset.tl; ve_lai(); });
   document.querySelectorAll("[data-csn]").forEach(b => b.onclick = () => { ST.cs = +b.dataset.csn; ST.cs_chon = null; ve_lai(); });
