@@ -2,17 +2,17 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6feb'/%3E%3Crect x='7' y='14' width='4' height='11' rx='1' fill='%23fff'/%3E%3Crect x='14' y='8' width='4' height='17' rx='1' fill='%23fff'/%3E%3Crect x='21' y='11' width='4' height='14' rx='1' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232E7D32'/%3E%3Crect x='7' y='14' width='4' height='11' rx='1' fill='%23fff'/%3E%3Crect x='14' y='8' width='4' height='17' rx='1' fill='%23fff'/%3E%3Crect x='21' y='11' width='4' height='14' rx='1' fill='%23fff'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tra cứu mã</title>
 <meta name="description" content="Tra cứu cổ phiếu HOSE / HNX: biểu đồ nến, báo cáo tài chính đầy đủ, định giá, cổ đông, cổ tức, lịch sử giá, tin & báo cáo CTCK, hồ sơ, phân tích hệ thống.">
 <style>
 :root{
-  --nen:#f3f5f8;--the:#fff;--vien:#e3e7ee;--luoi:#edf0f4;--nhat:#f7f9fc;
+  --nen:#f4f8f5;--the:#fff;--vien:#d9e7dc;--luoi:#ebf2ed;--nhat:#f6faf7;
   --chu:#1d2430;--chu2:#4b5565;--mo:#7a8494;
   --tang:#0f8a4a;--giam:#d1342b;--dung:#b88a00;--tran:#9b3fd1;--san:#0e9fb3;
   --tang-nen:#e3f4ea;--giam-nen:#fde8e6;--dung-nen:#fbf3d6;
-  --nhan:#1f6feb;--nhan-nen:#e8f0fe;
+  --nhan:#2E7D32;--nhan-nen:#E8F5E9;--nhan-dam:#1B5E20;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -22,7 +22,11 @@ a{color:var(--nhan);text-decoration:none}a:hover{text-decoration:underline}
 .so,td,.v{font-variant-numeric:tabular-nums}
 .t{color:var(--tang)}.g{color:var(--giam)}.d{color:var(--dung)}.m{color:var(--mo)}.tr{color:var(--tran)}.sa{color:var(--san)}
 button{font:inherit;color:inherit;cursor:pointer}
-header.dau{background:var(--the);border-bottom:1px solid var(--vien);position:sticky;top:0;z-index:30}
+/* tông XANH LÁ + TRẮNG – cùng bảng màu trang Tổng hợp (1B5E20 · 2E7D32 · 43A047 · 66BB6A · C8E6C9 · E8F5E9) */
+header.dau{background:linear-gradient(135deg,#43A047,var(--nhan-dam));color:#fff;position:sticky;top:0;z-index:30;box-shadow:0 2px 8px rgba(27,94,32,.25)}
+header.dau h1 a{color:#fff;text-shadow:0 1px 2px rgba(0,60,20,.35)}
+header.dau .lien a{color:#f0fff4;opacity:.92}header.dau .lien a:hover{opacity:1;text-decoration:none}
+header.dau .gg input{border-color:transparent;color:var(--chu)}header.dau .gg ul{color:var(--chu)}
 .dau-trong{max-width:1200px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .dau-trong h1{font-size:16px;margin:0;font-weight:650;white-space:nowrap}
 .dau-trong h1 a{color:inherit}
@@ -48,7 +52,7 @@ header.dau{background:var(--the);border-bottom:1px solid var(--vien);position:st
 .gg-lon .xoa{height:50px;right:12px}
 .gg-lon.mo input{border-radius:25px 25px 0 0}.gg-lon ul{border-radius:0 0 25px 25px}.gg-lon li{padding:8px 24px}
 .dau-chinh{text-align:center;padding:42px 0 30px}
-.dau-chinh h2{font-size:30px;font-weight:650;margin:0 0 22px;letter-spacing:-.3px}
+.dau-chinh h2{font-size:30px;font-weight:650;margin:0 0 22px;letter-spacing:-.3px;color:var(--nhan-dam)}
 .dau-chinh p{color:var(--mo);font-size:13px;margin:14px 0 0}
 body.o-dau .dau-trong .gg{display:none}
 .lien{margin-left:auto;display:flex;gap:12px;font-size:13px;flex-wrap:wrap}
@@ -181,11 +185,11 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .cs-o:hover{text-decoration:none;border-color:var(--nhan)}.cs-o .n{font-size:12px;color:var(--mo)}.cs-o b{font-size:18px;font-variant-numeric:tabular-nums}
 .cs-o span:last-child{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .luoi-dau{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;align-items:start}
-.o-dau{margin:0;padding:14px 16px 12px}.o-rong{grid-column:1/-1}
+.the.o-dau{margin:0;padding:14px 16px 12px}.o-rong{grid-column:1/-1}
 .o-tieu{display:flex;align-items:center;gap:8px}.o-tieu h3{margin:0;font-size:14.5px;font-weight:650}
 .so-o{font-size:11.5px;font-weight:650;color:var(--nhan);background:var(--nhan-nen);border-radius:10px;padding:0 7px}
 .o-phu{margin:3px 0 8px;font-size:12px;color:var(--mo)}.o-nhom{font-size:12px;color:var(--chu2);margin:8px 0 2px;font-weight:600}
-.lien a.dang{color:var(--chu);font-weight:650;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
+header.dau .lien a.dang{color:#fff;opacity:1;font-weight:650;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
 @media (max-width:600px){.luoi-dau{grid-template-columns:minmax(0,1fr)}.dai-cs{grid-template-columns:repeat(2,minmax(0,1fr))}.cs-o b{font-size:16px}}
 .ss-nganh tr.nay td{background:var(--nhan-nen)}.ss-nganh tr.tv td{border-top:2px solid var(--vien)}
 .sk-nhan{font-size:12px;font-weight:600;border-radius:10px;padding:1px 8px;white-space:nowrap;background:var(--nhat)}
@@ -305,7 +309,7 @@ const MA_OK = m => /^[A-Z0-9]{3,8}$/.test(m || "");
 const tb = a => { const x = a.filter(v => v != null && isFinite(v)); return x.length ? x.reduce((s, v) => s + v, 0) / x.length : null; };
 const trung_vi = a => { const x = a.filter(v => v != null && isFinite(v)).sort((p, q) => p - q); return x.length ? (x.length % 2 ? x[(x.length - 1) / 2] : (x[x.length / 2 - 1] + x[x.length / 2]) / 2) : null; };
 const W_RONG = () => innerWidth < 700 ? 400 : Math.max(640, Math.min(1100, innerWidth - 140));   // biểu đồ hết khung
-const MAU = ["#1f6feb", "#0f8a4a", "#e8710a", "#9b3fd1", "#0e9fb3", "#d1342b", "#7a8494"];
+const MAU = ["#2E7D32", "#1f6feb", "#e8710a", "#9b3fd1", "#0e9fb3", "#d1342b", "#7a8494"];
 
 async function lay(u, bat_buoc = true) {
   try {
@@ -456,8 +460,8 @@ function ve_duong(nhan, chuoi, o = {}) {              // nhiều đường; o.da
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
   for (let k = 0; k <= 3; k++) { const v = mn + (mx - mn) * k / 3; s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#edf0f4"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="10.5" fill="#7a8494">${f(v)}</text>`; }
   if (o.dai) { const {tb: a, sd} = o.dai;
-    s += `<rect x="${L}" y="${Y(a + sd)}" width="${W - L - R}" height="${Y(a - sd) - Y(a + sd)}" fill="#1f6feb" opacity=".07"/>`;
-    for (const [v, t] of [[a, "TB"], [a + sd, "+1σ"], [a - sd, "−1σ"]]) s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#1f6feb" stroke-dasharray="${t === "TB" ? "0" : "4 4"}" opacity=".5"/><text x="${W - R - 2}" y="${Y(v) - 3}" text-anchor="end" font-size="10" fill="#1f6feb">${t} ${f(v)}</text>`; }
+    s += `<rect x="${L}" y="${Y(a + sd)}" width="${W - L - R}" height="${Y(a - sd) - Y(a + sd)}" fill="#2E7D32" opacity=".08"/>`;
+    for (const [v, t] of [[a, "TB"], [a + sd, "+1σ"], [a - sd, "−1σ"]]) s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2E7D32" stroke-dasharray="${t === "TB" ? "0" : "4 4"}" opacity=".5"/><text x="${W - R - 2}" y="${Y(v) - 3}" text-anchor="end" font-size="10" fill="#1f6feb">${t} ${f(v)}</text>`; }
   chuoi.forEach((c, j) => { let p = ""; c.v.forEach((v, i) => { if (v == null || !isFinite(v)) return; p += (p ? "L" : "M") + X(i) + " " + Y(v); });
     s += `<path d="${p}" fill="none" stroke="${c.mau || MAU[j]}" stroke-width="1.8"/>`;
     c.v.forEach((v, i) => { if (v == null || !isFinite(v)) return; s += `<circle cx="${X(i)}" cy="${Y(v)}" r="6" fill="transparent"><title>${esc(c.ten)} ${esc(nhan[i])}: ${f(v)}</title></circle>`; }); });
@@ -724,20 +728,20 @@ async function tai_chinh(ma, k) {
   if (ST.bang === "kd") {
     const dt = ["isa3", "isb38", "isi64"].find(c => b.kd[c]) || tim_ma_ten(b, "kd", /doanh thu thuần|tổng thu nhập hoạt động/i);
     const ln = b.kd.isa22 ? "isa22" : "isa20", vdt = lay_v("kd", dt), vln = lay_v("kd", ln);
-    chart = ve_ket_hop(nhan, [{ten: ten_ct(b, "kd", dt), v: vdt, mau: "#5b7ee5"}, {ten: "LNST", v: vln, mau: "#8bc34a", am: "#d1342b"}],
+    chart = ve_ket_hop(nhan, [{ten: ten_ct(b, "kd", dt), v: vdt, mau: "#A5D6A7"}, {ten: "LNST", v: vln, mau: "#2E7D32", am: "#d1342b"}],
       {ten: "Tăng trưởng LNST", v: yoy(vln), mau: "#e8a400"}, {ten: "KQKD", w: W_RONG()});
-    cg = [[dt ? ten_ct(b, "kd", dt) : "Doanh thu", "#5b7ee5", 1], ["LNST cổ đông mẹ", "#8bc34a", 1], ["Tăng trưởng LNST (YoY)", "#e8a400"]];
+    cg = [[dt ? ten_ct(b, "kd", dt) : "Doanh thu", "#A5D6A7", 1], ["LNST cổ đông mẹ", "#2E7D32", 1], ["Tăng trưởng LNST (YoY)", "#e8a400"]];
   } else if (ST.bang === "cd") {
     const ts = lay_v("cd", "bsa53"), vc = lay_v("cd", "bsa78"), no = lay_v("cd", "bsa54");
-    chart = ve_ket_hop(nhan, [{ten: "Tổng tài sản", v: ts, mau: "#5b7ee5"}, {ten: "Vốn chủ sở hữu", v: vc, mau: "#8bc34a"}],
+    chart = ve_ket_hop(nhan, [{ten: "Tổng tài sản", v: ts, mau: "#A5D6A7"}, {ten: "Vốn chủ sở hữu", v: vc, mau: "#2E7D32"}],
       {ten: "Nợ / VCSH", v: no.map((v, i) => v != null && vc[i] ? v / vc[i] : null), mau: "#e8a400", fmt: v => so(v, 2) + "×"}, {ten: "CĐKT", w: W_RONG()});
-    cg = [["Tổng tài sản", "#5b7ee5", 1], ["Vốn chủ sở hữu", "#8bc34a", 1], ["Nợ / VCSH (lần)", "#e8a400"]];
+    cg = [["Tổng tài sản", "#A5D6A7", 1], ["Vốn chủ sở hữu", "#2E7D32", 1], ["Nợ / VCSH (lần)", "#e8a400"]];
   } else {
     const kd = tim_ma_ten(b, "lc", /thuần từ (các )?hoạt động (sản xuất )?kinh doanh/i), dt = tim_ma_ten(b, "lc", /thuần từ hoạt động đầu tư/i),
       tc = tim_ma_ten(b, "lc", /thuần từ hoạt động tài chính/i), th = tim_ma_ten(b, "lc", /thuần trong kỳ/i);
-    chart = ve_ket_hop(nhan, [{ten: "HĐKD", v: lay_v("lc", kd), mau: "#5b7ee5"}, {ten: "HĐĐT", v: lay_v("lc", dt), mau: "#e8710a"},
+    chart = ve_ket_hop(nhan, [{ten: "HĐKD", v: lay_v("lc", kd), mau: "#2E7D32"}, {ten: "HĐĐT", v: lay_v("lc", dt), mau: "#e8710a"},
       {ten: "HĐTC", v: lay_v("lc", tc), mau: "#9b3fd1"}], th ? {ten: "LCT thuần", v: lay_v("lc", th), mau: "#0f8a4a", fmt: v => ty(v)} : null, {ten: "LCTT", w: W_RONG()});
-    cg = [["LCT HĐ kinh doanh", "#5b7ee5", 1], ["HĐ đầu tư", "#e8710a", 1], ["HĐ tài chính", "#9b3fd1", 1], ["LCT thuần trong kỳ", "#0f8a4a"]];
+    cg = [["LCT HĐ kinh doanh", "#2E7D32", 1], ["HĐ đầu tư", "#e8710a", 1], ["HĐ tài chính", "#9b3fd1", 1], ["LCT thuần trong kỳ", "#0f8a4a"]];
   }
   // bảng đầy đủ theo cây chỉ tiêu Vietcap
   const cay = (CT_BCTC || {})[b.loai]?.[ST.bang] || [], co = b[ST.bang] || {};
@@ -1161,7 +1165,7 @@ async function chi_so(ma, k) {
   }).join("");
   const sel = ds.find(x => x[0] === ST.cs_chon) || ds[0];
   const f = f_cs(sel[2]), vv = cs[sel[0]].map(x => x == null ? null : sel[2] === "%a" ? Math.abs(x) : x), tv = ng[sel[0]]?.[0];
-  const bieu = ve_duong(cs.ky, [{ten: sel[1], v: vv, mau: "#1f6feb"}].concat(tv != null ? [{ten: "Trung vị ngành", v: cs.ky.map(() => sel[2] === "%a" ? Math.abs(tv) : tv), mau: "#e8a400"}] : []), {fmt: f, h: 240, w: W_RONG()});
+  const bieu = ve_duong(cs.ky, [{ten: sel[1], v: vv, mau: "#2E7D32"}].concat(tv != null ? [{ten: "Trung vị ngành", v: cs.ky.map(() => sel[2] === "%a" ? Math.abs(tv) : tv), mau: "#e8a400"}] : []), {fmt: f, h: 240, w: W_RONG()});
   return `<div class="sub">${nhom.map(([t], i) => `<button data-csn="${i}" aria-pressed="${i === chon}">${esc(t)}</button>`).join("")}</div>` +
     the(ten_n, `4 quý gần nhất mỗi kỳ · Vietcap · ngành ${esc(r.nganh || "–")}${ng.pe ? ` (${ng.pe[1]} mã)` : ""} · bấm tên chỉ số để xem biểu đồ · ${nut_tai("tai-cs", "Tải Excel")}`,
       `<div class="bang-boc"><table><thead><tr><th class="trai">Chỉ số</th>${ky.map(x => `<th>${esc(x)}</th>`).join("")}<th>Trung vị ngành</th><th>So ngành</th></tr></thead><tbody>${dong}</tbody></table></div>` +
@@ -1266,7 +1270,7 @@ function lich_su(ma, k) {
     tieu = ["Ngày", "Mua (tỷ)", "Bán (tỷ)", "Ròng (tỷ)", "% sở hữu"];
     dong = i => [ngay_vn(g.d[i]), so(g.nn_m[i], 1), so(g.nn_b[i], 1), `<b class="${mau(g.nn[i])}">${so(g.nn[i], 1)}</b>`, so(g.nn_pt[i], 2) + "%"];
     let lk = 0; const cum = g.nn.slice(-sl).map(v => (lk += v || 0));
-    chart = ve_ket_hop(nhan, [{ten: "Ròng", v: g.nn.slice(-sl), mau: "#0f8a4a", am: "#d1342b"}], {ten: "Luỹ kế", v: cum, mau: "#1f6feb", fmt: v => ty(v)}, {h: 230, w: W_RONG()});
+    chart = ve_ket_hop(nhan, [{ten: "Ròng", v: g.nn.slice(-sl), mau: "#0f8a4a", am: "#d1342b"}], {ten: "Luỹ kế", v: cum, mau: "#e8a400", fmt: v => ty(v)}, {h: 230, w: W_RONG()});
   } else if (ST.ls === "cc") {
     tieu = ["Ngày", "KL đặt mua", "KL đặt bán", "Mua − bán", "Mua / bán"];
     dong = i => [ngay_vn(g.d[i]), kl(g.dat_m[i]), kl(g.dat_b[i]), `<span class="${mau(g.dat_m[i] - g.dat_b[i])}">${kl(g.dat_m[i] - g.dat_b[i])}</span>`, g.dat_b[i] ? so(g.dat_m[i] / g.dat_b[i], 2) : "–"];
