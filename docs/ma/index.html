@@ -259,6 +259,8 @@ dialog#pp::backdrop{background:#1d243066}
 .rrg-truc{font-size:11px;fill:var(--mo)}.rrg-ten{font-size:12px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px}
 .rrg-i{cursor:pointer}.rrg-nhan{font-size:12px;font-weight:650;border-radius:999px;padding:1px 9px;white-space:nowrap}
 .rrg-bang .cham{vertical-align:middle}
+.rrg-o{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.rrg-o input{margin:0;accent-color:var(--nhan);width:16px;height:16px}
+.rrg-bang tr.tat td{opacity:.55}.rrg-goi{font-size:14px;fill:var(--mo)}
 </style>
 </head>
 <body>
@@ -394,11 +396,16 @@ function moc_su_kien(x, n) {                     // mốc trên nến: CT cổ t
       : /^(AGM|EGM)/.test(ma) || t.includes("đại hội") ? ["ĐH", "#1f6feb", "aboveBar", "square"] : null;
     if (k) out.push({time: x.d[i], text: k[0], color: k[1], position: k[2], shape: k[3]});
   }
-  for (const e of n.nb || []) {
+  for (const e of n.nb || []) {                  // nội bộ: chỉ giao dịch đã có kết quả (kq > 0) – bỏ đăng ký chưa khớp
     const i = vt(String(e.ngay || "").slice(0, 10)), mua = /mua/i.test(e.hd || ""), ban = /bán/i.test(e.hd || "");
+    if (e.kq != null && !(e.kq > 0)) continue;
     if (i >= 0 && (mua || ban)) out.push({time: x.d[i], text: mua ? "M" : "B", color: mua ? "#0f8a4a" : "#d1342b", position: mua ? "belowBar" : "aboveBar", shape: mua ? "arrowUp" : "arrowDown"});
   }
-  return out.sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  // gộp: 1 mốc / nến / loại (VD 12 lệnh bán nội bộ cùng phiên → "B×12") – không chồng thành cột, không kéo giãn trục giá
+  const gom = new Map();
+  for (const m of out) { const k = m.time + "|" + m.text, g = gom.get(k); g ? g.n++ : gom.set(k, {...m, n: 1}); }
+  return [...gom.values()].map(({n: so_lan, ...m}) => ({...m, text: so_lan > 1 ? `${m.text}×${so_lan}` : m.text}))
+    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
 }
 function ema(c, n) { const k = 2 / (n + 1); let e = null; return c.map(v => (e = e == null ? v : v * k + e * (1 - k))); }
 function rsi(c, n = 14) {
@@ -1076,7 +1083,7 @@ function mo_pp(k) {
 }
 // ---------------------------------------------------------------- ĐỒ THỊ RRG – xoay vòng tương đối so VN-Index (rrg.json dựng hằng ngày)
 let RRG = null;
-const RRG_ST = {nhom: "nganh", khung: "W", duoi: 5, chon: null, tu: (() => { try { const x = JSON.parse(localStorage.getItem("rrg_tu_chon") || "null"); return Array.isArray(x) ? x.filter(m => /^[A-Z0-9]{2,10}$/.test(m)).slice(0, 15) : null; } catch (e) { return null; } })()};
+const RRG_ST = {nhom: "nganh", khung: "W", duoi: 5, ve: (() => { try { const x = JSON.parse(localStorage.getItem("rrg_ve") || "{}"); return x && typeof x === "object" ? x : {}; } catch (e) { return {}; } })(), tu: (() => { try { const x = JSON.parse(localStorage.getItem("rrg_tu_chon") || "null"); return Array.isArray(x) ? x.filter(m => /^[A-Z0-9]{2,10}$/.test(m)).slice(0, 15) : null; } catch (e) { return null; } })()};
 const GOC = {dd: ["Dẫn dắt", "#0f8a4a", "#e3f4ea"], sy: ["Suy yếu", "#a87b00", "#fbf3d6"], th: ["Tụt hậu", "#d1342b", "#fde8e6"], ct: ["Cải thiện", "#1f6feb", "#e8f0fe"]};
 const goc = ([x, y]) => x >= 100 ? (y >= 100 ? "dd" : "sy") : (y >= 100 ? "ct" : "th");
 const MAU_RRG = ["#1f6feb", "#e8710a", "#0f8a4a", "#9b3fd1", "#d1342b", "#0e9fb3", "#b88a00", "#c2185b", "#5d4037", "#3949ab", "#00897b", "#6d6d6d"];
@@ -1096,13 +1103,19 @@ async function hien_rrg() {
   const nguon = RRG_ST.nhom === "nganh" ? (blk.nganh || {}) : ma_co;
   const cat = p => p.slice(-RRG_ST.duoi);
   const ds = muon.filter(m => nguon[m]?.length >= 2), thieu = muon.filter(m => !nguon[m]?.length || nguon[m].length < 2);
-  if (RRG_ST.chon && !ds.includes(RRG_ST.chon)) RRG_ST.chon = null;
+  // chỉ vẽ ngành / mã được TICK ở bảng (mặc định: 5 dòng đầu bảng – Dẫn dắt trước; nhóm ≤ 8 mã thì vẽ hết)
+  const thu_tu = {dd: 0, ct: 1, sy: 2, th: 3};
+  const hang = ds.map((m, i) => ({m, i, p: nguon[m], g: goc(nguon[m].at(-1)), g0: goc(nguon[m].at(-2))}))
+    .sort((a, b) => thu_tu[a.g] - thu_tu[b.g] || b.p.at(-1)[0] - a.p.at(-1)[0]);
+  const mac_dinh = RRG_ST.nhom !== "nganh" && ds.length <= 8 ? ds : hang.slice(0, 5).map(x => x.m);
+  const ve = new Set((Array.isArray(RRG_ST.ve[RRG_ST.nhom]) ? RRG_ST.ve[RRG_ST.nhom] : mac_dinh).filter(m => ds.includes(m)));
+  const ds_ve = ds.filter(m => ve.has(m));
   const nut_nhom = [["nganh", "Ngành"], ["td", `Theo dõi (${TD.size})`], ["giu", "Đang giữ"], ["tu", "Tự chọn"]].filter(([k]) => k !== "giu" || GIU.size)
     .map(([k, t]) => `<button class="bat" data-rrg="${k}" aria-pressed="${RRG_ST.nhom === k}">${esc(t)}</button>`).join("");
   const o_tu = RRG_ST.nhom === "tu" ? `<input id="rrg-tu" placeholder="Mã, cách nhau dấu phẩy – VD HPG, FPT, MWG" value="${esc((RRG_ST.tu || tu_mac_dinh()).join(", "))}" style="flex:1 1 260px"><button class="bat" id="rrg-ap">Áp dụng</button>` : "";
   // ----- vẽ
   const hep = window.innerWidth < 600, W = hep ? 380 : 620, H = hep ? 410 : 560, P = 34;
-  const tat = ds.flatMap(m => cat(nguon[m]));
+  const tat = ds_ve.flatMap(m => cat(nguon[m]));
   const d = Math.max(1.5, ...tat.map(([x, y]) => Math.max(Math.abs(x - 100), Math.abs(y - 100)))) * 1.12;
   const sx = v => P + (v - 100 + d) / (2 * d) * (W - 2 * P), sy = v => H - P - (v - 100 + d) / (2 * d) * (H - 2 * P);
   const cx = sx(100), cy = sy(100);
@@ -1112,34 +1125,37 @@ async function hien_rrg() {
     .map(([k, x, y, a]) => `<text x="${x}" y="${y}" text-anchor="${a}" class="rrg-goc" fill="${GOC[k][1]}">${GOC[k][0]}</text>`).join("");
   const vach = [-d / 2, d / 2].map(t => `<text x="${sx(100 + t)}" y="${H - P + 16}" text-anchor="middle" class="rrg-truc">${so(100 + t, 1)}</text><text x="${P - 6}" y="${sy(100 + t) + 4}" text-anchor="end" class="rrg-truc">${so(100 + t, 1)}</text>`).join("");
   const nhom_g = ds.map((m, i) => {
-    const p = cat(nguon[m]), c = MAU_RRG[i % MAU_RRG.length], dau = p[p.length - 1], mo = RRG_ST.chon && RRG_ST.chon !== m ? ' opacity="0.16"' : "";
-    return `<g class="rrg-i" data-rrg-chon="${esc(m)}"${mo}><title>${esc(m)} · ${GOC[goc(dau)][0]} · RS-Ratio ${so(dau[0], 2)} · RS-Momentum ${so(dau[1], 2)}</title>
+    if (!ve.has(m)) return "";
+    const p = cat(nguon[m]), c = MAU_RRG[i % MAU_RRG.length], dau = p[p.length - 1];
+    return `<g class="rrg-i"><title>${esc(m)} · ${GOC[goc(dau)][0]} · RS-Ratio ${so(dau[0], 2)} · RS-Momentum ${so(dau[1], 2)}</title>
       <polyline points="${p.map(([x, y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join(" ")}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/>
       ${p.slice(0, -1).map(([x, y], j) => `<circle cx="${sx(x).toFixed(1)}" cy="${sy(y).toFixed(1)}" r="2.4" fill="${c}" opacity="${(0.25 + 0.6 * j / p.length).toFixed(2)}"/>`).join("")}
       <circle cx="${sx(dau[0]).toFixed(1)}" cy="${sy(dau[1]).toFixed(1)}" r="5.5" fill="${c}" stroke="#fff" stroke-width="1.5"/>
-      <text x="${(sx(dau[0]) + 8).toFixed(1)}" y="${(sy(dau[1]) - 7).toFixed(1)}" class="rrg-ten" fill="${c}">${esc(m)}</text></g>`;
+      ${sx(dau[0]) + 8 + m.length * 6.6 > W ? `<text x="${(sx(dau[0]) - 8).toFixed(1)}" text-anchor="end"` : `<text x="${(sx(dau[0]) + 8).toFixed(1)}"`} y="${(sy(dau[1]) - 7).toFixed(1)}" class="rrg-ten" fill="${c}">${esc(m)}</text></g>`;
   }).join("");
   const svg = ds.length ? `<svg class="rrg-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Đồ thị RRG">${nen}
     <line x1="${cx}" y1="${P}" x2="${cx}" y2="${H - P}" stroke="#9aa4b2" stroke-dasharray="4 4"/><line x1="${P}" y1="${cy}" x2="${W - P}" y2="${cy}" stroke="#9aa4b2" stroke-dasharray="4 4"/>
-    ${nhan}${vach}<text x="${W - P}" y="${H - 6}" text-anchor="end" class="rrg-truc">RS-Ratio →</text><text x="12" y="${P - 10}" class="rrg-truc">↑ RS-Momentum</text>${nhom_g}</svg>`
+    ${nhan}${vach}<text x="${W - P}" y="${H - 6}" text-anchor="end" class="rrg-truc">RS-Ratio →</text><text x="12" y="${P - 10}" class="rrg-truc">↑ RS-Momentum</text>${nhom_g}
+    ${ds_ve.length ? "" : `<text x="${W / 2}" y="${H / 2 - 12}" text-anchor="middle" class="rrg-goi">Tick ${RRG_ST.nhom === "nganh" ? "ngành" : "mã"} ở bảng bên dưới để vẽ</text>`}</svg>`
     : `<div class="trong">${RRG.W ? (RRG_ST.nhom === "td" ? "Danh sách theo dõi trống – bấm “+ Theo dõi” ở trang mã để thêm." : "Không có mã đủ dữ liệu.") : "Chưa có dữ liệu RRG (dựng cùng dữ liệu Tra cứu mỗi sáng)."}</div>`;
-  // ----- bảng
-  const thu_tu = {dd: 0, ct: 1, sy: 2, th: 3};
-  const hang = ds.map((m, i) => ({m, i, p: nguon[m], g: goc(nguon[m].at(-1)), g0: goc(nguon[m].at(-2))}))
-    .sort((a, b) => thu_tu[a.g] - thu_tu[b.g] || b.p.at(-1)[0] - a.p.at(-1)[0]);
+  // ----- bảng (tick = vẽ)
   const ten = m => RRG_ST.nhom === "nganh" ? `<a href="#loc" data-loc-nganh="${esc(m)}"><b>${esc(m)}</b></a>` : `<a href="#${esc(m)}"><b>${esc(m)}</b></a>`;
-  const bang = hang.length ? `<div class="bang-boc"><table class="rrg-bang"><thead><tr><th class="trai">${RRG_ST.nhom === "nganh" ? "Ngành" : "Mã"}</th><th class="trai">Góc phần tư</th><th>RS-Ratio</th><th>RS-Momentum</th><th>Hướng</th><th class="trai">Kỳ trước</th></tr></thead><tbody>` +
-    hang.map(x => `<tr class="bam${RRG_ST.chon === x.m ? " chon" : ""}" data-rrg-chon="${esc(x.m)}"><td class="trai"><i class="cham" style="background:${MAU_RRG[x.i % MAU_RRG.length]}"></i> ${ten(x.m)}</td>
+  const bang = hang.length ? `<div class="bang-boc"><table class="rrg-bang"><thead><tr><th class="trai"><label class="rrg-o" title="Vẽ hết / bỏ hết"><input type="checkbox" id="rrg-tat"${ds_ve.length === ds.length ? " checked" : ""} aria-label="Vẽ hết"></label> ${RRG_ST.nhom === "nganh" ? "Ngành" : "Mã"} <span class="m">(${ds_ve.length}/${ds.length})</span></th><th class="trai">Góc phần tư</th><th>RS-Ratio</th><th>RS-Momentum</th><th>Hướng</th><th class="trai">Kỳ trước</th></tr></thead><tbody>` +
+    hang.map(x => `<tr class="bam${ve.has(x.m) ? "" : " tat"}" data-rrg-ve="${esc(x.m)}"><td class="trai"><label class="rrg-o"><input type="checkbox"${ve.has(x.m) ? " checked" : ""} aria-label="Vẽ ${esc(x.m)}"><i class="cham" style="background:${MAU_RRG[x.i % MAU_RRG.length]}"></i></label> ${ten(x.m)}</td>
       <td class="trai"><span class="rrg-nhan" style="background:${GOC[x.g][2]};color:${GOC[x.g][1]}">${GOC[x.g][0]}</span></td><td>${so(x.p.at(-1)[0], 2)}</td><td>${so(x.p.at(-1)[1], 2)}</td>
       <td style="font-size:16px">${huong(x.p.at(-2), x.p.at(-1))}</td><td class="trai m">${x.g0 !== x.g ? `${GOC[x.g0][0]} → <b style="color:${GOC[x.g][1]}">${GOC[x.g][0]}</b>` : GOC[x.g0][0]}</td></tr>`).join("") + `</tbody></table></div>` : "";
   const ky = blk.ky || [];
   $("#noi-dung").innerHTML = `<div class="loc-dau">${nut_nhom}${o_tu}<span class="dem"><span class="nut">${nut([["3", "Đuôi 3"], ["5", "5"], ["10", "Đủ"]], String(RRG_ST.duoi), "rrg-duoi")}</span> <span class="nut">${nut([["W", "Tuần"], ["D", "Ngày"]], RRG_ST.khung, "rrg-khung")}</span></span></div>` +
-    the_pt("Đồ thị xoay vòng tương đối (RRG)", `so VN-Index · ${ky.length ? `${ngay_vn(ky.slice(-RRG_ST.duoi)[0])} → ${ngay_vn(ky.at(-1))} · ` : ""}${RRG_ST.khung === "W" ? "khung tuần" : "khung ngày"} · bấm một dòng để làm nổi`,
+    the_pt("Đồ thị xoay vòng tương đối (RRG)", `so VN-Index · ${ky.length ? `${ngay_vn(ky.slice(-RRG_ST.duoi)[0])} → ${ngay_vn(ky.at(-1))} · ` : ""}${RRG_ST.khung === "W" ? "khung tuần" : "khung ngày"} · tick ở bảng để chọn ${RRG_ST.nhom === "nganh" ? "ngành" : "mã"} vẽ`,
       `<div class="rrg-khung">${svg}</div>${thieu.length ? `<p class="m nho" style="padding:0 14px 8px;margin:0">Chưa đủ thanh khoản / dữ liệu: ${thieu.slice(0, 20).map(esc).join(", ")}${thieu.length > 20 ? "…" : ""}</p>` : ""}${bang}`, nut_pp("rrg"));
-  document.querySelectorAll("[data-rrg]").forEach(b => b.onclick = () => { RRG_ST.nhom = b.dataset.rrg; RRG_ST.chon = null; hien_rrg(); });
+  document.querySelectorAll("[data-rrg]").forEach(b => b.onclick = () => { RRG_ST.nhom = b.dataset.rrg; hien_rrg(); });
+  const luu_ve = x => { RRG_ST.ve[RRG_ST.nhom] = x; try { localStorage.setItem("rrg_ve", JSON.stringify(RRG_ST.ve)); } catch (e) {} hien_rrg(); };
   document.querySelectorAll("[data-rrg-duoi]").forEach(b => b.onclick = () => { RRG_ST.duoi = +b.dataset.rrgDuoi; hien_rrg(); });
   document.querySelectorAll("[data-rrg-khung]").forEach(b => b.onclick = () => { RRG_ST.khung = b.dataset.rrgKhung; hien_rrg(); });
-  document.querySelectorAll("[data-rrg-chon]").forEach(b => b.onclick = e => { if (e.target.closest("a")) return; const m = b.dataset.rrgChon; RRG_ST.chon = RRG_ST.chon === m ? null : m; hien_rrg(); });
+  document.querySelectorAll("tr[data-rrg-ve]").forEach(b => b.onclick = e => { if (e.target.closest("a")) return; const m = b.dataset.rrgVe;
+    luu_ve(ve.has(m) ? [...ve].filter(x => x !== m) : [...ve, m]); });
+  if ($("#rrg-tat")) { $("#rrg-tat").indeterminate = ds_ve.length > 0 && ds_ve.length < ds.length;
+    $("#rrg-tat").onchange = () => luu_ve(ds_ve.length === ds.length ? [] : [...ds]); }
   document.querySelectorAll("[data-pp]").forEach(b => b.onclick = () => mo_pp(b.dataset.pp));
   if ($("#rrg-ap")) { const ap = () => { const x = [...new Set($("#rrg-tu").value.toUpperCase().split(/[^A-Z0-9]+/).filter(m => /^[A-Z0-9]{2,10}$/.test(m)))].slice(0, 15);
       RRG_ST.tu = x.length ? x : null; try { localStorage.setItem("rrg_tu_chon", JSON.stringify(x)); } catch (e) {} hien_rrg(); };
