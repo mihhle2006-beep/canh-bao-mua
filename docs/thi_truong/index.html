@@ -69,6 +69,7 @@ main{max-width:1440px;margin:0 auto;padding:16px}
   .cs .gia{font-size:17px}
   .an-dt{display:none}
   .tt-phien{margin-left:0;width:100%;padding-bottom:6px}
+  header{position:static}                                          /* điện thoại: thanh đầu cao 4 dòng → cuộn đi, không che thẻ */
 }
 .luoi2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;margin-bottom:16px}
 .luoi3{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);gap:16px}
@@ -634,14 +635,16 @@ function ve_tac() {
   const tro = (vung, d) => { vung.addEventListener("pointermove", e => { gy.xy = [e.clientX, e.clientY]; gy(d); }); vung.addEventListener("pointerleave", an_gy); };
   const mx_d = Math.max(...ds.map(d => d[1] > 0 ? dai(d[1]) : 0), 0), mx_a = Math.max(...ds.map(d => d[1] < 0 ? dai(d[1]) : 0), 0);
   if (W < 560) {                                                   // điện thoại: cột ngang, 1 mã / dòng
-    const hang = 21, H = ds.length * hang + 8, x_ten = 46, x_pt = 46, vung_w = W - x_ten - x_pt - 70;
+    // cột: mã (0–44) · % giá căn phải tới x_pt · chỗ nhãn âm (nhan) · vùng cột · chỗ nhãn dương (nhan) – nhãn không đè cột %
+    const hang = 21, H = ds.length * hang + 8, x_pt = 100, nhan = 50;
+    const vung_w = W - x_pt - (mx_a ? nhan : 6) - nhan;
     const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Mã tác động mạnh nhất lên VN-Index"}, hop);
-    const k = vung_w / ((mx_d + mx_a) || 1), x0 = x_ten + 34 + mx_a * k;
+    const k = vung_w / ((mx_d + mx_a) || 1), x0 = x_pt + (mx_a ? nhan : 6) + mx_a * k;
     el("line", {x1: x0, x2: x0, y1: 0, y2: H, stroke: "#cfd5de"}, s);
     ds.slice().reverse().forEach((d, i) => {
       const y = 4 + i * hang, w = Math.max(dai(d[1]) * k, 2), duong = d[1] >= 0, mau = duong ? MAU.tang : MAU.giam;
       el("text", {x: 0, y: y + 14, "font-size": 12, "font-weight": 650, fill: MAU.chu}, s).textContent = d[0];
-      el("text", {x: x_ten, y: y + 14, "font-size": 11, fill: d[2] > 0 ? MAU.tang : d[2] < 0 ? MAU.giam : MAU.truc, class: "so"}, s).textContent = d[2] == null ? "" : dau(d[2]) + "%";
+      el("text", {x: x_pt, y: y + 14, "font-size": 11, "text-anchor": "end", fill: d[2] > 0 ? MAU.tang : d[2] < 0 ? MAU.giam : MAU.truc, class: "so"}, s).textContent = d[2] == null ? "" : dau(d[2]) + "%";
       const bx = duong ? x0 : x0 - w;
       el("rect", {x: bx, y: y + 4, width: w, height: 12, rx: 3, fill: mau}, s);
       if (gay(d[1])) for (const dx of [-14, -9]) el("line", {x1: (duong ? bx + w : bx) + (duong ? dx : -dx) - 2, x2: (duong ? bx + w : bx) + (duong ? dx : -dx) + 2, y1: y + 18, y2: y + 2, stroke: "#fff", "stroke-width": 2}, s);
