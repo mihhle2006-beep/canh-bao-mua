@@ -202,3 +202,28 @@ def test_ma10_tuan_va_rs():
     for i in range(250, 400):
         moi = rs[i] > max(rs[i - 250:i])
         assert kq["r"]["dinh"][i] == moi and kq["r"]["som"][i] == (moi and not c[i] > max(c[i - 250:i]))
+
+
+def test_squeeze_momentum_va_vix_fix():
+    x = _nen(300, 11)
+    kq = _js(f"const x = {json.dumps(x)};\n"
+             "console.log(JSON.stringify({q: cb_squeeze(x.h, x.l, x.c, 20, 2, 20, 1.5), w: cb_wvf(x.c, x.l, 22, 20, 2, 50, 0.85)}));")
+    h, l_, c = (np.array(x[k]) for k in ("h", "l", "c"))
+    tr = np.r_[h[0] - l_[0], np.maximum.reduce([h[1:] - l_[1:], abs(h[1:] - c[:-1]), abs(l_[1:] - c[:-1])])]
+    for i in (60, 150, 299):
+        w = c[i - 19:i + 1]
+        bb_tr, bb_du = w.mean() + 2 * w.std(), w.mean() - 2 * w.std()
+        uk, lk = w.mean() + 1.5 * tr[i - 19:i + 1].mean(), w.mean() - 1.5 * tr[i - 19:i + 1].mean()
+        nen = 1 if bb_du > lk and bb_tr < uk else 0 if bb_du < lk and bb_tr > uk else -1
+        assert kq["q"]["nen"][i] == nen
+        src = [c[j] - ((h[j - 19:j + 1].max() + l_[j - 19:j + 1].min()) / 2 + c[j - 19:j + 1].mean()) / 2 for j in range(i - 19, i + 1)]
+        b, a = np.polyfit(np.arange(20), src, 1)
+        assert abs(kq["q"]["val"][i] - (a + b * 19)) < 1e-9
+    assert kq["q"]["val"][37] is None and kq["q"]["val"][38] is not None
+    wv = [None] * 21 + [(c[i - 21:i + 1].max() - l_[i]) / c[i - 21:i + 1].max() * 100 for i in range(21, 300)]
+    for i in (40, 120, 299):
+        assert abs(kq["w"]["w"][i] - wv[i]) < 1e-9
+        seg = np.array(wv[i - 19:i + 1])
+        tren = seg.mean() + 2 * seg.std()
+        mx = max(wv[i - 49:i + 1]) if i >= 21 + 49 else None
+        assert kq["w"]["dinh"][i] == bool(wv[i] >= tren or (mx is not None and wv[i] >= mx * 0.85))

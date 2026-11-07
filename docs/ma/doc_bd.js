@@ -194,15 +194,48 @@ function mau_hinh(x, A, gan = 10) {                     // mẫu hình đang hì
   }
   return out;
 }
-function phan_tich(x) {                                 // → {vung, xh, nen, gia, mh, a, N} ; dùng 250 nến gần nhất cho vùng / xu hướng
+// ---- CẤU TRÚC THỊ TRƯỜNG kiểu SMC (định nghĩa công khai, tự viết): BOS / CHoCH + khoảng trống giá FVG – không vẽ lại
+function cau_truc(x, k = 3) {                           // đỉnh / đáy cục bộ (k nến hai bên) chỉ dùng từ phiên đã xác nhận (k nến sau)
+  const N = x.c.length, P = pivots(x, k), ds = P.cao.map(i => ({i, k: "H"})).concat(P.thap.map(i => ({i, k: "L"}))).sort((a, b) => a.i - b.i);
+  const ev = []; let H = null, L = null, xu = 0, j = 0;
+  for (let t = 0; t < N; t++) {
+    while (j < ds.length && ds[j].i + k <= t) { const p = ds[j++]; if (p.k === "H") H = {i: p.i, v: x.h[p.i], pha: false}; else L = {i: p.i, v: x.l[p.i], pha: false}; }
+    if (H && !H.pha && x.c[t] > H.v) { ev.push({loai: xu === -1 ? "CHoCH" : "BOS", huong: 1, i: t, muc: H.v, tu: H.i, dau: xu === 0}); xu = 1; H.pha = true; }
+    else if (L && !L.pha && x.c[t] < L.v) { ev.push({loai: xu === 1 ? "CHoCH" : "BOS", huong: -1, i: t, muc: L.v, tu: L.i, dau: xu === 0}); xu = -1; L.pha = true; }
+  }
+  return {ev, xu, H, L};
+}
+function fvg(x, A, k_min = 0.1) {                       // FVG 3 nến: đáy nến 3 > đỉnh nến 1 (tăng) / đỉnh nến 3 < đáy nến 1 (giảm), rộng ≥ k_min ATR
+  const N = x.c.length, out = [];
+  for (let i = 2; i < N; i++) { const a = A[i] || A[N - 1] || 0;
+    if (x.l[i] > x.h[i - 2] && x.l[i] - x.h[i - 2] >= k_min * a) out.push({huong: 1, i, tren: x.l[i], duoi: x.h[i - 2]});
+    else if (x.h[i] < x.l[i - 2] && x.l[i - 2] - x.h[i] >= k_min * a) out.push({huong: -1, i, tren: x.l[i - 2], duoi: x.h[i]}); }
+  for (const f of out) { f.cham = null; f.lap = null;     // cham: lần đầu giá quay lại vùng · lap: giá đi xuyên hết vùng
+    for (let j = f.i + 1; j < N; j++) {
+      if (f.cham == null && (f.huong > 0 ? x.l[j] <= f.tren : x.h[j] >= f.duoi)) f.cham = j;
+      if (f.huong > 0 ? x.l[j] <= f.duoi : x.h[j] >= f.tren) { f.lap = j; break; } } }
+  return out;
+}
+function smc(x, A, gan = 3) {
+  const N = x.c.length, ct = cau_truc(x), F = fvg(x, A), tk = {};
+  for (const loai of ["BOS", "CHoCH"]) for (const h of [1, -1])
+    tk[loai + h] = thong_ke(x, ct.ev.filter(e => !e.dau && e.loai === loai && e.huong === h && e.i < N - 1).map(e => e.i), h, SAU_MH);
+  const du = F.filter(f => f.i + 20 < N), tkf = {};
+  for (const h of [1, -1]) tkf[h] = thong_ke(x, F.filter(f => f.huong === h && f.cham != null && f.cham < N - 1).map(f => f.cham), h, SAU);
+  const c = x.c[N - 1], mo = F.filter(f => f.lap == null && f.i >= N - 150);
+  return {ct, ev: ct.ev.slice(-gan), tk, tkf, n_fvg: du.length, lap20: du.length ? du.filter(f => f.lap != null && f.lap - f.i <= 20).length / du.length : null,
+    tren: mo.filter(f => f.duoi > c).sort((a, b) => a.duoi - b.duoi), duoi: mo.filter(f => f.tren < c).sort((a, b) => b.tren - a.tren),
+    trong: mo.filter(f => f.duoi <= c && f.tren >= c)};
+}
+function phan_tich(x) {                                 // → {vung, xh, nen, gia, mh, smc, a, N} ; dùng 250 nến gần nhất cho vùng / xu hướng
   const N = x.c.length; if (N < 30) return null;
   const A = atr(x), a = A[N - 1] || (x.h[N - 1] - x.l[N - 1]) || x.c[N - 1] * 0.02, P = pivots(x, 5, Math.max(0, N - 250)), c = x.c[N - 1];
   const vg = vung_gia(x, P, a).map(z => ({...z, loai: z.hi < c ? "ho_tro" : z.lo > c ? "khang_cu" : "trong", cach: z.hi < c ? (c - z.hi) / c : z.lo > c ? (z.lo - c) / c : 0}));
   vg.sort((p, q) => p.cach - q.cach || q.cham - p.cham);
   const gon = S.kieu === "gon";
-  return {vung: vg, xh: xu_huong(x, P, a), nen: mau_nen_cuoi(x, gon ? 5 : 20), gia: mau_gia(x, P, a), mh: mau_hinh(x, A, gon ? 10 : 30), a, N, c};
+  return {vung: vg, xh: xu_huong(x, P, a), nen: mau_nen_cuoi(x, gon ? 5 : 20), gia: mau_gia(x, P, a), mh: mau_hinh(x, A, gon ? 10 : 30), smc: smc(x, A, gon ? 3 : 8), a, N, c};
 }
-CP._thu = {atr, pivots, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh};
+CP._thu = {atr, pivots, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh, cau_truc, fvg, smc};
 
 // ---------------------------------------------------------------- DỮ LIỆU HỆ THỐNG
 let HT_P = null; const TH_P = {};
@@ -248,6 +281,13 @@ class LopPrim {
         if (it.loai === "xh" && !nen) { const [l1, v1, l2, v2] = it.line; const a = tia(l1, v1, l2, v2, it.huong < 0 ? "#d1342b" : "#0f8a4a", 1.8); if (a) chu(a.x + 4, a.y - 14, it.nhan, {vien: it.huong < 0 ? "#d1342b" : "#0f8a4a"}); }
         if (it.loai === "tam_giac" && !nen) { tia(...it.tren, "#9b3fd1", 1.4, [5, 3]); tia(...it.duoi, "#9b3fd1", 1.4, [5, 3]); const y = Y(it.tren[3]); if (y != null) chu(X(it.tren[2]) + 4, y - 14, it.ten, {vien: "#9b3fd1"}); }
         if (it.loai === "hai" && !nen) { const y = Y(it.co); if (y != null) { ctx.save(); ctx.strokeStyle = "#9b3fd1"; ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(X(it.dinh[0]), y); ctx.lineTo(M.width, y); ctx.stroke(); ctx.restore(); chu(X(it.dinh[1]) + 4, y + (it.huong < 0 ? 14 : -14), `${it.ten} · cổ ${so(it.co, 2)}`, {vien: "#9b3fd1"}); } }
+        if (it.loai === "fvg" && nen) { const f = it.f, x0 = X(f.i - 2), y1 = Y(f.tren), y2 = Y(f.duoi); if (x0 == null || y1 == null || y2 == null) continue;
+          ctx.fillStyle = f.huong > 0 ? "rgba(15,138,74,0.13)" : "rgba(209,52,43,0.13)"; ctx.fillRect(x0, y1, M.width - x0, Math.max(1.5, y2 - y1)); }
+        if (it.loai === "fvg" && !nen) { const f = it.f, x0 = X(f.i - 2), y1 = Y(f.tren); if (x0 == null || y1 == null) continue;
+          chu(x0, y1 - 1, `${it.id} FVG ${f.huong > 0 ? "tăng" : "giảm"}`, {c: 9.5, vien: f.huong > 0 ? "#0f8a4a" : "#d1342b", m: f.huong > 0 ? "#0f6b3a" : "#a3241d"}); }
+        if (it.loai === "ct" && !nen) for (const e of it.ds) { const a = X(e.tu), b = X(e.i), y = Y(e.muc); if (a == null || b == null || y == null) continue;
+          const m = e.huong > 0 ? "#0f8a4a" : "#d1342b"; ctx.save(); ctx.strokeStyle = m; ctx.lineWidth = 1.2; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); ctx.restore();
+          ctx.save(); ctx.font = "600 9.5px Inter,system-ui,sans-serif"; ctx.fillStyle = m; ctx.textAlign = "center"; ctx.fillText(e.loai, (a + b) / 2, y + (e.huong > 0 ? -4 : 11)); ctx.restore(); }
         if (it.loai === "mh" && !nen) { const m = it.huong > 0 ? "#0f8a4a" : "#d1342b", H = it.hinh;
           const doan = (l1, v1, l2, v2, w = 1.6, dash = []) => { const a = {x: X(l1), y: Y(v1)}, b = {x: X(l2), y: Y(v2)}; if ([a.x, a.y, b.x, b.y].some(z => z == null)) return null;
             ctx.save(); ctx.strokeStyle = m; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.restore(); return a; };
@@ -340,6 +380,30 @@ function dung(B, kq, ht, th) {
     if (h0) td.push(`thủng ${so(h0.lo, 2)} là mất vùng hỗ trợ`); else if (trong) td.push(`thủng ${so(trong.lo, 2)} là rời vùng`);
     if (k0) td.push(`vượt ${so(k0.hi, 2)} là phá kháng cự`);
     if (xh.huong < 0 && xh.giu) td.push(`vượt ${so(xh.muc, 2)} là phá xu hướng giảm`);
+    const sm = kq.smc;
+    if (sm?.ev.length) { const e = sm.ev[sm.ev.length - 1], b = sm.tk[e.loai + e.huong], tin = muc_tin(b), ten = h => h > 0 ? "tăng" : "giảm";
+      const mo_ta = z => `${z.loai} ${ten(z.huong)} ${ngay(z.i)} (đóng cửa ${z.huong > 0 ? "vượt đỉnh" : "thủng đáy"} ${so(z.muc, 2)})`;
+      cau.push(`Cấu trúc thị trường ${sm.ct.xu > 0 ? "tăng" : sm.ct.xu < 0 ? "giảm" : "chưa rõ"}: ${mo_ta(e)} – ${tin}${b?.n ? `: sau ${e.loai} ${ten(e.huong)} trên ${ma} đúng hướng ${pt(b.tl, 0, false)} trong ${b.n} lần (${SAU_MH} phiên)` : ""}`);
+      items.push({id: "C1", loai: "ct", huong: sm.ct.xu, ds: sm.ev, tu: sm.ev[0].tu, het: e.i, nhom: "Cấu trúc thị trường", tin,
+        tieu_de: `${e.loai} ${ten(e.huong)} · ${ngay(e.i)}`,
+        bang: [["Xu hướng cấu trúc", sm.ct.xu > 0 ? "tăng (đỉnh / đáy cao dần)" : sm.ct.xu < 0 ? "giảm (đỉnh / đáy thấp dần)" : "chưa rõ"], ["Sự kiện gần nhất", mo_ta(e)]]
+          .concat(sm.ct.H && !sm.ct.H.pha ? [["Đỉnh cấu trúc chờ phá", `${so(sm.ct.H.v, 2)} (${ngay(sm.ct.H.i)})`]] : [])
+          .concat(sm.ct.L && !sm.ct.L.pha ? [["Đáy cấu trúc chờ thủng", `${so(sm.ct.L.v, 2)} (${ngay(sm.ct.L.i)})`]] : [])
+          .concat(bang_tk(b, SAU_MH, `Số lần ${e.loai} ${ten(e.huong)} trên mã`)),
+        cach: `Đỉnh / đáy cục bộ (3 nến hai bên) chỉ dùng sau khi đã xác nhận (không vẽ lại). BOS = đóng cửa phá đỉnh / đáy gần nhất CÙNG chiều xu hướng (tiếp diễn), CHoCH = phá NGƯỢC chiều (đổi xu hướng). Kiểm thử: mọi lần trên ${ma}, vào ở giá mở cửa nến sau, ra sau ${SAU_MH} phiên`});
+      if (sm.ct.H && !sm.ct.H.pha) td.push(`vượt ${so(sm.ct.H.v, 2)} là ${sm.ct.xu > 0 ? "BOS" : "CHoCH"} tăng`);
+      if (sm.ct.L && !sm.ct.L.pha) td.push(`thủng ${so(sm.ct.L.v, 2)} là ${sm.ct.xu < 0 ? "BOS" : "CHoCH"} giảm`); }
+    if (sm) {
+      const chon = S.kieu === "gon" ? [sm.trong[0], sm.duoi[0], sm.tren[0]].filter(Boolean) : [...sm.trong, ...sm.duoi, ...sm.tren].slice(0, 6);
+      const nhan = f => `${so(f.duoi, 2)}–${so(f.tren, 2)}`;
+      if (chon.length) cau.push(`Khoảng trống giá (FVG) chưa lấp: ${[sm.duoi[0] ? `dưới giá ${nhan(sm.duoi[0])}` : "", sm.tren[0] ? `trên giá ${nhan(sm.tren[0])}` : "", sm.trong[0] ? `giá đang trong ${nhan(sm.trong[0])}` : ""].filter(Boolean).join(" · ")}` +
+        (sm.lap20 != null ? ` – trên ${ma} ${pt(sm.lap20, 0, false)} FVG bị lấp trong 20 phiên (${sm.n_fvg} lần)` : ""));
+      chon.forEach((f, j) => { const b = sm.tkf[f.huong], tin = muc_tin(b);
+        items.push({id: `G${j + 1}`, loai: "fvg", huong: f.huong, f, dau: f.i - 2, nhom: "Khoảng trống giá (FVG)", tin,
+          tieu_de: `FVG ${f.huong > 0 ? "tăng" : "giảm"} ${nhan(f)} · ${ngay(f.i)}`,
+          bang: [["Vị trí", f.duoi > kq.c ? "trên giá (kháng cự)" : f.tren < kq.c ? "dưới giá (hỗ trợ)" : "giá đang trong vùng"], ["Đã chạm lại", f.cham != null ? ngay(f.cham) : "chưa"],
+            ["FVG trên mã bị lấp trong 20 phiên", sm.lap20 == null ? "–" : `${pt(sm.lap20, 0, false)} (${sm.n_fvg} lần)`]].concat(bang_tk(b, SAU, "Số lần giá chạm lại FVG cùng chiều")),
+          cach: `3 nến: đáy nến 3 cao hơn đỉnh nến 1 (tăng) hoặc đỉnh nến 3 thấp hơn đáy nến 1 (giảm), rộng ≥ 0,1 ATR; "lấp" khi giá đi xuyên hết vùng. Kiểm thử: lần đầu giá quay lại chạm vùng, vào ở giá mở cửa nến sau, ra sau ${SAU} phiên – đúng hướng = bật theo chiều FVG`}); }); }
     for (const g of kq.mh) if (g.t == null) td.push(`${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)} xác nhận ${g.ten.toLowerCase()}`);
     for (const g of kq.gia) { if (g.vuot != null && g.huong >= 0) td.push(`vượt ${so(g.vuot, 2)} xác nhận ${g.ten.toLowerCase()}`); if (g.thung != null && g.huong <= 0) td.push(`thủng ${so(g.thung, 2)} xác nhận ${g.ten.toLowerCase()}`); }
     if (td.length) cau.push("Theo dõi: " + [...new Set(td)].slice(0, 3).join(" · "));
@@ -378,7 +442,8 @@ function panel_html(B, kq, dd, ht, th) {
     <details class="cp-doc"><summary>Cách đọc</summary><p>Vùng hỗ trợ / kháng cự: các đỉnh, đáy cục bộ (cao / thấp nhất trong 5 nến hai bên) nằm sát nhau (≤ 0,6 ATR) gộp thành vùng; càng nhiều lần chạm càng đáng chú ý.
       Xu hướng: nối 2 đỉnh thấp dần hoặc 2 đáy cao dần gần nhất. Mẫu nến (sau ${SAU} phiên) và mẫu hình cờ, nêm, vai–đầu–vai (sau ${SAU_MH} phiên) được kiểm thử trên chính mã:
       mọi lần xuất hiện / xác nhận trước đây, vào ở giá mở cửa nến sau. Tỷ lệ đúng hướng kèm khoảng tin cậy 95%: "đáng tin" khi ≥ ${TIN_N} lần và cả khoảng nằm trên 50%,
-      "thường SAI" khi cả khoảng dưới 50%. Tính trên khung đang xem${TUA_CHU()}.</p></details>
+      "thường SAI" khi cả khoảng dưới 50%. Cấu trúc thị trường (kiểu SMC): BOS = phá đỉnh / đáy gần nhất cùng chiều xu hướng, CHoCH = phá ngược chiều;
+      FVG = khoảng trống giá 3 nến chưa bị lấp. Tính trên khung đang xem${TUA_CHU()}.</p></details>
     <div class="cp-meta">${esc_(ma)} · ${esc_(B.ten_khung)} · dữ liệu tới ${esc_(B.phut ? gio_vn(x.d[B.n - 1]) : ngay_vn(x.d[B.n - 1]))}</div>
     <button class="cp-tinh" data-cp="tinh">Tính lại bằng chứng</button>
     <h4>HỆ THỐNG</h4>
@@ -395,7 +460,7 @@ function panel_html(B, kq, dd, ht, th) {
     ${dd.items.map(it => `<div class="cp-the cp-ct${it.an ? " an" : ""}" data-cpid="${it.id}"><div class="cp-ct-dau"><i class="cham ${it.loai === "vung" ? (it.ho_tro ? "t" : it.trong ? "cam" : "g") : it.huong > 0 ? "t" : it.huong < 0 ? "g" : "tim"}"></i><span class="cp-id">${it.id}</span><b>${esc_(it.tieu_de)}</b>${it.tin ? `<span class="cp-nhan ${it.tin === "đáng tin" ? "t" : /SAI/.test(it.tin) ? "g" : ""}">${esc_(it.tin.replace(/ \(.*\)| trên mã.*$/g, ""))}</span>` : ""}${S.lop && !it.an && !["bot", "lich_su"].includes(it.loai) ? '<span class="cp-nhan b">trên biểu đồ</span>' : ""}</div>
       <div class="cp-phu">${esc_(it.nhom)}</div>${it.bang.length ? `<table class="cp-bang">${it.bang.map(([a, v]) => `<tr><td>${esc_(a)}</td><td class="so">${esc_(v)}</td></tr>`).join("")}</table>` : ""}
       <div class="cp-cach"><b>Chỉ báo</b> ${esc_(it.cach)}</div>
-      <div class="cp-nut"><button data-cpx="${it.id}">Xem trên biểu đồ</button>${["vung", "xh", "tam_giac", "hai", "mh"].includes(it.loai) ? `<button data-cpg="${it.id}">Giữ thành hình vẽ</button>` : ""}<button data-cpb="${it.id}">${it.an ? "Hiện lại" : "Bỏ"}</button></div></div>`).join("")}
+      <div class="cp-nut"><button data-cpx="${it.id}">Xem trên biểu đồ</button>${["vung", "xh", "tam_giac", "hai", "mh", "fvg", "ct"].includes(it.loai) ? `<button data-cpg="${it.id}">Giữ thành hình vẽ</button>` : ""}<button data-cpb="${it.id}">${it.an ? "Hiện lại" : "Bỏ"}</button></div></div>`).join("")}
   </div>`;
 }
 let TUA_CHU = () => "";
@@ -440,6 +505,8 @@ function gan_panel(p) {
       if (it.loai === "xh") BD_VE.them_hinh({c: "tia", p: [{t: T(it.line[0]), v: it.line[1]}, {t: T(it.line[2]), v: it.line[3]}], s: {m: it.huong < 0 ? "#d1342b" : "#0f8a4a"}});
       if (it.loai === "tam_giac") for (const z of [it.tren, it.duoi]) BD_VE.them_hinh({c: "tia", p: [{t: T(z[0]), v: z[1]}, {t: T(z[2]), v: z[3]}], s: {m: "#9b3fd1"}});
       if (it.loai === "hai") BD_VE.them_hinh({c: "tia_ngang", p: [{t: T(it.dinh[0]), v: it.co}], s: {m: "#9b3fd1"}});
+      if (it.loai === "fvg") BD_VE.them_hinh({c: "hcn", p: [{t: T(it.f.i - 2), v: it.f.tren}, {t: T(B.n + 10), v: it.f.duoi}], s: {m: it.huong > 0 ? "#0f8a4a" : "#d1342b"}});
+      if (it.loai === "ct") for (const e of it.ds) BD_VE.them_hinh({c: "xu_huong", p: [{t: T(e.tu), v: e.muc}, {t: T(e.i), v: e.muc}], s: {m: e.huong > 0 ? "#0f8a4a" : "#d1342b"}});
       if (it.loai === "mh") { const m = it.huong > 0 ? "#0f8a4a" : "#d1342b", H = it.hinh, f = (q, i) => q[1] + (q[3] - q[1]) * (i - q[0]) / ((q[2] - q[0]) || 1);
         const seg = (l1, v1, l2, v2) => BD_VE.them_hinh({c: "xu_huong", p: [{t: T(l1), v: v1}, {t: T(l2), v: v2}], s: {m}});
         if (it.kieu === "vdv") { for (let k = 0; k + 1 < H.diem.length; k++) seg(...H.diem[k], ...H.diem[k + 1]); seg(H.co[0], H.co[1], it.het, f(H.co, it.het)); }
