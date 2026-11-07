@@ -160,6 +160,29 @@ body.co-ds main{margin-right:300px}
 .fs-trai button{width:34px;height:34px;border:0;border-radius:8px;background:none;font-size:16px;cursor:pointer;color:#374151}
 .fs-trai button:hover{background:var(--nhat)}.fs-trai button[aria-pressed="true"]{background:#e3f2e5;color:var(--nhan-dam)}
 .fs-trai hr{width:24px;border:0;border-top:1px solid var(--vien);margin:4px 0}
+.fs.trang{top:var(--dau,56px);z-index:25}.fs:fullscreen{top:0}
+.fs-trai{overflow-y:auto;padding-bottom:8px}.ve-nhom{position:relative;display:flex;align-items:center}
+.fs-trai .ve-mo{position:absolute;right:-6px;width:10px;height:22px;padding:0;font-size:12px;color:var(--mo);border-radius:4px}
+.fs-trai .ve-mo:hover{background:var(--nhat);color:var(--chu)}
+.ve-ds,.ve-tim{position:fixed;z-index:300;background:#fff;border:1px solid var(--vien);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:6px;min-width:270px;max-height:80vh;overflow:auto;font-size:13.5px}
+.ve-ds .dau,.ve-tim .dau{font-size:11.5px;font-weight:650;color:var(--mo);letter-spacing:.04em;padding:8px 10px 4px}
+.ve-ds button,.ve-tim .kq button{display:flex;justify-content:space-between;gap:18px;width:100%;border:0;background:none;padding:7px 10px;border-radius:6px;cursor:pointer;font:inherit;text-align:left;color:var(--chu)}
+.ve-ds button:hover,.ve-tim .kq button:hover,.ve-ds button[aria-pressed="true"]{background:#eef3ff}.ve-ds i,.ve-tim i{font-style:normal;color:var(--mo);font-size:12px}
+.ve-tim{left:50%;top:12vh;transform:translateX(-50%);width:min(440px,92vw)}.ve-tim>input{width:100%;box-sizing:border-box;font:inherit;padding:8px 10px;border:1px solid var(--vien);border-radius:8px}
+.ve-tim .kq{max-height:46vh;overflow:auto;margin:6px 0}.ve-tim .trong{padding:10px;color:var(--mo)}
+.ve-tim .tac{border-top:1px solid var(--vien);display:grid;gap:6px;padding:8px 10px 4px;font-size:13px}.ve-tim .tac button{border:1px solid var(--vien);background:var(--the);border-radius:6px;padding:5px 8px;cursor:pointer;font:inherit;text-align:left}
+.ve-chon{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:6;background:#fff;border:1px solid var(--vien);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:4px 6px;display:flex;flex-wrap:wrap;gap:3px;align-items:center;max-width:calc(100% - 20px);font-size:12px}
+.ve-chon button{border:1px solid transparent;background:none;border-radius:5px;min-width:22px;height:24px;cursor:pointer;font:inherit;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;color:var(--chu)}
+.ve-chon button[data-vm]{width:16px;min-width:16px;height:16px;border-radius:50%;padding:0}.ve-chon button[aria-pressed="true"]{border-color:#2962ff;background:#eef3ff}
+.ve-chon button[data-vm][aria-pressed="true"]{outline:2px solid #2962ff;outline-offset:1px}
+.ve-chon .ten{font-weight:600;margin-right:4px}.ve-chon .nhom{display:inline-flex;gap:2px;border-left:1px solid var(--vien);padding-left:4px}
+.ve-chon .goi-y{flex-basis:100%;color:var(--mo);font-size:11.5px;padding:2px 2px 0}
+.ve-sua{position:absolute;z-index:7;width:240px;min-height:60px;font:inherit;font-size:13px;padding:6px;border:1px solid #2962ff;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+.fs-tim{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:8;width:min(380px,90%);background:#fff;border:1px solid var(--vien);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:8px}
+.fs-tim input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;font-weight:600;padding:8px 10px;border:1px solid #2962ff;border-radius:8px;text-transform:uppercase}
+.fs-tim ul{list-style:none;margin:6px 0 0;padding:0;max-height:50vh;overflow:auto}.fs-tim li{display:flex;gap:8px;align-items:baseline;padding:6px 8px;border-radius:6px;cursor:pointer}
+.fs-tim li span{flex:1;color:var(--chu2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fs-tim li i{color:var(--mo);font-size:11px;font-style:normal}
+.fs-tim li.chon,.fs-tim li:hover{background:#eef3ff}
 .fs-bd{flex:1;position:relative;min-width:0}
 .fs-goi{position:absolute;left:50%;top:8px;transform:translateX(-50%);background:#1b1f24cc;color:#fff;font-size:12px;padding:4px 10px;border-radius:6px;z-index:4;pointer-events:none}
 .fs-day{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:5px 10px;border-top:1px solid var(--vien);font-size:12.5px}
@@ -332,7 +355,7 @@ dialog#pp::backdrop{background:#1d243066}
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-  <div class="lien"><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../thi_truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
+  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../thi_truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
 </div></header>
 <main>
   <div id="noi-dung"><div class="trong">Đang tải dữ liệu…</div></div>
@@ -717,6 +740,12 @@ function non_du_bao(c, H, kieu = "ls", L = 750, Ls = 60) {     // → {kieu, so_
 }
 function ngay_toi(d, k, khung) {                         // k mốc thời gian sau ngày d theo khung (D: bỏ T7 / CN; W: +7 ngày; M: +1 tháng)
   const o = []; let t = d;
+  if (/^\d+$/.test(String(khung))) {                     // khung phút: d = giây theo giờ VN; phiên 9:15–11:30, 13:00–14:45
+    const b = +khung * 60;
+    while (o.length < k) { t += b; const v = new Date(t * 1000), wd = v.getUTCDay(), m = v.getUTCHours() * 60 + v.getUTCMinutes();
+      if (wd && wd < 6 && ((m >= 555 && m < 690) || (m >= 780 && m <= 885))) o.push(t); }
+    return o;
+  }
   for (let i = 0; i < k; i++) {
     if (khung === "D") t = phien_sau(t);
     else { const x = new Date(t + "T00:00:00Z"); if (khung === "W") x.setUTCDate(x.getUTCDate() + 7); else { x.setUTCDate(1); x.setUTCMonth(x.getUTCMonth() + 1); x.setUTCDate(28); } t = x.toISOString().slice(0, 10); }
@@ -878,60 +907,35 @@ function gop_khung(x, khung) {                          // nến ngày → tuầ
   return o;
 }
 let BD_GIA = null, BD_DK = null;
-// HÌNH VẼ (đường xu hướng kéo dài tới phiên cuối · đường ngang) – lưu theo mã trong trình duyệt này
-const KHOA_VE = "ma_hinh_ve";
-const VE = (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_VE) || "{}"); return v && typeof v === "object" ? v : {}; } catch (e) { return {}; } })();
-const luu_ve = () => { try { localStorage.setItem(KHOA_VE, JSON.stringify(VE)); } catch (e) {} };
-const VS = {cong: "tro", nam: true, a: null, tam: null, ds: []};      // công cụ đang chọn, nam châm, điểm đầu, nét tạm, nét đã vẽ
-const t_chuoi = t => typeof t === "string" ? t : `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;
-function chi_so_nen(x, t) { let lo = 0, hi = x.d.length - 1, r = hi; while (lo <= hi) { const m = (lo + hi) >> 1; if (x.d[m] >= t) { r = m; hi = m - 1; } else lo = m + 1; } return r; }
-function ve_hinh(ma) {                                // vẽ lại mọi hình của mã lên biểu đồ hiện tại
-  const B = BD_DK; if (!B) return;
-  for (const h of VS.ds) { try { h.l ? B.nen.removePriceLine(h.l) : B.ch.removeSeries(h.s); } catch (e) {} }
-  VS.ds = [];
-  const x = B.x, n = x.d.length;
-  for (const h of VE[ma] || []) {
-    if (h.loai === "ngang") { VS.ds.push({l: B.nen.createPriceLine({price: h.p, color: "#2E7D32", lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: ""})}); continue; }
-    let ia = chi_so_nen(x, h.a.time), ib = chi_so_nen(x, h.b.time), va = h.a.value, vb = h.b.value;
-    if (ia === ib) continue;
-    if (ia > ib) [ia, ib, va, vb] = [ib, ia, vb, va];
-    const tiep = vb + (vb - va) / (ib - ia) * (n - 1 - ib);            // kéo dài tới phiên cuối
-    const s = B.ch.addSeries(B.LW.LineSeries, {color: h.mau || "#1f6feb", lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
-    s.setData([{time: x.d[ia], value: va}, {time: x.d[ib], value: vb}].concat(ib < n - 1 ? [{time: x.d[n - 1], value: tiep}] : []));
-    VS.ds.push({s});
-  }
+let VE_P = null;
+function tai_ve() {                                    // công cụ vẽ (bieu_do.js – file riêng, tải khi vẽ biểu đồ giá)
+  VE_P = VE_P || new Promise((ok, loi) => { const sc = document.createElement("script");
+    sc.src = "bieu_do.js?v=1"; sc.onload = () => ok(window.BD_VE); sc.onerror = loi; document.head.appendChild(sc); });
+  return VE_P;
 }
-function diem_ve(p) {                                  // điểm bấm → {time, value}; nam châm: bám O / C / H / L gần nhất của nến
-  const B = BD_DK; if (!B || !p?.time || !p.point || p.paneIndex) return null;      // chỉ khung giá (không khung chỉ báo phụ)
-  const t = t_chuoi(p.time), v = B.nen.coordinateToPrice(p.point.y); if (v == null) return null;
-  if (!VS.nam) return {time: t, value: v};
-  const i = B.x.d.indexOf(t); if (i < 0) return {time: t, value: v};
-  const ung = [B.x.o[i], B.x.h[i], B.x.l[i], B.x.c[i]].filter(z => z != null), g = ung.reduce((a, z) => Math.abs(z - v) < Math.abs(a - v) ? z : a, ung[0]);
-  return {time: t, value: Math.abs(g - v) / v < .03 ? g : v};
+const t_chuoi = t => typeof t === "number" ? t : typeof t === "string" ? t : `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;
+const PHUT = k => /^\d+$/.test(String(k));                 // khung phút: "1", "5", "15", "60"
+const gio_vn = s => { const d = new Date(s * 1000); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} ${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`; };
+const PHUT_KHO = {};
+function giai_phut(d) {                                // phut/<1|5>/<MÃ>.json (thi_truong/phut_web.py) → chuỗi nến; d = giờ VN (giây) để trục hiện giờ VN
+  if (!d?.dt?.length) return null;
+  const t = [], c = []; let s = d.t0, cc = 0;
+  d.dt.forEach((a, i) => { s += i ? a * 60 : 0; cc += d.c[i]; t.push(s); c.push(cc); });
+  const f = k => d[k].map((x, i) => (c[i] - x) / 100);
+  return {d: t.map(v => v + 25200), ts: t, o: f("o"), h: f("h"), l: f("l"), c: c.map(v => v / 100), v: d.v.slice(), nn: []};
 }
-function gan_ve(el) {                                 // bấm trên biểu đồ (toàn màn hình) theo công cụ đang chọn
-  const B = BD_DK, ma = B.ma, goi = el.querySelector(".fs-goi") || el.appendChild(Object.assign(document.createElement("div"), {className: "fs-goi"}));
-  const bao = t => { goi.textContent = t; goi.style.display = t ? "" : "none"; };
-  bao(VS.cong === "duong" ? "Bấm điểm đầu đường xu hướng" : VS.cong === "ngang" ? "Bấm vào mức giá cần kẻ ngang" : "");
-  B.ch.subscribeClick(p => {
-    if (VS.cong === "tro") return;
-    const d = diem_ve(p); if (!d) return;
-    if (VS.cong === "ngang") { (VE[ma] ||= []).push({loai: "ngang", p: +d.value.toFixed(3)}); luu_ve(); ve_hinh(ma); return; }
-    if (!VS.a) { VS.a = d; bao("Bấm điểm thứ hai (đường kéo dài tới phiên cuối)"); return; }
-    if (VS.a.time !== d.time) { (VE[ma] ||= []).push({loai: "duong", a: VS.a, b: d}); luu_ve(); }
-    VS.a = null; if (VS.tam) { try { B.ch.removeSeries(VS.tam); } catch (e) {} VS.tam = null; }
-    ve_hinh(ma); bao("Bấm điểm đầu đường xu hướng");
-  });
-  let cho = null, cuoi = "";
-  B.ch.subscribeCrosshairMove(p => {                     // nét tạm khi đang vẽ đường xu hướng – cập nhật ở khung hình sau
-    if (VS.cong !== "duong" || !VS.a) return;            // (setData ngay trong sự kiện rê chuột → biểu đồ gọi lại sự kiện → tràn ngăn xếp)
-    const d = diem_ve(p); if (!d || d.time === VS.a.time) return;
-    const khoa = d.time + "|" + d.value.toFixed(3); if (khoa === cuoi) return; cuoi = khoa;
-    if (cho) cancelAnimationFrame(cho);
-    cho = requestAnimationFrame(() => { cho = null; if (!VS.a || BD_DK !== B) return;
-      if (!VS.tam) VS.tam = B.ch.addSeries(B.LW.LineSeries, {color: "#1f6feb", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
-      VS.tam.setData([VS.a, d].sort((p_, q) => p_.time < q.time ? -1 : 1)); });
-  });
+function gop_phut(g, m) {                              // nến 5' → 15' / 1 giờ (theo giờ VN)
+  const o = {d: [], ts: [], o: [], h: [], l: [], c: [], v: [], nn: []}; let k0 = null;
+  g.d.forEach((d, i) => { const k = Math.floor(d / (m * 60));
+    if (k !== k0) { o.d.push(k * m * 60); o.ts.push(k * m * 60 - 25200); o.o.push(g.o[i]); o.h.push(g.h[i]); o.l.push(g.l[i]); o.c.push(g.c[i]); o.v.push(g.v[i] || 0); k0 = k; return; }
+    const j = o.d.length - 1; o.h[j] = Math.max(o.h[j], g.h[i]); o.l[j] = Math.min(o.l[j], g.l[i]); o.c[j] = g.c[i]; o.v[j] += g.v[i] || 0; });
+  return o;
+}
+async function chuoi_phut(ma, kh) {
+  const goc = kh === "1" ? "1" : "5", k = goc + ma;
+  if (!(k in PHUT_KHO)) PHUT_KHO[k] = lay(DL + `phut/${goc}/${ma}.json`, false).then(giai_phut).catch(() => null);
+  const g = await PHUT_KHO[k]; if (!g) return null;
+  return kh === "1" || kh === "5" ? g : gop_phut(g, +kh);
 }
 const thang_hl = () => ST.thang || (ST.nen >= 99999 ? "log" : "thuong");      // chưa chọn: "Tất cả" dùng log
 const che_do_thang = LW => ({log: LW.PriceScaleMode.Logarithmic, pt: LW.PriceScaleMode.Percentage})[thang_hl()] ?? LW.PriceScaleMode.Normal;
@@ -955,10 +959,13 @@ async function ve_bd_gia(el, x0, them = {}) {
   const LW = await tai_lwc();
   if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
   el.querySelectorAll(".chu-bd,.chu-pane").forEach(z => z.remove());
-  const x = gop_khung(x0, ST.khung), n = x.d.length, fs = !!them.fs, nhan = fs;   // toàn màn hình: nhãn giá từng chỉ báo trên trục
+  let kh = ST.khung, x = PHUT(kh) ? await chuoi_phut(them.ma, kh) : null, bao = "";
+  if (PHUT(kh) && !x) { bao = "Mã này chưa có nến phút (chỉ ~400 mã thanh khoản cao nhất) – đang hiện khung ngày"; kh = "D"; }
+  if (!x) x = gop_khung(x0, kh);
+  const n = x.d.length, fs = !!them.fs, nhan = fs;   // toàn màn hình: nhãn giá từng chỉ báo trên trục
   const nho = matchMedia("(max-width:600px)").matches, cao0 = nho ? 380 : 480, cao1 = nho ? 90 : 110;
-  const H = ST.khung === "D" ? CB.non_h : Math.max(1, Math.round(CB.non_h / (ST.khung === "W" ? 5 : 21))), [ich_a, ich_b, ich_s] = CB.ts.ich;   // tầm tính theo phiên
-  const du = n ? Math.max(CB.non ? H : 0, CB.ich ? ich_b : 0) : 0, fut = n ? ngay_toi(x.d[n - 1], du, ST.khung) : [], T = x.d.concat(fut);
+  const H = kh === "D" || PHUT(kh) ? CB.non_h : Math.max(1, Math.round(CB.non_h / (kh === "W" ? 5 : 21))), [ich_a, ich_b, ich_s] = CB.ts.ich;   // tầm tính theo phiên
+  const du = n ? Math.max(CB.non ? H : 0, CB.ich ? ich_b : 0) : 0, fut = n ? ngay_toi(x.d[n - 1], du, kh) : [], T = x.d.concat(fut);
   if (!fs) el.style.height = CB.duoi.length ? (cao0 + CB.duoi.length * cao1) + "px" : "";
   const ch = LW.createChart(el, {autoSize: true, layout: {background: {color: "#ffffff"}, textColor: "#4b5565", fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", fontSize: 11,
       panes: {separatorColor: "#e3e7ee", separatorHoverColor: "#c9d6cc", enableResize: true}},
@@ -995,12 +1002,12 @@ async function ve_bd_gia(el, x0, them = {}) {
     for (const [len, m] of [[true, "#0f8a4a"], [false, "#d1342b"]])
       duong(sar.v.map((v, i) => sar.len[i] === len ? v : null), {color: m, lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 1.6, lastValueVisible: false}); }
   let dc = null;
-  if (ST.dc) { const p = ST.dc === 52 ? ({D: 250, W: 52, M: 12})[ST.khung] : 20, cua = (a, f) => a.map((_, i) => i + 1 < p ? null : f(...a.slice(i + 1 - p, i + 1)));
+  if (ST.dc) { const p = ST.dc === 52 ? ({D: 250, W: 52, M: 12})[kh] || 20 : 20, cua = (a, f) => a.map((_, i) => i + 1 < p ? null : f(...a.slice(i + 1 - p, i + 1)));
     const tr = cua(x.h, Math.max), d_ = cua(x.l, Math.min); dc = {p, tr, du: d_, gi: tr.map((v, i) => v == null ? null : (v + d_[i]) / 2)};
     duong(dc.tr, {color: "#e8a400", lineWidth: 1}); duong(dc.du, {color: "#e8a400", lineWidth: 1}); duong(dc.gi, {color: "#e8a400", lineWidth: 1, lineStyle: 2}); }
-  if (ST.khung === "D" && them.gn) for (const [v, t, c] of [[them.gn.tran, "Trần", "#9b3fd1"], [them.gn.tc, "TC", "#b88a00"], [them.gn.san, "Sàn", "#0e9fb3"]])
+  if ((kh === "D" || PHUT(kh)) && them.gn) for (const [v, t, c] of [[them.gn.tran, "Trần", "#9b3fd1"], [them.gn.tc, "TC", "#b88a00"], [them.gn.san, "Sàn", "#0e9fb3"]])
     if (v > 0) nen.createPriceLine({price: v, color: c, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: t});
-  if (ST.mk && them.n) LW.createSeriesMarkers(nen, moc_su_kien(x, them.n));
+  if (ST.mk && them.n && !PHUT(kh)) LW.createSeriesMarkers(nen, moc_su_kien(x, them.n));
   // --- khối lượng / khối ngoại: dải dưới khung giá (+ đường TB 20 KL)
   const duoi = S("HistogramSeries", {priceScaleId: "duoi", priceFormat: ST.duoi === "kl" ? {type: "volume"} : {type: "price", precision: 1, minMove: .1}, lastValueVisible: false, priceLineVisible: false});
   ch.priceScale("duoi").applyOptions({scaleMargins: {top: .8, bottom: 0}});
@@ -1012,7 +1019,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   // --- nón dự báo
   let non = null;
   if (CB.non && n > 2) {
-    non = non_du_bao(x.c, H, CB.non_kieu, ({D: 750, W: 260})[ST.khung] || 1e6, ({D: 60, W: 26})[ST.khung] || 12);
+    non = non_du_bao(x.c, H, CB.non_kieu, ({D: 750, W: 260})[kh] || 1e6, ({D: 60, W: 26})[kh] || 12);
     if (non) { non.H = H; non.i0 = n - 1; non.p = non.q.map(a => a.map(r => r * x.c[n - 1])); nen.attachPrimitive(new NonPrim(ch, nen, non)); }
   }
   // --- khung riêng bên dưới (mỗi chỉ báo 1 khung, trục giá riêng)
@@ -1042,25 +1049,26 @@ async function ve_bd_gia(el, x0, them = {}) {
   const pn = ch.panes();
   if (pn.length > 1) { const k = pn.length - 1; pn[0].setStretchFactor(fs ? 3 : cao0 / cao1); for (let j = 1; j <= k; j++) pn[j].setStretchFactor(fs ? Math.min(1, 2.4 / k) : 1); }
   // --- vùng xem
-  const ytd = x.d.findIndex(d => d >= String(x.d[n - 1]).slice(0, 4) + "-01-01");
-  const so_nen = ST.nen < 0 ? Math.max(3, n - ytd) : ST.khung === "D" ? ST.nen : ST.khung === "W" ? Math.ceil(ST.nen / 5) : Math.ceil(ST.nen / 21);
+  const ytd = PHUT(kh) ? 0 : x.d.findIndex(d => d >= String(x.d[n - 1]).slice(0, 4) + "-01-01");
+  const so_nen = PHUT(kh) ? (ST.nen < 0 ? n : Math.min(n, ST.nen * ({1: 225, 5: 45, 15: 15, 60: 5})[kh])) : ST.nen < 0 ? Math.max(3, n - ytd) : kh === "D" ? ST.nen : kh === "W" ? Math.ceil(ST.nen / 5) : Math.ceil(ST.nen / 21);
   const phai = n + (CB.non && non ? H : 0) + 3;
   if (them.giu_vung) { const v = {...them.giu_vung}; if (v.to >= n - 3) v.to = Math.max(v.to, phai); ch.timeScale().setVisibleLogicalRange(v); }
   else ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: phai});
-  BD_DK = {ch, nen, LW, n, so_nen, x, ma: them.ma, phai, lai: vung => ve_bd_gia(el, x0, {...them, giu_vung: vung})};
-  if (them.ma) ve_hinh(them.ma);
-  if (fs) gan_ve(el);
+  x.ts = x.ts || x.d.map(d => Date.parse(String(d) + "T00:00:00Z") / 1000);
+  BD_DK = {ch, nen, LW, n, so_nen, x, ma: them.ma, phai, khung: kh, lai: vung => ve_bd_gia(el, x0, {...them, giu_vung: vung})};
+  if (fs && !el.querySelector(".fs-goi")) el.appendChild(Object.assign(document.createElement("div"), {className: "fs-goi", style: "display:none"}));
+  const B_ = BD_DK; tai_ve().then(V => { if (BD_DK === B_) V.gan(B_, {el, tuong_tac: fs}); }).catch(() => {});
   // --- chú giải: góc trái khung giá + mỗi khung phụ
   const cg = document.createElement("div"); cg.className = "chu-bd"; el.appendChild(cg);
   const cp = PH.map(() => { const d = document.createElement("div"); d.className = "chu-pane"; el.appendChild(d); return d; });
   const dat_cp = () => { const ds = ch.panes(); let top = 0; ds.forEach((p, j) => { if (j && cp[j - 1]) cp[j - 1].style.top = (top + 2) + "px"; top += p.getHeight() + 1; }); };
-  const u = {D: "phiên", W: "tuần", M: "tháng"}[ST.khung];
+  const u = {D: "phiên", W: "tuần", M: "tháng"}[kh] || "nến";
   const non_chu = non ? `<span class="chu-non"><br><span style="color:#1f4fa8">Nón ${H} ${u} (${non.kieu === "ls" ? "phân vị lịch sử" : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`}): 50% ${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)} · 95% ${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}</span> <span class="phu">· thống kê, không phải khuyến nghị</span></span>` : "";
   const viet = i => {
     if (i == null || i < 0 || i >= n) i = n - 1;
     if (i < 0) return;
     const p = x.tam && i === n - 1 && x.tc ? x.c[i] / x.tc - 1 : i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
-    cg.innerHTML = `${ngay_vn(x.d[i])}${x.tam && i === n - 1 ? " (tạm)" : ""} · M <b>${so(x.o[i], 2)}</b> C <b>${so(x.h[i], 2)}</b> T <b>${so(x.l[i], 2)}</b> Đ <b class="${mau(p)}">${so(x.c[i], 2)}</b> <span class="${mau(p)}">${pt(p, 2)}</span>` +
+    cg.innerHTML = (bao ? `<span class="g">${bao}</span><br>` : "") + `${PHUT(kh) ? gio_vn(x.d[i]) : ngay_vn(x.d[i])}${x.tam && i === n - 1 ? " (tạm)" : ""} · M <b>${so(x.o[i], 2)}</b> C <b>${so(x.h[i], 2)}</b> T <b>${so(x.l[i], 2)}</b> Đ <b class="${mau(p)}">${so(x.c[i], 2)}</b> <span class="${mau(p)}">${pt(p, 2)}</span>` +
       `<br>KL ${kl(x.v[i])}${klma?.[i] != null ? ` <span style="color:#e8710a">(TB20 ${kl(klma[i])})</span>` : ""}${x.nn?.[i] != null ? ` · NN ${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ` : ""}` +
       ST.ma_tb.map(m => ma[m][i] != null ? ` · <span style="color:${MAU_MA[m]}">MA${m} ${so(ma[m][i], 2)}</span>` : "").join("") +
       ST.ema.map(m => em[m]?.[i] != null ? ` · <span style="color:${MAU_EMA[m]}">EMA${m} ${so(em[m][i], 2)}</span>` : "").join("") +
@@ -1101,7 +1109,7 @@ function tong_quan(ma, k) {
     const hs = [["1 ngày", x.tam && x.tc ? c[L] / x.tc - 1 : ve(L - 1)], ["1 tuần", ve(L - 5)], ["1 tháng", ve(L - 21)], ["3 tháng", ve(L - 63)], ["6 tháng", ve(L - 126)],
       ["1 năm", ve(L - 250)], ["3 năm", ve(L - 750)], ["5 năm", ve(L - 1250)], ["Từ đầu năm", dn > 0 ? c[L] / c[dn - 1] - 1 : null]];
     h += the("Biểu đồ giá", `giá điều chỉnh cổ tức / chia tách · ${x.d.length} phiên từ ${ngay_vn(x.d[0])}${x.cu ? ` · <span class="g">lịch sử tới ${ngay_vn(x.cu)} (chưa cập nhật)</span>` : ""}${x.dc ? " · hôm nay GDKHQ – lịch sử đã điều chỉnh theo tham chiếu" : ""} · kéo / cuộn để xem · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`,
-      `<div class="nen-dk"><span class="nut">${nut([["D", "Ngày"], ["W", "Tuần"], ["M", "Tháng"]], ST.khung, "khung")}</span>
+      `<div class="nen-dk"><span class="nut">${nut([["1", "1'"], ["5", "5'"], ["15", "15'"], ["60", "1H"], ["D", "Ngày"], ["W", "Tuần"], ["M", "Tháng"]], ST.khung, "khung")}</span>
        ${menu_khoi()}
        <span class="nut">${nut([["kl", "Khối lượng"]].concat(x.nn?.some(v => v != null) ? [["nn", "Khối ngoại"]] : []), ST.duoi, "duoi")}</span></div>
        <div class="bd-khung" id="bd-khung"><div class="bd-gia" id="bd-gia"></div>
@@ -2259,7 +2267,7 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id === "dt-o") $("#dt-them")?.click();
   if (e.key === "Enter" && e.target.closest?.("[data-dtma]")) dt_mo_ma(e.target.closest("[data-dtma]").dataset.dtma);
-  if (e.key === "Escape" && FS && !document.fullscreenElement) fs_dong();
+  if (e.key === "Escape" && FS && !FS.trang && !document.fullscreenElement) fs_dong();
 });
 function dat_dau() { const h = $("header.dau"); if (h) document.documentElement.style.setProperty("--dau", h.offsetHeight + "px"); }
 addEventListener("resize", dat_dau); dat_dau();
@@ -2267,29 +2275,28 @@ addEventListener("resize", dat_dau); dat_dau();
 // ---------------------------------------------------------------- TOÀN MÀN HÌNH (biểu đồ + công cụ vẽ + watchlist)
 let FS = null;
 const NUT_KHOANG = [[5, "5 phiên"], [22, "1T"], [66, "3T"], [130, "6T"], [-1, "YTD"], [250, "1N"], [1250, "5N"], [99999, "Tất cả"]];
-async function fs_mo(ma) {
+async function fs_mo(ma, o = {}) {                   // o.trang: trang Biểu đồ (dưới thanh đầu, không chiếm cả màn hình)
   ma = String(ma || "").toUpperCase(); if (!MA_OK(ma)) return;
   const k = await tai_ma(ma);
   let el = $("#fs");
   if (!el) { el = document.createElement("div"); el.id = "fs"; el.className = "fs"; document.body.appendChild(el); }
   if (el.contains($("#rail"))) { document.body.appendChild($("#ds-td")); document.body.appendChild($("#rail")); }   // giữ watchlist khi dựng lại
-  const moi = !FS; FS = {ma}; VS.a = null; VS.tam = null;
+  const moi = !FS, trang = o.trang ?? FS?.trang ?? false; FS = {ma, trang}; el.classList.toggle("trang", trang);
+  try { localStorage.setItem("bd_ma", ma); } catch (e) {}
   const r = dong_ds(ma), ten = (k.n?.ct?.viOrganName) || r.ten || MKT?.ten?.[ma] || "";
   el.innerHTML = `<div class="fs-tren"><input class="o" id="fs-o" value="${esc(ma)}" maxlength="8" aria-label="Đổi mã" spellcheck="false">
-      <span class="nut">${nut([["D", "1D"], ["W", "1W"], ["M", "1M"]], ST.khung, "fsk")}</span>
+      <span class="nut">${nut([["1", "1m"], ["5", "5m"], ["15", "15m"], ["60", "1H"], ["D", "1D"], ["W", "1W"], ["M", "1M"]], ST.khung, "fsk")}</span>
       ${menu_khoi()}
       <span class="nut">${nut([["kl", "Khối lượng"]].concat(k.g?.nn ? [["nn", "Khối ngoại"]] : []), ST.duoi, "fsd")}</span>
-      <span class="ten">${esc(ten)}</span><button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button></div>
-    <div class="fs-than" id="fs-than"><div class="fs-trai">
-        <button data-cong="tro" title="Con trỏ (kéo / cuộn biểu đồ)">↖</button><button data-cong="duong" title="Đường xu hướng (2 điểm, kéo dài tới phiên cuối)">╱</button>
-        <button data-cong="ngang" title="Đường ngang (mức giá)">―</button><hr><button data-nam title="Nam châm: bám giá mở / đóng / cao / thấp của nến"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" d="M6 3v8a6 6 0 0 0 12 0V3M6 7h4M14 7h4"/></svg></button>
-        <button data-ve-lui title="Xoá hình vẽ cuối">↶</button><button data-ve-xoa title="Xoá mọi hình vẽ của mã này"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button></div>
+      <span class="ten">${esc(ten)}</span>${trang ? `<button class="thoat" id="fs-full" title="Toàn màn hình">⛶ Toàn màn hình</button>` : `<button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button>`}</div>
+    <div class="fs-than" id="fs-than"><div class="fs-trai" id="fs-trai"></div>
       <div class="fs-bd" id="fs-bd"></div></div>
     <div class="fs-day"><span class="nut">${nut(NUT_KHOANG, ST.nen, "fsn")}</span><span style="margin-left:auto" class="nut">
       <button data-bdc="pt" aria-pressed="false">%</button><button data-bdc="log" aria-pressed="false">log</button><button data-bdc="tu" aria-pressed="true">tự động</button><button data-bdc="vua">⤢ vừa khung</button></span></div>`;
   const than = $("#fs-than"); than.appendChild($("#ds-td")); than.appendChild($("#rail"));
-  if (moi) { try { if (!document.fullscreenElement) await el.requestFullscreen?.(); } catch (e) {} }
-  try { history.replaceState(null, "", "#" + ma); } catch (e) {}
+  if (moi && !trang) { try { if (!document.fullscreenElement) await el.requestFullscreen?.(); } catch (e) {} }
+  try { history.replaceState(null, "", trang ? "#bieu-do/" + ma : "#" + ma); } catch (e) {}
+  tai_ve().then(V => { const tr = $("#fs-trai"); if (tr) V.thanh(tr); }).catch(() => {});
   gan_fs();
   ds_td_ve();
   await fs_ve();
@@ -2300,33 +2307,60 @@ async function fs_ve(giu = false) {                    // vẽ (lại) biểu đ
   const vung = giu && BD_DK ? BD_GIA?.timeScale().getVisibleLogicalRange() : null;
   const k = await tai_ma(FS.ma);
   el.innerHTML = "";
-  await ve_bd_gia(el, chuoi_gia(k, FS.ma), {gn: gia_nay(FS.ma, k), n: k.n, ma: FS.ma, fs: true, giu_vung: vung});
-  document.querySelectorAll("[data-cong]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cong === VS.cong)));
-  document.querySelector("[data-nam]")?.setAttribute("aria-pressed", String(VS.nam));
+  const x = chuoi_gia(k, FS.ma);
+  if (!x && !PHUT(ST.khung)) { el.innerHTML = '<div class="trong">Chưa có lịch sử giá cho mã này.</div>'; return; }
+  await ve_bd_gia(el, x || {d: [], o: [], h: [], l: [], c: [], v: [], nn: []}, {gn: gia_nay(FS.ma, k), n: k.n, ma: FS.ma, fs: true, giu_vung: vung});
 }
 function gan_fs() {
-  $("#fs-thoat").onclick = fs_dong;
+  if ($("#fs-thoat")) $("#fs-thoat").onclick = () => fs_dong();
+  if ($("#fs-full")) $("#fs-full").onclick = () => { const f = $("#fs"); if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); else f?.requestFullscreen?.().catch(() => {}); };
   const o = $("#fs-o"); o.onkeydown = e => { if (e.key === "Enter") { const m = tim_ma(o.value) || o.value.trim().toUpperCase(); if (MA_OK(m)) fs_mo(m); } };
   o.onfocus = () => o.select();
   document.querySelectorAll("[data-fsk]").forEach(b => b.onclick = () => { ST.khung = b.dataset.fsk; fs_mo(FS.ma); });
   document.querySelectorAll("[data-fsd]").forEach(b => b.onclick = () => { ST.duoi = b.dataset.fsd; fs_mo(FS.ma); });
   document.querySelectorAll("[data-fsn]").forEach(b => b.onclick = () => { ST.nen = +b.dataset.fsn; fs_mo(FS.ma); });
   document.querySelectorAll("#fs [data-bdc]").forEach(b => b.onclick = () => dk_bd(b.dataset.bdc));
-  document.querySelectorAll("[data-cong]").forEach(b => b.onclick = () => { VS.cong = b.dataset.cong; VS.a = null; fs_ve(true); });
-  const nam = document.querySelector("[data-nam]"); if (nam) nam.onclick = () => { VS.nam = !VS.nam; nam.setAttribute("aria-pressed", String(VS.nam)); };
-  const lui = document.querySelector("[data-ve-lui]"); if (lui) lui.onclick = () => { (VE[FS.ma] || []).pop(); luu_ve(); ve_hinh(FS.ma); };
-  const xoa = document.querySelector("[data-ve-xoa]"); if (xoa) xoa.onclick = () => { if ((VE[FS.ma] || []).length && confirm(`Xoá mọi hình vẽ của ${FS.ma}?`)) { delete VE[FS.ma]; luu_ve(); ve_hinh(FS.ma); } };
 }
-function fs_dong() {
+function fs_dong(khong_dinh_tuyen = false) {
   if (!FS) return;
-  FS = null; VS.a = null; VS.tam = null;
+  FS = null;
   document.body.appendChild($("#ds-td")); document.body.appendChild($("#rail"));
   $("#fs")?.remove();
   if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
   BD_GIA = null; BD_DK = null;
-  dinh_tuyen(); ds_td_ve();
+  if (!khong_dinh_tuyen) dinh_tuyen(); ds_td_ve();
 }
-document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && FS) fs_dong(); });
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && FS && !FS.trang) fs_dong(); });
+function bd_trang(m) {                                 // trang Biểu đồ: #bieu-do/<MÃ> (không mã → mã xem gần nhất)
+  let ma = String(m || "").toUpperCase();
+  if (!MA_OK(ma)) { try { ma = localStorage.getItem("bd_ma") || ""; } catch (e) {} }
+  if (!MA_OK(ma)) ma = (DS || [])[0]?.ma || "HPG";
+  return fs_mo(ma, {trang: true});
+}
+// gõ chữ / số trên biểu đồ (trang Biểu đồ, toàn màn hình) → ô tìm mã
+document.addEventListener("keydown", e => {
+  if (!FS || e.ctrlKey || e.metaKey || e.altKey || !/^[a-z0-9]$/i.test(e.key)) return;
+  if (e.target.closest?.("input,textarea,select,[contenteditable]")) return;
+  e.preventDefault(); mo_tim_bd(e.key.toUpperCase());
+});
+function mo_tim_bd(dau = "") {
+  const bd = $("#fs-bd"); if (!bd) return;
+  let b = $("#fs-tim");
+  if (!b) { b = document.createElement("div"); b.id = "fs-tim"; b.className = "fs-tim";
+    b.innerHTML = `<input placeholder="Gõ mã hoặc tên – Enter để mở" maxlength="20" spellcheck="false" aria-label="Tìm mã"><ul role="listbox"></ul>`; bd.appendChild(b); }
+  const o = b.querySelector("input"), ul = b.querySelector("ul"); let kq = [], i = 0;
+  const ve = () => { kq = goi_y_ma(o.value); if (!kq.length && o.value.trim()) { const m = tim_ma(o.value); if (m) kq = [{ma: m, ten: "", san: ""}]; }
+    ul.innerHTML = kq.map((r, j) => `<li data-ma="${esc(r.ma)}" class="${j === i ? "chon" : ""}"><b>${esc(r.ma)}</b><span>${esc(ten_ma(r) || r.nganh || "")}</span><i>${esc(r.san || "")}</i></li>`).join(""); };
+  const mo = m => { b.remove(); if (MA_OK(m)) fs_mo(m); };
+  let bo = false; const bo_ = () => { if (!bo) { bo = true; b.remove(); } };
+  o.value = dau; o.oninput = () => { i = 0; ve(); }; ve(); o.focus();
+  o.onkeydown = e => { e.stopPropagation();
+    if (e.key === "Escape") bo_();
+    else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (kq.length) { i = (i + (e.key === "ArrowDown" ? 1 : -1) + kq.length) % kq.length; ve(); } }
+    else if (e.key === "Enter") { e.preventDefault(); mo(kq[i]?.ma || o.value.trim().toUpperCase()); } };
+  ul.onmousedown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); mo(li.dataset.ma); } };
+  o.onblur = () => setTimeout(bo_, 150);
+}
 function tim_ma(q) {
   q = (q || "").trim().toUpperCase(); if (!q) return null;
   if (DS.some(r => r.ma === q) || (MA_OK(q) && LIVE[q])) return q;
@@ -2342,6 +2376,7 @@ function dinh_tuyen() {
   if (h === "NGANH") { dat(""); return hien_nganh(); }
   if (h === "LICH") { dat(""); return hien_lich(); }
   if (h === "RRG") { dat(""); return hien_rrg(); }
+  if (h === "BIEU-DO") { dat(""); return bd_trang(b); }
   if (MA_OK(h)) { dat(h); return hien_ma(h, TAB.some(t => t[0] === b) ? b : "tong-quan"); }
   dat(""); return hien_dau();
 }
@@ -2379,7 +2414,9 @@ document.addEventListener("click", e => { const n = e.target.closest("[data-loc-
 document.addEventListener("click", e => { const b = e.target.closest("[data-td]"); if (!b) return;
   doi_td(b.dataset.td); const co = TD.has(b.dataset.td); b.setAttribute("aria-pressed", co); b.textContent = co ? "✓ Đang theo dõi" : "+ Theo dõi"; ds_td_ve(); });
 let MA_TRUOC = "";
-addEventListener("hashchange", () => { if (FS) return; const m = location.hash.split("/")[0]; dinh_tuyen(); ds_td_ve(); if (m !== MA_TRUOC) scrollTo(0, 0); MA_TRUOC = m; });
+addEventListener("hashchange", () => {
+  if (FS && !FS.trang) return;
+  if (FS?.trang) { if (/^#bieu-do/i.test(location.hash)) return; fs_dong(true); } const m = location.hash.split("/")[0]; dinh_tuyen(); ds_td_ve(); if (m !== MA_TRUOC) scrollTo(0, 0); MA_TRUOC = m; });
 
 (async () => {
   try {
