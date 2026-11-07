@@ -668,3 +668,17 @@ def test_tra_cuu_dn_gia_dai(monkeypatch):
         assert False
     except ValueError:
         pass
+
+
+def test_tra_cuu_dn_bo_sung_gia_dai(tmp_path, monkeypatch):
+    from thi_truong import tra_cuu_dn as T
+    ra = str(tmp_path)
+    T._ghi({"cap_nhat": "2026-11-01", "c": [1.0]}, f"{ra}/gia_dai/AAA.json")              # còn hạn → bỏ qua
+    T._ghi({"cap_nhat": "2026-09-01", "c": [1.0]}, f"{ra}/gia_dai/BBB.json")              # quá hạn → tải lại
+    monkeypatch.setattr(T, "lay_gia_dai", lambda m: {"d0": "2010-01-04", "g": [0], "c": [2.0]} if m != "DDD" else 1 / 0)
+    xong, loi, con = T.bo_sung_gia_dai(["AAA", "BBB", "CCC", "DDD"], ra, phut=5, luong=2, in_ra=lambda *_: None,
+                                       hom_nay="2026-11-07")
+    assert (xong, loi, con) == (2, 1, 0)
+    assert T._doc(f"{ra}/gia_dai/AAA.json")["c"] == [1.0] and T._doc(f"{ra}/gia_dai/BBB.json")["c"] == [2.0]
+    assert T._doc(f"{ra}/gia_dai/CCC.json")["cap_nhat"] == "2026-11-07" and T._doc(f"{ra}/gia_dai/DDD.json") is None
+    assert T.bo_sung_gia_dai(["EEE"], ra, phut=0, in_ra=lambda *_: None)[2] == 1          # hết giờ → không nhận mã
