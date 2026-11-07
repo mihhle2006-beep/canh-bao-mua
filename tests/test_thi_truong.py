@@ -389,11 +389,13 @@ def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
     T._ghi({"cap_nhat": "2026-01-01"}, f"{ra}/gia/ZZZ.json")
     assert T.thu_tu(["AAA", "ZZZ"], ra, "2026-03-01") == ["ZZZ", "AAA"]                  # cùng độ cũ: định dạng cũ trước
     monkeypatch.setattr(T, "lay_gia", lambda m, san="", cu=None: {"d": ["2026-11-05"], "c": [1.0]})
+    monkeypatch.setattr(T, "lay_gia_dai", lambda m: {"d0": "2010-01-04", "g": [0], "c": [2.0]} if m != "CCC" else 1 / 0)
     monkeypatch.setattr(T, "lay_dn", lambda m, cu=None, *a: ({"ct": {"m": m}}, []) if m != "BBB" else ({}, ["ct"] * T.SO_PHAN_DN))
     xong, loi, con = T.chay(["AAA", "BBB", "CCC"], ra, phut=5, luong=2, in_ra=lambda *_: None)
     assert (xong, loi, con) == (3, 0, 0)
     assert T._doc(f"{ra}/dn/AAA.json")["ct"] == {"m": "AAA"} and T._doc(f"{ra}/dn/BBB.json")["cap_nhat"] == "2026-02-01"  # lỗi hết → giữ file
     assert T._doc(f"{ra}/gia/CCC.json")["c"] == [1.0]
+    assert T._doc(f"{ra}/gia_dai/AAA.json")["c"] == [2.0] and T._doc(f"{ra}/gia_dai/CCC.json") is None   # lỗi → bỏ qua
     _, _, con = T.chay(["DDD", "EEE"], ra, phut=0, in_ra=lambda *_: None)                   # hết giờ → không nhận mã mới
     assert con == 2
 
@@ -648,3 +650,21 @@ def test_lich_su_kien():
     assert (tu, den) == ("2026-10-23", "2027-03-06")
     assert [r[:3] for r in dong] == [["2026-11-01", "BBB", "cp"], ["2026-11-20", "AAA", "tien"]]
     assert dong[1][4:7] == ["2026-11-21", "2026-12-05", 500] and dong[0][7] == 0.1
+
+
+def test_tra_cuu_dn_gia_dai(monkeypatch):
+    from thi_truong import tra_cuu_dn as T
+    # 3 phiên (1 trùng ngày, 1 giá 0 bị bỏ) – giờ UTC 17:00 = 00:00 giờ VN ngày sau
+    monkeypatch.setattr(T.nguon, "nen", lambda ma, k, n: {"t": ["1262624400", "1262710800", "1262710800", "1263142800", "1263229200"],
+                                                          "o": [20000, 21000, 1, 22000, 0], "h": [21000, 22000, 1, 23456, 0],
+                                                          "l": [19000, 20000, 1, 21000, 0], "c": [20500, 21500, 1, 23456.7, 0],
+                                                          "v": [1e6, 2e6, 3, 3e6, 0]})
+    g = T.lay_gia_dai("AAA")
+    assert g["d0"] == "2010-01-05" and g["g"] == [0, 1, 5] and g["c"] == [20.5, 21.5, 23.46] and g["v"] == [1000000, 2000000, 3000000]
+    assert g["h"][-1] == 23.46 and T._4so(0.81234) == 0.8123
+    monkeypatch.setattr(T.nguon, "nen", lambda ma, k, n: {"t": ["1262624400"], "o": [1], "h": [1], "l": [1], "c": [1], "v": [1]})
+    try:
+        T.lay_gia_dai("AAA")
+        assert False
+    except ValueError:
+        pass

@@ -3,6 +3,9 @@
 DỮ LIỆU DOANH NGHIỆP CHO TRANG TRA CỨU MÃ (docs/ma/ – công khai; dò nguồn 05/11/2026 "Chan doan nguon" --trang_ma):
   gia/<MÃ>.json  lịch sử ngày ~2 năm (Vietcap IQ price-history): OHLC điều chỉnh, giá đóng cửa gốc, KL / GT khớp, thoả
                  thuận, khối ngoại mua / bán / ròng + % sở hữu, cung cầu (KL đặt mua / bán), tự doanh ròng (HOSE)
+  gia_dai/<MÃ>.json  nến ngày TỪ KHI CÓ DỮ LIỆU (gap-chart trading.vietcap – API biểu đồ của Vietcap, giá điều chỉnh, máy
+                 chủ khác IQ): gọn {d0, g (cách ngày), o, h, l, c, v}; tải lại sau HAN_GIA_DAI ngày (trang nối với gia/ và
+                 quy đổi theo tỷ lệ ở ngày nối nếu nguồn điều chỉnh khác nhau)
   dn/<MÃ>.json   hồ sơ + khuyến nghị Vietcap, cơ cấu sở hữu, cổ đông lớn, sự kiện (cổ tức, phát hành, ĐHCĐ…), giao dịch
                  nội bộ, chỉ số tài chính theo quý (P/E, P/B, ROE, NIM, nợ xấu…), tin CafeF, báo cáo CTCK (Simplize / CafeF),
                  hồ sơ KBS (thành lập, niêm yết, vốn điều lệ, giá chào sàn, công ty con – liên kết, lãnh đạo), tóm tắt Simplize
@@ -32,6 +35,9 @@ CAFEF_TIN = ("https://cafef.vn/du-lieu/Ajax/Events_RelatedNews_New.aspx?symbol={
              "&PageSize={so}&Type=2")
 MAU_CAU_TRUC = {"CT": "HPG", "NH": "TCB", "CK": "SSI", "BH": "BVH"}         # loại DN (comTypeCode Vietcap) → mã mẫu
 SO_PHIEN = 500
+SO_PHIEN_DAI = 7000                                               # ~28 năm phiên – gap-chart trả từ ngày niêm yết
+HAN_GIA_DAI = 30                                                  # ngày – tải lại lịch sử dài
+SO_TIN = 60
 SO_PHAN_DN = 12                                                    # ct cc cd sk nb cs tin bc kbs sz nn_nam tl
 # chỉ số Vietcap statistics-financial giữ lại (đủ bộ – trang tự đặt tên / nhóm); giá trị tiền → tỷ đồng
 CHI_SO_KHOA = ("pe", "pb", "ps", "priceToCashFlow", "evToEbitda", "dividendYield", "marketCap", "roe", "roa", "roic",
@@ -188,6 +194,33 @@ def gia_du_phong(ma):
         for k in ("o", "h", "l", "c", "c0"):
             out[k] = [_r(x / 1000) for x in out[k]]
     return out
+
+
+def _4so(x):
+    """4 chữ số có nghĩa (giá điều chỉnh cũ có thể < 1 nghìn đồng)."""
+    return float(f"{x:.4g}") if x else x
+
+
+def lay_gia_dai(ma):
+    """Nến ngày gap-chart từ khi có dữ liệu → {"d0": ngày đầu, "g": [cách ngày phiên trước…], "o", "h", "l", "c" (nghìn đồng,
+    4 chữ số có nghĩa), "v"} (cũ → mới)."""
+    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+    n = nguon.nen(ma, "ONE_DAY", SO_PHIEN_DAI) or {}
+    dong = []
+    for i, t in enumerate(n.get("t") or []):
+        c = n["c"][i]
+        if not c:
+            continue
+        d = (_dt.fromtimestamp(int(float(t)), _tz.utc) + _td(hours=7)).date()
+        dong.append((d, n["o"][i] or c, n["h"][i] or c, n["l"][i] or c, c, int(float(n["v"][i] or 0))))
+    dong.sort(key=lambda x: x[0])                                   # ổn định: trùng ngày giữ bản đến trước
+    dong = [x for i, x in enumerate(dong) if i == 0 or x[0] != dong[i - 1][0]]          # trùng ngày → giữ bản đầu
+    if len(dong) < 2:
+        raise ValueError("gap-chart rỗng")
+    k = 1e-3 if max(x[4] for x in dong) > 1000 else 1.0           # đồng → nghìn đồng
+    return {"d0": dong[0][0].isoformat(), "g": [0] + [(b[0] - a[0]).days for a, b in zip(dong, dong[1:])],
+            **{ten: [_4so(x[j] * k) for x in dong] for j, ten in ((1, "o"), (2, "h"), (3, "l"), (4, "c"))},
+            "v": [x[5] for x in dong]}
 
 
 def _lay_gia_iq(ma, san, so):
@@ -358,7 +391,7 @@ def tai_lieu(ma):
     return out
 
 
-def tin_cafef(ma, so=15):
+def tin_cafef(ma, so=SO_TIN):
     """Tin liên quan CafeF (HTML) → [{ngay, tieu_de, link}]."""
     r = nguon._phien().get(CAFEF_TIN.format(ma=ma, so=so), timeout=15,
                            headers={**nguon.H, "Referer": "https://cafef.vn/", "Origin": "https://cafef.vn",
@@ -368,7 +401,7 @@ def tin_cafef(ma, so=15):
     return tach_tin(r.text, so)
 
 
-def tach_tin(t, so=15):
+def tach_tin(t, so=SO_TIN):
     """HTML tin CafeF → [{ngay, tieu_de, link}]: mỗi mốc "dd/mm/yyyy [HH:MM]" lấy liên kết đầu tiên ngay sau nó."""
     out, da = [], set()
     for m in re.finditer(r"(\d{2})/(\d{2})/(\d{4})(?:\s+(\d{2}:\d{2}))?", t):
@@ -574,6 +607,15 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print, lam_moi=False):
         except Exception:                                           # noqa: BLE001
             ok = False
         _do("gia", ok, time.time() - t0)
+        dai = os.path.join(ra, "gia_dai", f"{m}.json")
+        cu_dai = (_doc(dai) or {}).get("cap_nhat") or ""
+        if not cu_dai or (date.fromisoformat(hom_nay) - date.fromisoformat(cu_dai)).days >= HAN_GIA_DAI:
+            t1 = time.time()
+            try:
+                _ghi({**lay_gia_dai(m), "cap_nhat": hom_nay}, dai)
+                _do("gia_dai", True, time.time() - t1)
+            except Exception:                                       # noqa: BLE001 – lịch sử dài là phần phụ
+                _do("gia_dai", False, time.time() - t1)
         dn_cu = _doc(os.path.join(ra, "dn", f"{m}.json")) or {}
         dn, hong = lay_dn(m, dn_cu, hom_nay)
         if len(hong) < SO_PHAN_DN:
