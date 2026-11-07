@@ -110,6 +110,17 @@ a.huy:hover{text-decoration:none;box-shadow:inset 0 0 0 1px currentColor}
 .nen-khung canvas{display:block;width:100%;height:360px;touch-action:pan-y}
 @media (max-width:600px){.nen-khung canvas{height:300px}}
 .nen-dk{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 14px 0}
+.bd-cong{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;padding:0 14px 6px;font-size:12.5px}
+.bd-cong .goi{color:var(--phu);margin-right:auto}
+.bd-khung:fullscreen{background:#fff;padding:10px;overflow:auto}
+.bd-khung:fullscreen .bd-gia{height:calc(100vh - 150px)}
+.ss-dk{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 14px 0;font-size:13px}
+.ss-dk select,.ss-dk input{font:inherit;padding:5px 8px;border:1px solid var(--vien);border-radius:8px;background:var(--the);color:var(--chu)}
+.ss-dk input{min-width:220px;flex:1}
+.ss-chu{display:flex;gap:6px 12px;flex-wrap:wrap;justify-content:center;padding:4px 14px 12px;font-size:12.5px}
+.ss-chu button{border:0;background:none;padding:2px 4px;cursor:pointer;color:var(--chu);font:inherit}
+.ss-chu button[aria-pressed="false"]{opacity:.35;text-decoration:line-through}
+.ss-chu i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .nen-dk label{font-size:12.5px;color:var(--chu2);display:inline-flex;gap:4px;align-items:center}
 .goi-y{position:absolute;pointer-events:none;background:#1d2430;color:#fff;font-size:12px;line-height:1.45;
   padding:6px 9px;border-radius:6px;z-index:5;display:none;white-space:nowrap;box-shadow:0 4px 14px #0003}
@@ -302,7 +313,7 @@ function vgm_html(v) {                          // "B A C B" → Giá trị B ·
   return c.map((x, i) => `${i === 3 ? "<b>" : ""}${VGM_TEN[i]} <span class="${lop(x)}">${esc(x)}</span>${i === 3 ? "</b>" : ""}`).join(" · ");
 }
 const KHO = {};                     // mã → {r, g, n, b}
-const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true, ema: [], dc: 0, mk: true, nguon: "vc", tin_n: 20, pel: "pe", pen: 1250};
+const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true, ema: [], dc: 0, mk: true, nguon: "vc", tin_n: 20, pel: "pe", pen: 1250, thang: null, ss_x: "roe", ss_y: "pb_h", ss_s: "von", ss_peers: {}, ss_an: {}};
 let CS_NGANH = null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -552,7 +563,25 @@ function gop_khung(x, khung) {                          // nến ngày → tuầ
     if (x.nn?.[i] != null) o.nn[j] = (o.nn[j] || 0) + x.nn[i]; });
   return o;
 }
-let BD_GIA = null;
+let BD_GIA = null, BD_DK = null;
+const thang_hl = () => ST.thang || (ST.nen >= 99999 ? "log" : "thuong");      // chưa chọn: "Tất cả" dùng log
+const che_do_thang = LW => ({log: LW.PriceScaleMode.Logarithmic, pt: LW.PriceScaleMode.Percentage})[thang_hl()] ?? LW.PriceScaleMode.Normal;
+function nut_bd() {                                  // trạng thái nút %, log, tự động theo biểu đồ (kéo trục giá → tắt tự động)
+  if (!BD_DK) return;
+  let tu = true; try { tu = BD_DK.nen.priceScale().options().autoScale; } catch (e) {}
+  document.querySelectorAll("[data-bdc]").forEach(b => { const c = b.dataset.bdc;
+    if (c === "pt" || c === "log") b.setAttribute("aria-pressed", String(thang_hl() === c));
+    if (c === "tu") b.setAttribute("aria-pressed", String(tu)); });
+}
+function dk_bd(c, khung) {                           // điều khiển biểu đồ giá tại chỗ (giữ nguyên vùng đang xem)
+  if (c === "full") { if (document.fullscreenElement) document.exitFullscreen?.(); else khung?.requestFullscreen?.(); return; }
+  if (!BD_DK) return;
+  const {ch, nen, LW, n, so_nen} = BD_DK;
+  if (c === "pt" || c === "log") { ST.thang = thang_hl() === c ? "thuong" : c; nen.priceScale().applyOptions({mode: che_do_thang(LW), autoScale: true}); }
+  if (c === "tu") { nen.priceScale().applyOptions({autoScale: true}); ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: n + 3}); }
+  if (c === "vua") { nen.priceScale().applyOptions({autoScale: true}); ch.timeScale().fitContent(); }
+  nut_bd();
+}
 async function ve_bd_gia(el, x0, them = {}) {
   const LW = await tai_lwc();
   if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
@@ -564,7 +593,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   BD_GIA = ch;
   const nen = ch.addCandlestickSeries({upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false, wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineColor: "#7a8494"});
   nen.setData(x.d.map((d, i) => ({time: d, open: x.o[i], high: x.h[i], low: x.l[i], close: x.c[i]})));
-  nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}, mode: ST.nen >= 99999 ? LW.PriceScaleMode.Logarithmic : LW.PriceScaleMode.Normal});   // "Tất cả": thang log
+  nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}, autoScale: true, mode: che_do_thang(LW)});   // mặc định: "Tất cả" thang log
   const MAU_MA = {10: "#e8710a", 20: "#1f6feb", 50: "#9b3fd1", 200: "#0e9fb3"}, ma = {};
   for (const m of ST.ma_tb) { const v = sma(x.c, m); ma[m] = v;
     const l = ch.addLineSeries({color: MAU_MA[m], lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
@@ -586,6 +615,9 @@ async function ve_bd_gia(el, x0, them = {}) {
     return {time: d, value: v, color: tang ? "#0f8a4a66" : "#d1342b66"}; }).filter(Boolean));
   const so_nen = ST.khung === "D" ? ST.nen : ST.khung === "W" ? Math.ceil(ST.nen / 5) : Math.ceil(ST.nen / 21);
   ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: n + 3});
+  BD_DK = {ch, nen, LW, n, so_nen};
+  for (const ev of ["pointerup", "wheel", "touchend", "dblclick"]) el.addEventListener(ev, () => setTimeout(nut_bd, 60), {passive: true});
+  nut_bd();
   const cg = document.createElement("div"); cg.className = "chu-bd"; el.appendChild(cg);
   const viet = i => { if (i == null || i < 0 || i >= n) return; const p = x.tam && i === n - 1 && x.tc ? x.c[i] / x.tc - 1 : i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
     cg.innerHTML = `${ngay_vn(x.d[i])}${x.tam && i === n - 1 ? " (tạm)" : ""} · M <b>${so(x.o[i], 2)}</b> C <b>${so(x.h[i], 2)}</b> T <b>${so(x.l[i], 2)}</b> Đ <b class="${mau(p)}">${so(x.c[i], 2)}</b> <span class="${mau(p)}">${pt(p, 2)}</span>` +
@@ -623,7 +655,10 @@ function tong_quan(ma, k) {
        ${[["20", "Donchian 20"], ["52", "Kênh 52 tuần"]].map(([m, t]) => `<label><input type="checkbox" data-dc="${m}"${ST.dc === +m ? " checked" : ""}>${t}</label>`).join("")}
        <label title="CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán"><input type="checkbox" data-mk${ST.mk ? " checked" : ""}>Sự kiện</label>
        <span class="nut">${nut([["kl", "Khối lượng"]].concat(x.nn?.some(v => v != null) ? [["nn", "Khối ngoại"]] : []), ST.duoi, "duoi")}</span></div>
-       <div class="bd-gia" id="bd-gia"></div>
+       <div class="bd-khung" id="bd-khung"><div class="bd-gia" id="bd-gia"></div>
+       <div class="bd-cong"><span class="goi">kéo trục giá / thời gian để co giãn · cuộn để phóng to · bấm đúp trục để đặt lại</span>
+         <span class="nut"><button data-bdc="pt" aria-pressed="false" title="Thang % so với nến đầu vùng xem">%</button><button data-bdc="log" aria-pressed="false" title="Thang logarit">log</button><button data-bdc="tu" aria-pressed="true" title="Cột giá tự co giãn theo vùng đang xem + trục thời gian về khoảng đã chọn">tự động</button></span>
+         <span class="nut"><button data-bdc="vua" title="Xem toàn bộ lịch sử trong khung">⤢ vừa khung</button><button data-bdc="full" title="Toàn màn hình">⛶ toàn màn hình</button></span></div></div>
        <div class="hieu-suat">${hs.map(([t, v]) => `<div><div class="n">${t}</div><b class="${mau(v)}">${pt(v, 2)}</b></div>`).join("")}</div>`,
       nut([[22, "1T"], [66, "3T"], [130, "6T"], [250, "1N"], [750, "3N"], [1250, "5N"], [99999, "Tất cả"]], ST.nen, "nen"));
   } else h += the("Biểu đồ giá", `<a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`, `<div class="trong">Chưa có lịch sử giá cho mã này (cập nhật xoay vòng mỗi sáng).</div>`);
@@ -828,6 +863,57 @@ async function tai_chinh(ma, k) {
     `<div class="than" style="padding-bottom:0">${nut_nguon(b)} <span class="nut">${nut([["kd", "Kết quả kinh doanh"], ["cd", "Cân đối kế toán"], ["lc", "Lưu chuyển tiền tệ"]], ST.bang, "bang")}</span></div>
      <div class="bieu" style="padding:6px 8px 0">${chart}</div>${chu_giai(cg)}${bang}`, nut([["q", "Quý"], ["y", "Năm"]], ST.ky, "ky"));
   return h;
+}
+// SO SÁNH TƯƠNG QUAN: bong bóng X / Y / độ lớn cho nhóm so sánh (mặc định cùng ngành, vốn hoá lớn nhất) – chỉ số ds.json + giá trong phiên
+const SS_CS = [["roe", "ROE", 1, -1, 1], ["roa", "ROA", 1, -.5, .5], ["pe_h", "P/E", 0, 0, 100], ["pb_h", "P/B", 0, 0, 15],
+  ["bien_rong", "Biên LN ròng", 1, -1, 1], ["bien", "Biên gộp", 1, -1, 1], ["no_vcsh", "Nợ / VCSH", 0, 0, 15], ["ln4_yoy", "LNST 4 quý YoY", 1, -1, 3],
+  ["dt4_yoy", "Doanh thu 4 quý YoY", 1, -1, 3], ["cagr", "LNST CAGR 3 năm", 1, -1, 3], ["dinh_gia", "Chênh định giá hệ thống", 1, -1, 3], ["peg", "PEG", 0, 0, 5],
+  ["von", "Vốn hoá (tỷ)", 0, 0, 1e12]];
+const SS_MAU = ["#e8710a", "#f08a5d", "#b5b2f0", "#8fd14f", "#5fc9c0", "#6f74e8", "#e83ad6", "#7fe0a0", "#f2d15c", "#7b1f7a", "#d1342b", "#4dd8e8", "#2E7D32", "#9b3fd1", "#0e9fb3", "#7a8494"];
+const ss_gt = (x, key) => { const v = x[key]; const d = SS_CS.find(c => c[0] === key); return v == null || !isFinite(v) || !d || v <= d[3] && d[3] === 0 || v < d[3] || v > d[4] ? null : v; };
+const ss_f = (key, v, l = 1) => { const d = SS_CS.find(c => c[0] === key); if (v != null && Math.abs(v) < 5e-4) v = 0; return v == null ? "–" : d?.[2] ? pt(v, l, false) : key === "von" ? so(v, 0) : so(v, 2); };
+function ss_nhom(ma) {
+  const r = DS.find(x => x.ma === ma); if (!r) return [];
+  const tu = ST.ss_peers[ma];
+  if (tu?.length) return [ma, ...tu.filter(m => m !== ma && DS.some(x => x.ma === m))];
+  return [ma, ...DS.filter(x => x.nganh && x.nganh === r.nganh && x.ma !== ma).sort((a, b) => (b.von || 0) - (a.von || 0)).slice(0, 11).map(x => x.ma)];
+}
+function so_sanh_tq(ma) {
+  const r = DS.find(x => x.ma === ma); if (!r) return "";
+  for (const x of DS) { x.gia_h = gia_h(x); x.pe_h = x.eps > 0 && x.gia_h ? x.gia_h / x.eps : null; x.pb_h = x.bvps > 0 && x.gia_h ? x.gia_h / x.bvps : null; }
+  const ds = ss_nhom(ma), an = ST.ss_an[ma] || [], X = ST.ss_x, Y = ST.ss_y, S = ST.ss_s;
+  const mau = Object.fromEntries(ds.map((m, i) => [m, SS_MAU[i % SS_MAU.length]]));
+  const diem = ds.filter(m => !an.includes(m)).map(m => DS.find(x => x.ma === m)).filter(Boolean).map(x => ({ma: x.ma, x: ss_gt(x, X), y: ss_gt(x, Y), s: S ? ss_gt(x, S) : 1, r: x}));
+  const ve = diem.filter(d => d.x != null && d.y != null), thieu = diem.filter(d => d.x == null || d.y == null).map(d => d.ma);
+  const chon = (id, gt) => `<select data-ss="${id}">${(id === "s" ? [["", "Đều nhau"]] : []).concat(SS_CS.map(c => [c[0], c[1]])).map(([k_, t]) => `<option value="${k_}"${k_ === gt ? " selected" : ""}>${esc(t)}</option>`).join("")}</select>`;
+  const dk = `<div class="ss-dk"><label>Trục X ${chon("x", X)}</label><label>Trục Y ${chon("y", Y)}</label><label>Độ lớn ${chon("s", S)}</label>
+    <input id="ss-peers" value="${esc(ds.slice(1).join(", "))}" placeholder="Mã so sánh, cách nhau dấu phẩy" title="Thay đổi nhóm so sánh"><button class="nut-tai" id="ss-ap">Đổi nhóm</button><button class="nut-tai" id="ss-mac">Cùng ngành</button></div>`;
+  let svg = `<div class="trong">Chưa đủ số liệu ${esc(SS_CS.find(c => c[0] === X)?.[1] || X)} / ${esc(SS_CS.find(c => c[0] === Y)?.[1] || Y)} cho nhóm này.</div>`;
+  if (ve.length >= 2) {
+    const W = W_RONG(), H = innerWidth < 700 ? 340 : 440, L = 62, R = 24, T = 20, B = 44;
+    const xs = ve.map(d => d.x), ys = ve.map(d => d.y), sm = Math.max(...ve.map(d => d.s || 0), 1e-9);
+    const mo = (a) => { let lo = Math.min(...a), hi = Math.max(...a); const p = (hi - lo) * .12 || Math.abs(hi) * .2 || 1; return [lo - p, hi + p]; };
+    const [x0, x1] = mo(xs), [y0, y1] = mo(ys), PX = v => L + (v - x0) / (x1 - x0) * (W - L - R), PY = v => T + (y1 - v) / (y1 - y0) * (H - T - B);
+    const rad = d => S ? 7 + 33 * Math.sqrt(Math.max(d.s || 0, 0) / sm) : 11;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="So sánh tương quan">`;
+    for (let i = 0; i <= 4; i++) { const vx = x0 + (x1 - x0) * i / 4, vy = y0 + (y1 - y0) * i / 4;
+      s += `<line x1="${PX(vx)}" x2="${PX(vx)}" y1="${T}" y2="${H - B}" stroke="#f0f2f5"/><text x="${PX(vx)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="#7a8494">${ss_f(X, vx, 0)}</text>`;
+      s += `<line x1="${L}" x2="${W - R}" y1="${PY(vy)}" y2="${PY(vy)}" stroke="#f0f2f5"/><text x="${L - 8}" y="${PY(vy) + 4}" text-anchor="end" font-size="11" fill="#7a8494">${ss_f(Y, vy, 0)}</text>`; }
+    const tvx = trung_vi(xs), tvy = trung_vi(ys);
+    s += `<line x1="${PX(tvx)}" x2="${PX(tvx)}" y1="${T}" y2="${H - B}" stroke="#2E7D32" stroke-dasharray="4 4" opacity=".55"/><line x1="${L}" x2="${W - R}" y1="${PY(tvy)}" y2="${PY(tvy)}" stroke="#2E7D32" stroke-dasharray="4 4" opacity=".55"/>`;
+    s += `<text x="${PX(tvx) + 4}" y="${T + 12}" font-size="10.5" fill="#2E7D32">trung vị ${ss_f(X, tvx)}</text><text x="${W - R - 4}" y="${PY(tvy) - 4}" text-anchor="end" font-size="10.5" fill="#2E7D32">trung vị ${ss_f(Y, tvy)}</text>`;
+    s += `<text x="${W - R}" y="${H - 6}" text-anchor="end" font-size="11.5" fill="#4b5565">X: ${esc(SS_CS.find(c => c[0] === X)?.[1] || "")}</text><text x="${L}" y="${T - 6}" font-size="11.5" fill="#4b5565">Y: ${esc(SS_CS.find(c => c[0] === Y)?.[1] || "")}</text>`;
+    for (const d of [...ve].sort((a, b) => rad(b) - rad(a))) {
+      const cx = PX(d.x), cy = PY(d.y), rr = rad(d), c = mau[d.ma], toi = d.ma === ma;
+      s += `<g><title>${esc(d.ma)} · ${esc(SS_CS.find(c_ => c_[0] === X)?.[1])} ${ss_f(X, d.x)} · ${esc(SS_CS.find(c_ => c_[0] === Y)?.[1])} ${ss_f(Y, d.y)}${S ? ` · ${esc(SS_CS.find(c_ => c_[0] === S)?.[1])} ${ss_f(S, d.s)}` : ""}</title>` +
+        `<circle cx="${cx}" cy="${cy}" r="${rr}" fill="${c}" fill-opacity="${toi ? .75 : .45}" stroke="${toi ? "#1b1f24" : c}" stroke-width="${toi ? 2.5 : 1.2}"/>` +
+        (rr >= 15 ? `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="${toi ? 13 : 11.5}" font-weight="700" fill="#1b1f24">${esc(d.ma)}</text>`
+          : `<text x="${cx + rr + 3}" y="${cy + 4}" font-size="11" font-weight="${toi ? 700 : 500}" fill="#1b1f24">${esc(d.ma)}</text>`) + `</g>`;
+    }
+    svg = `<div class="bieu" style="padding:6px 8px 0">${s}</svg></div>`;
+  }
+  const chu = `<div class="ss-chu">${ds.map(m => `<button data-ssan="${esc(m)}" aria-pressed="${!an.includes(m)}"><i style="background:${mau[m]}"></i>${esc(m)}</button>`).join("")}</div>`;
+  return the("So sánh tương quan", `${ST.ss_peers[ma]?.length ? "nhóm tự chọn" : esc(r.nganh || "")} · ${ds.length} mã · bấm mã ở chú giải để ẩn / hiện${thieu.length ? ` · thiếu / ngoài thang: ${esc(thieu.join(", "))}` : ""}`, dk + svg + chu);
 }
 function so_nganh(ma, k) {
   const r = DS.find(x => x.ma === ma); if (!r || !r.nganh) return "";
@@ -1234,7 +1320,7 @@ function f_cs(kieu) { return kieu === "%" ? v => pt(v, 2, false) : kieu === "%a"
 async function chi_so(ma, k) {
   const n = k.n || {}, cs = n.cs, r = k.r || {};
   if (!CS_NGANH) CS_NGANH = (await lay(DL + "chi_so_nganh.json", false)) || {};
-  if (!cs?.ky?.length) return so_nganh(ma, k) || the("Chỉ số tài chính", "", `<div class="trong">Chưa có chỉ số theo quý cho mã này (cập nhật xoay vòng mỗi sáng).</div>`);
+  if (!cs?.ky?.length) return (so_nganh(ma, k) || the("Chỉ số tài chính", "", `<div class="trong">Chưa có chỉ số theo quý cho mã này (cập nhật xoay vòng mỗi sáng).</div>`)) + so_sanh_tq(ma);
   const nhom = NHOM_CS.map(([t, ds]) => [t, ds.filter(([key]) => cs[key])]).filter(([, ds]) => ds.length);
   if (r.suc_khoe?.loai === "NH" || cs.netInterestMargin) { const i = nhom.findIndex(x => x[0] === "Ngân hàng"); if (i > 0) nhom.unshift(...nhom.splice(i, 1)); }
   const chon = Math.min(ST.cs, nhom.length - 1), [ten_n, ds] = nhom[chon], ng = (CS_NGANH || {})[r.nganh] || {};
@@ -1251,7 +1337,7 @@ async function chi_so(ma, k) {
   return `<div class="sub">${nhom.map(([t], i) => `<button data-csn="${i}" aria-pressed="${i === chon}">${esc(t)}</button>`).join("")}</div>` +
     the(ten_n, `4 quý gần nhất mỗi kỳ · Vietcap · ngành ${esc(r.nganh || "–")}${ng.pe ? ` (${ng.pe[1]} mã)` : ""} · bấm tên chỉ số để xem biểu đồ · ${nut_tai("tai-cs", "Tải Excel")}`,
       `<div class="bang-boc"><table><thead><tr><th class="trai">Chỉ số</th>${ky.map(x => `<th>${esc(x)}</th>`).join("")}<th>Trung vị ngành</th><th>So ngành</th></tr></thead><tbody>${dong}</tbody></table></div>` +
-      `<div class="khoi-dau" style="border-top:1px solid var(--luoi)"><h2 style="font-size:14px">${esc(sel[1])}</h2><span class="phu">${esc(cs.ky[0])} – ${esc(cs.ky[L - 1])}</span></div><div class="bieu" style="padding:6px 8px">${bieu}</div>${chu_giai([[sel[1], "#1f6feb"]].concat(tv != null ? [["Trung vị ngành", "#e8a400"]] : []))}`) + so_nganh(ma, k);
+      `<div class="khoi-dau" style="border-top:1px solid var(--luoi)"><h2 style="font-size:14px">${esc(sel[1])}</h2><span class="phu">${esc(cs.ky[0])} – ${esc(cs.ky[L - 1])}</span></div><div class="bieu" style="padding:6px 8px">${bieu}</div>${chu_giai([[sel[1], "#1f6feb"]].concat(tv != null ? [["Trung vị ngành", "#e8a400"]] : []))}`) + so_nganh(ma, k) + so_sanh_tq(ma);
 }
 
 // ---------------------------------------------------------------- ĐỊNH GIÁ
@@ -1667,7 +1753,13 @@ function gan_su_kien(ma, k, tab) {
   document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { ST.tl = b.dataset.tl; ve_lai(); });
   document.querySelectorAll("[data-csn]").forEach(b => b.onclick = () => { ST.cs = +b.dataset.csn; ST.cs_chon = null; ve_lai(); });
   document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { ST.cs_chon = b.dataset.cs; ve_lai(); });
+  document.querySelectorAll("[data-bdc]").forEach(b => b.onclick = () => dk_bd(b.dataset.bdc, $("#bd-khung")));
   if ($("#tai-bctc")) $("#tai-bctc").onclick = () => ST.nguon === "vnd" && KHO[ma]?.bd ? xlsx_bctc_dai(ma) : xlsx_bctc(ma);
+  document.querySelectorAll("[data-ss]").forEach(b => b.onchange = () => { ST["ss_" + b.dataset.ss] = b.value; ve_lai(); });
+  document.querySelectorAll("[data-ssan]").forEach(b => b.onclick = () => { const a = ST.ss_an[ma] || (ST.ss_an[ma] = []), m = b.dataset.ssan, i = a.indexOf(m); i < 0 ? a.push(m) : a.splice(i, 1); ve_lai(); });
+  if ($("#ss-ap")) $("#ss-ap").onclick = () => { ST.ss_peers[ma] = $("#ss-peers").value.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean); ST.ss_an[ma] = []; ve_lai(); };
+  if ($("#ss-peers")) $("#ss-peers").onkeydown = e => { if (e.key === "Enter") $("#ss-ap").click(); };
+  if ($("#ss-mac")) $("#ss-mac").onclick = () => { delete ST.ss_peers[ma]; ST.ss_an[ma] = []; ve_lai(); };
   document.querySelectorAll("[data-nguon]").forEach(b => b.onclick = () => { ST.nguon = b.dataset.nguon; ve_lai(); });
   document.querySelectorAll("[data-pel]").forEach(b => b.onclick = () => { ST.pel = b.dataset.pel; ve_lai(); });
   document.querySelectorAll("[data-pen]").forEach(b => b.onclick = () => { ST.pen = +b.dataset.pen; ve_lai(); });
@@ -1677,7 +1769,7 @@ function gan_su_kien(ma, k, tab) {
   const bb = $("#bang-bctc"); if (bb) bb.scrollLeft = bb.scrollWidth;
   const bd = $("#bd-gia");
   if (bd) ve_bd_gia(bd, chuoi_gia(k, ma), {gn: gia_nay(ma, k), n: k.n}).catch(() => { bd.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
-  else if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
+  else if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; BD_DK = null; }
   const bp = $("#bd-pe"), P = bp ? chuoi_pe(k, ma) : null;
   if (bp && P) ve_bd_pe(bp, P).catch(() => { bp.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
   else if (BD_PE) { try { BD_PE.remove(); } catch (e) {} BD_PE = null; }
