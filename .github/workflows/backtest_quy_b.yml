@@ -8,6 +8,8 @@
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
+#   cham1r – (chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
+#           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -56,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan]
+        phan: [chuan, cham1r]
     runs-on: ubuntu-24.04
     defaults:
       run:
