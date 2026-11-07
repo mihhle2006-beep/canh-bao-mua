@@ -3,10 +3,11 @@
 NẾN 1' VÀ 5' CHO TRANG BIỂU ĐỒ (docs/ma, khung 1 phút / 5 phút / 15 phút / 1 giờ) – chạy SAU tra_cuu_dn (cần gia/<MÃ>.json để
 chọn mã thanh khoản). Nguồn DNSE chart-api (giữ ~3 tháng nến phút); file cũ trong cache được nối thêm phần mới nên lịch sử 5'
 dài dần (giữ tối đa GIU_NGAY), 1' giữ ~3 tháng.
-  • Mã: SO_MA mã GTGD TB 20 phiên cao nhất (gia/<MÃ>.json "gt") + mã trong --them.
+  • Mã: MỌI mã có gia/<MÃ>.json (SO_MA = 0; > 0: chỉ SO_MA mã GTGD TB 20 phiên cao nhất) + mã thêm thi_truong/ma_them.txt
+    + mã trong --them.
   • File phut/<1|5>/<MÃ>.json gọn: {"t0": giây UTC nến đầu, "dt": [phút cách nến trước], "c": [giá ×100, chênh nến trước],
     "o" / "h" / "l": [giá đóng ×100 − giá ×100], "v": [KL]} ; phut/ds.json {"cap_nhat", "1": [mã], "5": [mã]}.
-  python -m thi_truong.phut_web --ra docs/ma/du_lieu [--so_ma 400] [--them HPG,FPT]
+  python -m thi_truong.phut_web --ra docs/ma/du_lieu [--so_ma 0] [--them HPG,FPT]
   • --trong_phien (Bảng thị trường, mỗi lần chạy trong giờ giao dịch): chỉ nối nến mới cho SO_MA_PHIEN mã thanh khoản cao nhất
     + mã đang giữ (--them_file) + mã bot đang khuyến nghị / bộ lọc (--tin_hieu), không xoá file mã khác, ds.json cộng dồn.
 """
@@ -22,13 +23,13 @@ import requests
 
 URL = "https://services.entrade.com.vn/chart-api/v2/ohlcs/stock"
 GIU_NGAY = {"1": 95, "5": 370}
-SO_MA = 400
+SO_MA = 0                                                  # 0 = mọi mã (từ 07/11/2026; trước là 400 mã thanh khoản cao nhất)
 SO_MA_PHIEN = 60
 VN = timezone(timedelta(hours=7))
 
 
 def ma_thanh_khoan(thu_muc, so_ma=SO_MA, them=()):
-    """Mã GTGD TB 20 phiên cao nhất từ gia/<MÃ>.json (+ them)."""
+    """Mã GTGD TB 20 phiên cao nhất từ gia/<MÃ>.json (so_ma ≤ 0: mọi mã) + them."""
     ds = []
     for f in glob.glob(os.path.join(thu_muc, "gia", "*.json")):
         try:
@@ -39,7 +40,7 @@ def ma_thanh_khoan(thu_muc, so_ma=SO_MA, them=()):
         except (OSError, ValueError):
             continue
     ds.sort(reverse=True)
-    out = [m for _, m in ds[:so_ma]]
+    out = [m for _, m in (ds[:so_ma] if so_ma and so_ma > 0 else ds)]
     return out + [m for m in them if m and m not in out]
 
 
@@ -109,7 +110,8 @@ def cap_nhat(thu_muc, ma, res, bay_gio):
 
 def ma_them(them="", them_file=None, tin_hieu=None, bo_loc=None):
     """Mã thêm: chuỗi "A,B" + file một dòng "A,B" (mã đang giữ) + du_lieu.json Bảng thị trường (tin_hieu.ma) + ma_mua_bo_loc.json."""
-    ds = [m for m in them.split(",")]
+    from . import ma_them as _them
+    ds = [m for m in them.split(",")] + _them()
     try:
         ds += open(them_file, encoding="utf-8").read().replace("\n", ",").split(",") if them_file else []
     except OSError:

@@ -38,6 +38,15 @@ def test_chon_ma_thanh_khoan(tmp_path):
         (tmp_path / "gia" / f"{m}.json").write_text(json.dumps({"c": [1] * 30, "gt": [gt] * 30}))
     (tmp_path / "gia" / "MOI.json").write_text(json.dumps({"c": [1] * 5, "gt": [999] * 5}))     # mới niêm yết < 20 phiên: bỏ
     assert P.ma_thanh_khoan(str(tmp_path), 2, ["ZZZ", "BBB"]) == ["BBB", "AAA", "ZZZ"]
+    assert P.ma_thanh_khoan(str(tmp_path), 0) == ["BBB", "AAA", "CCC"] == P.ma_thanh_khoan(str(tmp_path))   # 0 = mọi mã
+
+
+def test_ma_them_doc_file(tmp_path):
+    from thi_truong import ma_them
+    p = tmp_path / "ma_them.txt"
+    p.write_text("# ghi chú SBX\nsbb, VNM\n  hpg\nVNM x\n", encoding="utf-8")
+    assert ma_them(str(p)) == ["SBB", "VNM", "HPG"] and ma_them(str(tmp_path / "khong.txt")) == []
+    assert "SBB" in ma_them()
 
 
 def test_trong_phien_chi_noi_ma_chon_va_giu_ma_khac(tmp_path, monkeypatch):
@@ -56,10 +65,12 @@ def test_trong_phien_chi_noi_ma_chon_va_giu_ma_khac(tmp_path, monkeypatch):
     bl.write_text(json.dumps({"ma": {"LLL": ["quy_b"]}}))
     chay = []
     monkeypatch.setattr(P, "cap_nhat", lambda thu_muc, ma, res, bay_gio: chay.append((ma, res)) or 3)
+    monkeypatch.setattr("thi_truong.ma_them", lambda: ["SBB"])                    # thi_truong/ma_them.txt
     assert P.main(["--ra", str(tmp_path), "--trong_phien", "--so_ma", "1", "--them_file", str(giu), "--tin_hieu", str(tt),
                    "--bo_loc", str(bl), "--them", "x y,ZZZ"]) == 0
-    assert sorted({m for m, _ in chay}) == ["BBB", "GGG", "LLL", "TTT", "ZZZ"]       # top 1 + giữ + bot + bộ lọc (bỏ chuỗi rác)
+    assert sorted({m for m, _ in chay}) == ["BBB", "GGG", "LLL", "SBB", "TTT", "ZZZ"]   # top 1 + giữ + bot + bộ lọc + mã thêm (bỏ rác)
     assert (tmp_path / "phut" / "1" / "CU.json").exists()                          # không xoá file mã khác
     ds = json.loads((tmp_path / "phut" / "ds.json").read_text())
     assert "CU" in ds["1"] and "TTT" in ds["5"]
+    monkeypatch.setattr("thi_truong.ma_them", lambda: [])
     assert P.ma_them("", str(tmp_path / "khong_co.txt"), str(tmp_path / "khong.json"), None) == []
