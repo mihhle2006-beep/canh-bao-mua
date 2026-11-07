@@ -649,6 +649,45 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print, lam_moi=False):
     return xong, loi, con
 
 
+def bo_sung_gia_dai(ds_ma, ra, phut=8, luong=8, in_ra=print, hom_nay=None):
+    """Vòng riêng: mã chưa có / quá HAN_GIA_DAI ngày lịch sử dài (gia_dai) → tải song song (gap-chart, máy chủ khác IQ –
+    không đụng giới hạn IQ), dừng nhận mã khi hết phut. Mã đã làm trong vòng chính thì bỏ qua. → (xong, lỗi, còn)."""
+    hom_nay = hom_nay or date.today().isoformat()
+
+    def can(m):
+        n = (_doc(os.path.join(ra, "gia_dai", f"{m}.json")) or {}).get("cap_nhat") or ""
+        return not n or (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days >= HAN_GIA_DAI
+    viec, bat_dau, xong, loi, con = [m for m in ds_ma if can(m)], time.time(), 0, 0, 0
+
+    def mot(m):
+        t0 = time.time()
+        try:
+            _ghi({**lay_gia_dai(m), "cap_nhat": hom_nay}, os.path.join(ra, "gia_dai", f"{m}.json"))
+            _do("gia_dai", True, time.time() - t0)
+            return True
+        except Exception:                                           # noqa: BLE001
+            _do("gia_dai", False, time.time() - t0)
+            return False
+    with ThreadPoolExecutor(luong) as ex:
+        tl = []
+        for m in viec:
+            if time.time() - bat_dau > phut * 60:
+                con += 1
+                continue
+            tl.append(ex.submit(mot, m))
+            if len(tl) >= luong * 2:
+                for f in tl[:luong]:
+                    ok = f.result()
+                    xong, loi = xong + ok, loi + (not ok)
+                tl = tl[luong:]
+        for f in tl:
+            ok = f.result()
+            xong, loi = xong + ok, loi + (not ok)
+    in_ra(f"Lịch sử giá dài: {xong}/{len(viec)} mã tải · lỗi {loi} · hết giờ chưa làm {con} · "
+          f"{(time.time() - bat_dau) / 60:.1f} phút")
+    return xong, loi, con
+
+
 def chi_so_nganh(ra, ds):
     """Trung vị chỉ số kỳ gần nhất (statistics-financial trong dn/<MÃ>.json) theo ngành của ds.json → chi_so_nganh.json
     {ngành: {khoá: [trung vị, số mã]}} – trang so sánh mã với ngành ở mục Chỉ số."""
@@ -675,6 +714,7 @@ def main(argv=None):
     p.add_argument("--phut", type=float, default=25)
     p.add_argument("--luong", type=int, default=6)
     p.add_argument("--lam_moi", action="store_true", help="làm cả mã đã cập nhật hôm nay (cũ nhất trước)")
+    p.add_argument("--phut_dai", type=float, default=8, help="phút cho vòng tải lịch sử giá dài (gia_dai) mã còn thiếu")
     a = p.parse_args(argv)
     ds = (_doc(os.path.join(a.ra, "ds.json")) or {}).get("ds") or []
     san = {r["ma"]: r.get("san", "") for r in ds}
@@ -684,6 +724,7 @@ def main(argv=None):
         _ghi(ct, os.path.join(a.ra, "cau_truc_bctc.json"))
     print(f"Cấu trúc BCTC: {', '.join(sorted(ct)) or 'lỗi – dùng thứ tự kho'}")
     chay(ma, a.ra, san, a.phut, a.luong, lam_moi=a.lam_moi)
+    bo_sung_gia_dai(ma, a.ra, a.phut_dai, max(a.luong, 8))
     ng = chi_so_nganh(a.ra, ds)
     print(f"Chỉ số ngành: {len(ng)} ngành")
     return 0
