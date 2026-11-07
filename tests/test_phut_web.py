@@ -38,3 +38,28 @@ def test_chon_ma_thanh_khoan(tmp_path):
         (tmp_path / "gia" / f"{m}.json").write_text(json.dumps({"c": [1] * 30, "gt": [gt] * 30}))
     (tmp_path / "gia" / "MOI.json").write_text(json.dumps({"c": [1] * 5, "gt": [999] * 5}))     # mới niêm yết < 20 phiên: bỏ
     assert P.ma_thanh_khoan(str(tmp_path), 2, ["ZZZ", "BBB"]) == ["BBB", "AAA", "ZZZ"]
+
+
+def test_trong_phien_chi_noi_ma_chon_va_giu_ma_khac(tmp_path, monkeypatch):
+    (tmp_path / "gia").mkdir()
+    for m, gt in (("AAA", 50), ("BBB", 500), ("CCC", 5)):
+        (tmp_path / "gia" / f"{m}.json").write_text(json.dumps({"c": [1] * 30, "gt": [gt] * 30}))
+    for r in ("1", "5"):
+        (tmp_path / "phut" / r).mkdir(parents=True)
+        (tmp_path / "phut" / r / "CU.json").write_text("{}")                  # mã dựng sáng nay, ngoài danh sách trong phiên
+    (tmp_path / "phut" / "ds.json").write_text(json.dumps({"1": ["CU"], "5": ["CU"]}))
+    giu = tmp_path / "giu.txt"
+    giu.write_text("GGG,BBB\n")
+    tt = tmp_path / "tt.json"
+    tt.write_text(json.dumps({"tin_hieu": {"ma": [["TTT", "Mua mới", 1, 2, 0.9, 2.1, 2.3, "x"]]}}))
+    bl = tmp_path / "bl.json"
+    bl.write_text(json.dumps({"ma": {"LLL": ["quy_b"]}}))
+    chay = []
+    monkeypatch.setattr(P, "cap_nhat", lambda thu_muc, ma, res, bay_gio: chay.append((ma, res)) or 3)
+    assert P.main(["--ra", str(tmp_path), "--trong_phien", "--so_ma", "1", "--them_file", str(giu), "--tin_hieu", str(tt),
+                   "--bo_loc", str(bl), "--them", "x y,ZZZ"]) == 0
+    assert sorted({m for m, _ in chay}) == ["BBB", "GGG", "LLL", "TTT", "ZZZ"]       # top 1 + giữ + bot + bộ lọc (bỏ chuỗi rác)
+    assert (tmp_path / "phut" / "1" / "CU.json").exists()                          # không xoá file mã khác
+    ds = json.loads((tmp_path / "phut" / "ds.json").read_text())
+    assert "CU" in ds["1"] and "TTT" in ds["5"]
+    assert P.ma_them("", str(tmp_path / "khong_co.txt"), str(tmp_path / "khong.json"), None) == []
