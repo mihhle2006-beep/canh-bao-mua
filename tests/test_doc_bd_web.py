@@ -122,3 +122,32 @@ def test_trang_gan_doc_bieu_do_va_tua_lai():
     v = open(JS, encoding="utf-8").read()
     assert not re.search(r"fetch\(|https?://", v) and not re.search("[\U0001F300-\U0001FAFF★⭐]", v)
     assert "VE.them_hinh = " in open("docs/ma/bieu_do.js", encoding="utf-8").read()
+
+
+def _zigzag(diem, nhieu=0.3):
+    """[(số nến, giá đích)…] → chuỗi nến nối thẳng, cao / thấp ± nhieu quanh giá đóng cửa."""
+    c = [diem[0][1]]
+    for n, v in diem[1:]:
+        a = c[-1]
+        c += [a + (v - a) * (k + 1) / n for k in range(n)]
+    return {"o": c[:1] + c[:-1], "h": [v + nhieu for v in c], "l": [v - nhieu for v in c], "c": c, "v": [1] * len(c)}
+
+
+def test_wilson_va_bo_nhan_mau_hinh():
+    vdv = _zigzag([(0, 100), (12, 100), (8, 110), (6, 105), (8, 115), (8, 105), (6, 110), (8, 104), (4, 103)])
+    co = _zigzag([(0, 100), (20, 100), (5, 85), (8, 88), (3, 83)])
+    nem = _zigzag([(0, 100), (6, 100), (6, 110), (6, 104), (6, 112), (6, 108), (6, 113), (4, 104)])
+    kq = _chay(f"const DS = {json.dumps({'vdv': vdv, 'co': co, 'nem': nem})};\n" + r"""
+      const T = window.BD_DOC._thu, out = {w: T.wilson(29, 59), w0: T.wilson(0, 0)};
+      for (const k in DS) { const x = DS[k]; out[k] = T.quet_mau_hinh(x, T.atr(x)).filter(z => z.t != null).map(z => ({ten: z.ten, t: z.t, N: x.c.length, kich: z.kich_hoat(z.t)}));
+        out[k + "_mh"] = T.mau_hinh(x, T.atr(x)).map(z => ({ten: z.ten, t: z.t, n: z.bc.n})); }
+      console.log(JSON.stringify(out));
+    """)
+    lo, hi = kq["w"]
+    assert abs(lo - 0.3684) < 1e-3 and abs(hi - 0.6157) < 1e-3 and kq["w0"] == [None, None]     # 29/59: khoảng Wilson 95%
+    assert any(z["ten"] == "Vai–đầu–vai" for z in kq["vdv"]), kq["vdv"]
+    z = next(z for z in kq["vdv"] if z["ten"] == "Vai–đầu–vai")
+    assert z["t"] >= z["N"] - 8 and abs(z["kich"] - 105) < 1                                       # thủng đường cổ ~105 ở cuối
+    assert any(z["ten"] == "Cờ giảm" and z["t"] >= z["N"] - 3 for z in kq["co"]), kq["co"]
+    assert any(z["ten"] == "Nêm tăng" for z in kq["nem"]), kq["nem"]
+    assert {z["ten"] for z in kq["vdv_mh"]} >= {"Vai–đầu–vai"} and any(z["ten"] == "Cờ giảm" for z in kq["co_mh"])

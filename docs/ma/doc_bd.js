@@ -59,14 +59,24 @@ const MAU_NEN = [                                        // [tên, hướng (+1 
   ["Ba con quạ đen", -1, (x, i) => [0, 1, 2].every(k => x.c[i - k] < x.o[i - k] && (x.o[i - k] - x.c[i - k]) >= 0.5 * (x.h[i - k] - x.l[i - k])) &&
     x.c[i] < x.c[i - 1] && x.c[i - 1] < x.c[i - 2] && x.o[i] <= x.o[i - 1] && x.o[i - 1] <= x.o[i - 2]],
 ];
-const SAU = 5, TIN_N = 10, TIN_TL = 0.58;
-function bang_chung(x, ten, huong) {                    // mẫu nến trên CHÍNH mã: số lần, % đúng hướng sau SAU nến, lãi TB
-  const m = MAU_NEN.find(z => z[0] === ten); if (!m) return null;
+const SAU = 5, SAU_MH = 10, TIN_N = 10, Z = 1.96;
+function wilson(k, n) {                                 // khoảng tin cậy 95% (Wilson) của tỷ lệ k / n
+  if (!n) return [null, null];
+  const p = k / n, d = 1 + Z * Z / n, g = p + Z * Z / (2 * n), e = Z * Math.sqrt(p * (1 - p) / n + Z * Z / (4 * n * n));
+  return [Math.max(0, (g - e) / d), Math.min(1, (g + e) / d)];
+}
+const trung_vi = a => { if (!a.length) return null; const b = [...a].sort((p, q) => p - q), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+function thong_ke(x, ds, huong, sau) {                  // kiểm thử trên chính mã: vào ở giá MỞ CỬA nến sau nến tín hiệu, ra ở giá đóng cửa sau `sau` nến
   const N = x.c.length, r = [];
-  for (let i = 6; i < N - SAU; i++) { let ok = false; try { ok = m[2](x, i); } catch (e) {} if (ok) r.push(x.c[i + SAU] / x.c[i] - 1); }
-  const dung = r.filter(v => Math.sign(v) === huong).length;
-  return {n: r.length, dung, tl: r.length ? dung / r.length : null, tb: r.length ? r.reduce((a, b) => a + b, 0) / r.length : null,
-    tin: r.length >= TIN_N && dung / r.length >= TIN_TL};
+  for (const i of ds) if (i + sau < N && x.o[i + 1] > 0) r.push(x.c[i + sau] / x.o[i + 1] - 1);
+  const dung = r.filter(v => Math.sign(v) === huong).length, [lo, hi] = wilson(dung, r.length);
+  return {n: r.length, dung, tl: r.length ? dung / r.length : null, lo, hi, tv: trung_vi(r), tb: r.length ? r.reduce((a, b) => a + b, 0) / r.length : null,
+    tin: r.length >= TIN_N && lo > 0.5, sai: r.length >= TIN_N && hi < 0.5};      // đáng tin: cả khoảng tin cậy trên 50%; thường sai: dưới 50%
+}
+function bang_chung(x, ten, huong) {                    // mẫu nến trên CHÍNH mã: mọi lần xuất hiện → thong_ke sau SAU nến
+  const m = MAU_NEN.find(z => z[0] === ten); if (!m) return null;
+  const ds = []; for (let i = 6; i < x.c.length; i++) { let ok = false; try { ok = m[2](x, i); } catch (e) {} if (ok) ds.push(i); }
+  return thong_ke(x, ds, huong, SAU);
 }
 function mau_nen_cuoi(x, so_nen = 3) {                  // mẫu nến xuất hiện ở so_nen nến cuối (mới nhất trước)
   const N = x.c.length, out = [];
@@ -108,14 +118,91 @@ function mau_gia(x, P, a) {                             // tam giác (cân / tă
         out.push({ten: "Hai đáy", huong: 1, loai: "hai", dinh: l, co, vuot: ip == null ? co : null, xac_nhan: ip}); } }
   return out;
 }
-function phan_tich(x) {                                 // → {vung, xh, nen, gia, a, N} ; dùng 250 nến gần nhất cho vùng / xu hướng
+function xen_ke(x, P) {                                 // đỉnh / đáy xen kẽ theo thời gian (2 đỉnh liền → giữ đỉnh cao hơn…)
+  const ds = P.cao.map(i => ({i, v: x.h[i], k: "H"})).concat(P.thap.map(i => ({i, v: x.l[i], k: "L"}))).sort((a, b) => a.i - b.i), out = [];
+  for (const p of ds) { const q = out[out.length - 1];
+    if (q && q.k === p.k) { if (p.k === "H" ? p.v >= q.v : p.v <= q.v) out[out.length - 1] = p; } else if (!q || q.i !== p.i) out.push(p); }
+  return out;
+}
+const K_MH = 3;                                          // đỉnh / đáy cho mẫu hình: cao / thấp nhất trong 3 nến hai bên (biết sau 3 nến)
+function quet_mau_hinh(x, A) {                          // → [{loai, ten, huong, t (nến xác nhận) | null, het (nến cuối còn hiệu lực), kich_hoat, vo_hieu, hinh}]
+  const N = x.c.length, Q = xen_ke(x, pivots(x, K_MH)), out = [], aa = i => A[i] || A.find(v => v) || x.c[i] * 0.02;
+  const cho = (bat_dau, het, kich, vo, len) => {        // tìm nến xác nhận (đóng cửa qua kich(t)) trước khi bị vô hiệu (đóng cửa qua vo(t))
+    for (let t = bat_dau; t <= Math.min(N - 1, het); t++) {
+      if (len ? x.c[t] > kich(t) : x.c[t] < kich(t)) return {t, vo: false};
+      if (len ? x.c[t] < vo(t) : x.c[t] > vo(t)) return {t, vo: true};
+    }
+    return null;
+  };
+  // vai – đầu – vai (đỉnh: giảm) / ngược (đáy: tăng): 3 đỉnh, đầu cao nhất, 2 vai gần bằng nhau, đường cổ qua 2 đáy giữa
+  for (let j = 0; j + 4 < Q.length; j++) {
+    const [v1, d1, dau, d2, v2] = Q.slice(j, j + 5), len = v1.k === "L", s = len ? -1 : 1, a = aa(dau.i);
+    if (v1.k !== (len ? "L" : "H") || v2.i - v1.i < 10 || v2.i - v1.i > 150) continue;
+    if (!(s * (dau.v - v1.v) > 0.5 * a && s * (dau.v - v2.v) > 0.5 * a && Math.abs(v1.v - v2.v) <= 1.2 * a && Math.abs(d1.v - d2.v) <= 1.5 * a)) continue;
+    const co = duong(x, d1.i, d1.v, d2.i, d2.v);
+    if (!(s * (v1.v - co(v1.i)) > 0.5 * a && s * (v2.v - co(v2.i)) > 0.5 * a)) continue;
+    const kq = cho(v2.i + K_MH, v2.i + 30, co, () => v2.v, len);
+    out.push({loai: "vdv", ten: len ? "Vai–đầu–vai ngược" : "Vai–đầu–vai", huong: len ? 1 : -1, t: kq && !kq.vo ? kq.t : null, huy: kq?.vo ? kq.t : null,
+      tu: v1.i, biet: v2.i + K_MH, het: kq ? kq.t : v2.i + 30, kich_hoat: co, vo_hieu: v2.v, hinh: {diem: [v1, d1, dau, d2, v2].map(p => [p.i, p.v]), co: [d1.i, d1.v, d2.i, d2.v]}});
+  }
+  // cờ: cán cờ (≤ 10 nến, ≥ 3 ATR) tới 1 đỉnh / đáy, rồi đi ngang / hồi ≤ 50% cán (3 – 20 nến); xác nhận khi đóng cửa qua đỉnh / đáy của lá cờ
+  for (const p of Q) {
+    const len = p.k === "H", j = p.i, a = aa(j);
+    let s0 = -1; for (let i = Math.max(0, j - 10); i <= j - 3; i++) if (s0 < 0 || (len ? x.l[i] < x.l[s0] : x.h[i] > x.h[s0])) s0 = i;
+    if (s0 < 0) continue;
+    const can = len ? x.h[j] - x.l[s0] : x.h[s0] - x.l[j]; if (can < 3 * a) continue;
+    const giua = len ? x.l[s0] + can / 2 : x.h[s0] - can / 2;
+    let cao = -Infinity, thap = Infinity, t = null, huy = null, cuoi = Math.min(N - 1, j + 21);
+    for (let i = j + 1; i <= cuoi; i++) {
+      if (i >= j + K_MH + 1 && (len ? x.c[i] > cao : x.c[i] < thap)) { t = i; break; }
+      if (len ? x.c[i] < giua : x.c[i] > giua) { huy = i; break; }
+      cao = Math.max(cao, x.h[i]); thap = Math.min(thap, x.l[i]);
+    }
+    const het = t ?? huy ?? cuoi;
+    out.push({loai: "co", ten: len ? "Cờ tăng" : "Cờ giảm", huong: len ? 1 : -1, t, huy, tu: s0, biet: j + K_MH, het,
+      kich_hoat: () => len ? cao : thap, vo_hieu: giua, hinh: {can: [s0, len ? x.l[s0] : x.h[s0], j, len ? x.h[j] : x.l[j]], la: [j + 1, het, thap, cao]}});
+  }
+  // nêm: 2 đỉnh + 2 đáy gần nhất cùng dốc lên (nêm tăng – giảm giá) / xuống (nêm giảm – tăng giá) và hội tụ
+  const da = new Set();
+  for (let j = 3; j < Q.length; j++) {
+    const cuoi4 = Q.slice(j - 3, j + 1), H = cuoi4.filter(q => q.k === "H"), L = cuoi4.filter(q => q.k === "L");
+    if (H.length !== 2 || L.length !== 2) continue;
+    const tu = cuoi4[0].i, den = cuoi4[3].i, a = aa(den); if (den - tu < 10 || den - tu > 90) continue;
+    const su = (H[1].v - H[0].v) / (H[1].i - H[0].i), sl = (L[1].v - L[0].v) / (L[1].i - L[0].i), nho = 0.03 * a;
+    const fu = duong(x, H[0].i, H[0].v, H[1].i, H[1].v), fl = duong(x, L[0].i, L[0].v, L[1].i, L[1].v);
+    const rong0 = fu(tu) - fl(tu), rong1 = fu(den) - fl(den);
+    let ten = null, len = null;
+    if (su < -nho && sl < -nho && su < sl) { ten = "Nêm giảm"; len = true; } else if (su > nho && sl > nho && sl > su) { ten = "Nêm tăng"; len = false; }
+    if (!ten || !(rong1 > 0 && rong0 > 1.3 * rong1)) continue;
+    const khoa = `${H[0].i}-${L[0].i}`; if (da.has(khoa)) continue; da.add(khoa);
+    const kq = cho(den + K_MH, den + 30, len ? fu : fl, len ? fl : fu, len);
+    out.push({loai: "nem", ten, huong: len ? 1 : -1, t: kq && !kq.vo ? kq.t : null, huy: kq?.vo ? kq.t : null, tu, biet: den + K_MH,
+      het: kq ? kq.t : den + 30, kich_hoat: len ? fu : fl, vo_hieu: len ? fl : fu, hinh: {tren: [H[0].i, H[0].v, H[1].i, H[1].v], duoi: [L[0].i, L[0].v, L[1].i, L[1].v]}});
+  }
+  return out;
+}
+function mau_hinh(x, A, gan = 10) {                     // mẫu hình đang hình thành / vừa xác nhận (≤ gan nến) + thống kê các lần xác nhận trên mã
+  const N = x.c.length, ds = quet_mau_hinh(x, A), out = [];
+  for (const ten of ["Vai–đầu–vai", "Vai–đầu–vai ngược", "Cờ tăng", "Cờ giảm", "Nêm tăng", "Nêm giảm"]) {
+    const cung = ds.filter(z => z.ten === ten && z.biet <= N - 1);
+    const xn = [...new Set(cung.filter(z => z.t != null).map(z => z.t))].sort((p, q) => p - q);
+    const nay = cung.filter(z => (z.t != null && N - 1 - z.t <= gan) || (z.t == null && z.huy == null && z.het >= N - 1)).sort((p, q) => (q.t ?? N) - (p.t ?? N))[0];
+    if (!nay) continue;
+    const i_kh = nay.t ?? N - 1, kh = typeof nay.kich_hoat === "function" ? nay.kich_hoat(i_kh) : nay.kich_hoat;
+    const vh = typeof nay.vo_hieu === "function" ? nay.vo_hieu(i_kh) : nay.vo_hieu;
+    out.push({...nay, kich: kh, vo: vh, bc: thong_ke(x, xn.filter(t => t < N - 1), nay.huong, SAU_MH), lan: xn.length});
+  }
+  return out;
+}
+function phan_tich(x) {                                 // → {vung, xh, nen, gia, mh, a, N} ; dùng 250 nến gần nhất cho vùng / xu hướng
   const N = x.c.length; if (N < 30) return null;
   const A = atr(x), a = A[N - 1] || (x.h[N - 1] - x.l[N - 1]) || x.c[N - 1] * 0.02, P = pivots(x, 5, Math.max(0, N - 250)), c = x.c[N - 1];
   const vg = vung_gia(x, P, a).map(z => ({...z, loai: z.hi < c ? "ho_tro" : z.lo > c ? "khang_cu" : "trong", cach: z.hi < c ? (c - z.hi) / c : z.lo > c ? (z.lo - c) / c : 0}));
   vg.sort((p, q) => p.cach - q.cach || q.cham - p.cham);
-  return {vung: vg, xh: xu_huong(x, P, a), nen: mau_nen_cuoi(x), gia: mau_gia(x, P, a), a, N, c};
+  const gon = S.kieu === "gon";
+  return {vung: vg, xh: xu_huong(x, P, a), nen: mau_nen_cuoi(x, gon ? 5 : 20), gia: mau_gia(x, P, a), mh: mau_hinh(x, A, gon ? 10 : 30), a, N, c};
 }
-CP._thu = {atr, pivots, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN};
+CP._thu = {atr, pivots, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh};
 
 // ---------------------------------------------------------------- DỮ LIỆU HỆ THỐNG
 let HT_P = null; const TH_P = {};
@@ -161,6 +248,17 @@ class LopPrim {
         if (it.loai === "xh" && !nen) { const [l1, v1, l2, v2] = it.line; const a = tia(l1, v1, l2, v2, it.huong < 0 ? "#d1342b" : "#0f8a4a", 1.8); if (a) chu(a.x + 4, a.y - 14, it.nhan, {vien: it.huong < 0 ? "#d1342b" : "#0f8a4a"}); }
         if (it.loai === "tam_giac" && !nen) { tia(...it.tren, "#9b3fd1", 1.4, [5, 3]); tia(...it.duoi, "#9b3fd1", 1.4, [5, 3]); const y = Y(it.tren[3]); if (y != null) chu(X(it.tren[2]) + 4, y - 14, it.ten, {vien: "#9b3fd1"}); }
         if (it.loai === "hai" && !nen) { const y = Y(it.co); if (y != null) { ctx.save(); ctx.strokeStyle = "#9b3fd1"; ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(X(it.dinh[0]), y); ctx.lineTo(M.width, y); ctx.stroke(); ctx.restore(); chu(X(it.dinh[1]) + 4, y + (it.huong < 0 ? 14 : -14), `${it.ten} · cổ ${so(it.co, 2)}`, {vien: "#9b3fd1"}); } }
+        if (it.loai === "mh" && !nen) { const m = it.huong > 0 ? "#0f8a4a" : "#d1342b", H = it.hinh;
+          const doan = (l1, v1, l2, v2, w = 1.6, dash = []) => { const a = {x: X(l1), y: Y(v1)}, b = {x: X(l2), y: Y(v2)}; if ([a.x, a.y, b.x, b.y].some(z => z == null)) return null;
+            ctx.save(); ctx.strokeStyle = m; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.restore(); return a; };
+          const f = (q, i) => q[1] + (q[3] - q[1]) * (i - q[0]) / ((q[2] - q[0]) || 1);
+          let nhan = null;
+          if (it.kieu === "vdv") { for (let k = 0; k + 1 < H.diem.length; k++) doan(...H.diem[k], ...H.diem[k + 1], 1.4); doan(H.co[0], H.co[1], it.het, f(H.co, it.het), 1.4, [5, 3]); nhan = H.diem[2]; }
+          if (it.kieu === "nem") { doan(H.tren[0], H.tren[1], it.het, f(H.tren, it.het), 1.4, [5, 3]); doan(H.duoi[0], H.duoi[1], it.het, f(H.duoi, it.het), 1.4, [5, 3]); nhan = [H.tren[0], H.tren[1]]; }
+          if (it.kieu === "co") { doan(...H.can, 2); const [i1, i2, lo, hi] = H.la, x1 = X(i1), x2 = X(i2), y1 = Y(hi), y2 = Y(lo);
+            if ([x1, x2, y1, y2].every(z => z != null)) { ctx.fillStyle = it.huong > 0 ? "rgba(15,138,74,0.10)" : "rgba(209,52,43,0.10)"; ctx.fillRect(x1, y1, Math.max(2, x2 - x1), Math.max(2, y2 - y1));
+              ctx.strokeStyle = m; ctx.lineWidth = 1; ctx.strokeRect(x1, y1, Math.max(2, x2 - x1), Math.max(2, y2 - y1)); } nhan = [H.can[2], H.can[3]]; }
+          if (nhan) { const x0 = X(nhan[0]), y0 = Y(nhan[1]); if (x0 != null && y0 != null) chu(x0, y0 + (it.huong > 0 ? 16 : -16), `${it.id} ${it.ten}`, {can: "giua", m, vien: m}); } }
         if (it.loai === "nen" && !nen) { const x = X(it.i), cao = it.huong > 0 ? this.B.x.l[it.i] : this.B.x.h[it.i], y = Y(cao); if (x == null || y == null) continue;
           chu(x, y + (it.huong > 0 ? 18 : -18), it.ten, {can: "giua", m: it.huong > 0 ? "#0f6b3a" : "#a3241d", vien: it.huong > 0 ? "#0f8a4a" : "#d1342b", c: 10}); }
         if (it.loai === "bot" && !nen) { const n = this.B.n, x0 = X(n - 1); if (x0 == null) continue;
@@ -187,6 +285,10 @@ function th_loc(B, th) {                                // tín hiệu MUA của
 CP._thu_th = th_loc; CP._dung = (...a) => dung(...a); CP._dk = (...a) => dieu_kien(...a);
 
 // ---------------------------------------------------------------- DỰNG CHÚ THÍCH + LỜI GIẢI THÍCH
+const muc_tin = b => !b?.n ? "chưa có lần nào trước trên mã" : b.tin ? "đáng tin" : b.sai ? "thường SAI trên mã này" : b.n < TIN_N ? "chưa đáng tin (ít lần)" : "chưa đáng tin";
+const pt1 = v => v == null ? "–" : pt(v, 1);
+const bang_tk = (b, sau, ten_n) => !b ? [] : [[ten_n, `${b.n} lần`], [`Đúng hướng sau ${sau} phiên`, b.tl == null ? "–" : `${pt(b.tl, 1, false)} (${pt(b.lo, 1, false)}–${pt(b.hi, 1, false)})`],
+  [`Thay đổi trung vị sau ${sau} phiên`, pt1(b.tv)], [`Thay đổi trung bình sau ${sau} phiên`, pt1(b.tb)]];
 function dung(B, kq, ht, th) {
   const x = B.x, N = B.n, c = x.c[N - 1], ma = B.ma, an = AN[ma] || (AN[ma] = new Set()), ngay = i => B.phut ? gio_vn(x.d[i]) : ngay_vn(x.d[i]);
   const items = [], cau = [];
@@ -211,13 +313,22 @@ function dung(B, kq, ht, th) {
           .concat(xh.giu ? [] : [["Bị phá", `${ngay(xh.pha)} · cách ${N - 1 - xh.pha} nến`]]),
         cach: "Nối 2 đỉnh thấp dần (giảm) / 2 đáy cao dần (tăng) gần nhất; giữ khi giá chưa đóng cửa vượt qua"}); }
     else cau.push("Chưa có xu hướng rõ (đỉnh / đáy gần nhất chưa cùng chiều)");
-    for (const m of kq.nen) { const b = m.bc, nguoc = b && b.n >= TIN_N && b.tl <= 1 - TIN_TL;
-      const tin = b?.tin ? "đáng tin" : nguoc ? "thường SAI trên mã này" : b && b.n < TIN_N ? "chưa đáng tin (ít lần xuất hiện)" : "chưa đáng tin";
+    for (const m of kq.nen) { const b = m.bc, tin = muc_tin(b);
       cau.push(`Mẫu nến ${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}, ${ngay(m.i)}) – ${tin}${b?.n ? `: đúng hướng ${pt(b.tl, 0, false)} trong ${b.n} lần trước trên ${ma}` : ""}`);
-      items.push({id: `N${items.filter(z => z.loai === "nen").length + 1}`, loai: "nen", i: m.i, huong: m.huong, ten: m.ten, nhom: "Mẫu nến",
-        tieu_de: `${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}) · ${ngay(m.i)}`,
-        bang: b ? [["Xuất hiện trên mã này", `${b.n} lần`], [`Đúng hướng sau ${SAU} nến`, b.tl == null ? "–" : pt(b.tl, 0, false)], [`Lãi TB sau ${SAU} nến`, b.tb == null ? "–" : pt(b.tb, 1)]] : [],
-        cach: `Bằng chứng: mọi lần mẫu này xuất hiện trong lịch sử ${ma} – đáng tin khi ≥ ${TIN_N} lần và đúng hướng ≥ ${Math.round(TIN_TL * 100)}%`}); }
+      items.push({id: `N${items.filter(z => z.loai === "nen").length + 1}`, loai: "nen", i: m.i, huong: m.huong, ten: m.ten, nhom: "Mẫu nến", tin,
+        tieu_de: `${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}) · ${ngay(m.i)}`, bang: bang_tk(b, SAU, "Xuất hiện trên mã"),
+        cach: `Bằng chứng: mọi lần mẫu này xuất hiện trong lịch sử ${ma}, vào ở giá mở cửa nến sau, ra sau ${SAU} nến`}); }
+    for (const g of kq.mh) { const b = g.bc, tin = muc_tin(b), xn = g.t != null;
+      cau.push(`Mẫu hình ${g.ten}${xn ? ` – đã xác nhận ${ngay(g.t)} (${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)})` : ` – đang hình thành, ${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)} là xác nhận`}` +
+        ` – ${tin}${b?.n ? `: đúng hướng ${pt(b.tl, 0, false)} trong ${b.n} lần trên ${ma}` : ""}`);
+      items.push({id: `M${items.filter(z => ["tam_giac", "hai", "mh"].includes(z.loai)).length + 1}`, loai: "mh", kieu: g.loai, ten: g.ten, huong: g.huong, hinh: g.hinh,
+        tu: g.tu, het: xn ? g.t : B.n - 1, xn, kich: g.kich, vo: g.vo, nhom: "Mẫu hình", tin,
+        tieu_de: `${g.ten} · ${xn ? `đã xác nhận ${ngay(g.t)}` : "đang hình thành"}`,
+        bang: [[xn ? "Mức kích hoạt đã " + (g.huong > 0 ? "vượt" : "thủng") : "Mức kích hoạt", so(g.kich, 2)], ["Mức vô hiệu của mẫu", so(g.vo, 2)]].concat(bang_tk(b, SAU_MH, "Số lần xác nhận trên mã")),
+        cach: ({vdv: "3 đỉnh (đáy), đầu cao (thấp) nhất, 2 vai chênh ≤ 1,2 ATR; xác nhận khi đóng cửa qua đường cổ trong 30 nến, vô hiệu khi qua vai phải",
+          co: "Cán cờ ≥ 3 ATR trong ≤ 10 nến, lá cờ 3–20 nến hồi ≤ 50% cán; xác nhận khi đóng cửa qua đỉnh (đáy) lá cờ, vô hiệu khi hồi quá 50%",
+          nem: "2 đỉnh + 2 đáy cùng dốc và hội tụ (10–90 nến); xác nhận khi đóng cửa ra khỏi nêm theo hướng ngược độ dốc trong 30 nến"})[g.loai] +
+          `. Kiểm thử: mọi lần xác nhận trên ${ma}, vào ở giá mở cửa nến sau, ra sau ${SAU_MH} nến`}); }
     for (const g of kq.gia) {
       cau.push(`Mẫu hình ${g.ten}${g.xac_nhan != null ? ` – đã xác nhận ${ngay(g.xac_nhan)} (${g.huong > 0 ? "vượt" : "thủng"} cổ ${so(g.co, 2)})`
         : g.huong ? (g.huong > 0 ? " (nghiêng tăng, chưa xác nhận)" : " (nghiêng giảm, chưa xác nhận)") : " – chờ phá vỡ"}`);
@@ -229,6 +340,7 @@ function dung(B, kq, ht, th) {
     if (h0) td.push(`thủng ${so(h0.lo, 2)} là mất vùng hỗ trợ`); else if (trong) td.push(`thủng ${so(trong.lo, 2)} là rời vùng`);
     if (k0) td.push(`vượt ${so(k0.hi, 2)} là phá kháng cự`);
     if (xh.huong < 0 && xh.giu) td.push(`vượt ${so(xh.muc, 2)} là phá xu hướng giảm`);
+    for (const g of kq.mh) if (g.t == null) td.push(`${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)} xác nhận ${g.ten.toLowerCase()}`);
     for (const g of kq.gia) { if (g.vuot != null && g.huong >= 0) td.push(`vượt ${so(g.vuot, 2)} xác nhận ${g.ten.toLowerCase()}`); if (g.thung != null && g.huong <= 0) td.push(`thủng ${so(g.thung, 2)} xác nhận ${g.ten.toLowerCase()}`); }
     if (td.length) cau.push("Theo dõi: " + [...new Set(td)].slice(0, 3).join(" · "));
   }
@@ -264,8 +376,9 @@ function panel_html(B, kq, dd, ht, th) {
       <span class="cp-phu">${S.kieu === "gon" ? "Vùng gần giá, xu hướng, mẫu hình gần đây" : "Mọi vùng giá và mẫu hình tìm được"}</span></div>
     ${kq ? `<h3>${esc_(dd.cau[0])}</h3><p>${dd.cau.slice(1).map(esc_).join("<br>")}</p>` : `<p class="cp-phu">Chưa đủ dữ liệu (cần ≥ 30 nến).</p>`}
     <details class="cp-doc"><summary>Cách đọc</summary><p>Vùng hỗ trợ / kháng cự: các đỉnh, đáy cục bộ (cao / thấp nhất trong 5 nến hai bên) nằm sát nhau (≤ 0,6 ATR) gộp thành vùng; càng nhiều lần chạm càng đáng chú ý.
-      Xu hướng: nối 2 đỉnh thấp dần hoặc 2 đáy cao dần gần nhất. Mẫu nến được kiểm bằng chứng trên chính mã: mọi lần xuất hiện trước đây, sau ${SAU} nến giá đi đúng hướng bao nhiêu % –
-      dưới ${TIN_N} lần hoặc dưới ${Math.round(TIN_TL * 100)}% thì ghi "chưa đáng tin". Tính trên khung đang xem${TUA_CHU()}.</p></details>
+      Xu hướng: nối 2 đỉnh thấp dần hoặc 2 đáy cao dần gần nhất. Mẫu nến (sau ${SAU} phiên) và mẫu hình cờ, nêm, vai–đầu–vai (sau ${SAU_MH} phiên) được kiểm thử trên chính mã:
+      mọi lần xuất hiện / xác nhận trước đây, vào ở giá mở cửa nến sau. Tỷ lệ đúng hướng kèm khoảng tin cậy 95%: "đáng tin" khi ≥ ${TIN_N} lần và cả khoảng nằm trên 50%,
+      "thường SAI" khi cả khoảng dưới 50%. Tính trên khung đang xem${TUA_CHU()}.</p></details>
     <div class="cp-meta">${esc_(ma)} · ${esc_(B.ten_khung)} · dữ liệu tới ${esc_(B.phut ? gio_vn(x.d[B.n - 1]) : ngay_vn(x.d[B.n - 1]))}</div>
     <button class="cp-tinh" data-cp="tinh">Tính lại bằng chứng</button>
     <h4>HỆ THỐNG</h4>
@@ -279,10 +392,10 @@ function panel_html(B, kq, dd, ht, th) {
     ${th_mua.length ? `<div class="cp-the"><b>Bot đã báo MUA ${th_mua.length} lần trên ${esc_(ma)}</b><div>${dung} đúng · ${sai} sai · ${cho} đang chờ${tbv != null ? ` · kết quả TB ${tbv > 0 ? "+" : ""}${so(tbv, 2)}%` : ""}</div>
       <table class="cp-bang">${th_mua.slice(-8).reverse().map(z => `<tr><td class="${z.ket_qua === "ĐÚNG" ? "t" : z.ket_qua === "SAI" ? "g" : "m"}">${z.ket_qua === "ĐÚNG" ? "✓" : z.ket_qua === "SAI" ? "✗" : "…"}</td><td>${esc_(ngay_vn(z.ngay))} · ${esc_(z.khuyen_nghi)} · giá ${esc_(z.gia)}<div class="cp-phu">${esc_(z.giai_thich || z.ket_qua)}${z.ket_qua_pct ? ` (${esc_(z.ket_qua_pct)}%)` : ""}</div></td></tr>`).join("")}</table></div>` : ""}
     <h4>CHÚ THÍCH · ${dd.items.length} · ĐANG HIỆN ${muc}</h4>
-    ${dd.items.map(it => `<div class="cp-the cp-ct${it.an ? " an" : ""}" data-cpid="${it.id}"><div class="cp-ct-dau"><i class="cham ${it.loai === "vung" ? (it.ho_tro ? "t" : it.trong ? "cam" : "g") : it.huong > 0 ? "t" : it.huong < 0 ? "g" : "tim"}"></i><span class="cp-id">${it.id}</span><b>${esc_(it.tieu_de)}</b></div>
+    ${dd.items.map(it => `<div class="cp-the cp-ct${it.an ? " an" : ""}" data-cpid="${it.id}"><div class="cp-ct-dau"><i class="cham ${it.loai === "vung" ? (it.ho_tro ? "t" : it.trong ? "cam" : "g") : it.huong > 0 ? "t" : it.huong < 0 ? "g" : "tim"}"></i><span class="cp-id">${it.id}</span><b>${esc_(it.tieu_de)}</b>${it.tin ? `<span class="cp-nhan ${it.tin === "đáng tin" ? "t" : /SAI/.test(it.tin) ? "g" : ""}">${esc_(it.tin.replace(/ \(.*\)| trên mã.*$/g, ""))}</span>` : ""}${S.lop && !it.an && !["bot", "lich_su"].includes(it.loai) ? '<span class="cp-nhan b">trên biểu đồ</span>' : ""}</div>
       <div class="cp-phu">${esc_(it.nhom)}</div>${it.bang.length ? `<table class="cp-bang">${it.bang.map(([a, v]) => `<tr><td>${esc_(a)}</td><td class="so">${esc_(v)}</td></tr>`).join("")}</table>` : ""}
       <div class="cp-cach"><b>Chỉ báo</b> ${esc_(it.cach)}</div>
-      <div class="cp-nut"><button data-cpx="${it.id}">Xem trên biểu đồ</button>${["vung", "xh", "tam_giac", "hai"].includes(it.loai) ? `<button data-cpg="${it.id}">Giữ thành hình vẽ</button>` : ""}<button data-cpb="${it.id}">${it.an ? "Hiện lại" : "Bỏ"}</button></div></div>`).join("")}
+      <div class="cp-nut"><button data-cpx="${it.id}">Xem trên biểu đồ</button>${["vung", "xh", "tam_giac", "hai", "mh"].includes(it.loai) ? `<button data-cpg="${it.id}">Giữ thành hình vẽ</button>` : ""}<button data-cpb="${it.id}">${it.an ? "Hiện lại" : "Bỏ"}</button></div></div>`).join("")}
   </div>`;
 }
 let TUA_CHU = () => "";
@@ -319,7 +432,7 @@ function gan_panel(p) {
     const it = CUR.dd.items.find(z => z.id === (id.dataset.cpx || id.dataset.cpg || id.dataset.cpb)); if (!it) return;
     if (id.dataset.cpb) { const an = AN[B.ma] || (AN[B.ma] = new Set()); an.has(it.id) ? an.delete(it.id) : an.add(it.id); return ve_lai(); }
     if (id.dataset.cpx) { const ts = B.ch.timeScale(), r = ts.getVisibleLogicalRange(), w = r ? r.to - r.from : 120;
-      const a = it.dau ?? it.line?.[0] ?? it.tren?.[0] ?? it.dinh?.[0] ?? it.i ?? (it.ds?.[0]?.i) ?? B.n - w; ts.setVisibleLogicalRange({from: Math.max(0, Math.min(a - 10, B.n - w)), to: Math.max(a - 10, B.n - w) + w});
+      const a = it.dau ?? it.line?.[0] ?? it.tren?.[0] ?? it.dinh?.[0] ?? it.tu ?? it.i ?? (it.ds?.[0]?.i) ?? B.n - w; ts.setVisibleLogicalRange({from: Math.max(0, Math.min(a - 10, B.n - w)), to: Math.max(a - 10, B.n - w) + w});
       try { B.nen.priceScale().applyOptions({autoScale: true}); } catch (e_) {} return; }
     if (id.dataset.cpg && window.BD_VE?.them_hinh) {
       const T = i => window.BD_VE.t_cua(i);
@@ -327,6 +440,11 @@ function gan_panel(p) {
       if (it.loai === "xh") BD_VE.them_hinh({c: "tia", p: [{t: T(it.line[0]), v: it.line[1]}, {t: T(it.line[2]), v: it.line[3]}], s: {m: it.huong < 0 ? "#d1342b" : "#0f8a4a"}});
       if (it.loai === "tam_giac") for (const z of [it.tren, it.duoi]) BD_VE.them_hinh({c: "tia", p: [{t: T(z[0]), v: z[1]}, {t: T(z[2]), v: z[3]}], s: {m: "#9b3fd1"}});
       if (it.loai === "hai") BD_VE.them_hinh({c: "tia_ngang", p: [{t: T(it.dinh[0]), v: it.co}], s: {m: "#9b3fd1"}});
+      if (it.loai === "mh") { const m = it.huong > 0 ? "#0f8a4a" : "#d1342b", H = it.hinh, f = (q, i) => q[1] + (q[3] - q[1]) * (i - q[0]) / ((q[2] - q[0]) || 1);
+        const seg = (l1, v1, l2, v2) => BD_VE.them_hinh({c: "xu_huong", p: [{t: T(l1), v: v1}, {t: T(l2), v: v2}], s: {m}});
+        if (it.kieu === "vdv") { for (let k = 0; k + 1 < H.diem.length; k++) seg(...H.diem[k], ...H.diem[k + 1]); seg(H.co[0], H.co[1], it.het, f(H.co, it.het)); }
+        if (it.kieu === "nem") for (const q of [H.tren, H.duoi]) seg(q[0], q[1], it.het, f(q, it.het));
+        if (it.kieu === "co") { seg(...H.can); BD_VE.them_hinh({c: "hcn", p: [{t: T(H.la[0]), v: H.la[3]}, {t: T(H.la[1]), v: H.la[2]}], s: {m}}); } }
       const an = AN[B.ma] || (AN[B.ma] = new Set()); an.add(it.id); ve_lai();
     }
   };
