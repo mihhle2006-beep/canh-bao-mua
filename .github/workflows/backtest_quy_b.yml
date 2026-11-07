@@ -8,14 +8,14 @@
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
-#   cham1r – (chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
+#   cham1r – (đầu tháng + chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
 on:
   schedule:
-    - cron: "13 2 1 * *"            # 09:13 giờ VN ngày 1 hằng tháng: phần chuan (mốc luật hiện tại + đối chiếu giả lập)
+    - cron: "13 2 1 * *"            # 09:13 giờ VN ngày 1 hằng tháng: chuan (mốc luật + đối chiếu giả lập) + cham1r (so bot thật – backtest)
   workflow_dispatch:
     inputs:
       ma:
@@ -72,7 +72,7 @@ jobs:
         id: chon
         working-directory: .
         env:
-          PHAN: ${{ inputs.phan || 'chuan' }}   # lịch tháng → chuan
+          PHAN: ${{ inputs.phan || 'chuan,cham1r' }}   # lịch tháng → chuan + cham1r
         run: |
           case ",$PHAN," in *",${{ matrix.phan }},"*|*",all,"*) echo "chay=1" >> "$GITHUB_OUTPUT";; esac
       - uses: actions/checkout@v5
@@ -94,6 +94,13 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: gia_lap
+      - uses: actions/checkout@v5                 # phần cham1r: tín hiệu bot đã chấm (lich_su_danh_gia.csv của repo này)
+        if: steps.chon.outputs.chay && matrix.phan == 'cham1r'
+        with:
+          path: cbm
+          sparse-checkout: lich_su_danh_gia.csv
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - uses: actions/setup-python@v6
         if: steps.chon.outputs.chay
         with:
@@ -131,8 +138,9 @@ jobs:
           PHAN: ${{ matrix.phan }}
           SO_NN: ${{ inputs.so_nn }}
           # chỉ phần chuan gửi 1 tin đối chiếu giả lập (cùng bot giả lập); các phần khác không gửi Telegram
-          TELEGRAM_TOKEN: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN) || '' }}
-          TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || '' }}
+          TELEGRAM_TOKEN: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN) || matrix.phan == 'cham1r' && secrets.TELEGRAM_TOKEN || '' }}
+          TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || matrix.phan == 'cham1r' && secrets.TELEGRAM_CHAT_ID || '' }}
+          LICH_SU_LIVE: ${{ github.workspace }}/cbm/lich_su_danh_gia.csv   # cham1r: so bot thật – backtest, lệch → Telegram
         run: |
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
