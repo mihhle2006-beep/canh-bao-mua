@@ -211,7 +211,8 @@ body.co-ds main{margin-right:300px}
 .cp-dong .nut{flex:none}
 .cp-bang td.so{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .cp-bang td.t,.cp-bang td.g,.cp-bang td.m{width:16px;font-weight:700;text-align:center}.cp-bang td.t{color:#0f8a4a}.cp-bang td.g{color:#d1342b}.cp-bang td.m{color:#e8710a}
-.cp-ct-dau{display:flex;gap:6px;align-items:baseline}.cp-id{font-size:10.5px;color:var(--mo);border:1px solid var(--vien);border-radius:4px;padding:0 4px}
+.cp-ct-dau{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.cp-nhan{font-size:10px;font-weight:600;padding:1px 6px;border-radius:5px;background:#eef0f3;color:#5b6472;white-space:nowrap}
+.cp-nhan.t{background:#e3f2e5;color:#1b5e20}.cp-nhan.g{background:#fde8e7;color:#a3241d}.cp-nhan.b{background:#e8efff;color:#1f4fa8}.cp-id{font-size:10.5px;color:var(--mo);border:1px solid var(--vien);border-radius:4px;padding:0 4px}
 .cham{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}.cham.t{background:#0f8a4a}.cham.g{background:#d1342b}.cham.cam{background:#e8710a}.cham.tim{background:#9b3fd1}
 .cp-cach{font-size:11px;color:var(--chu2);margin-top:3px}
 .cp-nut{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.cp-nut button{border:1px solid var(--vien);background:var(--the);border-radius:7px;padding:2px 8px;cursor:pointer;font:inherit;font-size:11px}
@@ -985,7 +986,7 @@ const cp_luu = () => { try { localStorage.setItem("cp_mo", CPS.mo ? "1" : "0"); 
 let CP_P = null;
 function tai_cp() {
   CP_P = CP_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "doc_bd.js?v=1"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "doc_bd.js?v=2"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
   return CP_P;
 }
 const TEN_KHUNG = {1: "1 phút", 5: "5 phút", 15: "15 phút", 60: "1 giờ", D: "ngày", W: "tuần", M: "tháng"};
