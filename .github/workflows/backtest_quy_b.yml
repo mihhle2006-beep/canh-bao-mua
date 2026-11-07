@@ -10,6 +10,8 @@
 #           (lịch hằng tháng)
 #   cham1r – (chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
+#   tv2 – (chạy tay, 11/2026) ý từ TradingView: RS đỉnh mới trước giá (xếp ★ / suất dự phòng) · Williams Vix Fix cho hệ
+#           bắt đáy – luật đặt trước C1 20/20 + C2 4/4, so cả bộ B + Trứng + bắt đáy.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -58,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r]
+        phan: [chuan, cham1r, tv2]
     runs-on: ubuntu-24.04
     defaults:
       run:
