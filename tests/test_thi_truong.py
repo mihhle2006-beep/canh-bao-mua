@@ -221,7 +221,7 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     assert "<script src" not in h and "@import" not in h and "fonts.googleapis" not in h
     ngoai = set(re.findall(r'\.src = "(https://[^"/]+)', h))                 # script tải động ngoài: chỉ SheetJS
     assert ngoai == {"https://cdnjs.cloudflare.com"}, ngoai
-    assert 'sc.src = "lib/lightweight-charts.standalone.production.js"' in h       # biểu đồ: thư viện kèm trang
+    assert 'sc.src = "lib/lightweight-charts.standalone.production.js?v=' in h       # biểu đồ: thư viện kèm trang (?v= đổi bản)
     lib = open("docs/ma/lib/lightweight-charts.standalone.production.js", encoding="utf-8").read(400)
     assert "TradingView Lightweight Charts" in lib and "Apache License 2.0" in lib
     assert "Apache License" in open("docs/ma/lib/LICENSE-lightweight-charts.txt", encoding="utf-8").read()

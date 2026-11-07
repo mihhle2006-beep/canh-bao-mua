@@ -145,6 +145,16 @@ body.co-ds main{margin-right:300px}
 .fs-cb{position:relative}.fs-cb>button{border:1px solid var(--vien);background:var(--the);border-radius:6px;padding:5px 10px;cursor:pointer;font:inherit}
 .fs-cb-ds{position:absolute;top:calc(100% + 4px);left:0;z-index:5;background:#fff;border:1px solid var(--vien);border-radius:8px;padding:8px 12px;display:grid;gap:6px;min-width:190px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 .fs-cb-ds[hidden]{display:none}
+.fs-cb-ds{grid-template-columns:minmax(250px,auto) minmax(220px,auto) minmax(230px,auto);gap:4px 18px;max-height:min(70vh,560px);overflow:auto;font-size:13px}
+.cb-nhom{display:grid;gap:4px;align-content:start}.cb-nhom>b{font-size:12px;color:var(--mo);text-transform:uppercase;letter-spacing:.03em;margin:2px 0}
+.cb-dong{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.cb-chip{flex-wrap:nowrap}.cb-dong label{white-space:nowrap}.cb-dong label{display:inline-flex;gap:5px;align-items:center;cursor:pointer}
+.cb-chip>span{min-width:34px;color:var(--chu2)}.cb-chip label{gap:3px}.cb-g{border:0;background:none;cursor:pointer;padding:0 4px;color:var(--mo);font-size:14px}
+.cb-ts{display:flex;gap:4px;padding:0 0 4px 24px}.cb-ts[hidden]{display:none}.cb-ts input{width:62px;font:inherit;padding:2px 4px;border:1px solid var(--vien);border-radius:6px}
+.cb-ghi{font-size:11.5px;color:var(--mo);max-width:240px}.cb-cuoi{grid-column:1/-1;text-align:right}.cb-cuoi button{border:1px solid var(--vien);background:var(--the);border-radius:6px;padding:3px 10px;cursor:pointer;font:inherit}
+.chu-pane{position:absolute;left:8px;z-index:3;font-size:11.5px;line-height:1.3;background:#ffffffd9;border-radius:5px;padding:1px 6px;pointer-events:none}
+.fs-cb-ds{z-index:40}
+@media (max-width:760px){.fs-cb-ds{grid-template-columns:1fr;position:fixed;left:8px;right:8px;top:calc(var(--dau, 56px) + 8px);max-height:calc(100vh - var(--dau, 56px) - 16px);min-width:0;z-index:150}.fs .fs-cb-ds{top:52px;max-height:calc(100vh - 60px)}}
+@media (max-width:600px){.chu-non{display:none}}
 .fs-than{flex:1;display:flex;min-height:0}
 .fs-trai{width:44px;border-right:1px solid var(--vien);display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:8px}
 .fs-trai button{width:34px;height:34px;border:0;border-radius:8px;background:none;font-size:16px;cursor:pointer;color:#374151}
@@ -588,12 +598,272 @@ const o_so = (n, v, c = "") => `<div><div class="n">${n}</div><div class="v">${v
 const the = (tieu, phu, than, nut = "") => `<div class="the"><div class="khoi-dau"><h2>${tieu}</h2>${phu ? `<span class="phu">${phu}</span>` : ""}${nut ? `<span class="nut">${nut}</span>` : ""}</div>${than}</div>`;
 const nut = (ds, gt, ten) => ds.map(([v, t]) => `<button data-${ten}="${v}" aria-pressed="${v === gt}">${esc(t)}</button>`).join("");
 
+// ---------------------------------------------------------------- CHỈ BÁO KỸ THUẬT (hàm thuần – mảng theo nến, null khi chưa đủ dữ liệu)
+const CB_TS = {bb: [20, 2], st: [10, 3], ich: [9, 26, 52], sar: [0.02, 0.2], rsi: [14], macd: [12, 26, 9], stoch: [14, 3, 3], adx: [14], atr: [14], mfi: [14]};
+const CB_GH = {bb: [[2, 200, 1], [0.5, 5, 0.1]], st: [[2, 100, 1], [0.5, 10, 0.1]], ich: [[2, 120, 1], [2, 120, 1], [2, 240, 1]],   // [min, max, bước] từng tham số
+  sar: [[0.005, 0.1, 0.005], [0.05, 0.5, 0.01]], rsi: [[2, 100, 1]], macd: [[2, 100, 1], [3, 200, 1], [2, 50, 1]], stoch: [[2, 100, 1], [1, 20, 1], [1, 20, 1]],
+  adx: [[2, 100, 1]], atr: [[2, 100, 1]], mfi: [[2, 100, 1]]};
+const cb_ts_dung = (k, a) => (CB_GH[k] || []).map(([lo, hi, b], j) => { let v = +String(a?.[j] ?? "").replace(",", ".");
+  if (!isFinite(v)) v = CB_TS[k][j]; v = Math.min(hi, Math.max(lo, v)); return b >= 1 ? Math.round(v) : +(Math.round(v / b) * b).toFixed(4); });
+const cb_sma = (c, n) => { const o = new Array(c.length).fill(null); let s = 0, d = 0;           // bỏ qua null đầu chuỗi
+  for (let i = 0; i < c.length; i++) { if (c[i] == null) { s = 0; d = 0; continue; } s += c[i]; d++; if (d > n) s -= c[i - n]; if (d >= n) o[i] = s / n; } return o; };
+const cb_rma = (c, n) => { const o = new Array(c.length).fill(null); let e = null, d = 0, s = 0;   // trung bình Wilder (RSI, ATR, ADX)
+  for (let i = 0; i < c.length; i++) { if (c[i] == null) continue; d++;
+    if (e == null) { s += c[i]; if (d === n) { e = s / n; o[i] = e; } } else { e = (e * (n - 1) + c[i]) / n; o[i] = e; } } return o; };
+const cb_ema = (c, n) => { const o = new Array(c.length).fill(null), a = 2 / (n + 1); let e = null, d = 0, s = 0;   // EMA khởi đầu bằng SMA n
+  for (let i = 0; i < c.length; i++) { if (c[i] == null) continue; d++;
+    if (e == null) { s += c[i]; if (d === n) { e = s / n; o[i] = e; } } else { e = c[i] * a + e * (1 - a); o[i] = e; } } return o; };
+function cb_bb(c, n, k) {
+  const gi = cb_sma(c, n), tr = gi.slice(), du = gi.slice();
+  for (let i = n - 1; i < c.length; i++) { if (gi[i] == null) continue; let s = 0; for (let j = i - n + 1; j <= i; j++) s += (c[j] - gi[i]) ** 2;
+    const sd = Math.sqrt(s / n); tr[i] = gi[i] + k * sd; du[i] = gi[i] - k * sd; }
+  return {gi, tr, du};
+}
+const cb_tr = (h, l, c) => h.map((_, i) => i ? Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1])) : h[i] - l[i]);
+const cb_atr = (h, l, c, n) => cb_rma(cb_tr(h, l, c), n);
+function cb_supertrend(h, l, c, n, k) {                  // → {v, len (true = xu hướng tăng)}
+  const a = cb_atr(h, l, c, n), v = new Array(c.length).fill(null), len = new Array(c.length).fill(null);
+  let ut = null, dt = null, xu = 1;
+  for (let i = 0; i < c.length; i++) {
+    if (a[i] == null) continue;
+    const g = (h[i] + l[i]) / 2, u0 = g + k * a[i], d0 = g - k * a[i];
+    const u = ut == null || u0 < ut || c[i - 1] > ut ? u0 : ut, d = dt == null || d0 > dt || c[i - 1] < dt ? d0 : dt;
+    if (ut != null) xu = xu === 1 ? (c[i] < d ? -1 : 1) : (c[i] > u ? 1 : -1);
+    ut = u; dt = d; v[i] = xu === 1 ? d : u; len[i] = xu === 1;
+  }
+  return {v, len};
+}
+function cb_ichimoku(h, l, c, a, b, s) {                 // span A / B đẩy tới b nến (mảng dài c.length + b), chikou lùi b nến
+  const N = c.length, giua = (p, i) => { if (i + 1 < p) return null; let x = -Infinity, y = Infinity; for (let j = i - p + 1; j <= i; j++) { x = Math.max(x, h[j]); y = Math.min(y, l[j]); } return (x + y) / 2; };
+  const tenkan = c.map((_, i) => giua(a, i)), kijun = c.map((_, i) => giua(b, i));
+  const spa = new Array(N + b).fill(null), spb = new Array(N + b).fill(null), chikou = new Array(N).fill(null);
+  for (let i = 0; i < N; i++) {
+    if (tenkan[i] != null && kijun[i] != null) spa[i + b] = (tenkan[i] + kijun[i]) / 2;
+    const v = giua(s, i); if (v != null) spb[i + b] = v;
+    if (i - b >= 0) chikou[i - b] = c[i];
+  }
+  return {tenkan, kijun, spa, spb, chikou};
+}
+function cb_psar(h, l, af0, afmax) {                     // → {v, len}
+  const N = h.length, v = new Array(N).fill(null), len = new Array(N).fill(null);
+  if (N < 2) return {v, len};
+  let up = h[1] + l[1] >= h[0] + l[0], af = af0, ep = up ? Math.max(h[0], h[1]) : Math.min(l[0], l[1]), sar = up ? Math.min(l[0], l[1]) : Math.max(h[0], h[1]);
+  v[1] = sar; len[1] = up;
+  for (let i = 2; i < N; i++) {
+    sar = sar + af * (ep - sar);
+    if (up) { sar = Math.min(sar, l[i - 1], l[i - 2]);
+      if (l[i] < sar) { up = false; sar = ep; ep = l[i]; af = af0; } else if (h[i] > ep) { ep = h[i]; af = Math.min(afmax, af + af0); } }
+    else { sar = Math.max(sar, h[i - 1], h[i - 2]);
+      if (h[i] > sar) { up = true; sar = ep; ep = h[i]; af = af0; } else if (l[i] < ep) { ep = l[i]; af = Math.min(afmax, af + af0); } }
+    v[i] = sar; len[i] = up;
+  }
+  return {v, len};
+}
+function cb_rsi(c, n) {                                  // Wilder
+  const lai = c.map((v, i) => i ? Math.max(v - c[i - 1], 0) : null), lo = c.map((v, i) => i ? Math.max(c[i - 1] - v, 0) : null);
+  const a = cb_rma(lai, n), b = cb_rma(lo, n);
+  return a.map((x, i) => x == null || b[i] == null ? null : b[i] === 0 ? 100 : 100 - 100 / (1 + x / b[i]));
+}
+function cb_macd(c, f, s, g) {
+  const a = cb_ema(c, f), b = cb_ema(c, s), m = a.map((x, i) => x == null || b[i] == null ? null : x - b[i]), sg = cb_ema(m, g);
+  return {m, s: sg, h: m.map((x, i) => x == null || sg[i] == null ? null : x - sg[i])};
+}
+function cb_stoch(h, l, c, n, sk, sd) {                  // Stochastic chậm: %K thô n → làm mượt sk → %D = TB sd
+  const raw = c.map((v, i) => { if (i + 1 < n) return null; let x = -Infinity, y = Infinity; for (let j = i - n + 1; j <= i; j++) { x = Math.max(x, h[j]); y = Math.min(y, l[j]); }
+    return x === y ? 50 : (v - y) / (x - y) * 100; });
+  const k = cb_sma(raw, sk); return {k, d: cb_sma(k, sd)};
+}
+function cb_dmi(h, l, c, n) {                            // → {adx, pdi, mdi} (Wilder)
+  const pd = h.map((v, i) => { if (!i) return null; const u = v - h[i - 1], d = l[i - 1] - l[i]; return u > d && u > 0 ? u : 0; });
+  const md = h.map((v, i) => { if (!i) return null; const u = v - h[i - 1], d = l[i - 1] - l[i]; return d > u && d > 0 ? d : 0; });
+  const tr = cb_tr(h, l, c).map((v, i) => i ? v : null), atr = cb_rma(tr, n), P = cb_rma(pd, n), M = cb_rma(md, n);
+  const pdi = P.map((v, i) => v == null || !atr[i] ? null : 100 * v / atr[i]), mdi = M.map((v, i) => v == null || !atr[i] ? null : 100 * v / atr[i]);
+  const dx = pdi.map((v, i) => v == null || mdi[i] == null ? null : v + mdi[i] === 0 ? 0 : 100 * Math.abs(v - mdi[i]) / (v + mdi[i]));
+  return {adx: cb_rma(dx, n), pdi, mdi};
+}
+const cb_atr_pt = (h, l, c, n) => cb_atr(h, l, c, n).map((v, i) => v == null || !c[i] ? null : v / c[i] * 100);
+const cb_obv = (c, v) => { let s = 0; return c.map((x, i) => { if (i) s += x > c[i - 1] ? (v[i] || 0) : x < c[i - 1] ? -(v[i] || 0) : 0; return s; }); };
+function cb_mfi(h, l, c, v, n) {
+  const tp = c.map((x, i) => (h[i] + l[i] + x) / 3), o = new Array(c.length).fill(null);
+  for (let i = n; i < c.length; i++) { let a = 0, b = 0;
+    for (let j = i - n + 1; j <= i; j++) { const f = tp[j] * (v[j] || 0); if (tp[j] > tp[j - 1]) a += f; else if (tp[j] < tp[j - 1]) b += f; }
+    o[i] = b === 0 ? 100 : 100 - 100 / (1 + a / b); }
+  return o;
+}
+// NÓN DỰ BÁO: giá có thể ở đâu sau 1…H nến, theo phân vị lịch sử của chính mã (đã bỏ xu hướng tăng / giảm của quá khứ –
+// trung vị = giá hiện tại) hoặc theo biến động σ L nến gần nhất (loe theo √thời gian). Thống kê, không dự đoán lên / xuống.
+const NON_P = [0.025, 0.1, 0.25, 0.5, 0.75, 0.9, 0.975], NON_Z = [-1.959964, -1.281552, -0.67449, 0, 0.67449, 1.281552, 1.959964];
+const phan_vi = (s, p) => { if (!s.length) return null; const t = (s.length - 1) * p, i = Math.floor(t); return s[i] + (s[Math.min(i + 1, s.length - 1)] - s[i]) * (t - i); };
+function non_du_bao(c, H, kieu = "ls", L = 750, Ls = 60) {     // → {kieu, so_mau, q: [7 mảng tỷ lệ giá / giá cuối, chỉ số 0…H]} | null
+  const N = c.length, ln = c.map(v => v > 0 ? Math.log(v) : null);
+  if (N < 3) return null;
+  if (kieu === "ls") {
+    const i0 = Math.max(0, N - 1 - L), q = NON_P.map(() => [1]);
+    let mau = Infinity;
+    for (let h = 1; h <= H; h++) {
+      const r = [];
+      for (let i = i0; i + h <= N - 1; i++) if (ln[i] != null && ln[i + h] != null) r.push(ln[i + h] - ln[i]);
+      if (r.length < 30) { mau = 0; break; }
+      mau = Math.min(mau, r.length); r.sort((a, b) => a - b);
+      const giua = phan_vi(r, 0.5);
+      NON_P.forEach((p, j) => q[j].push(Math.exp(phan_vi(r, p) - giua)));
+    }
+    if (mau >= 30) return {kieu: "ls", so_mau: mau, q};
+  }
+  const r = []; for (let i = Math.max(1, N - Ls); i < N; i++) if (ln[i] != null && ln[i - 1] != null) r.push(ln[i] - ln[i - 1]);
+  if (r.length < 10) return null;
+  const m = r.reduce((a, b) => a + b, 0) / r.length, sd = Math.sqrt(r.reduce((a, b) => a + (b - m) ** 2, 0) / (r.length - 1));
+  return {kieu: "sigma", so_mau: r.length, sd, thay: kieu === "ls", q: NON_Z.map(z => Array.from({length: H + 1}, (_, h) => Math.exp(z * sd * Math.sqrt(h))))};
+}
+function ngay_toi(d, k, khung) {                         // k mốc thời gian sau ngày d theo khung (D: bỏ T7 / CN; W: +7 ngày; M: +1 tháng)
+  const o = []; let t = d;
+  for (let i = 0; i < k; i++) {
+    if (khung === "D") t = phien_sau(t);
+    else { const x = new Date(t + "T00:00:00Z"); if (khung === "W") x.setUTCDate(x.getUTCDate() + 7); else { x.setUTCDate(1); x.setUTCMonth(x.getUTCMonth() + 1); x.setUTCDate(28); } t = x.toISOString().slice(0, 10); }
+    o.push(t);
+  }
+  return o;
+}
+// ---------------------------------------------------------------- hết chỉ báo kỹ thuật
+// ---------------------------------------------------------------- CHỈ BÁO: trạng thái (lưu trong trình duyệt) + menu ƒx (trang thường + toàn màn hình)
+const KHOA_CB = "ma_chi_bao";
+const CB_DUOI = [["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
+  ["obv", "OBV", ""], ["mfi", "MFI", "mfi"]];
+const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
+const CB = cb_mac();
+(() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
+  if (Array.isArray(v.ma_tb)) ST.ma_tb = v.ma_tb.filter(m => [10, 20, 50, 200].includes(m));
+  if (Array.isArray(v.ema)) ST.ema = v.ema.filter(m => [9, 21, 50, 200].includes(m));
+  if ([0, 20, 52].includes(v.dc)) ST.dc = v.dc;
+  if (typeof v.mk === "boolean") ST.mk = v.mk;
+  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
+  if (Array.isArray(v.duoi)) CB.duoi = [...new Set(v.duoi.filter(k => CB_DUOI.some(d => d[0] === k)))];
+  if ([5, 20, 60].includes(v.non_h)) CB.non_h = v.non_h;
+  if (["ls", "sigma"].includes(v.non_kieu)) CB.non_kieu = v.non_kieu;
+  for (const k in CB_TS) if (Array.isArray(v.ts?.[k])) CB.ts[k] = cb_ts_dung(k, v.ts[k]);
+} catch (e) {} })();
+const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB})); } catch (e) {} };
+const ts_chu = k => CB.ts[k].map(v => String(v).replace(".", ",")).join(", ");
+function menu_cb() {
+  const chip = (ten, khoa, ds, gt) => `<div class="cb-dong cb-chip"><span>${ten}</span>${ds.map(m => `<label><input type="checkbox" data-cbx="${khoa}:${m}"${gt.includes(m) ? " checked" : ""}>${m}</label>`).join("")}</div>`;
+  const dong = (khoa, gt, ten, ts) => `<div class="cb-dong"><label><input type="checkbox" data-cbx="${khoa}"${gt ? " checked" : ""}>${ten}${ts ? ` <span class="phu" data-cbn="${ts}">(${ts_chu(ts)})</span>` : ""}</label>` +
+    (ts ? `<button type="button" class="cb-g" data-cbg="${ts}" title="Sửa tham số">⚙</button></div><div class="cb-ts" data-cbtk="${ts}" hidden>` +
+      CB.ts[ts].map((v, j) => `<input type="number" data-cbt="${ts}:${j}" value="${v}" min="${CB_GH[ts][j][0]}" max="${CB_GH[ts][j][1]}" step="${CB_GH[ts][j][2]}" aria-label="${ten} – tham số ${j + 1}">`).join("") : "") + `</div>`;
+  return `<div class="cb-nhom"><b>Vẽ trên nến giá</b>${chip("MA", "ma", [10, 20, 50, 200], ST.ma_tb)}${chip("EMA", "ema", [9, 21, 50, 200], ST.ema)}
+      ${dong("bb", CB.bb, "Bollinger Bands", "bb")}${dong("st", CB.st, "Supertrend", "st")}${dong("ich", CB.ich, "Ichimoku", "ich")}${dong("sar", CB.sar, "Parabolic SAR", "sar")}
+      ${dong("dc:20", ST.dc === 20, "Donchian 20")}${dong("dc:52", ST.dc === 52, "Kênh 52 tuần")}
+      <div class="cb-dong"><label title="CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán"><input type="checkbox" data-cbx="mk"${ST.mk ? " checked" : ""}>Sự kiện (cổ tức, ĐHCĐ, nội bộ)</label></div></div>
+    <div class="cb-nhom"><b>Khung riêng bên dưới</b>${dong("kl_ma", CB.kl_ma, "Đường TB 20 khối lượng")}
+      ${CB_DUOI.map(([k, t, ts]) => dong("p:" + k, CB.duoi.includes(k), t, ts)).join("")}</div>
+    <div class="cb-nhom"><b>Nón dự báo</b>${dong("non", CB.non, "Hiện nón xác suất")}
+      <div class="cb-dong">Tầm <span class="nut">${[5, 20, 60].map(h => `<button type="button" data-cbh="${h}" aria-pressed="${CB.non_h === h}">${h}</button>`).join("")}</span> phiên</div>
+      <div class="cb-dong"><span class="nut"><button type="button" data-cbk="ls" aria-pressed="${CB.non_kieu === "ls"}" title="Phân vị mức tăng / giảm thực tế của chính mã trong 3 năm (ngày) / 5 năm (tuần) / toàn bộ (tháng)">Phân vị lịch sử</button><button type="button" data-cbk="sigma" aria-pressed="${CB.non_kieu === "sigma"}" title="Biến động σ 60 phiên gần nhất, loe theo căn bậc hai thời gian">σ 60 phiên</button></span></div>
+      <div class="phu cb-ghi">Ba lớp 95% · 80% · 50%, nét đứt là trung vị (giá hiện tại – đã bỏ xu hướng quá khứ). Khung tuần / tháng quy đổi tầm theo phiên. Thống kê, không phải khuyến nghị.</div></div>
+    <div class="cb-cuoi"><button type="button" data-cbmd>Về mặc định</button></div>`;
+}
+const menu_khoi = () => `<div class="fs-cb"><button type="button" data-cbmo>ƒx Chỉ báo ▾</button><div class="fs-cb-ds" hidden>${menu_cb()}</div></div>`;
+function cb_doi() { cb_luu(); if (FS) return fs_ve(true); bd_ve_lai(); }
+function bd_ve_lai() { if (!BD_DK?.lai) return; let v = null; try { v = BD_GIA?.timeScale().getVisibleLogicalRange(); } catch (e) {} BD_DK.lai(v); }
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.matches?.("[data-cbx]")) {
+    const [k, v] = t.dataset.cbx.split(":"), on = t.checked;
+    if (k === "ma" || k === "ema") { const key = k === "ma" ? "ma_tb" : "ema", m = +v; ST[key] = on ? [...new Set([...ST[key], m])].sort((a, b) => a - b) : ST[key].filter(z => z !== m); }
+    else if (k === "dc") { ST.dc = on ? +v : 0; document.querySelectorAll('[data-cbx^="dc:"]').forEach(z => { if (z !== t) z.checked = false; }); }
+    else if (k === "mk") ST.mk = on;
+    else if (k === "p") CB.duoi = on ? [...CB.duoi.filter(z => z !== v), v] : CB.duoi.filter(z => z !== v);
+    else CB[k] = on;
+    return cb_doi();
+  }
+  if (t.matches?.("[data-cbt]")) {
+    const [k, j] = t.dataset.cbt.split(":"), a = CB.ts[k].slice(); a[+j] = t.value; CB.ts[k] = cb_ts_dung(k, a); t.value = CB.ts[k][+j];
+    document.querySelectorAll(`[data-cbn="${k}"]`).forEach(z => { z.textContent = `(${ts_chu(k)})`; });
+    return cb_doi();
+  }
+});
+document.addEventListener("click", e => {
+  const t = e.target;
+  const mo = t.closest("[data-cbmo]");
+  if (mo) { e.stopPropagation(); const d = mo.parentElement.querySelector(".fs-cb-ds"); d.hidden = !d.hidden; return; }
+  const g = t.closest("[data-cbg]");
+  if (g) { const r = g.closest(".fs-cb-ds")?.querySelector(`[data-cbtk="${g.dataset.cbg}"]`); if (r) r.hidden = !r.hidden; return; }
+  const h = t.closest("[data-cbh]"), k = t.closest("[data-cbk]");
+  if (h || k) { if (h) CB.non_h = +h.dataset.cbh; if (k) CB.non_kieu = k.dataset.cbk; CB.non = true;
+    document.querySelectorAll("[data-cbh]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.cbh === CB.non_h)));
+    document.querySelectorAll("[data-cbk]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cbk === CB.non_kieu)));
+    document.querySelectorAll('[data-cbx="non"]').forEach(b => { b.checked = true; });
+    return cb_doi(); }
+  if (t.closest("[data-cbmd]")) { Object.assign(CB, cb_mac()); Object.assign(ST, {ma_tb: [20, 50], ema: [], dc: 0, mk: true});
+    document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = menu_cb(); }); return cb_doi(); }
+  document.querySelectorAll(".fs-cb-ds").forEach(d => { if (!d.hidden && !t.closest(".fs-cb")) d.hidden = true; });
+});
+// tô vùng giữa 2 đường (Bollinger, mây Ichimoku) – plugin vẽ dưới nến
+class DaiPrim {
+  constructor(ch, s, a, b, mau) { this.ch = ch; this.s = s; this.a = a; this.b = b; this.mau = mau;
+    this.v = [{zOrder: () => "bottom", renderer: () => ({draw: t => this.ve(t)})}]; }
+  paneViews() { return this.v; }
+  ve(t) {
+    const ts = this.ch.timeScale(), r = ts.getVisibleLogicalRange(); if (!r) return;
+    const i0 = Math.max(0, Math.floor(r.from) - 1), i1 = Math.min(this.a.length - 1, Math.ceil(r.to) + 1);
+    t.useBitmapCoordinateSpace(({context: c, horizontalPixelRatio: hr, verticalPixelRatio: vr}) => {
+      let run = [], mau_ = null;
+      const xong = () => { if (run.length > 1) { c.beginPath(); run.forEach(([x, y], j) => j ? c.lineTo(x, y) : c.moveTo(x, y));
+        for (let j = run.length - 1; j >= 0; j--) c.lineTo(run[j][0], run[j][2]); c.closePath(); c.fillStyle = mau_; c.fill(); } run = []; };
+      for (let i = i0; i <= i1; i++) {
+        const a = this.a[i], b = this.b[i];
+        if (a == null || b == null) { xong(); continue; }
+        const X = ts.logicalToCoordinate(i), ya = this.s.priceToCoordinate(a), yb = this.s.priceToCoordinate(b);
+        if (X == null || ya == null || yb == null) { xong(); continue; }
+        const p = [X * hr, ya * vr, yb * vr], m = this.mau(i);
+        if (m !== mau_) { const cuoi = run[run.length - 1]; xong(); mau_ = m; if (cuoi) run.push(cuoi); }
+        run.push(p);
+      }
+      xong();
+    });
+  }
+}
+// nón dự báo: 3 lớp 95% · 80% · 50% từ nến cuối, trung vị nét đứt, nhãn giá ở mép phải
+class NonPrim {
+  constructor(ch, s, d) { this.ch = ch; this.s = s; this.d = d; this.v = [{zOrder: () => "bottom", renderer: () => ({draw: t => this.ve(t)})}]; }
+  paneViews() { return this.v; }
+  autoscaleInfo(a, b) {
+    const {i0, H, p} = this.d; if (b < i0 || a > i0 + H) return null;
+    let lo = Infinity, hi = -Infinity;
+    for (let j = Math.max(0, Math.floor(a) - i0); j <= Math.min(H, Math.ceil(b) - i0); j++) { lo = Math.min(lo, p[0][j]); hi = Math.max(hi, p[6][j]); }
+    return isFinite(lo) ? {priceRange: {minValue: lo, maxValue: hi}} : null;
+  }
+  ve(t) {
+    const {i0, H, p} = this.d, ts = this.ch.timeScale();
+    t.useBitmapCoordinateSpace(({context: c, horizontalPixelRatio: hr, verticalPixelRatio: vr}) => {
+      const X = j => { const v = ts.logicalToCoordinate(i0 + j); return v == null ? null : v * hr; }, Y = v => { const y = this.s.priceToCoordinate(v); return y == null ? null : y * vr; };
+      for (const [lo, hi, m] of [[0, 6, "rgba(31,111,235,0.08)"], [1, 5, "rgba(31,111,235,0.12)"], [2, 4, "rgba(31,111,235,0.18)"]]) {
+        const tren = [], duoi = [];
+        for (let j = 0; j <= H; j++) { const x = X(j), a = Y(p[hi][j]), b = Y(p[lo][j]); if (x == null || a == null || b == null) continue; tren.push([x, a]); duoi.push([x, b]); }
+        if (tren.length < 2) return;
+        c.beginPath(); tren.forEach(([x, y], j) => j ? c.lineTo(x, y) : c.moveTo(x, y)); for (let j = duoi.length - 1; j >= 0; j--) c.lineTo(duoi[j][0], duoi[j][1]);
+        c.closePath(); c.fillStyle = m; c.fill();
+      }
+      c.save(); c.setLineDash([4 * hr, 3 * hr]); c.strokeStyle = "#1f6feb"; c.lineWidth = Math.max(1, hr); c.beginPath();
+      let dau = true; for (let j = 0; j <= H; j++) { const x = X(j), y = Y(p[3][j]); if (x == null || y == null) continue; dau ? c.moveTo(x, y) : c.lineTo(x, y); dau = false; }
+      c.stroke(); c.restore();
+      const xe = X(H); if (xe == null) return;
+      c.font = `${Math.round(10.5 * vr)}px system-ui,-apple-system,Segoe UI,Roboto,sans-serif`; c.textBaseline = "middle"; c.textAlign = "right";
+      let yt = -Infinity;
+      for (const [k, ten] of [[6, "97,5%"], [5, "90%"], [4, "75%"], [3, "50%"], [2, "25%"], [1, "10%"], [0, "2,5%"]]) {
+        const y = Y(p[k][H]); if (y == null) continue;
+        const yy = Math.max(y, yt + 13 * vr), chu = `${ten} ${so(p[k][H], 2)}`, w = c.measureText(chu).width; yt = yy;
+        c.fillStyle = "rgba(255,255,255,0.85)"; c.fillRect(xe - 6 * hr - w, yy - 7 * vr, w + 4 * hr, 14 * vr);
+        c.fillStyle = k === 3 ? "#1f6feb" : "#1f4fa8"; c.fillText(chu, xe - 4 * hr, yy);
+      }
+    });
+  }
+}
 // ---------------------------------------------------------------- TradingView, Excel
 function ma_tv(ma, k) { const s = String(k?.r?.san || LIVE[ma]?.san || "HOSE").toUpperCase(); return (s.startsWith("HN") ? "HNX" : s.startsWith("UP") ? "UPCOM" : "HOSE") + ":" + ma; }
 let LWC_P = null;
 function tai_lwc() {                                   // TradingView Lightweight Charts (Apache 2.0) – kèm trang: lib/
   LWC_P = LWC_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "lib/lightweight-charts.standalone.production.js"; sc.onload = () => ok(window.LightweightCharts); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "lib/lightweight-charts.standalone.production.js?v=5.1.0"; sc.onload = () => ok(window.LightweightCharts); sc.onerror = loi; document.head.appendChild(sc); });
   return LWC_P;
 }
 function gop_khung(x, khung) {                          // nến ngày → tuần / tháng (OHLC, KL, NN cộng dồn)
@@ -626,13 +896,13 @@ function ve_hinh(ma) {                                // vẽ lại mọi hình 
     if (ia === ib) continue;
     if (ia > ib) [ia, ib, va, vb] = [ib, ia, vb, va];
     const tiep = vb + (vb - va) / (ib - ia) * (n - 1 - ib);            // kéo dài tới phiên cuối
-    const s = B.ch.addLineSeries({color: h.mau || "#1f6feb", lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+    const s = B.ch.addSeries(B.LW.LineSeries, {color: h.mau || "#1f6feb", lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
     s.setData([{time: x.d[ia], value: va}, {time: x.d[ib], value: vb}].concat(ib < n - 1 ? [{time: x.d[n - 1], value: tiep}] : []));
     VS.ds.push({s});
   }
 }
 function diem_ve(p) {                                  // điểm bấm → {time, value}; nam châm: bám O / C / H / L gần nhất của nến
-  const B = BD_DK; if (!B || !p?.time || !p.point) return null;
+  const B = BD_DK; if (!B || !p?.time || !p.point || p.paneIndex) return null;      // chỉ khung giá (không khung chỉ báo phụ)
   const t = t_chuoi(p.time), v = B.nen.coordinateToPrice(p.point.y); if (v == null) return null;
   if (!VS.nam) return {time: t, value: v};
   const i = B.x.d.indexOf(t); if (i < 0) return {time: t, value: v};
@@ -659,7 +929,7 @@ function gan_ve(el) {                                 // bấm trên biểu đ�
     const khoa = d.time + "|" + d.value.toFixed(3); if (khoa === cuoi) return; cuoi = khoa;
     if (cho) cancelAnimationFrame(cho);
     cho = requestAnimationFrame(() => { cho = null; if (!VS.a || BD_DK !== B) return;
-      if (!VS.tam) VS.tam = B.ch.addLineSeries({color: "#1f6feb", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+      if (!VS.tam) VS.tam = B.ch.addSeries(B.LW.LineSeries, {color: "#1f6feb", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
       VS.tam.setData([VS.a, d].sort((p_, q) => p_.time < q.time ? -1 : 1)); });
   });
 }
@@ -677,61 +947,139 @@ function dk_bd(c, khung) {                           // điều khiển biểu �
   if (!BD_DK) return;
   const {ch, nen, LW, n, so_nen} = BD_DK;
   if (c === "pt" || c === "log") { ST.thang = thang_hl() === c ? "thuong" : c; nen.priceScale().applyOptions({mode: che_do_thang(LW), autoScale: true}); }
-  if (c === "tu") { nen.priceScale().applyOptions({autoScale: true}); ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: n + 3}); }
+  if (c === "tu") { nen.priceScale().applyOptions({autoScale: true}); ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: BD_DK.phai ?? n + 3}); }
   if (c === "vua") { nen.priceScale().applyOptions({autoScale: true}); ch.timeScale().fitContent(); }
   nut_bd();
 }
 async function ve_bd_gia(el, x0, them = {}) {
   const LW = await tai_lwc();
   if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
-  const x = gop_khung(x0, ST.khung), n = x.d.length;
-  const ch = LW.createChart(el, {autoSize: true, layout: {background: {color: "#ffffff"}, textColor: "#4b5565", fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", fontSize: 11},
+  el.querySelectorAll(".chu-bd,.chu-pane").forEach(z => z.remove());
+  const x = gop_khung(x0, ST.khung), n = x.d.length, fs = !!them.fs, nhan = fs;   // toàn màn hình: nhãn giá từng chỉ báo trên trục
+  const nho = matchMedia("(max-width:600px)").matches, cao0 = nho ? 380 : 480, cao1 = nho ? 90 : 110;
+  const H = ST.khung === "D" ? CB.non_h : Math.max(1, Math.round(CB.non_h / (ST.khung === "W" ? 5 : 21))), [ich_a, ich_b, ich_s] = CB.ts.ich;   // tầm tính theo phiên
+  const du = n ? Math.max(CB.non ? H : 0, CB.ich ? ich_b : 0) : 0, fut = n ? ngay_toi(x.d[n - 1], du, ST.khung) : [], T = x.d.concat(fut);
+  if (!fs) el.style.height = CB.duoi.length ? (cao0 + CB.duoi.length * cao1) + "px" : "";
+  const ch = LW.createChart(el, {autoSize: true, layout: {background: {color: "#ffffff"}, textColor: "#4b5565", fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", fontSize: 11,
+      panes: {separatorColor: "#e3e7ee", separatorHoverColor: "#c9d6cc", enableResize: true}},
     grid: {vertLines: {color: "#f2f4f7"}, horzLines: {color: "#f2f4f7"}}, rightPriceScale: {borderColor: "#e3e7ee"},
     timeScale: {borderColor: "#e3e7ee", rightOffset: 4, minBarSpacing: 0.1}, crosshair: {mode: LW.CrosshairMode.Normal},
     localization: {locale: "vi-VN", priceFormatter: p => so(p, 2)}});
   BD_GIA = ch;
-  const nen = ch.addCandlestickSeries({upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false, wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineColor: "#7a8494"});
-  nen.setData(x.d.map((d, i) => ({time: d, open: x.o[i], high: x.h[i], low: x.l[i], close: x.c[i]})));
+  const S = (loai, o, p = 0) => ch.addSeries(LW[loai], o, p);
+  const dl = v => T.map((d, i) => v[i] == null ? {time: d} : {time: d, value: v[i]});            // khoảng trống giữ đúng vị trí nến
+  const duong = (v, o, p = 0) => { const s = S("LineSeries", {lineWidth: 1.5, priceLineVisible: false, lastValueVisible: nhan, crosshairMarkerVisible: false, ...o}, p); s.setData(dl(v)); return s; };
+  const nen = S("CandlestickSeries", {upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false, wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineColor: "#7a8494"});
+  nen.setData(x.d.map((d, i) => ({time: d, open: x.o[i], high: x.h[i], low: x.l[i], close: x.c[i]})).concat(fut.map(d => ({time: d}))));
   nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}, autoScale: true, mode: che_do_thang(LW)});   // mặc định: "Tất cả" thang log
+  // --- vẽ trên nến giá
   const MAU_MA = {10: "#e8710a", 20: "#1f6feb", 50: "#9b3fd1", 200: "#0e9fb3"}, ma = {};
-  const nhan = !!them.fs;                              // toàn màn hình: nhãn giá từng chỉ báo trên trục giá
-  for (const m of ST.ma_tb) { const v = sma(x.c, m); ma[m] = v;
-    const l = ch.addLineSeries({color: MAU_MA[m], lineWidth: 1.5, priceLineVisible: false, lastValueVisible: nhan, crosshairMarkerVisible: false});
-    l.setData(x.d.map((d, i) => v[i] == null ? null : {time: d, value: v[i]}).filter(Boolean)); }
-  const MAU_EMA = {9: "#c2185b", 21: "#00897b"}, em = {}, them_duong = (v, o) => ch.addLineSeries({lineWidth: 1.5, priceLineVisible: false, lastValueVisible: nhan, crosshairMarkerVisible: false, ...o})
-    .setData(x.d.map((d, i) => v[i] == null ? null : {time: d, value: v[i]}).filter(Boolean));
-  for (const m of ST.ema) { em[m] = ema_bd(x.c, m); them_duong(em[m], {color: MAU_EMA[m], lineStyle: 2}); }
+  for (const m of ST.ma_tb) { ma[m] = sma(x.c, m); duong(ma[m], {color: MAU_MA[m]}); }
+  const MAU_EMA = {9: "#c2185b", 21: "#00897b", 50: "#6d4c41", 200: "#455a64"}, em = {};
+  for (const m of ST.ema) { em[m] = ema_bd(x.c, m); duong(em[m], {color: MAU_EMA[m], lineStyle: 2}); }
+  let bb = null;
+  if (CB.bb) { const [p, k] = CB.ts.bb; bb = cb_bb(x.c, p, k);
+    duong(bb.tr, {color: "#2962ff", lineWidth: 1}); duong(bb.du, {color: "#2962ff", lineWidth: 1}); duong(bb.gi, {color: "#ff6d00", lineWidth: 1});
+    nen.attachPrimitive(new DaiPrim(ch, nen, bb.tr, bb.du, () => "rgba(41,98,255,0.07)")); }
+  let st = null;
+  if (CB.st) { const [p, k] = CB.ts.st; st = cb_supertrend(x.h, x.l, x.c, p, k);
+    const noi = len => st.v.map((v, i) => st.len[i] === len || (st.len[i + 1] === len && st.len[i] !== len) ? v : null);   // nối điểm đổi chiều
+    duong(noi(true), {color: "#0f8a4a", lineWidth: 2}); duong(noi(false), {color: "#d1342b", lineWidth: 2}); }
+  let ich = null;
+  if (CB.ich) { ich = cb_ichimoku(x.h, x.l, x.c, ich_a, ich_b, ich_s);
+    nen.attachPrimitive(new DaiPrim(ch, nen, ich.spa, ich.spb, i => ich.spa[i] >= ich.spb[i] ? "rgba(67,160,71,0.16)" : "rgba(229,57,53,0.16)"));
+    duong(ich.spa, {color: "#43a04799", lineWidth: 1}); duong(ich.spb, {color: "#e5393599", lineWidth: 1});
+    duong(ich.tenkan, {color: "#0496ff", lineWidth: 1}); duong(ich.kijun, {color: "#991515", lineWidth: 1}); }
+  let sar = null;
+  if (CB.sar) { const [a0, am] = CB.ts.sar; sar = cb_psar(x.h, x.l, a0, am);
+    for (const [len, m] of [[true, "#0f8a4a"], [false, "#d1342b"]])
+      duong(sar.v.map((v, i) => sar.len[i] === len ? v : null), {color: m, lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 1.6, lastValueVisible: false}); }
   let dc = null;
   if (ST.dc) { const p = ST.dc === 52 ? ({D: 250, W: 52, M: 12})[ST.khung] : 20, cua = (a, f) => a.map((_, i) => i + 1 < p ? null : f(...a.slice(i + 1 - p, i + 1)));
-    const tr = cua(x.h, Math.max), du = cua(x.l, Math.min); dc = {p, tr, du, gi: tr.map((v, i) => v == null ? null : (v + du[i]) / 2)};
-    them_duong(dc.tr, {color: "#e8a400", lineWidth: 1}); them_duong(dc.du, {color: "#e8a400", lineWidth: 1}); them_duong(dc.gi, {color: "#e8a400", lineWidth: 1, lineStyle: 2}); }
+    const tr = cua(x.h, Math.max), d_ = cua(x.l, Math.min); dc = {p, tr, du: d_, gi: tr.map((v, i) => v == null ? null : (v + d_[i]) / 2)};
+    duong(dc.tr, {color: "#e8a400", lineWidth: 1}); duong(dc.du, {color: "#e8a400", lineWidth: 1}); duong(dc.gi, {color: "#e8a400", lineWidth: 1, lineStyle: 2}); }
   if (ST.khung === "D" && them.gn) for (const [v, t, c] of [[them.gn.tran, "Trần", "#9b3fd1"], [them.gn.tc, "TC", "#b88a00"], [them.gn.san, "Sàn", "#0e9fb3"]])
     if (v > 0) nen.createPriceLine({price: v, color: c, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: t});
-  if (ST.mk && them.n) nen.setMarkers(moc_su_kien(x, them.n));
-  const duoi = ch.addHistogramSeries({priceScaleId: "duoi", priceFormat: ST.duoi === "kl" ? {type: "volume"} : {type: "price", precision: 1, minMove: .1}, lastValueVisible: false, priceLineVisible: false});
+  if (ST.mk && them.n) LW.createSeriesMarkers(nen, moc_su_kien(x, them.n));
+  // --- khối lượng / khối ngoại: dải dưới khung giá (+ đường TB 20 KL)
+  const duoi = S("HistogramSeries", {priceScaleId: "duoi", priceFormat: ST.duoi === "kl" ? {type: "volume"} : {type: "price", precision: 1, minMove: .1}, lastValueVisible: false, priceLineVisible: false});
   ch.priceScale("duoi").applyOptions({scaleMargins: {top: .8, bottom: 0}});
   duoi.setData(x.d.map((d, i) => { const v = ST.duoi === "kl" ? x.v[i] : x.nn?.[i];
     if (v == null) return null; const tang = ST.duoi === "kl" ? x.c[i] >= x.o[i] : v >= 0;
     return {time: d, value: v, color: tang ? "#0f8a4a66" : "#d1342b66"}; }).filter(Boolean));
+  let klma = null;
+  if (CB.kl_ma && ST.duoi === "kl") { klma = cb_sma(x.v.map(v => v || 0), 20); duong(klma, {priceScaleId: "duoi", color: "#e8710a", lineWidth: 1, lastValueVisible: false}); }
+  // --- nón dự báo
+  let non = null;
+  if (CB.non && n > 2) {
+    non = non_du_bao(x.c, H, CB.non_kieu, ({D: 750, W: 260})[ST.khung] || 1e6, ({D: 60, W: 26})[ST.khung] || 12);
+    if (non) { non.H = H; non.i0 = n - 1; non.p = non.q.map(a => a.map(r => r * x.c[n - 1])); nen.attachPrimitive(new NonPrim(ch, nen, non)); }
+  }
+  // --- khung riêng bên dưới (mỗi chỉ báo 1 khung, trục giá riêng)
+  const PH = [], co_dinh = {autoscaleInfoProvider: () => ({priceRange: {minValue: 0, maxValue: 100}})};
+  const nguong = (s, ds) => ds.forEach(y => s.createPriceLine({price: y, color: "#9aa3af", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: ""}));
+  const mau_chu = (m, v, l = 2) => `<b style="color:${m}">${so(v, l)}</b>`;
+  CB.duoi.forEach((k, j) => {
+    const p = j + 1, ts = CB.ts[k], d_ = (v, o) => duong(v, {lastValueVisible: true, ...o}, p);
+    if (k === "rsi") { const v = cb_rsi(x.c, ts[0]); nguong(d_(v, {color: "#7e57c2", ...co_dinh}), [30, 70]);
+      PH.push(i => `RSI ${ts[0]} ${mau_chu("#7e57c2", v[i], 1)}`); }
+    else if (k === "macd") { const m = cb_macd(x.c, ...ts), hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: false}, p);
+      hs.setData(T.map((d, i) => { const h = m.h[i]; if (h == null) return {time: d}; const t = i > 0 && m.h[i - 1] != null ? h - m.h[i - 1] : 0;
+        return {time: d, value: h, color: h >= 0 ? (t >= 0 ? "#26a69a" : "#b2dfdb") : (t <= 0 ? "#ef5350" : "#ffcdd2")}; }));
+      d_(m.m, {color: "#2962ff"}); d_(m.s, {color: "#ff6d00"});
+      PH.push(i => `MACD ${ts.join(", ")} ${mau_chu("#2962ff", m.m[i])} · tín hiệu ${mau_chu("#ff6d00", m.s[i])} · histogram ${mau_chu(m.h[i] >= 0 ? "#26a69a" : "#ef5350", m.h[i])}`); }
+    else if (k === "stoch") { const s = cb_stoch(x.h, x.l, x.c, ...ts); nguong(d_(s.k, {color: "#2962ff", ...co_dinh}), [20, 80]); d_(s.d, {color: "#ff6d00", ...co_dinh});
+      PH.push(i => `Stochastic ${ts.join(", ")} %K ${mau_chu("#2962ff", s.k[i], 1)} · %D ${mau_chu("#ff6d00", s.d[i], 1)}`); }
+    else if (k === "adx") { const a = cb_dmi(x.h, x.l, x.c, ts[0]); nguong(d_(a.adx, {color: "#37474f", lineWidth: 2}), [25]); d_(a.pdi, {color: "#0f8a4a", lineWidth: 1}); d_(a.mdi, {color: "#d1342b", lineWidth: 1});
+      PH.push(i => `ADX ${ts[0]} ${mau_chu("#37474f", a.adx[i], 1)} · +DI ${mau_chu("#0f8a4a", a.pdi[i], 1)} · −DI ${mau_chu("#d1342b", a.mdi[i], 1)}`); }
+    else if (k === "atr") { const v = cb_atr_pt(x.h, x.l, x.c, ts[0]); d_(v, {color: "#00897b"});
+      PH.push(i => `ATR ${ts[0]} ${mau_chu("#00897b", v[i])}% giá`); }
+    else if (k === "obv") { const v = cb_obv(x.c, x.v); d_(v, {color: "#5d4037", priceFormat: {type: "volume"}});
+      PH.push(i => `OBV <b style="color:#5d4037">${kl(v[i])}</b>`); }
+    else if (k === "mfi") { const v = cb_mfi(x.h, x.l, x.c, x.v, ts[0]); nguong(d_(v, {color: "#ad1457", ...co_dinh}), [20, 80]);
+      PH.push(i => `MFI ${ts[0]} ${mau_chu("#ad1457", v[i], 1)}`); }
+  });
+  const pn = ch.panes();
+  if (pn.length > 1) { const k = pn.length - 1; pn[0].setStretchFactor(fs ? 3 : cao0 / cao1); for (let j = 1; j <= k; j++) pn[j].setStretchFactor(fs ? Math.min(1, 2.4 / k) : 1); }
+  // --- vùng xem
   const ytd = x.d.findIndex(d => d >= String(x.d[n - 1]).slice(0, 4) + "-01-01");
   const so_nen = ST.nen < 0 ? Math.max(3, n - ytd) : ST.khung === "D" ? ST.nen : ST.khung === "W" ? Math.ceil(ST.nen / 5) : Math.ceil(ST.nen / 21);
-  if (them.giu_vung) ch.timeScale().setVisibleLogicalRange(them.giu_vung);
-  else ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: n + 3});
-  BD_DK = {ch, nen, LW, n, so_nen, x, ma: them.ma};
+  const phai = n + (CB.non && non ? H : 0) + 3;
+  if (them.giu_vung) { const v = {...them.giu_vung}; if (v.to >= n - 3) v.to = Math.max(v.to, phai); ch.timeScale().setVisibleLogicalRange(v); }
+  else ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: phai});
+  BD_DK = {ch, nen, LW, n, so_nen, x, ma: them.ma, phai, lai: vung => ve_bd_gia(el, x0, {...them, giu_vung: vung})};
   if (them.ma) ve_hinh(them.ma);
-  if (them.fs) gan_ve(el);
-  for (const ev of ["pointerup", "wheel", "touchend", "dblclick"]) el.addEventListener(ev, () => setTimeout(nut_bd, 60), {passive: true});
-  nut_bd();
+  if (fs) gan_ve(el);
+  // --- chú giải: góc trái khung giá + mỗi khung phụ
   const cg = document.createElement("div"); cg.className = "chu-bd"; el.appendChild(cg);
-  const viet = i => { if (i == null || i < 0 || i >= n) return; const p = x.tam && i === n - 1 && x.tc ? x.c[i] / x.tc - 1 : i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
+  const cp = PH.map(() => { const d = document.createElement("div"); d.className = "chu-pane"; el.appendChild(d); return d; });
+  const dat_cp = () => { const ds = ch.panes(); let top = 0; ds.forEach((p, j) => { if (j && cp[j - 1]) cp[j - 1].style.top = (top + 2) + "px"; top += p.getHeight() + 1; }); };
+  const u = {D: "phiên", W: "tuần", M: "tháng"}[ST.khung];
+  const non_chu = non ? `<span class="chu-non"><br><span style="color:#1f4fa8">Nón ${H} ${u} (${non.kieu === "ls" ? "phân vị lịch sử" : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`}): 50% ${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)} · 95% ${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}</span> <span class="phu">· thống kê, không phải khuyến nghị</span></span>` : "";
+  const viet = i => {
+    if (i == null || i < 0 || i >= n) i = n - 1;
+    if (i < 0) return;
+    const p = x.tam && i === n - 1 && x.tc ? x.c[i] / x.tc - 1 : i > 0 ? x.c[i] / x.c[i - 1] - 1 : null;
     cg.innerHTML = `${ngay_vn(x.d[i])}${x.tam && i === n - 1 ? " (tạm)" : ""} · M <b>${so(x.o[i], 2)}</b> C <b>${so(x.h[i], 2)}</b> T <b>${so(x.l[i], 2)}</b> Đ <b class="${mau(p)}">${so(x.c[i], 2)}</b> <span class="${mau(p)}">${pt(p, 2)}</span>` +
-      `<br>KL ${kl(x.v[i])}${x.nn?.[i] != null ? ` · NN ${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ` : ""}` +
+      `<br>KL ${kl(x.v[i])}${klma?.[i] != null ? ` <span style="color:#e8710a">(TB20 ${kl(klma[i])})</span>` : ""}${x.nn?.[i] != null ? ` · NN ${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ` : ""}` +
       ST.ma_tb.map(m => ma[m][i] != null ? ` · <span style="color:${MAU_MA[m]}">MA${m} ${so(ma[m][i], 2)}</span>` : "").join("") +
       ST.ema.map(m => em[m]?.[i] != null ? ` · <span style="color:${MAU_EMA[m]}">EMA${m} ${so(em[m][i], 2)}</span>` : "").join("") +
-      (dc && dc.tr[i] != null ? `<br><span style="color:#a87b00">DC ${dc.p} Trên ${so(dc.tr[i], 2)} · Giữa ${so(dc.gi[i], 2)} · Dưới ${so(dc.du[i], 2)}</span>` : ""); };
+      (bb && bb.gi[i] != null ? `<br><span style="color:#2962ff">BB ${ts_chu("bb")} Trên ${so(bb.tr[i], 2)} · Giữa ${so(bb.gi[i], 2)} · Dưới ${so(bb.du[i], 2)}</span>` : "") +
+      (st && st.v[i] != null ? `<br><span style="color:${st.len[i] ? "#0f8a4a" : "#d1342b"}">Supertrend ${ts_chu("st")} ${so(st.v[i], 2)} (${st.len[i] ? "tăng" : "giảm"})</span>` : "") +
+      (ich && ich.tenkan[i] != null ? `<br>Ichimoku <span style="color:#0496ff">Tenkan ${so(ich.tenkan[i], 2)}</span> · <span style="color:#991515">Kijun ${so(ich.kijun[i], 2)}</span>${ich.spa[i] != null ? ` · Mây ${so(Math.min(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}–${so(Math.max(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}` : ""}` : "") +
+      (sar && sar.v[i] != null ? `<br><span style="color:${sar.len[i] ? "#0f8a4a" : "#d1342b"}">SAR ${so(sar.v[i], 2)}</span>` : "") +
+      (dc && dc.tr[i] != null ? `<br><span style="color:#a87b00">DC ${dc.p} Trên ${so(dc.tr[i], 2)} · Giữa ${so(dc.gi[i], 2)} · Dưới ${so(dc.du[i], 2)}</span>` : "") + non_chu;
+    PH.forEach((f, j) => { cp[j].innerHTML = f(i); });
+  };
   viet(n - 1);
   const vi = new Map(x.d.map((d, i) => [d, i]));
-  ch.subscribeCrosshairMove(e => { if (!e || !e.time) return viet(n - 1); const t = typeof e.time === "string" ? e.time : `${e.time.year}-${String(e.time.month).padStart(2, "0")}-${String(e.time.day).padStart(2, "0")}`; viet(vi.get(t)); });
+  ch.subscribeCrosshairMove(e => { if (!e || !e.time) return viet(n - 1); viet(vi.get(t_chuoi(e.time))); });
+  el._cap = () => { nut_bd(); dat_cp(); };                        // gắn sự kiện 1 lần / khung (vẽ lại không chồng sự kiện)
+  if (!el._nghe) { el._nghe = true;
+    for (const ev of ["pointerup", "wheel", "touchend", "dblclick"]) el.addEventListener(ev, () => setTimeout(() => el._cap?.(), 60), {passive: true});
+    try { new ResizeObserver(() => requestAnimationFrame(() => el._cap?.())).observe(el); } catch (e) {} }
+  requestAnimationFrame(dat_cp);
+  nut_bd();
 }
 let XLSX_P = null;
 function tai_xlsx(ten, sheets) {                       // sheets: [[tên sheet, [[ô…]…]]] – SheetJS tải khi bấm
@@ -754,10 +1102,7 @@ function tong_quan(ma, k) {
       ["1 năm", ve(L - 250)], ["3 năm", ve(L - 750)], ["5 năm", ve(L - 1250)], ["Từ đầu năm", dn > 0 ? c[L] / c[dn - 1] - 1 : null]];
     h += the("Biểu đồ giá", `giá điều chỉnh cổ tức / chia tách · ${x.d.length} phiên từ ${ngay_vn(x.d[0])}${x.cu ? ` · <span class="g">lịch sử tới ${ngay_vn(x.cu)} (chưa cập nhật)</span>` : ""}${x.dc ? " · hôm nay GDKHQ – lịch sử đã điều chỉnh theo tham chiếu" : ""} · kéo / cuộn để xem · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`,
       `<div class="nen-dk"><span class="nut">${nut([["D", "Ngày"], ["W", "Tuần"], ["M", "Tháng"]], ST.khung, "khung")}</span>
-       ${["10", "20", "50", "200"].map(m => `<label><input type="checkbox" data-ma="${m}"${ST.ma_tb.includes(+m) ? " checked" : ""}>MA${m}</label>`).join("")}
-       ${["9", "21"].map(m => `<label><input type="checkbox" data-ema="${m}"${ST.ema.includes(+m) ? " checked" : ""}>EMA${m}</label>`).join("")}
-       ${[["20", "Donchian 20"], ["52", "Kênh 52 tuần"]].map(([m, t]) => `<label><input type="checkbox" data-dc="${m}"${ST.dc === +m ? " checked" : ""}>${t}</label>`).join("")}
-       <label title="CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán"><input type="checkbox" data-mk${ST.mk ? " checked" : ""}>Sự kiện</label>
+       ${menu_khoi()}
        <span class="nut">${nut([["kl", "Khối lượng"]].concat(x.nn?.some(v => v != null) ? [["nn", "Khối ngoại"]] : []), ST.duoi, "duoi")}</span></div>
        <div class="bd-khung" id="bd-khung"><div class="bd-gia" id="bd-gia"></div>
        <div class="bd-cong"><span class="goi">kéo trục giá / thời gian để co giãn · cuộn để phóng to · bấm đúp trục để đặt lại</span>
@@ -1519,12 +1864,12 @@ async function ve_bd_pe(el, P) {
     grid: {vertLines: {color: "#f2f4f7"}, horzLines: {color: "#f2f4f7"}}, rightPriceScale: {borderColor: "#e3e7ee"}, timeScale: {borderColor: "#e3e7ee", minBarSpacing: 0.1},
     localization: {locale: "vi-VN", priceFormatter: p => so(p, key === "pe" ? 1 : 2)}});
   BD_PE = ch;
-  const l = ch.addLineSeries({color: "#2E7D32", lineWidth: 2, priceLineVisible: false});
+  const l = ch.addSeries(LW.LineSeries, {color: "#2E7D32", lineWidth: 2, priceLineVisible: false});
   l.setData(d.map((t, i) => v[i] == null ? {time: t} : {time: t, value: v[i]}));
   if (co.length > 20) { const m = tb(co), sd = Math.sqrt(tb(co.map(a => (a - m) ** 2)));
     for (const [y, t, s] of [[m, "TB", 0], [m + sd, "+1σ", 2], [m - sd, "−1σ", 2]]) if (y > 0) l.createPriceLine({price: y, color: "#1f6feb", lineWidth: 1, lineStyle: s, axisLabelVisible: true, title: t}); }
   const tm = P.uoc ? d.find(t => t >= P.vc) : null;              // mốc phải trùng 1 phiên trên trục
-  if (tm && tm > d[0]) l.setMarkers([{time: tm, position: "aboveBar", color: "#7a8494", shape: "arrowDown", text: "P/E Vietcap từ đây"}]);
+  if (tm && tm > d[0]) LW.createSeriesMarkers(l, [{time: tm, position: "aboveBar", color: "#7a8494", shape: "arrowDown", text: "P/E Vietcap từ đây"}]);
   ch.timeScale().fitContent();
 }
 
@@ -1838,7 +2183,6 @@ async function hien_ma(ma, tab) {
 function gan_su_kien(ma, k, tab) {
   const ve_lai = () => hien_ma(ma, tab);
   document.querySelectorAll("[data-nen]").forEach(b => b.onclick = () => { ST.nen = +b.dataset.nen; ve_lai(); });
-  document.querySelectorAll("[data-ma]").forEach(b => b.onchange = () => { const m = +b.dataset.ma; ST.ma_tb = b.checked ? [...new Set([...ST.ma_tb, m])].sort((a, c) => a - c) : ST.ma_tb.filter(x => x !== m); ve_lai(); });
   document.querySelectorAll("[data-ky]").forEach(b => b.onclick = () => { ST.ky = b.dataset.ky; ve_lai(); });
   document.querySelectorAll("[data-bang]").forEach(b => b.onclick = () => { ST.bang = b.dataset.bang; ve_lai(); });
   document.querySelectorAll("[data-ls]").forEach(b => b.onclick = () => { ST.ls = b.dataset.ls; ST.ls_n = 30; ve_lai(); });
@@ -1846,9 +2190,6 @@ function gan_su_kien(ma, k, tab) {
   if ($("#ls-them")) $("#ls-them").onclick = () => { ST.ls_n += 30; ve_lai(); };
   document.querySelectorAll("[data-khung]").forEach(b => b.onclick = () => { ST.khung = b.dataset.khung; ve_lai(); });
   document.querySelectorAll("[data-duoi]").forEach(b => b.onclick = () => { ST.duoi = b.dataset.duoi; ve_lai(); });
-  document.querySelectorAll("[data-ema]").forEach(b => b.onchange = () => { const m = +b.dataset.ema; ST.ema = b.checked ? [...new Set([...ST.ema, m])].sort((a, c) => a - c) : ST.ema.filter(x => x !== m); ve_lai(); });
-  document.querySelectorAll("[data-dc]").forEach(b => b.onchange = () => { ST.dc = b.checked ? +b.dataset.dc : 0; ve_lai(); });
-  document.querySelectorAll("[data-mk]").forEach(b => b.onchange = () => { ST.mk = b.checked; ve_lai(); });
   document.querySelectorAll("[data-ptc-di]").forEach(a => a.onclick = () => { ST.pt = a.dataset.ptcDi; });
   document.querySelectorAll("[data-ptc]").forEach(b => b.onclick = () => { ST.pt = b.dataset.ptc; ve_lai(); });
   document.querySelectorAll("[data-dp6]").forEach(b => b.onclick = () => { ST.dp6 = b.dataset.dp6 === "6"; ve_lai(); });
@@ -1934,12 +2275,9 @@ async function fs_mo(ma) {
   if (el.contains($("#rail"))) { document.body.appendChild($("#ds-td")); document.body.appendChild($("#rail")); }   // giữ watchlist khi dựng lại
   const moi = !FS; FS = {ma}; VS.a = null; VS.tam = null;
   const r = dong_ds(ma), ten = (k.n?.ct?.viOrganName) || r.ten || MKT?.ten?.[ma] || "";
-  const o = (id, gt, t) => `<label><input type="checkbox" data-fscb="${id}"${gt ? " checked" : ""}> ${t}</label>`;
   el.innerHTML = `<div class="fs-tren"><input class="o" id="fs-o" value="${esc(ma)}" maxlength="8" aria-label="Đổi mã" spellcheck="false">
       <span class="nut">${nut([["D", "1D"], ["W", "1W"], ["M", "1M"]], ST.khung, "fsk")}</span>
-      <div class="fs-cb"><button id="fs-cb">ƒx Chỉ báo ▾</button><div class="fs-cb-ds" id="fs-cb-ds" hidden>
-        ${["10", "20", "50", "200"].map(m => o("ma" + m, ST.ma_tb.includes(+m), "MA" + m)).join("")}${["9", "21"].map(m => o("ema" + m, ST.ema.includes(+m), "EMA" + m)).join("")}
-        ${o("dc20", ST.dc === 20, "Donchian 20")}${o("dc52", ST.dc === 52, "Kênh 52 tuần")}${o("mk", ST.mk, "Sự kiện (cổ tức, ĐHCĐ, nội bộ)")}</div></div>
+      ${menu_khoi()}
       <span class="nut">${nut([["kl", "Khối lượng"]].concat(k.g?.nn ? [["nn", "Khối ngoại"]] : []), ST.duoi, "fsd")}</span>
       <span class="ten">${esc(ten)}</span><button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button></div>
     <div class="fs-than" id="fs-than"><div class="fs-trai">
@@ -1970,13 +2308,6 @@ function gan_fs() {
   $("#fs-thoat").onclick = fs_dong;
   const o = $("#fs-o"); o.onkeydown = e => { if (e.key === "Enter") { const m = tim_ma(o.value) || o.value.trim().toUpperCase(); if (MA_OK(m)) fs_mo(m); } };
   o.onfocus = () => o.select();
-  $("#fs-cb").onclick = e => { e.stopPropagation(); const d = $("#fs-cb-ds"); d.hidden = !d.hidden; };
-  document.querySelectorAll("[data-fscb]").forEach(b => b.onchange = () => { const v = b.dataset.fscb;
-    if (v.startsWith("ma")) { const m = +v.slice(2); ST.ma_tb = b.checked ? [...new Set([...ST.ma_tb, m])].sort((a, c) => a - c) : ST.ma_tb.filter(z => z !== m); }
-    else if (v.startsWith("ema")) { const m = +v.slice(3); ST.ema = b.checked ? [...new Set([...ST.ema, m])].sort((a, c) => a - c) : ST.ema.filter(z => z !== m); }
-    else if (v.startsWith("dc")) { ST.dc = b.checked ? +v.slice(2) : 0; document.querySelectorAll("[data-fscb^=dc]").forEach(z => { if (z !== b) z.checked = false; }); }
-    else if (v === "mk") ST.mk = b.checked;
-    fs_ve(true); });
   document.querySelectorAll("[data-fsk]").forEach(b => b.onclick = () => { ST.khung = b.dataset.fsk; fs_mo(FS.ma); });
   document.querySelectorAll("[data-fsd]").forEach(b => b.onclick = () => { ST.duoi = b.dataset.fsd; fs_mo(FS.ma); });
   document.querySelectorAll("[data-fsn]").forEach(b => b.onclick = () => { ST.nen = +b.dataset.fsn; fs_mo(FS.ma); });
@@ -1986,7 +2317,6 @@ function gan_fs() {
   const lui = document.querySelector("[data-ve-lui]"); if (lui) lui.onclick = () => { (VE[FS.ma] || []).pop(); luu_ve(); ve_hinh(FS.ma); };
   const xoa = document.querySelector("[data-ve-xoa]"); if (xoa) xoa.onclick = () => { if ((VE[FS.ma] || []).length && confirm(`Xoá mọi hình vẽ của ${FS.ma}?`)) { delete VE[FS.ma]; luu_ve(); ve_hinh(FS.ma); } };
 }
-document.addEventListener("click", e => { const d = $("#fs-cb-ds"); if (d && !d.hidden && !e.target.closest(".fs-cb")) d.hidden = true; });
 function fs_dong() {
   if (!FS) return;
   FS = null; VS.a = null; VS.tam = null;
