@@ -55,7 +55,7 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-    timeout-minutes: 70                         # + nến phút ~3–5 phút
+    timeout-minutes: 90                         # + nến phút mọi mã ~10–20 phút (lần đầu dài hơn)
     steps:
       - uses: actions/checkout@v5                   # repo này (thi_truong/tra_cuu_dn.py)
         with:
@@ -103,9 +103,9 @@ jobs:
           LAM_MOI: ${{ inputs.lam_moi && '--lam_moi' || '' }}
         run: python -m thi_truong.tra_cuu_dn --ra docs/ma/du_lieu --phut "$PHUT" --luong 8 $LAM_MOI ${MA:+--ma "$MA"}
 
-      - name: Nến 1' / 5' (DNSE, ~3 tháng, 400 mã thanh khoản cao nhất) → phut/ – khung phút trang Biểu đồ
+      - name: Nến 1' / 5' (DNSE, ~3 tháng, MỌI mã + thi_truong/ma_them.txt) → phut/ – khung phút trang Biểu đồ
         working-directory: .
-        timeout-minutes: 15
+        timeout-minutes: 30
         run: python -m thi_truong.phut_web --ra docs/ma/du_lieu || echo "::warning::Nến phút lỗi – trang giữ dữ liệu cũ"
 
       - name: CANSLIM (C·A từ BCTC, N·S·L từ giá mọi mã, M VN-Index) → ds.json

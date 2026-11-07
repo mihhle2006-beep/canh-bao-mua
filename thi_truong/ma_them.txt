@@ -1,0 +1,3 @@
+# Mã thêm vào trang Tra cứu mã / Biểu đồ ngoài rổ HOSE + HNX của ds.json (mỗi dòng 1 mã hoặc cách bằng dấu phẩy).
+# Được tải giá ngày, lịch sử dài, hồ sơ (tra_cuu_dn) và nến 1' / 5' (phut_web).
+SBB

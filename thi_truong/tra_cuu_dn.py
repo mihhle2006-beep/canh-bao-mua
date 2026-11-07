@@ -24,7 +24,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 
-from . import nguon
+from . import ma_them, nguon
 
 IQ = nguon.IQ
 SIMPLIZE_BC = "https://api.simplize.vn/api/company/analysis-report/list?ticker={ma}&page=0&size=30"
@@ -719,6 +719,8 @@ def main(argv=None):
     ds = (_doc(os.path.join(a.ra, "ds.json")) or {}).get("ds") or []
     san = {r["ma"]: r.get("san", "") for r in ds}
     ma = [m.strip().upper() for m in a.ma.split(",") if m.strip()] or [r["ma"] for r in ds]
+    if not a.ma.strip():                                    # xoay vòng mọi mã: + mã thêm ngoài ds.json (thi_truong/ma_them.txt)
+        ma += [m for m in ma_them() if m not in ma]
     ct = cau_truc_bctc()
     if ct:
         _ghi(ct, os.path.join(a.ra, "cau_truc_bctc.json"))
