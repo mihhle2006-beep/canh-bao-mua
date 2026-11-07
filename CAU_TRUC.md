@@ -36,6 +36,7 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | BCTC moi hang dem | 22:13 hằng ngày | tải BCTC kỳ mới vào kho → kéo theo Bat thuong BCTC | danh-muc `ptcp.kho_bctc` |
 | Doc bao cao thuong nien | 22:17 hằng ngày | đọc BCTN mới (chiến lược DN, OCR) | danh-muc `ptcp.chien_luoc_dn` |
 | Kho BCTC | 00:47 thứ Bảy | làm mới kho BCTC toàn bộ | danh-muc |
+| Du lieu tra cuu | 06:41 T2–T7 | dữ liệu trang Tra cứu mã + trang **Biểu đồ** (giá, BCTC, doanh nghiệp, nến 1' / 5' ~3 tháng của 400 mã thanh khoản cao nhất – `thi_truong/phut_web.py`) → triển khai web | repo này `thi_truong` |
 | Tai nen 15p | 01:43 thứ Bảy | tải nến 15' (giữ cache backtest) | repo này |
 | Boi so nganh | 03:13 thứ Bảy | bội số định giá theo ngành | danh-muc |
 | Tra cuu ma | 07:53 thứ Bảy (+ chạy tay) | tra cứu mã đang giữ / theo dõi | danh-muc `ptcp.tra_cuu` |
