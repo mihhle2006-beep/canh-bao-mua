@@ -106,11 +106,14 @@ def test_xu_huong_bi_pha():
       const T = window.BD_DOC._thu, N = 120, x = {o: [], h: [], l: [], c: [], v: []};
       for (let i = 0; i < N; i++) { const g = 20 - i * 0.05 + 1.2 * Math.sin(i / 4); x.c.push(g); x.o.push(g + .05); x.h.push(g + .2); x.l.push(g - .2); x.v.push(1); }
       for (let i = N - 3; i < N; i++) { x.c[i] = 21 + i * .01; x.o[i] = x.c[i] - .1; x.h[i] = x.c[i] + .2; x.l[i] = x.c[i] - .3; }   // 3 nến cuối vượt lên
-      const P = T.pivots(x, 5), a = T.atr(x)[N - 1], xh = T.xu_huong(x, P, a);
-      console.log(JSON.stringify({xh, N}));
+      const P = T.pivots_dong(x, 5), a = T.atr(x)[N - 1], xh = T.xu_huong(x, P, a);
+      console.log(JSON.stringify({xh, N, c: x.c}));
     """)
-    xh = kq["xh"]
-    assert xh["huong"] == -1 and xh["giu"] is False and kq["N"] - 3 <= xh["pha"] < kq["N"]        # đường xu hướng giảm bị phá ở 3 nến cuối
+    xh, c = kq["xh"], kq["c"]
+    i1, v1, i2, v2 = xh["line"]
+    assert xh["huong"] == -1 and xh["giu"] is False and abs(c[i1] - v1) < 1e-12 and abs(c[i2] - v2) < 1e-12   # nối theo GIÁ ĐÓNG CỬA
+    f = lambda i: v1 + (v2 - v1) * (i - i1) / (i2 - i1)                                               # noqa: E731
+    assert xh["pha"] == next(i for i in range(i2 + 1, kq["N"]) if c[i] > f(i))                      # nến đóng cửa đầu tiên vượt đường
 
 
 def test_trang_gan_doc_bieu_do_va_tua_lai():

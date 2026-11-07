@@ -1053,7 +1053,7 @@ const cp_luu = () => { try { localStorage.setItem("cp_mo", CPS.mo ? "1" : "0"); 
 let CP_P = null;
 function tai_cp() {
   CP_P = CP_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "doc_bd.js?v=3"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "doc_bd.js?v=4"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
   return CP_P;
 }
 const TEN_KHUNG = {1: "1 phút", 5: "5 phút", 15: "15 phút", 60: "1 giờ", D: "ngày", W: "tuần", M: "tháng"};
@@ -1068,7 +1068,7 @@ function cp_ve() {
 let VE_P = null;
 function tai_ve() {                                    // công cụ vẽ (bieu_do.js – file riêng, tải khi vẽ biểu đồ giá)
   VE_P = VE_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "bieu_do.js?v=2"; sc.onload = () => ok(window.BD_VE); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "bieu_do.js?v=3"; sc.onload = () => ok(window.BD_VE); sc.onerror = loi; document.head.appendChild(sc); });
   return VE_P;
 }
 const t_chuoi = t => typeof t === "number" ? t : typeof t === "string" ? t : `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;

@@ -85,16 +85,17 @@ function mau_nen_cuoi(x, so_nen = 3) {                  // mẫu nến xuất hi
   return out;
 }
 function duong(x, i1, v1, i2, v2) { return i => v1 + (v2 - v1) * (i - i1) / ((i2 - i1) || 1); }
-function xu_huong(x, P, a) {
-  const N = x.c.length, c = x.c[N - 1], h = P.cao.slice(-3), l = P.thap.slice(-3);
-  const h2 = h.slice(-2), l2 = l.slice(-2);
-  const giam = h2.length === 2 && x.h[h2[1]] < x.h[h2[0]] - 0.2 * a, tang = l2.length === 2 && x.l[l2[1]] > x.l[l2[0]] + 0.2 * a;
-  const mo_dau = (ds, cao) => { let k = ds.length - 1; const arr = cao ? x.h : x.l; while (k > 0 && (cao ? arr[ds[k - 1]] > arr[ds[k]] : arr[ds[k - 1]] < arr[ds[k]])) k--; return ds[k]; };
-  const pha = (f, tu, len) => { for (let i = tu + 1; i < N; i++) if (len ? x.c[i] < f(i) : x.c[i] > f(i)) return i; return null; };   // nến đóng cửa đầu tiên qua đường
-  if (giam && (!tang || h2[1] > l2[1])) { const f = duong(x, h2[0], x.h[h2[0]], h2[1], x.h[h2[1]]), ip = pha(f, h2[1], false);
-    return {huong: -1, tu: mo_dau(P.cao, true), line: [h2[0], x.h[h2[0]], h2[1], x.h[h2[1]]], giu: ip == null, pha: ip, muc: f(N - 1), muc_pha: ip == null ? null : f(ip)}; }
-  if (tang) { const f = duong(x, l2[0], x.l[l2[0]], l2[1], x.l[l2[1]]), ip = pha(f, l2[1], true);
-    return {huong: 1, tu: mo_dau(P.thap, false), line: [l2[0], x.l[l2[0]], l2[1], x.l[l2[1]]], giu: ip == null, pha: ip, muc: f(N - 1), muc_pha: ip == null ? null : f(ip)}; }
+function pivots_dong(x, k = 5, tu = 0) { return pivots({h: x.c, l: x.c, c: x.c}, k, tu); }   // đỉnh / đáy theo GIÁ ĐÓNG CỬA
+function xu_huong(x, P, a) {                            // đường xu hướng theo GIÁ ĐÓNG CỬA (P: pivots_dong): nối 2 đỉnh thấp dần / 2 đáy cao dần
+  const N = x.c.length, c = x.c[N - 1], g = x.c, h2 = P.cao.slice(-2), l2 = P.thap.slice(-2);
+  const giam = h2.length === 2 && g[h2[1]] < g[h2[0]] - 0.2 * a, tang = l2.length === 2 && g[l2[1]] > g[l2[0]] + 0.2 * a;
+  const mo_dau = (ds, cao) => { let k = ds.length - 1; while (k > 0 && (cao ? g[ds[k - 1]] > g[ds[k]] : g[ds[k - 1]] < g[ds[k]])) k--; return ds[k]; };
+  const pha = (f, tu, len) => { for (let i = tu + 1; i < N; i++) if (len ? g[i] < f(i) : g[i] > f(i)) return i; return null; };   // nến đóng cửa đầu tiên qua đường
+  if (giam && (!tang || h2[1] > l2[1])) { const f = duong(x, h2[0], g[h2[0]], h2[1], g[h2[1]]), ip = pha(f, h2[1], false);
+    return {huong: -1, tu: mo_dau(P.cao, true), line: [h2[0], g[h2[0]], h2[1], g[h2[1]]], giu: ip == null, pha: ip, muc: f(N - 1), muc_pha: ip == null ? null : f(ip)}; }
+  if (tang) { const f = duong(x, l2[0], g[l2[0]], l2[1], g[l2[1]]), ip = pha(f, l2[1], true);
+    return {huong: 1, tu: mo_dau(P.thap, false), line: [l2[0], g[l2[0]], l2[1], g[l2[1]]], giu: ip == null, pha: ip, muc: f(N - 1), muc_pha: ip == null ? null : f(ip)}; }
+  void c;
   return {huong: 0};
 }
 function mau_gia(x, P, a) {                             // tam giác (cân / tăng / giảm), hai đỉnh, hai đáy từ 2 đỉnh + 2 đáy gần nhất
@@ -233,9 +234,9 @@ function phan_tich(x) {                                 // → {vung, xh, nen, g
   const vg = vung_gia(x, P, a).map(z => ({...z, loai: z.hi < c ? "ho_tro" : z.lo > c ? "khang_cu" : "trong", cach: z.hi < c ? (c - z.hi) / c : z.lo > c ? (z.lo - c) / c : 0}));
   vg.sort((p, q) => p.cach - q.cach || q.cham - p.cham);
   const gon = S.kieu === "gon";
-  return {vung: vg, xh: xu_huong(x, P, a), nen: mau_nen_cuoi(x, gon ? 5 : 20), gia: mau_gia(x, P, a), mh: mau_hinh(x, A, gon ? 10 : 30), smc: smc(x, A, gon ? 3 : 8), a, N, c};
+  return {vung: vg, xh: xu_huong(x, pivots_dong(x, 5, Math.max(0, N - 250)), a), nen: mau_nen_cuoi(x, gon ? 5 : 20), gia: mau_gia(x, P, a), mh: mau_hinh(x, A, gon ? 10 : 30), smc: smc(x, A, gon ? 3 : 8), a, N, c};
 }
-CP._thu = {atr, pivots, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh, cau_truc, fvg, smc};
+CP._thu = {atr, pivots, pivots_dong, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh, cau_truc, fvg, smc};
 
 // ---------------------------------------------------------------- DỮ LIỆU HỆ THỐNG
 let HT_P = null; const TH_P = {};
@@ -351,7 +352,7 @@ function dung(B, kq, ht, th) {
       cau.push(t); items.push({id: "T1", loai: "xh", huong: xh.huong, line: xh.line, nhan: `Xu hướng ${ten}${xh.giu ? "" : ` – bị phá ${ngay(xh.pha)}`}`, tieu_de: t, nhom: "Đường xu hướng",
         bang: [["Nối", `${xh.huong < 0 ? "2 đỉnh" : "2 đáy"} ${ngay(xh.line[0])} → ${ngay(xh.line[2])}`], ["Giá trị đường hôm nay", so(xh.muc, 2)], ["Giá so đường", pt(c / xh.muc - 1, 1)]]
           .concat(xh.giu ? [] : [["Bị phá", `${ngay(xh.pha)} · cách ${N - 1 - xh.pha} nến`]]),
-        cach: "Nối 2 đỉnh thấp dần (giảm) / 2 đáy cao dần (tăng) gần nhất; giữ khi giá chưa đóng cửa vượt qua"}); }
+        cach: "Nối 2 đỉnh thấp dần (giảm) / 2 đáy cao dần (tăng) gần nhất theo GIÁ ĐÓNG CỬA; giữ khi giá chưa đóng cửa vượt qua"}); }
     else cau.push("Chưa có xu hướng rõ (đỉnh / đáy gần nhất chưa cùng chiều)");
     for (const m of kq.nen) { const b = m.bc, tin = muc_tin(b);
       cau.push(`Mẫu nến ${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}, ${ngay(m.i)}) – ${tin}${b?.n ? `: đúng hướng ${pt(b.tl, 0, false)} trong ${b.n} lần trước trên ${ma}` : ""}`);

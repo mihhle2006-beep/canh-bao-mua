@@ -171,18 +171,18 @@ function hoi_quy(a, b) {
   let e = 0; for (let k = i; k <= j; k++) e += (c[k] - (a_ + b_ * (k - i))) ** 2;
   return {i, j, a: a_, b: b_, sd: Math.sqrt(e / n)};
 }
-function pivot(i0, i1, cao, k = 4) {                    // đỉnh / đáy fractal trong [i0, i1]
-  const x = C.x, a = cao ? x.h : x.l, out = [];
+function pivot(i0, i1, cao, k = 4, a = null) {          // đỉnh / đáy fractal trong [i0, i1] (a: chuỗi giá, mặc định cao / thấp)
+  const x = C.x, out = []; a = a || (cao ? x.h : x.l);
   for (let i = Math.max(i0, k); i <= Math.min(i1, C.n - 1 - k); i++) {
     let ok = true; for (let j = i - k; j <= i + k && ok; j++) if (j !== i && (cao ? a[j] > a[i] : a[j] < a[i])) ok = false;
     if (ok) out.push(i);
   }
   return out;
 }
-function xu_huong_tu_dong(l) {                         // 2 đường: hỗ trợ nối 2 đáy gần nhất đi lên / kháng cự nối 2 đỉnh gần nhất đi xuống
+function xu_huong_tu_dong(l) {                         // 2 đường theo GIÁ ĐÓNG CỬA: hỗ trợ nối 2 đáy gần nhất đi lên / kháng cự nối 2 đỉnh đi xuống
   const i1 = idx(Math.min(l, C.n - 1)), i0 = Math.max(0, i1 - 160), x = C.x, out = [];
   for (const cao of [false, true]) {
-    const pv = pivot(i0, i1, cao), a = cao ? x.h : x.l; let chon = null;
+    const a = x.c, pv = pivot(i0, i1, cao, 4, a); let chon = null;
     for (let u = pv.length - 1; u > 0 && !chon; u--) for (let v = u - 1; v >= 0 && !chon; v--) {
       const p = pv[v], q = pv[u]; if (cao ? a[q] >= a[p] : a[q] <= a[p]) continue;
       const k_ = (a[q] - a[p]) / (q - p); let gay = false;
