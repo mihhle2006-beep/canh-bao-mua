@@ -7,6 +7,8 @@ dài dần (giữ tối đa GIU_NGAY), 1' giữ ~3 tháng.
   • File phut/<1|5>/<MÃ>.json gọn: {"t0": giây UTC nến đầu, "dt": [phút cách nến trước], "c": [giá ×100, chênh nến trước],
     "o" / "h" / "l": [giá đóng ×100 − giá ×100], "v": [KL]} ; phut/ds.json {"cap_nhat", "1": [mã], "5": [mã]}.
   python -m thi_truong.phut_web --ra docs/ma/du_lieu [--so_ma 400] [--them HPG,FPT]
+  • --trong_phien (Bảng thị trường, mỗi lần chạy trong giờ giao dịch): chỉ nối nến mới cho SO_MA_PHIEN mã thanh khoản cao nhất
+    + mã đang giữ (--them_file) + mã bot đang khuyến nghị / bộ lọc (--tin_hieu), không xoá file mã khác, ds.json cộng dồn.
 """
 import argparse
 import glob
@@ -21,6 +23,7 @@ import requests
 URL = "https://services.entrade.com.vn/chart-api/v2/ohlcs/stock"
 GIU_NGAY = {"1": 95, "5": 370}
 SO_MA = 400
+SO_MA_PHIEN = 60
 VN = timezone(timedelta(hours=7))
 
 
@@ -104,14 +107,42 @@ def cap_nhat(thu_muc, ma, res, bay_gio):
     return len(tg)
 
 
+def ma_them(them="", them_file=None, tin_hieu=None, bo_loc=None):
+    """Mã thêm: chuỗi "A,B" + file một dòng "A,B" (mã đang giữ) + du_lieu.json Bảng thị trường (tin_hieu.ma) + ma_mua_bo_loc.json."""
+    ds = [m for m in them.split(",")]
+    try:
+        ds += open(them_file, encoding="utf-8").read().replace("\n", ",").split(",") if them_file else []
+    except OSError:
+        pass
+    try:
+        ds += [r[0] for r in (json.load(open(tin_hieu, encoding="utf-8")).get("tin_hieu") or {}).get("ma") or []] if tin_hieu else []
+    except (OSError, ValueError, TypeError, IndexError, AttributeError):
+        pass
+    try:
+        ds += list((json.load(open(bo_loc, encoding="utf-8")).get("ma") or {})) if bo_loc else []
+    except (OSError, ValueError, TypeError, AttributeError):
+        pass
+    out = []
+    for m in ds:
+        m = str(m).strip().upper()
+        if m.isalnum() and 3 <= len(m) <= 8 and m not in out:
+            out.append(m)
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Nến 1' / 5' cho trang Biểu đồ")
     ap.add_argument("--ra", default="docs/ma/du_lieu")
-    ap.add_argument("--so_ma", type=int, default=SO_MA)
+    ap.add_argument("--so_ma", type=int, default=None)
     ap.add_argument("--them", default="")
+    ap.add_argument("--them_file", default=None)
+    ap.add_argument("--tin_hieu", default=None)
+    ap.add_argument("--bo_loc", default=None)
+    ap.add_argument("--trong_phien", action="store_true")
     ap.add_argument("--luong", type=int, default=8)
     a = ap.parse_args(argv)
-    ds = ma_thanh_khoan(a.ra, a.so_ma, [m.strip().upper() for m in a.them.split(",") if m.strip()])
+    so_ma = a.so_ma if a.so_ma is not None else SO_MA_PHIEN if a.trong_phien else SO_MA
+    ds = ma_thanh_khoan(a.ra, so_ma, ma_them(a.them, a.them_file, a.tin_hieu, a.bo_loc))
     bay_gio = int(time.time())
     co = {"1": [], "5": []}
     for res in ("1", "5"):
@@ -119,7 +150,13 @@ def main(argv=None):
             so = list(ex.map(lambda m: cap_nhat(a.ra, m, res, bay_gio), ds))
         co[res] = sorted(m for m, n in zip(ds, so) if n)
         print(f"Nến {res}': {len(co[res])}/{len(ds)} mã")
-    for res in ("1", "5"):                                 # bỏ file mã đã rời danh sách
+    if a.trong_phien:                                      # trong phiên: giữ file / danh sách mã khác (dựng hằng ngày)
+        try:
+            cu = json.load(open(os.path.join(a.ra, "phut", "ds.json"), encoding="utf-8"))
+        except (OSError, ValueError):
+            cu = {}
+        co = {r: sorted(set(co[r]) | set(cu.get(r) or [])) for r in ("1", "5")}
+    for res in ("1", "5") if not a.trong_phien else ():    # bỏ file mã đã rời danh sách
         for f in glob.glob(os.path.join(a.ra, "phut", res, "*.json")):
             if os.path.basename(f)[:-5] not in co[res]:
                 os.remove(f)

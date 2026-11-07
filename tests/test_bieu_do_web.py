@@ -116,7 +116,7 @@ def test_trang_bieu_do_va_khung_phut():
     assert 'sc.src = "bieu_do.js?v=' in h and "function mo_tim_bd(" in h                 # file riêng, tải động; gõ phím → tìm mã
     for k in ('["1", "1m"]', '["5", "5m"]', '["15", "15m"]', '["60", "1H"]', '["1", "1\'"]', '["5", "5\'"]'):
         assert k in h, k
-    assert 'lay(DL + `phut/${goc}/${ma}.json`, false)' in h
+    assert 'lay(DL + `phut/${goc}/${ma}.json?p=${' in h
     v = open(VE, encoding="utf-8").read()
     assert "localStorage.setItem(KHOA" in v and 'KHOA = "ma_hinh_ve_2"' in v and "KHOA_CU" in v       # lưu + chuyển hình vẽ kiểu cũ
     assert not re.search(r"fetch\(|https?://", v)                     # không gọi ra ngoài

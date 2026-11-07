@@ -573,6 +573,11 @@ VE.gan = (B, o = {}) => {                              // B = BD_DK của trang;
   ve_thanh_chon();
 };
 VE.so_hinh = ma => (KHO[ma] || []).length;
+VE.t_cua = l => l2t(l);                                // chỉ số nến → thời gian (cho mục Đọc biểu đồ: "Giữ thành hình vẽ")
+VE.them_hinh = d => {                                  // thêm hình dựng sẵn ({c, p, s}) vào mã đang xem, có hoàn tác
+  if (!C || !CONG[d.c]) return null;
+  const h = {id: uid(), c: d.c, p: d.p, s: d.s || {}}; chup(C.ma); (KHO[C.ma] || (KHO[C.ma] = [])).push(h); luu(); cap_nhat(); return h.id;
+};
 
 // ---------------------------------------------------------------- CHUỘT / CẢM ỨNG
 function toa_do(e) { const r = C.vung.getBoundingClientRect(); return {x: e.clientX - r.left, y: e.clientY - r.top, ngoai: e.clientX - r.left > (C.W || r.width) || e.clientY - r.top > (C.H || r.height)}; }
