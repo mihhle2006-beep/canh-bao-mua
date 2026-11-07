@@ -41,7 +41,7 @@ def main(argv=None):
     p.add_argument("--khong_gui", action="store_true")
     p.add_argument("--ro", default="chien_luoc", choices=["chien_luoc", "hose_hnx", "da_khung"],
                    help="backtest: 41 mã chiến lược (đủ phần) · hose_hnx = toàn sàn HOSE + HNX (chỉ cách vào 15') · "
-                        "da_khung = cách vào nến 5' + 15' + 60' (41 mã + top 100 GTGD, nến 1' Vietcap)")
+                        "da_khung = cách vào nến 5' + 15' + 60' (41 mã + rổ top GTGD, nến 1' Vietcap)")
     p.add_argument("--khong_ban", action="store_true", help="bỏ danh mục / cảnh báo bán")
     p.add_argument("--khong_chien_luoc", action="store_true", help="(giữ cho tương thích – không còn tác dụng)")
     a = p.parse_args(argv)

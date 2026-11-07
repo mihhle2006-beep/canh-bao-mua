@@ -21,7 +21,7 @@ from . import cau_hinh as C
 
 
 def ro_do_rong():
-    """Rổ tính độ rộng / điểm thị trường: top 100 GTGD chốt thứ Sáu tuần liền trước (ptcp.loc_quy_b.ro_thi_truong);
+    """Rổ tính độ rộng / điểm thị trường: rổ top GTGD chốt thứ Sáu tuần liền trước (ptcp.loc_quy_b.ro_thi_truong);
     ptcp cũ / thiếu dữ liệu → MA_CHIEN_LUOC (41 mã)."""
     try:
         from ptcp.loc_quy_b import ro_thi_truong
@@ -45,7 +45,7 @@ def ma_bat_day():
 
 def he_bat_day(gia_ngay, vni):
     """Hệ bắt đáy (ptcp/bat_day.py) tới phiên cuối đã đóng: trạng thái lọc sáng nay (loc_quy_b.json "bat_day") + phiên
-    hôm nay bằng giá đã tải (rổ top 100 tuần này + mã hệ đang giữ). → dict trạng thái (giu, cho_ban, cho_mua …),
+    hôm nay bằng giá đã tải (rổ top GTGD tuần này + mã hệ đang giữ). → dict trạng thái (giu, cho_ban, cho_mua …),
     {"loi": …} nếu lỗi, None nếu ptcp cũ / chưa bật."""
     try:
         from ptcp import bat_day as BD

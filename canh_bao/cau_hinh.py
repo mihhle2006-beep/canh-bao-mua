@@ -13,7 +13,7 @@ MA_VN30 = ["ACB", "BCM", "BID", "BVH", "CTG", "FPT", "GAS", "GVR", "HDB", "HPG",
 TU_LAY_VN30 = True                 # True: lúc tổng kết tự lấy rổ VN30 online (rổ đổi kỳ tháng 1 & 7); lỗi → MA_VN30 trên
 MA_THEM = ["DHC", "GMD", "MWG"]
 MA_THEO_DOI = list(dict.fromkeys(MA_VN30 + MA_THEM))
-# Độ rộng thị trường (1 trong 8 chỉ báo → CL1/CL2) tính trên rổ top 100 GTGD chốt phiên thứ Sáu tuần liền trước
+# Độ rộng thị trường (1 trong 8 chỉ báo → CL1/CL2) tính trên rổ top GTGD chốt phiên thứ Sáu tuần liền trước
 # (ptcp/loc_quy_b.json – chien_luoc_bot.ro_do_rong; thiếu thì MA_CHIEN_LUOC 41 mã) + mã đang quét, để điểm thị trường
 # không đổi theo danh sách cảnh báo. Mã chỉ dùng cho độ rộng KHÔNG lên danh sách mua.
 DO_RONG_THEO_MA_CHIEN_LUOC = True
@@ -89,7 +89,7 @@ LOAI_NHAT_KY_CL = "CHIEN_LUOC"     # loại dòng nhật ký cho khuyến nghị
 # --- ĐIỂM VÀO 15 PHÚT – đồng bộ chiến lược (ptcp/diem_vao_15p.py: một bộ tiêu chí cho cảnh báo & backtest) ---
 #   Chỉ quét mã trong nhóm mua của tin tổng kết gần nhất, trong đúng phiên hiệu lực; không phủ quyết MACD tuần.
 CACH_VAO_15P = "15P+GIO"           # 19/10/2026: backtest quỹ Bứt Phá theo cách vào khớp luật live (★ ATC, suất dự phòng, lọc biến
-                                   # động, ĐẮT ½; 687 mã, nến 15' 09/2023–10/2026): 15P+GIO 17,6%/năm MDD −16,7% Sharpe 1,41
+                                   # động, ĐẮT; 687 mã, nến 15' 09/2023–10/2026): 15P+GIO 17,6%/năm MDD −16,7% Sharpe 1,41
                                    # · 15P+GIO+ATC★ 15,4% / −19,0% / 1,13 · LO+ATC★ 7,0%. Mẫu ~3 năm – theo dõi. Trước:
                                    # 15P+GIO+ATC (17/10, số 22,5% đo khi mọi mã được ATC);
                                    # LO+ATC (cố định 10/2026, rổ chiến lược 41 mã);

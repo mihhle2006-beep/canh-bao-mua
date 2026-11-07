@@ -4,7 +4,7 @@ TỔNG KẾT 15:20 THEO CHIẾN LƯỢC THỊ TRƯỜNG – tin Telegram GỌN, 
 
   📊 thị trường & CL đang áp dụng
   🟢 MUA MỚI / ✅ VÀO NHƯ LỆNH MỚI / 🟡 VÀO ½   mã | vùng mua | mục tiêu 1R → 3R | cắt lỗ | đạt điểm mua
-                    (Quỹ Bứt Phá 10/2026: ✅ = vào trễ ở giá ≤ giá vào hệ thống + ½R; không còn nhóm 🟡 · 20/10/2026:
+                    (Quỹ Bứt Phá 10/2026: ✅ = vào trễ trong biên giá vào hệ thống; không còn nhóm 🟡 · 20/10/2026:
                      vào trễ chỉ đặt lệnh ATC, huỷ nếu chạm cắt lỗ trong phiên – canh_bao/diem_vao.vao_tre_atc)
   ⏳ CHỜ ĐIỀU CHỈNH   mã + vùng chờ           ⛔ KHÔNG VÀO   hệ thống đang lỗ / sắp bán
   💼 ĐANG GIỮ (danh mục thật – tin riêng tư)  lãi/lỗ theo giá vốn · cắt lỗ hệ thoát · hành động · mốc tiếp ·
@@ -95,9 +95,9 @@ def ds_khuyen_nghi(ra):
         nh = ra.get("nhiet") or {}
         k_["nhiet"], k_["he_so_nhiet"] = nh.get("diem"), float(nh.get("he_so", 1.0))
         lq = _loc_quy(k_["ma"], ra.get("vni_df")) if k_["nhom"] in NHOM_MUA else None
-        if lq:                  # Quỹ Bứt Phá: top 100 GTGD · RS 3T nóng · biến động top 30% · ĐẮT ½ · nhiệt dài hạn ½
+        if lq:                  # Quỹ Bứt Phá: rổ thanh khoản · RS 3T nóng · biến động · ĐẮT · nhiệt dài hạn
             k_["he_so_quy"], k_["loc_quy"] = lq["he_so"], "; ".join(lq["ly_do"])
-            k_["manh_b"] = bool(lq.get("manh_b"))            # tín hiệu MẠNH B → được dùng suất dự phòng (mã thứ 9)
+            k_["manh_b"] = bool(lq.get("manh_b"))            # tín hiệu MẠNH B → được dùng suất dự phòng
             k_["dau_hieu_manh"] = ", ".join(lq.get("dau_hieu_manh") or [])
             k_["he_so_vni"] = lq.get("he_so_vni", 1.0)        # gia_lap: × trần tổng rủi ro mở (gồm độ rộng)
             k_["he_so_rong"] = lq.get("he_so_rong", 1.0)
@@ -153,8 +153,8 @@ def _loc_quy(ma, vni):
 
 
 def dong_nhiet(nh, rr=None):
-    """Dòng 🌡 NHIỆT THỊ TRƯỜNG (công khai – chỉ dữ liệu thị trường), 2 phần nhân với nhau: DÀI HẠN (VN-Index Tăng nóng ½ /
-    Tăng nhẹ ×1 / Giảm ×1,5; MA50 dốc mạnh ½; độ rộng top 100 "tăng giả" / "hẹp" ½) · NGẮN HẠN (6 chỉ báo) → rủi ro/lệnh
+    """Dòng 🌡 NHIỆT THỊ TRƯỜNG (công khai – chỉ dữ liệu thị trường), 2 phần nhân với nhau: DÀI HẠN (theo trạng thái VN-Index,
+    MA50 dốc mạnh, độ rộng rổ "tăng giả" / "hẹp" – hệ số ở ptcp) · NGẮN HẠN (6 chỉ báo) → rủi ro/lệnh
     mới sau cả hai hệ số. Tin gọn (29/10/2026): 2 dòng, MA50 dốc / độ rộng chỉ ghi khi đang bật; luật sụt danh mục ở README."""
     if not nh:
         return None
@@ -175,9 +175,9 @@ def dong_nhiet(nh, rr=None):
         if dai.get("doc_manh"):
             phan.append(f"MA50 VNI dốc {dai.get('doc_ma50', 0):+.1f}%/10 phiên ×{float(dai.get('he_so_doc', 1.0)):g}")
         rong = dai.get("do_rong") or {}
-        if rong and float(rong.get("he_so", 1.0)) != 1:                 # độ rộng rổ top 100 (29/10/2026)
-            ly = [x for x, co in (("tăng giả – VNI không Giảm, đa số top 100 Giảm", rong.get("tang_gia")),
-                                  (f"hẹp – VNI 60 phiên {rong.get('vni_60p') or 0:+.1f}% · trung vị top 100 "
+        if rong and float(rong.get("he_so", 1.0)) != 1:                 # độ rộng rổ thanh khoản (29/10/2026)
+            ly = [x for x, co in (("tăng giả – VNI không Giảm, đa số mã trong rổ Giảm", rong.get("tang_gia")),
+                                  (f"hẹp – VNI 60 phiên {rong.get('vni_60p') or 0:+.1f}% · trung vị rổ "
                                    f"{rong.get('tv_60p') or 0:+.1f}%", rong.get("hep"))) if co]
             phan.append(f"Độ rộng: {'; '.join(ly)} ×{float(rong['he_so']):g}"
                         + (f" (số phiên {pd.Timestamp(rong['ngay']):%d/%m})" if rong.get("tre") else ""))
@@ -481,7 +481,7 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
 
 
 def dong_suat(ra, giu):
-    """'🗓 Phiên 20/10 (tuần 43): đã mua 2/5 mã mới tuần này → còn 3 suất · đang giữ 7/8 mã (+1 cho 💪) – mua lần lượt
+    """'🗓 Phiên 20/10 (tuần 43): đã mua a/b mã mới tuần này → còn c suất · đang giữ d/e mã (+suất 💪) – mua lần lượt
     theo ★ tới hết suất' – theo danh mục thật (ngày mua trong tuần của phiên hiệu lực). Không có danh mục → None."""
     if giu is None:
         return None
@@ -640,7 +640,7 @@ def cach_vao(kq_bt=None):
     b15 = (kq_bt or {}).get("15p") or {}
     top = b15.get("top_gtgd") or {}
     if top.get("tot_nhat") in BIEN_THE:                       # Quỹ Bứt Phá chỉ mua top GTGD → chọn theo đúng rổ đó
-        return top["tot_nhat"], f"tốt nhất theo backtest top {top.get('top', 100)} GTGD"
+        return top["tot_nhat"], "tốt nhất theo backtest rổ top GTGD"
     tot = b15.get("tot_nhat")
     if tot in BIEN_THE:
         return tot, "tốt nhất theo backtest"

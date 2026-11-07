@@ -2,7 +2,7 @@
 # bằng secret DANH_MUC_TOKEN_GHI – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục thật.
 # BCTC MỚI MỖI ĐÊM (22:13 giờ VN, cả cuối tuần – DN công bố cả thứ Bảy): tải kỳ BCTC quý / năm vừa công bố cho MỌI mã
 # trong kho thiếu đúng kỳ mới nhất đã tới hạn (kho_bctc --moi_het – không giới hạn 80 mã như bước sáng của "Loc quy But
-# Pha", mùa BCTC không phải chờ nhiều ngày) → tin Telegram "BCTC mới" (mã top 100 GTGD: kết quả quý, chấm điểm, dòng tiền
+# Pha", mùa BCTC không phải chờ nhiều ngày) → tin Telegram "BCTC mới" (mã rổ top GTGD: kết quả quý, chấm điểm, dòng tiền
 # & chất lượng lợi nhuận, bất thường số liệu – đã gộp, bỏ ý trùng) → commit kho → "Bat thuong BCTC" tự chạy tiếp (đọc
 # báo cáo thường niên tìm giải thích). Bước sáng (--moi 80) vẫn chạy: lấy nốt mã công bố sau giờ chạy đêm.
 # Sau đó File KQKD (ptcp/kqkd_excel --tu_dong): mã HOSE + HNX ngoài rổ chính (kho riêng du_lieu/bctc_kqkd – tin BCTC mới,

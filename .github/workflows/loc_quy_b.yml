@@ -3,7 +3,7 @@
 # GHI Contents repo danh-muc – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục
 # thật (ptcp.cau_hinh.CONG_KHAI).
 # LỌC QUỸ BỨT PHÁ – hạng GTGD TB20, RS 3T, biến động, tín hiệu mạnh trong rổ HOSE + HNX (~700 mã, 17/10/2026; trước ~420 mã)
-# + định giá J8 cuối quý gần nhất (mã gần top + bản đồ ngành) + độ rộng top 100 (ptcp/do_rong.py) + hệ bắt đáy
+# + định giá J8 cuối quý gần nhất (mã gần top + bản đồ ngành) + độ rộng rổ top GTGD (ptcp/do_rong.py) + hệ bắt đáy
 # (ptcp/bat_day.py: danh mục hệ tới phiên trước + lệnh ATO phiên này) → ptcp/loc_quy_b.json (trong gói ptcp,
 # nên canh-bao-mua / gia_lap nhận qua lay_ptcp.py). Chạy 06:07 giờ VN mỗi ngày giao dịch (xong trước phiên 09:00 & tin tổng kết 15:20).
 # Trước khi định giá: tải BCTC quý / năm vừa công bố (mã thiếu đúng kỳ mới nhất đã tới hạn – kho_bctc --moi) và lấy lại
@@ -81,7 +81,7 @@ jobs:
       - name: Tải BCTC quý / năm mới công bố
         continue-on-error: true
         timeout-minutes: 30
-        env:                               # tin chất lượng BCTC mới (mã top 100 GTGD / danh mục)
+        env:                               # tin chất lượng BCTC mới (mã rổ top GTGD / danh mục)
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: python -m ptcp.kho_bctc --moi 80
