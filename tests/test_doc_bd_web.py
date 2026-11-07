@@ -151,3 +151,29 @@ def test_wilson_va_bo_nhan_mau_hinh():
     assert any(z["ten"] == "Cờ giảm" and z["t"] >= z["N"] - 3 for z in kq["co"]), kq["co"]
     assert any(z["ten"] == "Nêm tăng" for z in kq["nem"]), kq["nem"]
     assert {z["ten"] for z in kq["vdv_mh"]} >= {"Vai–đầu–vai"} and any(z["ten"] == "Cờ giảm" for z in kq["co_mh"])
+
+
+def test_cau_truc_bos_choch_va_fvg():
+    tang = _zigzag([(0, 100), (6, 104), (4, 102), (6, 107), (4, 105), (6, 110), (4, 108), (8, 101)])     # đỉnh cao dần rồi thủng đáy
+    g = {"o": [10, 10.2, 11.0, 11.1, 11.2, 11.3, 10.6, 10.0], "h": [10.3, 10.5, 11.4, 11.5, 11.6, 11.5, 10.9, 10.4],
+         "l": [9.9, 10.1, 10.8, 11.0, 11.1, 10.9, 10.4, 9.9], "c": [10.2, 10.4, 11.3, 11.4, 11.4, 11.0, 10.5, 10.1], "v": [1] * 8}
+    kq = _chay(f"const A = {json.dumps(tang)}, G = {json.dumps(g)};\n" + r"""
+      const T = window.BD_DOC._thu, ct = T.cau_truc(A), F = T.fvg(G, G.c.map(() => 0.3)), s = T.smc(A, T.atr(A));
+      console.log(JSON.stringify({ev: ct.ev.map(e => [e.loai, e.huong, e.i, e.muc]), xu: ct.xu, F, s_ev: s.ev.length, N: A.c.length}));
+    """)
+    loai = [(e[0], e[1]) for e in kq["ev"]]
+    assert ("BOS", 1) in loai and loai[-1] == ("CHoCH", -1) and kq["xu"] == -1          # tăng tiếp diễn (BOS) rồi đổi chiều (CHoCH)
+    for loai_, h, i, muc in kq["ev"]:                                                     # không vẽ lại: phá ở nến đóng cửa qua mức
+        c = tang["c"][i]
+        assert (c > muc) if h > 0 else (c < muc)
+    f = kq["F"][0]
+    assert f["huong"] == 1 and f["i"] == 2 and abs(f["duoi"] - 10.3) < 1e-9 and abs(f["tren"] - 10.8) < 1e-9
+    assert f["cham"] == 6 and f["lap"] == 7                                                # chạm lại phiên 6, đi xuyên hết vùng phiên 7
+    assert kq["s_ev"] >= 1
+
+
+def test_doc_bd_co_smc_va_chi_bao_moi():
+    v = open(JS, encoding="utf-8").read()
+    assert "function cau_truc(" in v and "function fvg(" in v and '"BOS"' in v and '"CHoCH"' in v
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    assert '["sqz", "Squeeze Momentum (nén giá)", "sqz"]' in h and '["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"]' in h
