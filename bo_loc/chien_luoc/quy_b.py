@@ -1,26 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-CHIẾN LƯỢC QUỸ BỨT PHÁ (mặc định) – chiến lược đang áp dụng 10/2026, cùng luật với danh-muc, canh-bao-mua, gia_lap:
+CHIẾN LƯỢC QUỸ BỨT PHÁ (mặc định) – chiến lược đang áp dụng, cùng luật với danh-muc, canh-bao-mua, gia_lap:
   · tín hiệu hệ B: MACD ngày cắt lên có lọc MACD tuần + nhồi lệnh (chien_luoc_tt → ptcp, mọi trạng thái thị trường)
-  · nhóm MUA: 🟢 mua mới · ✅ vào trễ (giá ≤ giá vào hệ thống + ½R, cắt lỗ ≤ 7%, đủ KL – quỹ chỉ vào mã đã bỏ vì
-    hết suất 5 mã mới/tuần); không còn nhóm ½ KL (phân nhóm lấy từ ptcp)
-  · rổ HOSE + HNX (17/10/2026): chỉ mã top 100 GTGD TB20 (hạng chốt thứ Sáu tuần trước, cố định cả tuần), hạng RS
-    3 tháng < 90 và không thuộc 30% mã biến động nhất rổ (ptcp/loc_quy_b.json – ngoài top / quá nóng / biến động →
-    không mua mới); đủ 8 mã vẫn mua thêm 1 mã nếu tín hiệu MẠNH B (suất dự phòng),
-    GTGD ≥ 3 tỷ
-  · mã ĐẮT (định giá ≤ −20%) ½ khối lượng · nhiệt dài hạn (VN-Index Tăng) ½ rủi ro
-  · 29/10/2026 độ rộng rổ top 100: "tăng giả" (VN-Index không Giảm, phần lớn mã Giảm) | "hẹp" (VN-Index lãi 60 phiên hơn
-    trung vị rổ > 10 điểm, trung vị < 0) → ½ rủi ro lệnh mới & trần rủi ro mở (ptcp/do_rong.py); hệ bắt đáy bằng tiền B để
-    không ≤ 30% NAV chạy riêng (ptcp/bat_day.py – tin tổng kết canh-bao-mua, không qua bộ lọc này)
-  · thoát theo hệ thoát 2R – MA10 tuần
+  · nhóm MUA: 🟢 mua mới · ✅ vào trễ trong biên cho phép (phân nhóm lấy từ ptcp)
+  · rổ HOSE + HNX: rổ thanh khoản tuần, RS 3 tháng không quá nóng, không thuộc nhóm biến động nhất (ptcp/loc_quy_b.json);
+    giới hạn số mã giữ / mã mới mỗi tuần, suất dự phòng cho tín hiệu MẠNH
+  · mã ĐẮT giảm khối lượng · nhiệt dài hạn và độ rộng rổ yếu giảm rủi ro (ptcp/do_rong.py) · hệ bắt đáy chạy riêng
+    (ptcp/bat_day.py – tin tổng kết canh-bao-mua, không qua bộ lọc này)
+  · thoát theo hệ thoát của ptcp
+Ngưỡng / hệ số: ptcp/cau_hinh.py (repo kín); mô tả đầy đủ: danh-muc/LUAT_CHI_TIET.md.
 Điểm cộng chỉ để xếp hạng trong danh sách lọc.
 """
 CHIEN_LUOC = {
     "ten": "Quỹ Bứt Phá",
-    "mo_ta": "Chiến lược đang áp dụng – Quỹ Bứt Phá: hệ B (MACD ngày + tuần), HOSE + HNX, top 100 GTGD, bỏ RS 3T quá nóng "
-             "và 30% mã biến động nhất, ≤ 5 mã mới/tuần, 8 mã + 1 suất dự phòng cho tín hiệu mạnh, vào trễ ≤ giá vào "
-             "+ ½R, thoát 2R – MA10 tuần; độ rộng top 100 yếu (tăng giả / hẹp) ½ rủi ro; "
-             "cùng luật với danh-muc / canh-bao-mua",
+    "mo_ta": "Chiến lược đang áp dụng – Quỹ Bứt Phá: hệ B (MACD ngày + tuần), HOSE + HNX, rổ thanh khoản tuần, bỏ mã RS 3 tháng "
+             "quá nóng và nhóm biến động nhất, giới hạn mã mới / tuần và số mã giữ (+ suất dự phòng cho tín hiệu mạnh), vào "
+             "trễ trong biên cho phép, thoát theo hệ thoát; độ rộng rổ yếu giảm rủi ro; cùng luật với danh-muc / canh-bao-mua",
     "bat_buoc": {"gtgd_min": 3, "cl_tt_mua": None},
     "cong_diem": {"tren_ma200": None, "ma50_tren_ma200": None, "rs_3t": 0, "vol_dot_bien": 1.5, "gan_dinh52": 15},
 }

@@ -112,17 +112,17 @@ def _bang_top(ct, top):
 
 
 def _dinh_gia(ct, gia):
-    """Định giá J8 theo quý (kho BCTC du_lieu/bctc của danh-muc) cho các mã có tín hiệu → mã ĐẮT × ½ KL như live.
+    """Định giá J8 theo quý (kho BCTC du_lieu/bctc của danh-muc) cho các mã có tín hiệu → mã ĐẮT giảm KL như live (hệ số ở ptcp).
     Thiếu kho / lỗi → None (backtest chạy không có ĐẮT, ghi rõ trong log)."""
     try:
         from ptcp import kiem_dinh_dinh_gia as kd
         ma = sorted(set(ct["Mã"]) & set(gia))
         dg = kd.chay(ma, gia_san={m: gia[m]["close"] for m in ma})
         dg = dg[dg.bien_the == "hiện tại"] if "bien_the" in dg else dg
-        print(f"  Định giá J8: {dg['ma'].nunique()}/{len(ma)} mã có số liệu → áp ĐẮT ½ khối lượng")
+        print(f"  Định giá J8: {dg['ma'].nunique()}/{len(ma)} mã có số liệu → áp ĐẮT giảm khối lượng")
         return dg
     except Exception as e:                                          # noqa: BLE001 – không có định giá vẫn backtest
-        print(f"  ⚠ Không có định giá ({type(e).__name__}: {str(e)[:120]}) → backtest 15' không áp ĐẮT ½")
+        print(f"  ⚠ Không có định giá ({type(e).__name__}: {str(e)[:120]}) → backtest 15' không áp ĐẮT")
         return None
 
 
@@ -174,7 +174,7 @@ def tai_nen_5p(ma, tu=None, cua_so=20, nghi=0.2):
 
 
 def ro_da_khung():
-    """Rổ backtest đa khung: 41 mã chiến lược + top 100 GTGD hiện tại (Quỹ Bứt Phá chỉ mua top 100) – nến 1' nặng nên
+    """Rổ backtest đa khung: 41 mã chiến lược + rổ top GTGD hiện tại (Quỹ Bứt Phá chỉ mua rổ này) – nến 1' nặng nên
     không chạy toàn sàn."""
     ds = list(C.MA_CHIEN_LUOC)
     try:
@@ -326,13 +326,13 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
         print(kl)
         try:
             from ptcp import cau_hinh as pc
-            top = getattr(pc, "QUY_TOP_GTGD", 0) or 100
+            top = int(pc.QUY_TOP_GTGD)                               # ngưỡng ở ptcp/cau_hinh.py (repo kín) – không ghi ra
             bt = _bang_top(k15["chi_tiet"], top)
-        except ImportError:                                         # ptcp cũ chưa có loc_quy_b
+        except (ImportError, AttributeError):                       # ptcp cũ chưa có loc_quy_b
             bt = None
         if bt:
-            ra["15p"]["top_gtgd"] = {**bt, "top": top}
-            print(f"  Riêng top {top} GTGD ({bt['so_tin_hieu']} khuyến nghị): {bt['ket_luan']}")
+            ra["15p"]["top_gtgd"] = bt                               # không ghi số mã rổ (file kết quả công khai)
+            print(f"  Riêng rổ top GTGD ({bt['so_tin_hieu']} khuyến nghị): {bt['ket_luan']}")
         ts = _bang_san(k15["chi_tiet"])
         if ts:
             ra["15p"]["theo_san"] = ts
@@ -361,7 +361,7 @@ def _luu_gui(ra, bay_gio, khong_gui, gui, gui_file, file_ra=None):
     print(f"Đã lưu {file_ra}")
     tin = "\n".join([f"🧪 BACKTEST CHIẾN LƯỢC – {pd.Timestamp(bay_gio):%d/%m/%Y}",
                      f"Điểm vào 15' ({ra['15p'].get('mo_ta', '')}): {ra['15p']['ket_luan']}",
-                     *([f"  riêng top {ra['15p']['top_gtgd']['top']} GTGD: {ra['15p']['top_gtgd']['ket_luan']}"]
+                     *([f"  riêng rổ top GTGD: {ra['15p']['top_gtgd']['ket_luan']}"]
                        if ra["15p"].get("top_gtgd") else []),
                      *([f"  {ra['15p']['quy_b']['ket_luan']}"] if ra["15p"].get("quy_b") else []),
                      f"Điểm bán & mua thêm: {ra['diem_ban']['ket_luan']}",

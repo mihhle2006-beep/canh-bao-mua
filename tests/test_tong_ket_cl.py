@@ -255,7 +255,7 @@ def test_loc_quy_b_ngoai_top_va_he_so(monkeypatch):
                        for m, ut in (("AAA", 2), ("BBB", 1))])
     ra = {"hanh_dong": hd, "doc": {"ngay": "2026-10-14"}, "vni_df": None}
     loc = {"AAA": {"bo": False, "he_so": 0.5, "he_so_vni": 0.5, "ly_do": ["VN-Index Tăng ×0.5"]},
-           "BBB": {"bo": True, "he_so": 1.0, "ly_do": ["ngoài top 100 GTGD (hạng 180)"]}}
+           "BBB": {"bo": True, "he_so": 1.0, "ly_do": ["ngoài rổ GTGD (hạng 180)"]}}
     monkeypatch.setattr(tong_ket_cl, "_loc_quy", lambda ma, vni: loc[ma])
     a, b = tong_ket_cl.ds_khuyen_nghi(ra)
     assert a["nhom"] == "VAO_NHU_MOI" and a["he_so_quy"] == 0.5 and a["he_so_vni"] == 0.5
@@ -296,9 +296,9 @@ def test_dong_mua_ghi_gia_lo():
 def test_cach_vao_uu_tien_bang_top_gtgd(monkeypatch):
     monkeypatch.setattr(C, "CACH_VAO_15P", "tu_dong")
     kq = {"15p": {"tot_nhat": "15P+GIO+ATC", "bang": [],
-                  "top_gtgd": {"top": 100, "tot_nhat": "LO", "bang": [{"Biến thể": "LO", "TB/lệnh khớp %": -2.37,
+                  "top_gtgd": {"tot_nhat": "LO", "bang": [{"Biến thể": "LO", "TB/lệnh khớp %": -2.37,
                                                                          "Khớp %": 62.5}]}}}
-    assert tong_ket_cl.cach_vao(kq) == ("LO", "tốt nhất theo backtest top 100 GTGD")
+    assert tong_ket_cl.cach_vao(kq) == ("LO", "tốt nhất theo backtest rổ top GTGD")
     assert tong_ket_cl.cach_vao({"15p": {"tot_nhat": "VWAP"}})[0] == "VWAP"
 
 
@@ -556,7 +556,7 @@ def test_mua_cung_luc_chi_ma_sao_tin_rieng_con_lai_du_phong():
 
 
 def test_dong_nhiet_do_rong_va_von_lenh_tach_he_so():
-    """Độ rộng top 100 (29/10/2026): dòng 🌡 có lý do, 💰 tách "VNI" và "độ rộng" (đã nằm trong he_so_vni)."""
+    """Độ rộng rổ (29/10/2026): dòng 🌡 có lý do, 💰 tách "VNI" và "độ rộng" (đã nằm trong he_so_vni)."""
     rong = {"ngay": "2026-10-29", "tang_gia": True, "hep": False, "vni_60p": 4.0, "tv_60p": -6.0, "he_so": 0.5, "tre": 0}
     nh = {"diem": 1, "so_chi_bao": 6, "he_so": 1.0, "chi_bao": [],
           "dai_han": {"trang_thai": "Tăng", "he_so": 0.25, "he_so_tt": 0.5, "nong": True, "cach_ma200": 6.0,

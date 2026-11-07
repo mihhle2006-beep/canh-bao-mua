@@ -38,11 +38,11 @@ def test_nhom_vung_cat_lo_dung_nhu_bot(ro, tmp_path, monkeypatch):
         if k["nhom"] in T.NHOM_MUA + ("CHO",):
             if k["nhom"] == "MUA_MOI":
                 assert (k["tu"], k["den"]) == vung_gia(k["nhom"], k["gia"], k["cl"])
-            elif k["tu"] != k["tu"]:                       # Quỹ Bứt Phá: cắt lỗ đã > giá vào + ½R → không vùng vào trễ
+            elif k["tu"] != k["tu"]:                       # Quỹ Bứt Phá: cắt lỗ đã quá biên vào trễ → không vùng vào trễ
                 assert k["nhom"] == "CHO"
                 continue
             assert k["cl"] < k["tu"] <= k["den"]
-            assert k["den"] <= vung_gia(k["nhom"], k["gia"], k["cl"])[1]     # ≤ vùng không giới hạn ½R
+            assert k["den"] <= vung_gia(k["nhom"], k["gia"], k["cl"])[1]     # ≤ vùng không giới hạn biên vào trễ
             assert k["mt1"] == pytest.approx(2 * k["gia"] - k["cl"]) and k["mt3"] == pytest.approx(4 * k["gia"] - 3 * k["cl"])
         if k["nhom"] == "MUA_MOI":
             atr = __import__("bo_loc.loi.chi_bao", fromlist=["x"]).tinh_chi_bao(gia[ma]).ATR.iloc[-1]

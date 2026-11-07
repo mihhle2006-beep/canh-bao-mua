@@ -60,7 +60,7 @@ jobs:
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
 
-      - name: Lấy kho BCTC (định giá → mã ĐẮT ½ KL trong backtest 15' – chỉ du_lieu/bctc, không lấy file danh mục)
+      - name: Lấy kho BCTC (định giá → mã ĐẮT giảm KL trong backtest 15' – chỉ du_lieu/bctc, không lấy file danh mục)
         uses: actions/checkout@v5
         continue-on-error: true
         with:

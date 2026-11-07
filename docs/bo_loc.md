@@ -23,10 +23,10 @@ theo dõi mỗi mã **4 phiên kế tiếp**: Bo_Loc lọc lại vẫn đạt ho
 ## Mới ở beta 1.1 – đồng bộ chiến lược thị trường (cùng bot canh-bao-mua & ptcp)
 
 - **Chiến lược mặc định `quy_b`** – chiến lược đang áp dụng (Quỹ Bứt Phá, giống danh-muc / canh-bao-mua): hệ B (MACD ngày + tuần),
-  nhóm MUA (mới / vào trễ ≤ giá vào hệ thống + ½R), chỉ mã top 100 GTGD và hạng RS 3 tháng < 90 (không quá nóng),
-  GTGD ≥ 3 tỷ, mã ĐẮT ½ KL, tối đa 5 mã mới/tuần, thoát 2R – MA10 tuần.
-- Nhóm MUA gồm: tín hiệu hệ B hôm nay (MACD ngày cắt lên + MACD tuần > Signal), hoặc hệ thống đang giữ và giá ≤ giá
-  vào + ½R (vào trễ, đủ KL) với cắt lỗ cách ≤ 7%.
+  nhóm MUA (mới / vào trễ trong biên giá vào hệ thống), chỉ mã trong rổ thanh khoản tuần và RS 3 tháng không quá nóng,
+  mã ĐẮT giảm KL, giới hạn số mã mới mỗi tuần, thoát theo hệ thoát (ngưỡng ở ptcp/cau_hinh.py – repo kín).
+- Nhóm MUA gồm: tín hiệu hệ B hôm nay (MACD ngày cắt lên + MACD tuần > Signal), hoặc hệ thống đang giữ và giá còn trong
+  biên vào trễ (đủ KL) với cắt lỗ không quá xa.
 - **Dòng thị trường** ở đầu KẾT LUẬN: điểm X/8, CL1/CL2, trạng thái đi ngang.
   Độ rộng: ≥ 10 mã quét thì tính trên các mã quét. Ít hơn thì dùng `thi_truong_cl.json` cùng phiên của ptcp (nếu có),
   không có thì ước tính bằng VNI > MA200.
@@ -158,7 +158,7 @@ Ngân hàng/CK/bảo hiểm bỏ 4 tiêu chí không phù hợp (biên gộp, th
 
 | Chiến lược | Dùng khi |
 |---|---|
-| `quy_b` *(mặc định)* | Chiến lược GIAO DỊCH – Quỹ Bứt Phá: hệ B, top 100 GTGD, thoát 2R – MA10 tuần – **cùng tiêu chí bot `canh-bao-mua`** |
+| `quy_b` *(mặc định)* | Chiến lược GIAO DỊCH – Quỹ Bứt Phá: hệ B, rổ thanh khoản tuần, thoát theo hệ thoát – **cùng tiêu chí bot `canh-bao-mua`** |
 | `xu_huong` | Danh sách THEO DÕI (không đặt lệnh): giá > MA50 > MA200, RSI 50–72, mạnh hơn VN-Index, có lãi |
 | `tuy_chinh` | Tự đặt (sửa file `bo_loc/chien_luoc/tuy_chinh.py` hoặc JSON trong `chien_luoc_rieng/`) |
 

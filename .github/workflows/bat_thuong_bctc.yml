@@ -7,7 +7,7 @@
 # – 2 bước đó tải BCTC quý / năm vừa công bố: job chon chỉ lấy mã
 # có BCTC MỚI (kỳ mới nhất của kho khác lần đọc trước) hoặc có năm đang "chờ báo cáo thường niên" mà BCTN vừa ra
 # (BCTN giải thích → ĐÃ GIẢI THÍCH). Không có mã nào → dừng, không chạy nhóm đọc. Tin Telegram: thay đổi (🆕 bất thường
-# mới · ✅ đã giải thích · 🔁 đổi mức) + Excel các mã lần này; 🆕 của mã top 100 GTGD
+# mới · ✅ đã giải thích · 🔁 đổi mức) + Excel các mã lần này; 🆕 của mã rổ top GTGD
 # bỏ khỏi tin (đã gộp trong tin "BCTC mới"). Chạy tay: Excel đủ mã như cũ.
 # Nhóm song song: ≤ 12 mã → 1 nhóm, nhiều hơn → 6 nhóm (≤ 320 phút / nhóm). CONG_KHAI=1: log chỉ in số mã.
 # ĐỆM CHỮ TÀI LIỆU (cache_du_lieu/tai_lieu – chữ từng trang đã OCR, theo URL): mỗi nhóm khôi phục bản đệm chung (actions/cache),
