@@ -282,7 +282,7 @@ const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json";
 const TAB = [["tong-quan", "Tổng quan"], ["tin", "Tin tức"], ["ho-so", "Hồ sơ"], ["lanh-dao", "Lãnh đạo"], ["co-dong", "Cổ đông"],
   ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["phan-tich", "Phân tích"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
   ["bao-cao", "Báo cáo CTCK"], ["tai-lieu", "Tài liệu"], ["he-thong", "Hệ thống"]];
-let DS = null, META = {}, NG = null, MKT = null, LIVE = {}, BOT = {}, GIU = new Set(), CT_BCTC = null, TEN_CT = null;
+let DS = null, META = {}, NG = null, MKT = null, LIVE = {}, BOT = {}, GIU = new Set(), CT_BCTC = null, TEN_CT = null, TEN_VND = null;
 // danh sách theo dõi CÁ NHÂN – chỉ lưu trong trình duyệt này (localStorage), không gửi đi đâu
 const KHOA_TD = "bang_tt_theo_doi";                // DÙNG CHUNG với danh sách theo dõi của Bảng thị trường (cùng tên miền)
 const TD = new Set((() => { try { return JSON.parse(localStorage.getItem(KHOA_TD) || "[]").filter(m => /^[A-Z0-9]{2,10}$/.test(m)); } catch (e) { return []; } })());
@@ -302,7 +302,7 @@ function vgm_html(v) {                          // "B A C B" → Giá trị B ·
   return c.map((x, i) => `${i === 3 ? "<b>" : ""}${VGM_TEN[i]} <span class="${lop(x)}">${esc(x)}</span>${i === 3 ? "</b>" : ""}`).join(" · ");
 }
 const KHO = {};                     // mã → {r, g, n, b}
-const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true, ema: [], dc: 0, mk: true};
+const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true, ema: [], dc: 0, mk: true, nguon: "vc", tin_n: 20, pel: "pe", pen: 1250};
 let CS_NGANH = null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -338,7 +338,7 @@ async function tai_thi_truong() {
 async function tai_ma(ma) {
   const k = KHO[ma] || (KHO[ma] = {});
   if (!k.p) k.p = Promise.all([lay(DL + "ma/" + ma + ".json", false), lay(DL + "gia/" + ma + ".json", false),
-    lay(DL + "dn/" + ma + ".json", false)]).then(([r, g, n]) => { k.r = r; k.g = g; k.n = n; });
+    lay(DL + "dn/" + ma + ".json", false), lay(DL + "gia_dai/" + ma + ".json", false)]).then(([r, g, n, gd]) => { k.r = r; k.g = g; k.n = n; k.gd = gd; });
   await k.p; return k;
 }
 async function tai_bctc(ma) {
@@ -348,6 +348,12 @@ async function tai_bctc(ma) {
       CT_BCTC ?? lay(DL + "cau_truc_bctc.json", false).then(x => x || {}), TEN_CT ?? lay(DL + "chi_tieu.json", false).then(x => x || {})]);
   }
   return k.b;
+}
+async function tai_bctc_dai(ma) {                // BCTC VNDirect từ 2008 – chỉ tải khi chọn nguồn này
+  const k = KHO[ma];
+  if (k.bd === undefined) [k.bd, TEN_VND] = await Promise.all([lay(DL + "bctc_dai/" + ma + ".json", false),
+    TEN_VND ?? lay(DL + "chi_tieu_vnd.json", false).then(x => x || {})]);
+  return k.bd;
 }
 
 // ---------------------------------------------------------------- giá hiện tại & chỉ báo
@@ -360,10 +366,24 @@ function gia_nay(ma, k) {                      // nghìn đồng
   if (k.r?.gia) return {gia: k.r.gia / 1000};
   return {};
 }
-function chuoi_gia(k, ma) {                    // lịch sử + nến hôm nay (bảng giá trong phiên) nếu chưa có
-  const g = k.g;
-  if (!g?.d?.length) return null;
-  const x = {d: [...g.d], o: [...g.o], h: [...g.h], l: [...g.l], c: [...g.c], v: [...g.v], nn: [...(g.nn || [])]};
+function giai_gia_dai(gd) {                    // gia_dai gọn {d0, g (cách ngày), o, h, l, c, v} → cột theo ngày
+  if (!gd?.d0 || !gd.c?.length) return null;
+  const t = new Date(gd.d0 + "T00:00:00Z"), d = gd.g.map(n => { t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); });
+  return {d, o: gd.o, h: gd.h, l: gd.l, c: gd.c, v: gd.v};
+}
+function chuoi_gia(k, ma) {                    // lịch sử (gia_dai từ khi niêm yết + gia ~2 năm đủ khối ngoại) + nến hôm nay nếu chưa có
+  const g = k.g, D = k.gd ? (k.gdx || (k.gdx = giai_gia_dai(k.gd))) : null;
+  if (!g?.d?.length && !D) return null;
+  let x;
+  if (g?.d?.length) {
+    x = {d: [...g.d], o: [...g.o], h: [...g.h], l: [...g.l], c: [...g.c], v: [...g.v], nn: [...(g.nn || g.d.map(() => null))]};
+    const het = D ? (i => i < 0 ? D.d.length : i)(D.d.findIndex(d => d >= g.d[0])) : 0;
+    if (het > 0) {                             // phần trước phiên đầu của gia – quy đổi theo tỷ lệ giá ở ngày nối (nguồn điều chỉnh khác nhau)
+      const j = D.d.indexOf(g.d[0]), h_ = j >= 0 && D.c[j] && g.c[0] ? g.c[0] / D.c[j] : 1, f = a => a.slice(0, het).map(v => v == null ? v : v * h_);
+      x = {d: D.d.slice(0, het).concat(x.d), o: f(D.o).concat(x.o), h: f(D.h).concat(x.h), l: f(D.l).concat(x.l), c: f(D.c).concat(x.c),
+        v: D.v.slice(0, het).concat(x.v), nn: Array(het).fill(null).concat(x.nn)};
+    }
+  } else x = {d: [...D.d], o: [...D.o], h: [...D.h], l: [...D.l], c: [...D.c], v: [...D.v], nn: D.d.map(() => null)};
   const l = LIVE[ma], ph = MKT?.phien, cuoi = x.d[x.d.length - 1];
   if (l && l.gia && ph && ph > cuoi && l.co_gd) {
     const c0 = x.c[x.c.length - 1];
@@ -539,12 +559,12 @@ async function ve_bd_gia(el, x0, them = {}) {
   const x = gop_khung(x0, ST.khung), n = x.d.length;
   const ch = LW.createChart(el, {autoSize: true, layout: {background: {color: "#ffffff"}, textColor: "#4b5565", fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", fontSize: 11},
     grid: {vertLines: {color: "#f2f4f7"}, horzLines: {color: "#f2f4f7"}}, rightPriceScale: {borderColor: "#e3e7ee"},
-    timeScale: {borderColor: "#e3e7ee", rightOffset: 4, minBarSpacing: 1}, crosshair: {mode: LW.CrosshairMode.Normal},
+    timeScale: {borderColor: "#e3e7ee", rightOffset: 4, minBarSpacing: 0.1}, crosshair: {mode: LW.CrosshairMode.Normal},
     localization: {locale: "vi-VN", priceFormatter: p => so(p, 2)}});
   BD_GIA = ch;
   const nen = ch.addCandlestickSeries({upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false, wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineColor: "#7a8494"});
   nen.setData(x.d.map((d, i) => ({time: d, open: x.o[i], high: x.h[i], low: x.l[i], close: x.c[i]})));
-  nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}});
+  nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}, mode: ST.nen >= 99999 ? LW.PriceScaleMode.Logarithmic : LW.PriceScaleMode.Normal});   // "Tất cả": thang log
   const MAU_MA = {10: "#e8710a", 20: "#1f6feb", 50: "#9b3fd1", 200: "#0e9fb3"}, ma = {};
   for (const m of ST.ma_tb) { const v = sma(x.c, m); ma[m] = v;
     const l = ch.addLineSeries({color: MAU_MA[m], lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
@@ -595,8 +615,8 @@ function tong_quan(ma, k) {
     const c = x.c, L = c.length - 1, ve = (i) => i >= 0 ? c[L] / c[i] - 1 : null;
     const nam = String(x.d[L]).slice(0, 4), dn = x.d.findIndex(d => d.startsWith(nam));
     const hs = [["1 ngày", x.tam && x.tc ? c[L] / x.tc - 1 : ve(L - 1)], ["1 tuần", ve(L - 5)], ["1 tháng", ve(L - 21)], ["3 tháng", ve(L - 63)], ["6 tháng", ve(L - 126)],
-      ["1 năm", ve(L - 250)], ["Từ đầu năm", dn > 0 ? c[L] / c[dn - 1] - 1 : null]];
-    h += the("Biểu đồ giá", `giá điều chỉnh cổ tức / chia tách · ${x.d.length} phiên${x.cu ? ` · <span class="g">lịch sử tới ${ngay_vn(x.cu)} (chưa cập nhật)</span>` : ""}${x.dc ? " · hôm nay GDKHQ – lịch sử đã điều chỉnh theo tham chiếu" : ""} · kéo / cuộn để xem · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`,
+      ["1 năm", ve(L - 250)], ["3 năm", ve(L - 750)], ["5 năm", ve(L - 1250)], ["Từ đầu năm", dn > 0 ? c[L] / c[dn - 1] - 1 : null]];
+    h += the("Biểu đồ giá", `giá điều chỉnh cổ tức / chia tách · ${x.d.length} phiên từ ${ngay_vn(x.d[0])}${x.cu ? ` · <span class="g">lịch sử tới ${ngay_vn(x.cu)} (chưa cập nhật)</span>` : ""}${x.dc ? " · hôm nay GDKHQ – lịch sử đã điều chỉnh theo tham chiếu" : ""} · kéo / cuộn để xem · <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`,
       `<div class="nen-dk"><span class="nut">${nut([["D", "Ngày"], ["W", "Tuần"], ["M", "Tháng"]], ST.khung, "khung")}</span>
        ${["10", "20", "50", "200"].map(m => `<label><input type="checkbox" data-ma="${m}"${ST.ma_tb.includes(+m) ? " checked" : ""}>MA${m}</label>`).join("")}
        ${["9", "21"].map(m => `<label><input type="checkbox" data-ema="${m}"${ST.ema.includes(+m) ? " checked" : ""}>EMA${m}</label>`).join("")}
@@ -605,7 +625,7 @@ function tong_quan(ma, k) {
        <span class="nut">${nut([["kl", "Khối lượng"]].concat(x.nn?.some(v => v != null) ? [["nn", "Khối ngoại"]] : []), ST.duoi, "duoi")}</span></div>
        <div class="bd-gia" id="bd-gia"></div>
        <div class="hieu-suat">${hs.map(([t, v]) => `<div><div class="n">${t}</div><b class="${mau(v)}">${pt(v, 2)}</b></div>`).join("")}</div>`,
-      nut([[22, "1T"], [66, "3T"], [130, "6T"], [250, "1N"], [9999, "Tất cả"]], ST.nen, "nen"));
+      nut([[22, "1T"], [66, "3T"], [130, "6T"], [250, "1N"], [750, "3N"], [1250, "5N"], [99999, "Tất cả"]], ST.nen, "nen"));
   } else h += the("Biểu đồ giá", `<a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`, `<div class="trong">Chưa có lịch sử giá cho mã này (cập nhật xoay vòng mỗi sáng).</div>`);
   // thống kê giá
   const g = k.g, L = g?.c?.length ? g.c.length - 1 : -1;
@@ -732,9 +752,48 @@ function tim_ma_ten(b, bang, re) {
   for (const c of Object.keys(b[bang] || {})) if (re.test(ten_ct(b, bang, c))) return c;
   return null;
 }
+const TONG_VND = /^(tổng|doanh thu thuần|lợi nhuận (gộp|thuần|sau thuế|kế toán)|nợ phải trả$|vốn chủ sở hữu$|lưu chuyển tiền thuần)/i;   // dòng tổng in đậm
+const nut_nguon = b => b?.co_dai ? `<span class="nut">${nut([["vc", "Vietcap · từ 2018"], ["vnd", "VNDirect · từ 2008"]], ST.nguon, "nguon")}</span>` : "";
+async function tai_chinh_vnd(ma, k, b) {          // BCTC VNDirect (tên / mã chỉ tiêu riêng, cấp theo mã số) – lịch sử từ ~2008
+  const bd = await tai_bctc_dai(ma);
+  if (!bd) { ST.nguon = "vc"; return tai_chinh(ma, k); }
+  const q = ST.ky === "q", nq = bd.q.length, nhan = q ? bd.q : bd.y, cat = v => q ? v.slice(0, nq) : v.slice(nq), T = TEN_VND || {};
+  const tim = (bang, re) => Object.keys(bd[bang] || {}).find(c => re.test(T[c] || ""));
+  const lay_v = (bang, c) => c && bd[bang]?.[c] ? cat(bd[bang][c]) : nhan.map(() => null);
+  const yoy = a => a.map((v, i) => { const j = q ? i - 4 : i - 1; return j >= 0 && v != null && a[j] > 0 ? v / a[j] - 1 : null; });
+  let chart = "", cg = [];
+  if (ST.bang === "kd") {
+    const dt = bd.kd?.v21001 ? "v21001" : tim("kd", /doanh thu thuần|tổng thu nhập hoạt động|thu nhập lãi thuần/i);
+    const ln = bd.kd?.v23000 ? "v23000" : tim("kd", /lợi nhuận sau thuế của (công ty mẹ|cổ đông)/i) || tim("kd", /lợi nhuận sau thuế/i);
+    const vln = lay_v("kd", ln);
+    chart = ve_ket_hop(nhan, [{ten: T[dt] || "Doanh thu", v: lay_v("kd", dt), mau: "#A5D6A7"}, {ten: "LNST", v: vln, mau: "#2E7D32", am: "#d1342b"}],
+      {ten: "Tăng trưởng LNST", v: yoy(vln), mau: "#e8a400"}, {ten: "KQKD", w: W_RONG()});
+    cg = [[T[dt] || "Doanh thu", "#A5D6A7", 1], ["LNST cổ đông mẹ", "#2E7D32", 1], ["Tăng trưởng LNST (YoY)", "#e8a400"]];
+  } else if (ST.bang === "cd") {
+    const ts = lay_v("cd", tim("cd", /^tổng cộng tài sản/i)), vc = lay_v("cd", tim("cd", /^vốn chủ sở hữu$/i)), no = lay_v("cd", tim("cd", /^nợ phải trả$/i));
+    chart = ve_ket_hop(nhan, [{ten: "Tổng tài sản", v: ts, mau: "#A5D6A7"}, {ten: "Vốn chủ sở hữu", v: vc, mau: "#2E7D32"}],
+      {ten: "Nợ / VCSH", v: no.map((v, i) => v != null && vc[i] ? v / vc[i] : null), mau: "#e8a400", fmt: v => so(v, 2) + "×"}, {ten: "CĐKT", w: W_RONG()});
+    cg = [["Tổng tài sản", "#A5D6A7", 1], ["Vốn chủ sở hữu", "#2E7D32", 1], ["Nợ / VCSH (lần)", "#e8a400"]];
+  } else {
+    const kd = tim("lc", /thuần từ (các )?hoạt động (sản xuất )?kinh doanh/i), dt = tim("lc", /thuần từ hoạt động đầu tư/i),
+      tc = tim("lc", /thuần từ hoạt động tài chính/i), th = tim("lc", /thuần trong kỳ/i);
+    chart = ve_ket_hop(nhan, [{ten: "HĐKD", v: lay_v("lc", kd), mau: "#2E7D32"}, {ten: "HĐĐT", v: lay_v("lc", dt), mau: "#e8710a"},
+      {ten: "HĐTC", v: lay_v("lc", tc), mau: "#9b3fd1"}], th ? {ten: "LCT thuần", v: lay_v("lc", th), mau: "#0f8a4a", fmt: v => ty(v)} : null, {ten: "LCTT", w: W_RONG()});
+    cg = [["LCT HĐ kinh doanh", "#2E7D32", 1], ["HĐ đầu tư", "#e8710a", 1], ["HĐ tài chính", "#9b3fd1", 1], ["LCT thuần trong kỳ", "#0f8a4a"]];
+  }
+  const co = bd[ST.bang] || {};
+  const bang = `<div class="bang-boc" id="bang-bctc"><table class="bctc"><thead><tr><th class="trai">Tỷ đồng</th>${nhan.map(t => `<th>${esc(t)}</th>`).join("")}</tr></thead><tbody>` +
+    Object.keys(co).map(c => { const tong = TONG_VND.test(T[c] || ""), v = cat(co[c]); return `<tr class="${tong ? "c1" : ""}"><td class="trai">${esc(T[c] || c)}</td>${v.map(x => `<td class="${x < 0 ? "g" : ""}">${x ? ty(x) : "–"}</td>`).join("")}</tr>`; }).join("") +
+    `</tbody></table></div>`;
+  return `<p class="m nho" style="margin:0 0 10px">Nguồn VNDirect: tên chỉ tiêu theo VNDirect (khác Vietcap), xếp theo mã chỉ tiêu, dòng tổng in đậm; số năm cũ chưa qua bước khớp kiểm toán Q4 như nguồn Vietcap.</p>` +
+    the("Báo cáo tài chính", `VNDirect · ${q ? bd.q.length + " quý" : bd.y.length + " năm"} (${esc(nhan[0] || "")} → ${esc(nhan.at(-1) || "")}) · ${nut_tai("tai-bctc", "Tải Excel BCTC")}`,
+      `<div class="than" style="padding-bottom:0">${nut_nguon(b)} <span class="nut">${nut([["kd", "Kết quả kinh doanh"], ["cd", "Cân đối kế toán"], ["lc", "Lưu chuyển tiền tệ"]], ST.bang, "bang")}</span></div>
+       <div class="bieu" style="padding:6px 8px 0">${chart}</div>${chu_giai(cg)}${bang}`, nut([["q", "Quý"], ["y", "Năm"]], ST.ky, "ky"));
+}
 async function tai_chinh(ma, k) {
   const b = await tai_bctc(ma), r = k.r || {}, n = k.n || {};
   if (!b) return the("Báo cáo tài chính", "", `<div class="trong">Chưa có BCTC trong kho cho mã này.</div>`);
+  if (ST.nguon === "vnd" && b.co_dai) return tai_chinh_vnd(ma, k, b);
   const q = ST.ky === "q", nq = b.q.length, nhan = q ? b.q : b.y, cat = v => q ? v.slice(0, nq) : v.slice(nq);
   const lay_v = (bang, c) => c && b[bang]?.[c] ? cat(b[bang][c]) : nhan.map(() => null);
   const yoy = a => a.map((v, i) => { const j = q ? i - 4 : i - 1; return j >= 0 && v != null && a[j] > 0 ? v / a[j] - 1 : null; });
@@ -766,7 +825,7 @@ async function tai_chinh(ma, k) {
     `</tbody></table></div>`;
   const sub = `<p class="m nho" style="margin:0 0 10px">Z-Score, F-Score, M-Score, DuPont 6 nhân tố, chất lượng lợi nhuận, định giá đa phương pháp: <a href="#${esc(ma)}/phan-tich">tab Phân tích</a></p>`;
   let h = sub + the("Báo cáo tài chính", `${({CT: "doanh nghiệp", NH: "ngân hàng", CK: "chứng khoán", BH: "bảo hiểm"})[b.loai] || ""} · ${q ? b.q.length + " quý" : b.y.length + " năm"} · Q4 khớp số kiểm toán · ${nut_tai("tai-bctc", "Tải Excel BCTC")}`,
-    `<div class="than" style="padding-bottom:0"><span class="nut">${nut([["kd", "Kết quả kinh doanh"], ["cd", "Cân đối kế toán"], ["lc", "Lưu chuyển tiền tệ"]], ST.bang, "bang")}</span></div>
+    `<div class="than" style="padding-bottom:0">${nut_nguon(b)} <span class="nut">${nut([["kd", "Kết quả kinh doanh"], ["cd", "Cân đối kế toán"], ["lc", "Lưu chuyển tiền tệ"]], ST.bang, "bang")}</span></div>
      <div class="bieu" style="padding:6px 8px 0">${chart}</div>${chu_giai(cg)}${bang}`, nut([["q", "Quý"], ["y", "Năm"]], ST.ky, "ky"));
   return h;
 }
@@ -1205,9 +1264,12 @@ function dinh_gia(ma, k) {
     o_so("P/E hiện tại", pe ? so(pe, 1) : "–", r.pe_nganh ? "ngành " + so(r.pe_nganh, 1) : "") + o_so("P/B hiện tại", pb ? so(pb, 2) : "–") +
     o_so("LNST năm dự phóng", r.lnst_f ? so(r.lnst_f, 0) + " tỷ" : "–", esc(r.ghi_f || "")) + o_so("P/E dự phóng", pe_f ? so(pe_f, 1) : "–") +
     o_so("PEG", r.peg ? so(r.peg, 2) : "–", r.cagr != null ? "LNST CAGR 3 năm " + pt(r.cagr) : "") + `</div><p class="nhan-xet">${esc(r.nhan_xet || "")}</p>`);
-  // P/E, P/B lịch sử
-  const cs = n.cs;
-  if (cs?.ky?.length > 4) {
+  // P/E, P/B lịch sử THEO NGÀY (biểu đồ vẽ sau – gan_su_kien) · không đủ số → bản theo quý như cũ
+  const cs = n.cs, P = chuoi_pe(k, ma);
+  if (P) h += the("P/E · P/B lịch sử theo ngày", `dải trung bình ± 1σ của khoảng đang xem · ${P.vc ? `từ ${ngay_vn(P.vc)}: P/E quý Vietcap` : ""}${P.uoc ? ` · trước đó ước tính từ LNST cổ đông mẹ 4 quý (VNDirect), quy đổi số CP theo quý Vietcap đầu tiên` : ""}`,
+    `<div class="nen-dk"><span class="nut">${nut([["pe", "P/E"]].concat(P.pb.some(v => v != null) ? [["pb", "P/B"]] : []), ST.pel, "pel")}</span>
+     <span class="nut">${nut([[750, "3N"], [1250, "5N"], [99999, "Tất cả"]], ST.pen, "pen")}</span></div><div class="bd-gia" id="bd-pe"></div>`);
+  else if (cs?.ky?.length > 4) {
     const dai = (v) => { const x = v.filter(a => a != null && a > 0 && a < 200); const m = tb(x); return x.length > 4 ? {tb: m, sd: Math.sqrt(tb(x.map(a => (a - m) ** 2)))} : null; };
     const o = [];
     for (const [t, key, cur] of [["P/E", "pe", pe], ["P/B", "pb", pb]]) if (cs[key]) { const v = cs[key].map(a => a != null && a > 0 && a < 200 ? a : null), d = dai(v);
@@ -1231,6 +1293,49 @@ function dinh_gia(ma, k) {
     kh.map(x => `<tr><td class="trai">${esc(x.nam)}</td><td>${ty(x.dt)}${ht(x, "dt")}</td><td>${ty(x.lntt)}${ht(x, "lntt")}</td><td>${ty(x.lnst)}${ht(x, "lnst")}</td><td class="trai">${url(x.link) ? `<a href="${url(x.link)}" target="_blank" rel="noopener">${esc(x.nguon || "tài liệu")}</a>` : esc(x.nguon)}</td></tr>`).join("") + `</tbody></table></div>`
     : `<div class="trong">Chưa có kế hoạch ĐHCĐ đã đọc cho mã này.</div>`);
   return h;
+}
+
+function chuoi_pe(k, ma) {                     // P/E, P/B theo ngày = giá điều chỉnh ÷ EPS / BVPS (theo giá điều chỉnh) của quý gần nhất
+  const x = chuoi_gia(k, ma), cs = k.n?.cs, l4 = k.r?.ln4q;
+  if (!x || !cs?.ky?.length) return null;
+  const cuoi_q = (y, q) => new Date(Date.UTC(y, q * 3, 0)).toISOString().slice(0, 10);
+  const gia_tai = d => { let lo = 0, hi = x.d.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (x.d[m] <= d) { r = m; lo = m + 1; } else hi = m - 1; } return r >= 0 ? x.c[r] : null; };
+  const eps = new Map(), bv = new Map();       // ngày cuối quý → EPS / BVPS quy theo giá điều chỉnh (≤ 0 = lỗ / âm vốn)
+  cs.ky.forEach((t, i) => { const m = /^Q(\d)\.(\d\d)$/.exec(t); if (!m) return; const d = cuoi_q(2000 + +m[2], +m[1]), g = gia_tai(d); if (!g) return;
+    const pe = cs.pe?.[i], pb = cs.pb?.[i];
+    if (pe != null) eps.set(d, pe > 0 ? g / pe : -1);
+    if (pb != null) bv.set(d, pb > 0 ? g / pb : -1); });
+  const vc = [...eps.keys()].sort()[0];
+  let uoc = false;
+  if (vc && l4?.ky?.length) {                  // trước quý Vietcap đầu tiên: LNST 4 quý × hệ số khớp ở quý đó
+    const ln = new Map(l4.ky.map((t, i) => [cuoi_q(+t.slice(0, 4), +t.slice(-1)), l4.v[i]])), e0 = eps.get(vc), n0 = ln.get(vc);
+    if (e0 > 0 && n0 > 0) for (const [d, v] of ln) if (d < vc) { eps.set(d, v > 0 ? v * e0 / n0 : -1); uoc = true; }
+  }
+  if (!eps.size) return null;
+  const moc = (M) => { const ds = [...M.keys()].sort(); return d => { let r = null; for (const a of ds) { if (a <= d) r = M.get(a); else break; } return r; }; };
+  const e = moc(eps), b = moc(bv), d0 = [...eps.keys()].sort()[0];
+  const out = {d: [], pe: [], pb: [], vc, uoc};
+  x.d.forEach((d, i) => { if (d < d0) return; const a = e(d), c = b(d);
+    out.d.push(d); out.pe.push(a > 0 && x.c[i] / a < 200 ? x.c[i] / a : null); out.pb.push(c > 0 && x.c[i] / c < 50 ? x.c[i] / c : null); });
+  return out.pe.some(v => v != null) ? out : null;
+}
+let BD_PE = null;
+async function ve_bd_pe(el, P) {
+  const LW = await tai_lwc();
+  if (BD_PE) { try { BD_PE.remove(); } catch (e) {} BD_PE = null; }
+  const key = ST.pel === "pb" ? "pb" : "pe", i0 = Math.max(0, P.d.length - ST.pen);
+  const d = P.d.slice(i0), v = P[key].slice(i0), co = v.filter(a => a != null);
+  const ch = LW.createChart(el, {autoSize: true, layout: {background: {color: "#ffffff"}, textColor: "#4b5565", fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", fontSize: 11},
+    grid: {vertLines: {color: "#f2f4f7"}, horzLines: {color: "#f2f4f7"}}, rightPriceScale: {borderColor: "#e3e7ee"}, timeScale: {borderColor: "#e3e7ee", minBarSpacing: 0.1},
+    localization: {locale: "vi-VN", priceFormatter: p => so(p, key === "pe" ? 1 : 2)}});
+  BD_PE = ch;
+  const l = ch.addLineSeries({color: "#2E7D32", lineWidth: 2, priceLineVisible: false});
+  l.setData(d.map((t, i) => v[i] == null ? {time: t} : {time: t, value: v[i]}));
+  if (co.length > 20) { const m = tb(co), sd = Math.sqrt(tb(co.map(a => (a - m) ** 2)));
+    for (const [y, t, s] of [[m, "TB", 0], [m + sd, "+1σ", 2], [m - sd, "−1σ", 2]]) if (y > 0) l.createPriceLine({price: y, color: "#1f6feb", lineWidth: 1, lineStyle: s, axisLabelVisible: true, title: t}); }
+  const tm = P.uoc ? d.find(t => t >= P.vc) : null;              // mốc phải trùng 1 phiên trên trục
+  if (tm && tm > d[0]) l.setMarkers([{time: tm, position: "aboveBar", color: "#7a8494", shape: "arrowDown", text: "P/E Vietcap từ đây"}]);
+  ch.timeScale().fitContent();
 }
 
 // ---------------------------------------------------------------- CỔ ĐÔNG
@@ -1315,8 +1420,9 @@ function lich_su(ma, k) {
 
 // ---------------------------------------------------------------- TIN & BÁO CÁO
 function tin(ma, k) {
-  const t = k.n?.tin || [];
-  return the("Tin tức & công bố", "CafeF", t.length ? `<div class="ds-tin">${t.map(x => `<a href="${url(x.link)}" target="_blank" rel="noopener"><div>${esc(x.tieu_de)}</div><div class="ngay">${esc(ngay_vn(x.ngay.slice(0, 10)))}${x.ngay.length > 10 ? " " + esc(x.ngay.slice(11)) : ""}</div></a>`).join("")}</div>` : `<div class="trong">Chưa có tin.</div>`);
+  const tat = k.n?.tin || [], t = tat.slice(0, ST.tin_n);
+  return the("Tin tức & công bố", `CafeF · ${tat.length} tin gần nhất`, t.length ? `<div class="ds-tin">${t.map(x => `<a href="${url(x.link)}" target="_blank" rel="noopener"><div>${esc(x.tieu_de)}</div><div class="ngay">${esc(ngay_vn(x.ngay.slice(0, 10)))}${x.ngay.length > 10 ? " " + esc(x.ngay.slice(11)) : ""}</div></a>`).join("")}</div>` +
+    (tat.length > t.length ? `<button class="them" id="tin-them">Xem thêm ${Math.min(20, tat.length - t.length)} tin</button>` : "") : `<div class="trong">Chưa có tin.</div>`);
 }
 function bao_cao(ma, k) {
   const bc = k.n?.bc || [], gn = gia_nay(ma, k);
@@ -1497,6 +1603,15 @@ function xlsx_bctc(ma) {
   }
   tai_xlsx(`${ma}_BCTC.xlsx`, sheets);
 }
+function xlsx_bctc_dai(ma) {
+  const bd = KHO[ma]?.bd; if (!bd) return;
+  const nq = bd.q.length, T = TEN_VND || {}, sheets = [];
+  for (const [bang, ten] of [["kd", "KQKD"], ["cd", "CDKT"], ["lc", "LCTT"]]) for (const q of [true, false]) {
+    const co = bd[bang] || {};
+    sheets.push([`${ten} ${q ? "quy" : "nam"} VND`, [["Tỷ đồng", ...(q ? bd.q : bd.y)], ...Object.keys(co).map(c => [T[c] || c, ...(q ? co[c].slice(0, nq) : co[c].slice(nq))])]]);
+  }
+  tai_xlsx(`${ma}_BCTC_VNDirect.xlsx`, sheets);
+}
 function xlsx_so_huu(ma, k) {
   const n = k.n || {}, cc = n.cc || {};
   tai_xlsx(`${ma}_co_cau_so_huu.xlsx`, [
@@ -1552,13 +1667,20 @@ function gan_su_kien(ma, k, tab) {
   document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { ST.tl = b.dataset.tl; ve_lai(); });
   document.querySelectorAll("[data-csn]").forEach(b => b.onclick = () => { ST.cs = +b.dataset.csn; ST.cs_chon = null; ve_lai(); });
   document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { ST.cs_chon = b.dataset.cs; ve_lai(); });
-  if ($("#tai-bctc")) $("#tai-bctc").onclick = () => xlsx_bctc(ma);
+  if ($("#tai-bctc")) $("#tai-bctc").onclick = () => ST.nguon === "vnd" && KHO[ma]?.bd ? xlsx_bctc_dai(ma) : xlsx_bctc(ma);
+  document.querySelectorAll("[data-nguon]").forEach(b => b.onclick = () => { ST.nguon = b.dataset.nguon; ve_lai(); });
+  document.querySelectorAll("[data-pel]").forEach(b => b.onclick = () => { ST.pel = b.dataset.pel; ve_lai(); });
+  document.querySelectorAll("[data-pen]").forEach(b => b.onclick = () => { ST.pen = +b.dataset.pen; ve_lai(); });
+  if ($("#tin-them")) $("#tin-them").onclick = () => { ST.tin_n += 20; ve_lai(); };
   if ($("#tai-so-huu")) $("#tai-so-huu").onclick = () => xlsx_so_huu(ma, k);
   if ($("#tai-cs")) $("#tai-cs").onclick = () => xlsx_chi_so(ma, k);
   const bb = $("#bang-bctc"); if (bb) bb.scrollLeft = bb.scrollWidth;
   const bd = $("#bd-gia");
   if (bd) ve_bd_gia(bd, chuoi_gia(k, ma), {gn: gia_nay(ma, k), n: k.n}).catch(() => { bd.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
   else if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
+  const bp = $("#bd-pe"), P = bp ? chuoi_pe(k, ma) : null;
+  if (bp && P) ve_bd_pe(bp, P).catch(() => { bp.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
+  else if (BD_PE) { try { BD_PE.remove(); } catch (e) {} BD_PE = null; }
 }
 function tim_ma(q) {
   q = (q || "").trim().toUpperCase(); if (!q) return null;
