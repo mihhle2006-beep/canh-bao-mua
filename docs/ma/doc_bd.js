@@ -1,7 +1,8 @@
 /* ĐỌC BIỂU ĐỒ (trang Biểu đồ / toàn màn hình) – tổng hợp TỰ ĐỘNG từ dữ liệu giá + dữ liệu hệ thống (không phải AI,
  * không phải khuyến nghị): vùng hỗ trợ / kháng cự (đỉnh / đáy cục bộ gộp theo ATR), xu hướng, mẫu nến kèm BẰNG CHỨNG trên
  * chính mã (bao nhiêu lần xuất hiện, đúng hướng bao nhiêu % sau 5 nến), mẫu hình giá (tam giác, hai đỉnh / hai đáy), điều
- * kiện chọn mã của Quỹ Bứt Phá (he_thong.json), khuyến nghị bot hiện tại + lịch sử tín hiệu (tin_hieu/<MÃ>.json).
+ * kiện chọn mã của Quỹ Bứt Phá (he_thong.json – chỉ đạt / chưa đạt, không ngưỡng luật), khuyến nghị bot hiện tại + lịch sử
+ * tín hiệu (tin_hieu/<MÃ>.json).
  * Nạp động từ docs/ma/index.html; dùng chung so, pt, esc, ngay_vn, gio_vn, lay, DL, BOT, LIVE, dong_ds, BD_VE. */
 (() => {
 "use strict";
@@ -120,23 +121,20 @@ CP._thu = {atr, pivots, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, p
 let HT_P = null; const TH_P = {};
 const tai_ht = () => (HT_P = HT_P || lay(DL + "he_thong.json", false).catch(() => null));
 const tai_th = ma => (TH_P[ma] = TH_P[ma] || lay(DL + `tin_hieu/${ma}.json`, false).catch(() => null));
-function dieu_kien(ht, ma) {                            // điều kiện chọn mã Quỹ Bứt Phá → [{ten, dat (true / false / null = lưu ý), chu}]
-  if (!ht?.ma) return null;
-  const r = ht.ma[ma], ng = ht.nguong || {}, san = String(LIVE[ma]?.san || dong_ds(ma).san || "").toUpperCase(), out = [];
+function dieu_kien(ht, ma) {                            // điều kiện chọn mã Quỹ Bứt Phá → [{ten, dat (true / false / null = lưu ý / chưa rõ), chu}]
+  if (!ht?.ma) return null;                             // he_thong.json chỉ có đạt / chưa đạt (1 / 0 / null) – không ngưỡng, không số liệu so
+  const r = ht.ma[ma], san = String(LIVE[ma]?.san || dong_ds(ma).san || "").toUpperCase(), out = [];
   if (!r) return [{ten: "Có trong dữ liệu lọc của hệ thống", dat: false, chu: "mã ngoài rổ HOSE + HNX hoặc chưa đủ dữ liệu"}];
-  const [hr, hg, gt, rs, bd, dg, dinh, tk, rsn] = r;
+  const o = {}; (ht.cot || []).forEach((k, i) => o[k] = r[i] == null ? null : !!r[i]);
+  const ro_chu = v => v === true ? "đạt" : v === false ? "chưa đạt" : "chưa rõ";
   out.push({ten: "Sàn HOSE / HNX", dat: !san || !/UPCOM/.test(san), chu: san || "–"});
-  out.push({ten: `Trong rổ thanh khoản tuần (top ${ng.QUY_TOP_GTGD} GTGD TB20, chốt ${ngay_vn(ht.ro_ngay_chot)})`, dat: hr != null,
-    chu: hr != null ? `hạng ${hr}` : `hạng GTGD ${hg ?? "–"}${gt != null ? ` · ${so(gt, 1)} tỷ / phiên` : ""}`});
-  out.push({ten: `RS 3 tháng chưa quá nóng (hạng < ${ng.QUY_RS3T_NONG})`, dat: rs == null ? null : rs < ng.QUY_RS3T_NONG, chu: rs == null ? "–" : `hạng ${so(rs, 0)}/100`});
-  out.push({ten: `Không thuộc ${ng.QUY_BO_BIEN_DONG_PCT}% mã biến động mạnh nhất (60 phiên)`, dat: bd == null ? null : bd * 100 > ng.QUY_BO_BIEN_DONG_PCT,
-    chu: bd == null ? "–" : `nằm ở top ${so(bd * 100, 0)}% biến động mạnh nhất (bỏ nếu ≤ top ${ng.QUY_BO_BIEN_DONG_PCT}%)`});
-  out.push({ten: "Định giá (đắt → mua ½ khối lượng)", dat: dg == null ? null : dg > ng.QUY_DAT_NGUONG_PCT ? true : null,
-    chu: dg == null ? "chưa có định giá" : `giá trị hợp lý ${dg >= 0 ? "cao" : "thấp"} hơn giá ${so(Math.abs(dg), 1)}%` + (dg > ng.QUY_DAT_NGUONG_PCT ? "" : ` – ĐẮT (ngưỡng ${ng.QUY_DAT_NGUONG_PCT}%)`)});
-  const manh = [[dinh != null && dinh >= ng.QUY_MANH_DINH_PCT, "sát đỉnh 52 tuần"], [rs != null && rs >= ng.QUY_MANH_RS3T, "RS 3T cao"],
-    [tk != null && tk >= ng.QUY_MANH_TK, "thanh khoản tăng"], [rsn != null && rsn > 0, "ngành mạnh"]];
-  const k = manh.filter(z => z[0]).length;
-  out.push({ten: `Tín hiệu MẠNH ${k}/4 (≥ ${ng.QUY_MANH_SO_DAU_HIEU} được dùng suất dự phòng)`, dat: k >= ng.QUY_MANH_SO_DAU_HIEU ? true : null, chu: manh.map(([o, t]) => (o ? "✓ " : "✗ ") + t).join(" · ")});
+  out.push({ten: `Trong rổ thanh khoản tuần (chốt ${ngay_vn(ht.ro_ngay_chot)})`, dat: o.ro, chu: o.ro ? "có trong rổ tuần này" : o.ro === false ? "ngoài rổ tuần này" : "chưa rõ"});
+  out.push({ten: "RS 3 tháng chưa quá nóng", dat: o.rs, chu: o.rs === false ? "RS 3 tháng quá nóng – bỏ" : ro_chu(o.rs)});
+  out.push({ten: "Không thuộc nhóm biến động mạnh nhất rổ", dat: o.bien_dong, chu: o.bien_dong === false ? "thuộc nhóm biến động mạnh nhất – bỏ" : ro_chu(o.bien_dong)});
+  out.push({ten: "Định giá", dat: o.dat == null ? null : o.dat ? null : true, chu: o.dat == null ? "chưa có định giá" : o.dat ? "ĐẮT – vẫn chọn nhưng giảm khối lượng" : "không đắt"});
+  const manh = [[o.m_dinh, "sát đỉnh 52 tuần"], [o.m_rs, "RS 3 tháng cao"], [o.m_tk, "thanh khoản tăng"], [o.m_nganh, "ngành mạnh"]];
+  out.push({ten: "Tín hiệu MẠNH (đủ thì được dùng suất dự phòng)", dat: o.manh ? true : null,
+    chu: (o.manh ? "đủ · " : o.manh === false ? "chưa đủ · " : "") + manh.map(([v, t]) => (v ? "✓ " : v === false ? "✗ " : "? ") + t).join(" · ")});
   const bl = (ht.bo_loc || {})[ma]; if (bl) out.push({ten: `Bộ lọc phiên ${ngay_vn(ht.bo_loc_phien)}`, dat: true, chu: "có trong danh sách mua · " + bl.join(", ")});
   return out;
 }
@@ -256,7 +254,7 @@ function panel_html(B, kq, dd, ht, th) {
   const th_mua = th_loc(B, th);
   const dung = th_mua.filter(z => z.ket_qua === "ĐÚNG").length, sai = th_mua.filter(z => z.ket_qua === "SAI").length, cho = th_mua.length - dung - sai;
   const tb = th_mua.map(z => parseFloat(z.ket_qua_pct)).filter(v => isFinite(v)), tbv = tb.length ? tb.reduce((a, v) => a + v, 0) / tb.length : null;
-  const du_dk = dk && dk.slice(0, 4).every(z => z.dat !== false);
+  const du_dk = dk && dk.slice(0, 4).every(z => z.dat === true), truot = dk && dk.slice(0, 4).some(z => z.dat === false);
   return `<div class="cp-dau"><b>Đọc biểu đồ</b><button class="cp-x" data-cp="dong" title="Đóng">✕</button></div>
   <div class="cp-than">
     <div class="cp-luu">Tổng hợp tự động từ dữ liệu giá và dữ liệu hệ thống – không phải AI, không phải khuyến nghị đầu tư.</div>
@@ -274,8 +272,8 @@ function panel_html(B, kq, dd, ht, th) {
     <div class="cp-the">${b ? `<b>Bot đang khuyến nghị ${esc_(b[1])}</b><div>Vùng mua ${so(b[2], 2)}–${so(b[3], 2)} · cắt lỗ ${so(b[4], 2)} · mục tiêu ${so(b[5], 2)} / ${so(b[6], 2)}</div>${b[7] ? `<div class="cp-phu">${esc_(b[7])}</div>` : ""}`
       : B.tua ? `<b>Đang tua lại</b><div class="cp-phu">Ẩn khuyến nghị bot hôm nay; điều kiện chọn mã bên dưới là dữ liệu hôm nay, không phải ngày tua.</div>`
       : `<b>Bot chưa có khuyến nghị mua ${esc_(ma)}</b>`}</div>
-    ${dk ? `<div class="cp-the"><b>${du_dk ? "Đủ điều kiện chọn mã của Quỹ Bứt Phá" : "Chưa đủ điều kiện chọn mã của Quỹ Bứt Phá"}</b>
-      <div class="cp-phu">${du_dk ? "Còn chờ điểm vào của bot (15', giờ, ATC) – không mua khi chưa có tin MUA." : "Mã không qua điều kiện dưới đây – bot sẽ không mua mới."}</div>
+    ${dk ? `<div class="cp-the"><b>${du_dk ? "Đủ điều kiện chọn mã của Quỹ Bứt Phá" : truot ? "Chưa đủ điều kiện chọn mã của Quỹ Bứt Phá" : "Chưa đủ dữ liệu để kết luận"}</b>
+      <div class="cp-phu">${du_dk ? "Còn chờ điểm vào của bot (15', giờ, ATC) – không mua khi chưa có tin MUA." : truot ? "Mã không qua điều kiện dưới đây – bot sẽ không mua mới." : "Một số điều kiện chưa có dữ liệu hôm nay."}</div>
       <table class="cp-bang">${dk.map(z => `<tr><td class="${z.dat === true ? "t" : z.dat === false ? "g" : "m"}">${z.dat === true ? "✓" : z.dat === false ? "✗" : "!"}</td><td>${esc_(z.ten)}<div class="cp-phu">${esc_(z.chu)}</div></td></tr>`).join("")}</table>
       <div class="cp-phu">Dữ liệu lọc phiên ${esc_(ngay_vn(ht.ngay_gia))} (cập nhật ${esc_(ht.cap_nhat)}).</div></div>` : ""}
     ${th_mua.length ? `<div class="cp-the"><b>Bot đã báo MUA ${th_mua.length} lần trên ${esc_(ma)}</b><div>${dung} đúng · ${sai} sai · ${cho} đang chờ${tbv != null ? ` · kết quả TB ${tbv > 0 ? "+" : ""}${so(tbv, 2)}%` : ""}</div>

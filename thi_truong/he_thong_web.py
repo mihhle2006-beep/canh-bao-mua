@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 DỮ LIỆU "HỆ THỐNG" CHO MỤC "ĐỌC BIỂU ĐỒ" CỦA TRANG BIỂU ĐỒ (docs/ma/doc_bd.js) – chạy trong workflow "Du lieu tra cuu":
-  • he_thong.json : từng mã – đạt / chưa đạt các điều kiện chọn mã của Quỹ Bứt Phá (danh-muc ptcp/loc_quy_b.json, ngưỡng
-                    đọc thẳng từ ptcp/cau_hinh.py): trong rổ thanh khoản tuần, RS 3 tháng không quá nóng, không thuộc nhóm
-                    biến động mạnh nhất, định giá (đắt → giảm khối lượng), 4 dấu hiệu MẠNH; + chiến lược Bo_Loc hôm nay.
+  • he_thong.json : từng mã – CHỈ đạt / chưa đạt (1 / 0 / null) các điều kiện chọn mã của Quỹ Bứt Phá: trong rổ thanh khoản
+                    tuần, RS 3 tháng không quá nóng, không thuộc nhóm biến động mạnh nhất, định giá đắt (giảm khối lượng),
+                    4 dấu hiệu MẠNH + đủ dấu hiệu MẠNH; + chiến lược Bo_Loc hôm nay. Ngưỡng luật đọc từ ptcp/cau_hinh.py của repo
+                    kín lúc chạy và KHÔNG ghi ra (không ngưỡng, không số liệu đem so – trang công khai); thiếu ngưỡng → null.
   • tin_hieu/<MÃ>.json : các lần bot đã báo (lich_su_danh_gia.csv – vốn công khai trong repo) kèm kết quả.
   python -m thi_truong.he_thong_web --ra docs/ma/du_lieu --loc danh-muc/ptcp/loc_quy_b.json --cau_hinh danh-muc/ptcp/cau_hinh.py
 """
@@ -15,15 +16,16 @@ import re
 from datetime import datetime, timedelta, timezone
 
 VN = timezone(timedelta(hours=7))
-NGUONG_MAC = {"QUY_TOP_GTGD": 100, "QUY_RS3T_NONG": 90.0, "QUY_BO_BIEN_DONG_PCT": 30.0, "QUY_DAT_NGUONG_PCT": -20.0,
-              "QUY_MANH_DINH_PCT": -3.0, "QUY_MANH_RS3T": 70.0, "QUY_MANH_TK": 1.5, "QUY_MANH_SO_DAU_HIEU": 3}
+KHOA = ("QUY_RS3T_NONG", "QUY_BO_BIEN_DONG_PCT", "QUY_DAT_NGUONG_PCT", "QUY_MANH_DINH_PCT", "QUY_MANH_RS3T", "QUY_MANH_TK",
+        "QUY_MANH_SO_DAU_HIEU")
+COT = ("ro", "rs", "bien_dong", "dat", "m_dinh", "m_rs", "m_tk", "m_nganh", "manh")
 COT_TH = ("ngay", "loai", "khuyen_nghi", "nhom", "gia", "cat_lo", "muc_tieu", "ket_qua", "ket_qua_pct", "giai_thich",
           "ngay_ket_thuc", "gia_ket_thuc", "so_phien", "vung_tu", "vung_den")
 
 
 def nguong(duong):
-    """Ngưỡng luật từ ptcp/cau_hinh.py (đọc chữ – không import vì file tự cài thư viện); thiếu → mặc định."""
-    out = dict(NGUONG_MAC)
+    """Ngưỡng luật từ ptcp/cau_hinh.py (đọc chữ – không import vì file tự cài thư viện); thiếu → None (không đánh giá)."""
+    out = dict.fromkeys(KHOA)
     try:
         txt = open(duong, encoding="utf-8").read()
     except (OSError, TypeError):
@@ -31,23 +33,35 @@ def nguong(duong):
     for k in out:
         m = re.search(rf"^{k}\s*=\s*(-?[\d.]+)", txt, re.M)
         if m:
-            out[k] = type(out[k])(float(m[1]))
+            out[k] = float(m[1])
     return out
 
 
+def _so(f, v, n):
+    """So v với ngưỡng n bằng f → 1 / 0; thiếu số hoặc ngưỡng → None."""
+    return None if v is None or n is None else int(bool(f(v, n)))
+
+
+def danh_gia(loc, ng, m):
+    """Một mã → [trong rổ, RS chưa nóng, không biến động mạnh nhất, ĐẮT, 4 dấu hiệu MẠNH…, đủ MẠNH] (1 / 0 / None)."""
+    g = lambda k: (loc.get(k) or {}).get(m)                                            # noqa: E731
+    ro = (loc.get("ro_tuan") or {}).get("ma")
+    bd = ng["QUY_BO_BIEN_DONG_PCT"]
+    manh = [_so(lambda v, n: v >= n, g("cach_dinh_52t"), ng["QUY_MANH_DINH_PCT"]),
+            _so(lambda v, n: v >= n, g("hang_rs3t"), ng["QUY_MANH_RS3T"]),
+            _so(lambda v, n: v >= n, g("tk_tang"), ng["QUY_MANH_TK"]),
+            None if g("rs_nganh") is None else int(g("rs_nganh") > 0)]
+    k = ng["QUY_MANH_SO_DAU_HIEU"]
+    return [None if ro is None else int(m in ro), _so(lambda v, n: v < n, g("hang_rs3t"), ng["QUY_RS3T_NONG"]),
+            _so(lambda v, n: v > n / 100, g("bien_dong_hang"), bd), _so(lambda v, n: v <= n, g("dinh_gia"), ng["QUY_DAT_NGUONG_PCT"]),
+            *manh, None if k is None else int(sum(1 for x in manh if x) >= k)]
+
+
 def he_thong(loc, ng, bo_loc=None):
-    """loc: loc_quy_b.json · ng: nguong() · bo_loc: ma_mua_bo_loc.json → dict he_thong.json (mỗi mã 1 mảng gọn)."""
-    ro = set((loc.get("ro_tuan") or {}).get("ma") or [])
-    hang = {m: i + 1 for i, m in enumerate((loc.get("ro_tuan") or {}).get("ma") or [])}
-    g = lambda k, m: (loc.get(k) or {}).get(m)                                         # noqa: E731
-    ma = {}
-    for m in set(loc.get("hang_gtgd") or {}) | ro:
-        ma[m] = [hang.get(m), g("hang_gtgd", m), g("gtgd", m), g("hang_rs3t", m), g("bien_dong_hang", m), g("dinh_gia", m),
-                 g("cach_dinh_52t", m), g("tk_tang", m), g("rs_nganh", m), g("dinh_52t_3t", m)]
+    """loc: loc_quy_b.json · ng: nguong() · bo_loc: ma_mua_bo_loc.json → dict he_thong.json (mỗi mã 1 mảng 1 / 0 / null)."""
+    ma = {m: danh_gia(loc, ng, m) for m in sorted(set(loc.get("hang_gtgd") or {}) | set((loc.get("ro_tuan") or {}).get("ma") or []))}
     return {"cap_nhat": datetime.now(VN).strftime("%H:%M %d/%m/%Y"), "ngay_gia": loc.get("ngay_gia"),
-            "ro_ngay_chot": (loc.get("ro_tuan") or {}).get("ngay_chot"), "nguong": ng,
-            "cot": ["hang_ro_tuan", "hang_gtgd", "gtgd", "hang_rs3t", "bien_dong_hang", "dinh_gia", "cach_dinh_52t", "tk_tang",
-                    "rs_nganh", "dinh_52t_3t"],
+            "ro_ngay_chot": (loc.get("ro_tuan") or {}).get("ngay_chot"), "cot": list(COT),
             "ma": ma, "bo_loc": (bo_loc or {}).get("ma") or {}, "bo_loc_phien": (bo_loc or {}).get("phien")}
 
 

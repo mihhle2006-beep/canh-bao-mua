@@ -58,10 +58,9 @@ def _chay(ma_js):
 
 def test_phan_tich_va_panel():
     x = _chuoi()
-    ht = {"ngay_gia": "2025-08-01", "ro_ngay_chot": "2025-07-25", "cap_nhat": "x", "nguong": {"QUY_TOP_GTGD": 100, "QUY_RS3T_NONG": 90,
-          "QUY_BO_BIEN_DONG_PCT": 30, "QUY_DAT_NGUONG_PCT": -20, "QUY_MANH_DINH_PCT": -3, "QUY_MANH_RS3T": 70, "QUY_MANH_TK": 1.5,
-          "QUY_MANH_SO_DAU_HIEU": 3},
-          "ma": {"AAA": [None, 140, 9.5, 95, 0.2, -30, -10, 1.0, -1, None]}, "bo_loc": {}}
+    ht = {"ngay_gia": "2025-08-01", "ro_ngay_chot": "2025-07-25", "cap_nhat": "x",
+          "cot": ["ro", "rs", "bien_dong", "dat", "m_dinh", "m_rs", "m_tk", "m_nganh", "manh"],
+          "ma": {"AAA": [0, 0, 0, 1, 0, 1, None, 0, 0], "BBB": [1, 1, 1, 0, 1, 1, 1, 0, 1]}, "bo_loc": {}}
     th = [{"ngay": x["d"][100], "nhom": "MUA", "ket_qua": "ĐÚNG", "ket_qua_pct": "5", "ngay_ket_thuc": x["d"][110], "khuyen_nghi": "MUA", "gia": "10"},
           {"ngay": x["d"][150], "nhom": "MUA", "ket_qua": "SAI", "ket_qua_pct": "-4", "ngay_ket_thuc": x["d"][158], "khuyen_nghi": "MUA", "gia": "11"},
           {"ngay": x["d"][120], "nhom": "CHỜ", "ket_qua": "SAI", "ngay_ket_thuc": x["d"][125]}]
@@ -78,7 +77,7 @@ def test_phan_tich_va_panel():
         const tua = CP._thu_th({x, n: 155, tua: "x"}, DATA["tin_hieu/AAA.json"]);
         await CP.ve(B, {el: mk(), panel, mo: false});
         console.log(JSON.stringify({vung: kq.vung.slice(0, 3), nen: kq.nen, xh: kq.xh, p1, an: panel.hidden, lop, con: PR.d, tua,
-          dk: CP._dk(DATA["he_thong.json"], "AAA"), dk_ngoai: CP._dk(DATA["he_thong.json"], "ZZZ")}));
+          dk: CP._dk(DATA["he_thong.json"], "AAA"), dk_b: CP._dk(DATA["he_thong.json"], "BBB"), dk_ngoai: CP._dk(DATA["he_thong.json"], "ZZZ")}));
       })();
     """)
     ho_tro = [z for z in kq["vung"] if z["loai"] == "ho_tro"]
@@ -91,10 +90,13 @@ def test_phan_tich_va_panel():
     assert "Bot đã báo MUA 2 lần" in p and "1 đúng · 1 sai" in p                                     # nhóm CHỜ không tính
     assert "bot" in kq["lop"] and "lich_su" in kq["lop"] and "vung" in kq["lop"]
     assert kq["an"] is True and kq["con"] is None                                                   # đóng: bỏ panel + lớp vẽ
-    dk = {z["ten"].split(" (")[0]: z["dat"] for z in kq["dk"]}
-    assert dk["Trong rổ thanh khoản tuần"] is False and dk["RS 3 tháng chưa quá nóng"] is False
-    assert dk["Không thuộc 30% mã biến động mạnh nhất"] is False and dk["Định giá"] is None             # đắt: ½ khối lượng (lưu ý)
+    dk = {z["ten"].split(" (")[0]: z for z in kq["dk"]}
+    assert dk["Trong rổ thanh khoản tuần"]["dat"] is False and dk["RS 3 tháng chưa quá nóng"]["dat"] is False
+    assert dk["Không thuộc nhóm biến động mạnh nhất rổ"]["dat"] is False and dk["Định giá"]["dat"] is None   # đắt: lưu ý (giảm KL)
+    assert "? thanh khoản tăng" in dk["Tín hiệu MẠNH"]["chu"] and "✓ RS 3 tháng cao" in dk["Tín hiệu MẠNH"]["chu"]
+    assert [z["dat"] for z in kq["dk_b"]][1:6] == [True, True, True, True, True]
     assert kq["dk_ngoai"][0]["dat"] is False
+    assert not re.search(r"top \d|hạng < ?\d|ngưỡng|½|QUY_", p)                                    # không lộ ngưỡng luật
     # tua lại tới nến 154: tín hiệu nến 150 chưa có kết quả (kết thúc nến 158) → đang chờ; tín hiệu nến 100 giữ kết quả
     assert [z["ket_qua"] for z in kq["tua"]] == ["ĐÚNG", "ĐANG CHỜ"]
 
