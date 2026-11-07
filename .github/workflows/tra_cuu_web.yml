@@ -124,6 +124,10 @@ jobs:
         working-directory: .
         run: python -m thi_truong.rrg_web --ra docs/ma/du_lieu || echo "::warning::RRG lỗi – trang giữ dữ liệu khác"
 
+      - name: VN-Index ngày từ 2010 (đường RS trang Biểu đồ) → vni.json
+        working-directory: .
+        run: python -m thi_truong.vni_web --ra docs/ma/du_lieu || echo "::warning::VN-Index lỗi – trang giữ dữ liệu cũ"
+
       - name: Dữ liệu hệ thống cho mục "Đọc biểu đồ" (điều kiện chọn mã Quỹ Bứt Phá + lịch sử tín hiệu bot) → he_thong.json, tin_hieu/
         working-directory: .
         run: python -m thi_truong.he_thong_web --ra docs/ma/du_lieu --loc danh-muc/ptcp/loc_quy_b.json --cau_hinh danh-muc/ptcp/cau_hinh.py || echo "::warning::Dữ liệu hệ thống lỗi – trang giữ dữ liệu khác"

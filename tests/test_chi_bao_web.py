@@ -177,3 +177,28 @@ def test_menu_chi_bao_va_thu_vien_v5():
     assert "LW.createSeriesMarkers(" in h and "ch.addSeries(LW[loai]" in h and "attachPrimitive(new NonPrim(" in h
     lib = open("docs/ma/lib/lightweight-charts.standalone.production.js", encoding="utf-8").read(300)
     assert "Lightweight Charts™ v5." in lib
+
+
+def test_ma10_tuan_va_rs():
+    import datetime as dt
+    x = _nen(400, 7)
+    d, t = [], dt.date(2024, 1, 3)
+    while len(d) < 400:
+        if t.weekday() < 5:
+            d.append(t.isoformat())
+        t += dt.timedelta(days=1)
+    v = list(1000 * np.exp(np.cumsum(np.random.default_rng(1).normal(0, 0.01, 400))))
+    kq = _js(f"const d = {json.dumps(d)}, c = {json.dumps(x['c'])}, v = {json.dumps(v)};\n"
+             "console.log(JSON.stringify({m: cb_ma10_tuan(d, c), r: cb_rs(c, v, 250)}));")
+    # tham chiếu: 9 tuần đã đóng gần nhất (giá đóng cửa phiên cuối tuần) + giá đóng cửa hôm nay
+    c, tuan = x["c"], [dt.date.fromisoformat(z).isocalendar()[:2] for z in d]
+    for i in (60, 61, 199, 399):
+        dong = [c[j] for j in range(i) if j + 1 < len(c) and tuan[j + 1] != tuan[j] and tuan[j] != tuan[i]]
+        assert abs(kq["m"][i] - (sum(dong[-9:]) + c[i]) / 10) < 1e-9
+    assert kq["m"][0] is None and kq["m"][30] is None                       # chưa đủ 9 tuần đã đóng
+    rs = [ci / vi for ci, vi in zip(c, v)]
+    g = rs[400 - 1 - 250]
+    assert abs(kq["r"]["rs"][-1] - rs[-1] / g * 100) < 1e-9 and abs(kq["r"]["rs"][149] - 100) < 1e-9
+    for i in range(250, 400):
+        moi = rs[i] > max(rs[i - 250:i])
+        assert kq["r"]["dinh"][i] == moi and kq["r"]["som"][i] == (moi and not c[i] > max(c[i - 250:i]))
