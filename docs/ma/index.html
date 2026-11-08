@@ -185,9 +185,9 @@ body.co-ds main{margin-right:300px}
 .ve-chon .ten{font-weight:600;margin-right:4px}.ve-chon .nhom{display:inline-flex;gap:2px;border-left:1px solid var(--vien);padding-left:4px}
 .ve-chon .goi-y{flex-basis:100%;color:var(--mo);font-size:11.5px;padding:2px 2px 0}
 .ve-sua{position:absolute;z-index:7;width:240px;min-height:60px;font:inherit;font-size:13px;padding:6px;border:1px solid #2962ff;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
-.fs-tim{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:8;width:min(380px,90%);background:#fff;border:1px solid var(--vien);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:8px}
+.fs-tim{position:fixed;top:calc(var(--vv-tren, 0px) + 10px);left:50%;transform:translateX(-50%);z-index:400;width:min(380px,92vw);background:#fff;border:1px solid var(--vien);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:8px}
 .fs-tim input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;font-weight:600;padding:8px 10px;border:1px solid #2962ff;border-radius:8px;text-transform:uppercase}
-.fs-tim ul{list-style:none;margin:6px 0 0;padding:0;max-height:50vh;overflow:auto}.fs-tim li{display:flex;gap:8px;align-items:baseline;padding:6px 8px;border-radius:6px;cursor:pointer}
+.fs-tim ul{list-style:none;margin:6px 0 0;padding:0;max-height:min(50vh, calc(var(--vv-cao, 100vh) - 90px));overflow:auto}.fs-tim li{display:flex;gap:8px;align-items:baseline;padding:6px 8px;border-radius:6px;cursor:pointer}
 .fs-tim li span{flex:1;color:var(--chu2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fs-tim li i{color:var(--mo);font-size:11px;font-style:normal}
 .fs-tim li.chon,.fs-tim li:hover{background:#eef3ff}
 .fs-bd{flex:1;position:relative;min-width:0}
@@ -437,6 +437,7 @@ const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50],
 let CS_NGANH = null;
 const $ = s => document.querySelector(s);
 const BAN = "__BAN__";                                   // mã bản code – bước "Gói trang" (Bang thi truong) ghi khi triển khai
+const CHAM = matchMedia("(pointer: coarse)").matches;      // màn hình cảm ứng (điện thoại / máy tính bảng)
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const url = u => /^https?:\/\//i.test(u || "") ? esc(u) : "";
 const so = (v, l = 0) => v == null || !isFinite(v) ? "–" : Number(v).toLocaleString("vi-VN", {minimumFractionDigits: l, maximumFractionDigits: l});
@@ -2554,7 +2555,7 @@ async function fs_mo(ma, o = {}) {                   // o.trang: trang Biểu đ
   const moi = !FS, trang = o.trang ?? FS?.trang ?? false; FS = {ma, trang}; el.classList.toggle("trang", trang);
   try { localStorage.setItem("bd_ma", ma); } catch (e) {}
   const r = dong_ds(ma), ten = (k.n?.ct?.viOrganName) || r.ten || MKT?.ten?.[ma] || "";
-  el.innerHTML = `<div class="fs-tren"><input class="o" id="fs-o" value="${esc(ma)}" maxlength="8" aria-label="Đổi mã" spellcheck="false">
+  el.innerHTML = `<div class="fs-tren"><input class="o" id="fs-o" value="${esc(ma)}" maxlength="8" aria-label="Đổi mã" spellcheck="false"${CHAM ? " readonly" : ""}>
       <span class="nut">${nut([["1", "1m"], ["5", "5m"], ["15", "15m"], ["60", "1H"], ["D", "1D"], ["W", "1W"], ["M", "1M"]], ST.khung, "fsk")}</span>
       ${menu_khoi()}
       <span class="nut">${nut([["kl", "Khối lượng"]].concat(k.g?.nn ? [["nn", "Khối ngoại"]] : []), ST.duoi, "fsd")}</span>
@@ -2584,6 +2585,7 @@ async function fs_ve(giu = false) {                    // vẽ (lại) biểu đ
 function gan_fs() {
   if ($("#fs-thoat")) $("#fs-thoat").onclick = () => fs_dong();
   const o = $("#fs-o"); o.onkeydown = e => { if (e.key === "Enter") { const m = tim_ma(o.value) || o.value.trim().toUpperCase(); if (MA_OK(m)) fs_mo(m); } };
+  if (CHAM) o.onclick = () => mo_tim_bd("");              // điện thoại: hộp tìm nổi bám trên bàn phím (ô ở thanh trên bị bàn phím đẩy khuất)
   o.onfocus = () => o.select();
   document.querySelectorAll("[data-fsk]").forEach(b => b.onclick = () => { ST.khung = b.dataset.fsk; fs_mo(FS.ma); });
   document.querySelectorAll("[data-fsd]").forEach(b => b.onclick = () => { ST.duoi = b.dataset.fsd; fs_mo(FS.ma); });
@@ -2611,6 +2613,7 @@ function fs_toan_man() {                              // ⛶ trang Biểu đồ:
 }
 function fs_dong(khong_dinh_tuyen = false) {
   if (!FS) return;
+  $("#fs-tim")?.remove();
   document.body.classList.remove("co-phu-kin");
   FS = null; TUA.chay = false; TUA.chon = false;
   $("#rail-cp")?.setAttribute("aria-pressed", "false");
@@ -2641,11 +2644,17 @@ document.addEventListener("keydown", e => {
   if (e.target.closest?.("input,textarea,select,[contenteditable]")) return;
   e.preventDefault(); mo_tim_bd(e.key.toUpperCase());
 });
+(() => {                                                  // vùng nhìn thấy khi bàn phím bật (iPhone): hộp tìm mã bám theo
+  const vv = window.visualViewport; if (!vv) return;
+  const dat = () => { document.documentElement.style.setProperty("--vv-tren", vv.offsetTop + "px"); document.documentElement.style.setProperty("--vv-cao", vv.height + "px"); };
+  vv.addEventListener("resize", dat); vv.addEventListener("scroll", dat); dat();
+})();
 function mo_tim_bd(dau = "") {
-  const bd = $("#fs-bd"); if (!bd) return;
+  if (!$("#fs-bd")) return;
   let b = $("#fs-tim");
   if (!b) { b = document.createElement("div"); b.id = "fs-tim"; b.className = "fs-tim";
-    b.innerHTML = `<input placeholder="Gõ mã hoặc tên – Enter để mở" maxlength="20" spellcheck="false" aria-label="Tìm mã"><ul role="listbox"></ul>`; bd.appendChild(b); }
+    b.innerHTML = `<input placeholder="Gõ mã hoặc tên – chạm để mở" maxlength="20" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="characters" enterkeyhint="go" aria-label="Tìm mã"><ul role="listbox"></ul>`;
+    document.body.appendChild(b); }
   const o = b.querySelector("input"), ul = b.querySelector("ul"); let kq = [], i = 0;
   const ve = () => { kq = goi_y_ma(o.value); if (!kq.length && o.value.trim()) { const m = tim_ma(o.value); if (m) kq = [{ma: m, ten: "", san: ""}]; }
     ul.innerHTML = kq.map((r, j) => `<li data-ma="${esc(r.ma)}" class="${j === i ? "chon" : ""}"><b>${esc(r.ma)}</b><span>${esc(ten_ma(r) || r.nganh || "")}</span><i>${esc(r.san || "")}</i></li>`).join(""); };
@@ -2656,7 +2665,7 @@ function mo_tim_bd(dau = "") {
     if (e.key === "Escape") bo_();
     else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (kq.length) { i = (i + (e.key === "ArrowDown" ? 1 : -1) + kq.length) % kq.length; ve(); } }
     else if (e.key === "Enter") { e.preventDefault(); mo(kq[i]?.ma || o.value.trim().toUpperCase()); } };
-  ul.onmousedown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); mo(li.dataset.ma); } };
+  ul.onpointerdown = e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); mo(li.dataset.ma); } };   // chạm / chuột
   o.onblur = () => setTimeout(bo_, 150);
 }
 function tim_ma(q) {

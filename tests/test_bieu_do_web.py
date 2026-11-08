@@ -174,3 +174,15 @@ def test_tu_cap_nhat_ban_moi():
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert 'sc.src = "doc_bd.js?v=6&b=" + BAN;' in h and 'sc.src = "bieu_do.js?v=3&b=" + BAN;' in h
     assert h.index('const BAN = "__BAN__";') < h.index("function tai_ve(") if "function tai_ve(" in h else True
+
+
+def test_doi_ma_khi_toan_man_hinh_tren_dien_thoai():
+    """Điện thoại (màn hình cảm ứng): ô mã thanh trên chỉ đọc, chạm → hộp tìm nổi cố định theo vùng nhìn thấy (bàn phím iPhone
+    không đẩy khuất), gõ có gợi ý, chạm gợi ý là đổi mã (pointerdown) – vẫn giữ toàn màn hình; đóng trang Biểu đồ bỏ hộp tìm."""
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    assert 'const CHAM = matchMedia("(pointer: coarse)").matches;' in h and h.index("const CHAM =") < h.index("async function fs_mo(")
+    assert '${CHAM ? " readonly" : ""}' in h and 'if (CHAM) o.onclick = () => mo_tim_bd("");' in h
+    assert ".fs-tim{position:fixed;top:calc(var(--vv-tren, 0px) + 10px)" in h and "z-index:400" in h
+    assert 'document.documentElement.style.setProperty("--vv-tren", vv.offsetTop + "px")' in h
+    assert "ul.onpointerdown = e =>" in h and 'enterkeyhint="go"' in h and 'autocapitalize="characters"' in h
+    assert '$("#fs-tim")?.remove();' in h
