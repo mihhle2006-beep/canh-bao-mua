@@ -197,6 +197,8 @@ body.co-ds main{margin-right:300px}
 .fs .ds-td{position:static;width:300px;height:auto;box-shadow:none;border-radius:0}
 @media (max-width:700px){.fs-trai{width:38px}.fs .ds-td{position:absolute;left:0;right:44px;bottom:0;height:60vh;width:auto;z-index:6}}
 #rail-cp{display:none}.fs #rail-cp{display:grid}.rail #rail-cp[aria-pressed="true"]{color:#2962ff;background:#eef3ff}
+#rail-full{display:none}.fs.trang #rail-full{display:grid}.rail #rail-full[aria-pressed="true"]{color:#1b5e20;background:#e8f5e9}
+@media (display-mode:standalone){.fs-day{padding-bottom:max(12px,env(safe-area-inset-bottom))}}   /* mở từ màn hình chính: chừa vạch Home */
 .cp{width:330px;border-left:1px solid var(--vien);background:var(--the);display:flex;flex-direction:column;min-height:0;font:12.5px/1.42 Inter,"SF Pro Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.005em}
 .cp[hidden]{display:none}
 .cp-dau{display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid var(--vien);font-size:13.5px}
@@ -404,7 +406,7 @@ dialog#pp::backdrop{background:#1d243066}
 </main>
 <div class="goi-y" id="goi-y"></div>
 <aside class="ds-td" id="ds-td" hidden aria-label="Danh sách theo dõi"></aside>
-<nav class="rail" id="rail" aria-label="Công cụ"><button id="rail-td" title="Danh sách theo dõi (watchlist)" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.2 1.2-6.5-4.8-4.6 6.6-.9z"/></svg></button><button id="rail-cp" title="Đọc biểu đồ – giải thích tự động: vùng giá, xu hướng, mẫu hình, điều kiện chọn mã, tín hiệu bot" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l4.5-4.5 3.5 3 5-6"/><circle cx="16.5" cy="15.5" r="3.6"/><path d="M19.2 18.2 22 21"/></svg></button></nav>
+<nav class="rail" id="rail" aria-label="Công cụ"><button id="rail-td" title="Danh sách theo dõi (watchlist)" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.2 1.2-6.5-4.8-4.6 6.6-.9z"/></svg></button><button id="rail-cp" title="Đọc biểu đồ – giải thích tự động: vùng giá, xu hướng, mẫu hình, điều kiện chọn mã, tín hiệu bot" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l4.5-4.5 3.5 3 5-6"/><circle cx="16.5" cy="15.5" r="3.6"/><path d="M19.2 18.2 22 21"/></svg></button><button id="rail-full" title="Toàn màn hình" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></nav>
 <script>
 "use strict";
 const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json";
@@ -2520,6 +2522,7 @@ document.addEventListener("click", e => {
   const t = e.target;
   if (t.closest("#rail-td")) { DT.mo = !DT.mo; dt_luu(); if (DT.mo && CPS.mo && FS) { CPS.mo = false; cp_luu(); cp_ve(); } ds_td_ve(); FS && fs_ve(true); return; }
   if (t.closest("#rail-cp")) { CPS.mo = !CPS.mo; cp_luu(); if (CPS.mo && DT.mo) { DT.mo = false; dt_luu(); ds_td_ve(); } cp_ve(); return; }
+  if (t.closest("#rail-full")) { fs_toan_man(); return; }
   const tk = t.closest("[data-tuak]"); if (tk) { tua_lenh(tk.dataset.tuak); return; }
   if (t.closest("#fs [data-tua]")) { if (TUA.t != null || TUA.chon) tua_lenh(TUA.chon && TUA.t == null ? "huy" : "thoat"); else tua_lenh("chon"); return; }
   if (t.closest("#dt-dong")) { DT.mo = false; dt_luu(); ds_td_ve(); FS && fs_ve(true); return; }
@@ -2554,7 +2557,7 @@ async function fs_mo(ma, o = {}) {                   // o.trang: trang Biểu đ
       <span class="nut">${nut([["1", "1m"], ["5", "5m"], ["15", "15m"], ["60", "1H"], ["D", "1D"], ["W", "1W"], ["M", "1M"]], ST.khung, "fsk")}</span>
       ${menu_khoi()}
       <span class="nut">${nut([["kl", "Khối lượng"]].concat(k.g?.nn ? [["nn", "Khối ngoại"]] : []), ST.duoi, "fsd")}</span>
-      <span class="ten">${esc(ten)}</span>${trang ? `<button class="thoat" id="fs-full" title="Toàn màn hình">${fs_kin() ? "✕ Thu nhỏ" : "⛶ Toàn màn hình"}</button>` : `<button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button>`}</div>
+      <span class="ten">${esc(ten)}</span>${trang ? "" : `<button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button>`}</div>
     <div class="fs-than" id="fs-than"><div class="fs-trai" id="fs-trai"></div>
       <div class="fs-bd" id="fs-bd"></div><aside class="cp" id="cp" hidden aria-label="Đọc biểu đồ"></aside></div>
     <div class="fs-day"><span class="nut">${nut(NUT_KHOANG, ST.nen, "fsn")}</span><span class="nut"><button data-tua aria-pressed="${TUA.t != null || TUA.chon}" title="Tua lại: bấm nút rồi bấm vào nến – biểu đồ chỉ hiện tới phiên đó (lùi / tới / phát từng nến)">↺ Tua lại</button></span><span style="margin-left:auto" class="nut">
@@ -2563,7 +2566,7 @@ async function fs_mo(ma, o = {}) {                   // o.trang: trang Biểu đ
   if (moi && !trang) { try { if (!document.fullscreenElement) await el.requestFullscreen?.(); } catch (e) {} }
   try { history.replaceState(null, "", trang ? "#bieu-do/" + ma : "#" + ma); } catch (e) {}
   tai_ve().then(V => { const tr = $("#fs-trai"); if (tr) V.thanh(tr); }).catch(() => {});
-  gan_fs();
+  gan_fs(); fs_nut();
   ds_td_ve();
   await fs_ve();
 }
@@ -2579,7 +2582,6 @@ async function fs_ve(giu = false) {                    // vẽ (lại) biểu đ
 }
 function gan_fs() {
   if ($("#fs-thoat")) $("#fs-thoat").onclick = () => fs_dong();
-  if ($("#fs-full")) $("#fs-full").onclick = fs_toan_man;
   const o = $("#fs-o"); o.onkeydown = e => { if (e.key === "Enter") { const m = tim_ma(o.value) || o.value.trim().toUpperCase(); if (MA_OK(m)) fs_mo(m); } };
   o.onfocus = () => o.select();
   document.querySelectorAll("[data-fsk]").forEach(b => b.onclick = () => { ST.khung = b.dataset.fsk; fs_mo(FS.ma); });
@@ -2588,7 +2590,12 @@ function gan_fs() {
   document.querySelectorAll("#fs [data-bdc]").forEach(b => b.onclick = () => dk_bd(b.dataset.bdc));
 }
 const fs_kin = () => !!(document.fullscreenElement || document.webkitFullscreenElement || $("#fs")?.classList.contains("phu-kin"));
-function fs_nut() { const b = $("#fs-full"); if (b) b.textContent = fs_kin() ? "✕ Thu nhỏ" : "⛶ Toàn màn hình"; }
+const SVG_TO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+const SVG_NHO = SVG_TO.replace("M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5", "M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5");
+function fs_nut() {                                   // nút toàn màn hình trên cột công cụ phải: biểu tượng mở rộng / thu nhỏ
+  const b = $("#rail-full"); if (!b) return; const k = fs_kin();
+  b.innerHTML = k ? SVG_NHO : SVG_TO; b.title = k ? "Thu nhỏ (Esc)" : "Toàn màn hình"; b.setAttribute("aria-pressed", String(k));
+}
 function fs_toan_man() {                              // ⛶ trang Biểu đồ: Fullscreen API; không có / bị từ chối (Safari iPhone) → phủ kín cửa sổ bằng CSS
   const f = $("#fs"); if (!f) return;
   if (f.classList.contains("phu-kin")) { f.classList.remove("phu-kin"); document.body.classList.remove("co-phu-kin"); return fs_nut(); }
