@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232E7D32'/%3E%3Crect x='7' y='14' width='4' height='11' rx='1' fill='%23fff'/%3E%3Crect x='14' y='8' width='4' height='17' rx='1' fill='%23fff'/%3E%3Crect x='21' y='11' width='4' height='14' rx='1' fill='%23fff'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Biểu đồ"><meta name="theme-color" content="#2E7D32">
+<link rel="apple-touch-icon" href="icon-180.png"><link rel="manifest" href="manifest.webmanifest">
 <title>Tra cứu mã</title>
 <meta name="description" content="Tra cứu cổ phiếu HOSE / HNX: biểu đồ nến, báo cáo tài chính đầy đủ, định giá, cổ đông, cổ tức, lịch sử giá, tin & báo cáo CTCK, hồ sơ, phân tích hệ thống.">
 <style>
@@ -164,6 +167,7 @@ body.co-ds main{margin-right:300px}
 .fs-trai hr{width:24px;border:0;border-top:1px solid var(--vien);margin:4px 0}
 .fs.trang{top:var(--dau,56px);z-index:25}.fs:fullscreen{top:0}
 .fs.phu-kin{top:0;z-index:300}body.co-phu-kin{overflow:hidden}   /* toàn màn hình khi trình duyệt không cho (Safari iPhone) */
+@media (max-height:520px){.fs.phu-kin .fs-tren .ten{display:none}.fs.phu-kin .fs-tren{padding:3px 8px}.fs.phu-kin .fs-day{padding:2px 8px}}
 .fs-trai{overflow-y:auto;padding-bottom:8px}.ve-nhom{position:relative;display:flex;align-items:center}
 .fs-trai .ve-mo{position:absolute;right:-6px;width:10px;height:22px;padding:0;font-size:12px;color:var(--mo);border-radius:4px}
 .fs-trai .ve-mo:hover{background:var(--nhat);color:var(--chu)}
@@ -1283,6 +1287,14 @@ async function ve_bd_gia(el, x0, them = {}) {
     else if (v.to >= n - 3) v.to = Math.max(v.to, phai);
     ch.timeScale().setVisibleLogicalRange(v); }
   else ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: phai});
+  {                                                    // xoay máy / đổi cỡ khung: thư viện giữ độ rộng nến (hiện thêm nến) → giữ đúng khoảng đang xem
+    const ts_ = ch.timeScale(); let w0 = el.clientWidth, v0 = ts_.getVisibleLogicalRange();
+    ts_.subscribeVisibleLogicalRangeChange(r => {
+      const w = el.clientWidth;
+      if (w !== w0 && v0) { w0 = w; const v = v0; requestAnimationFrame(() => { try { ts_.setVisibleLogicalRange(v); } catch (e) {} }); return; }
+      if (r) v0 = {from: r.from, to: r.to};
+    });
+  }
   x.ts = x.ts || x.d.map(d => Date.parse(String(d) + "T00:00:00Z") / 1000);
   BD_DK = {ch, nen, LW, n, so_nen, x, ma: them.ma, phai, khung: kh, lai: vung => ve_bd_gia(el, x0, {...them, giu_vung: vung})};
   if (fs && !el.querySelector(".fs-goi")) el.appendChild(Object.assign(document.createElement("div"), {className: "fs-goi", style: "display:none"}));

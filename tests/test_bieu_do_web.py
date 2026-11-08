@@ -141,3 +141,18 @@ def test_toan_man_hinh_khi_khong_co_fullscreen_api():
     assert '$("#fs-full").onclick = fs_toan_man;' in h and "const req = f.requestFullscreen || f.webkitRequestFullscreen;" in h
     assert "if (!req) return phu();" in h and "if (p?.catch) p.catch(phu);" in h
     assert '${fs_kin() ? "✕ Thu nhỏ" : "⛶ Toàn màn hình"}' in h and 'document.body.classList.remove("co-phu-kin");' in h
+
+
+def test_xoay_may_giu_khoang_va_mo_tu_man_hinh_chinh():
+    """Xoay máy / đổi cỡ: giữ đúng khoảng nến đang xem (thư viện giữ độ rộng nến → hiện thêm nến); màn hình thấp (điện thoại
+    nằm ngang) ở chế độ phủ kín: gọn thanh trên; thêm vào màn hình chính iPhone → mở không có thanh Safari (standalone)."""
+    import json
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    assert "ts_.subscribeVisibleLogicalRangeChange(r => {" in h and "if (w !== w0 && v0)" in h
+    assert "@media (max-height:520px){.fs.phu-kin .fs-tren .ten{display:none}" in h
+    assert '<meta name="apple-mobile-web-app-capable" content="yes">' in h and '<link rel="manifest" href="manifest.webmanifest">' in h
+    assert '<link rel="apple-touch-icon" href="icon-180.png">' in h
+    m = json.load(open("docs/ma/manifest.webmanifest", encoding="utf-8"))
+    assert m["display"] == "standalone" and m["start_url"] == "./#bieu-do" and m["scope"] == "../"
+    for f in ("icon-180.png", "icon-192.png", "icon-512.png"):
+        assert open("docs/ma/" + f, "rb").read(8) == b"\x89PNG\r\n\x1a\n"
