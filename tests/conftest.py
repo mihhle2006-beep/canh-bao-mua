@@ -26,3 +26,11 @@ def _khong_quy_doi_quyen_khi_cham(monkeypatch):
         return
     if hasattr(NK, "QUY_DOI_QUYEN"):
         monkeypatch.setattr(NK, "QUY_DOI_QUYEN", False)
+
+
+@pytest.fixture(autouse=True)
+def _khong_hoi_bang_gia_so(monkeypatch):
+    """Quy đổi GDKHQ trong phiên không gọi bảng giá / finfo (hệ số sở) – test nào cần thì tự giả lập."""
+    from canh_bao import diem_vao
+    monkeypatch.setattr(diem_vao, "_HE_SO_SO_GOC", diem_vao._he_so_so, raising=False)
+    monkeypatch.setattr(diem_vao, "_he_so_so", lambda ma, bay_gio: None)

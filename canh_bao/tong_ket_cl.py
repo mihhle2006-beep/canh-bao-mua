@@ -450,11 +450,16 @@ def dong_su_kien(gia_ma, bay_gio):
         except Exception:                                        # noqa: BLE001 – lịch lỗi không chặn tin
             continue
         for d, x in sk.items():
+            qm = "quyền mua" in str(x.get("mo_ta", ""))
+            if qm and x["he_so_cp"] == 1 and not x["tien"]:              # chỉ quyền mua: tỷ lệ giá theo tham chiếu sở hôm đó
+                out.append(f"• {ma} GDKHQ {d:%d/%m}: {x['mo_ta'].split(' (')[0]} → giá theo tham chiếu sở ngày GDKHQ")
+                continue
             f = he_so_gia(x, gia_ma[ma])
             out.append(f"• {ma} GDKHQ {d:%d/%m}: {x['mo_ta']} → giá × {f:.3f}"
                        + (f" (≈ {_f(gia_ma[ma] * f)})" if gia_ma[ma] == gia_ma[ma] and gia_ma[ma] else "")
-                       + (f", số CP × {x['he_so_cp']:.2f}" if x["he_so_cp"] != 1 else ""))
-    return (["", "📅 SẮP GDKHQ – vùng / cắt lỗ tự quy đổi theo tỷ lệ khi tới ngày"] + out) if out else []
+                       + (f", số CP × {x['he_so_cp']:.2f}" if x["he_so_cp"] != 1 else "")
+                       + (" + quyền mua (theo tham chiếu sở)" if qm else ""))
+    return (["", "📅 SẮP GDKHQ – vùng / cắt lỗ tự quy đổi theo giá tham chiếu sở khi tới ngày"] + out) if out else []
 
 
 def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
