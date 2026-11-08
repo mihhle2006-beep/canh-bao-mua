@@ -131,3 +131,13 @@ def test_watchlist_co_nhom_tin_hieu_bot():
     assert 'bot: ["Tín hiệu bot", Object.keys(BOT)]' in h and '["bot", `Tín hiệu bot (${Object.keys(BOT).length})`]' in h
     assert "vùng mua ${so(bt[2], 2)}–${so(bt[3], 2)} · cắt lỗ ${so(bt[4], 2)}" in h and '.dt-nhan.bot{' in h
     assert ".fs .ds-td{position:absolute;left:0;right:44px;" in h
+
+
+def test_toan_man_hinh_khi_khong_co_fullscreen_api():
+    """Safari iPhone không có Element.requestFullscreen → nút ⛶ trang Biểu đồ phủ kín cửa sổ bằng CSS (phu-kin), nút đổi
+    '✕ Thu nhỏ'; trình duyệt có API mà từ chối → cũng phủ kín; Esc / bấm lại → thu nhỏ; rời trang → bỏ khoá cuộn."""
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    assert ".fs.phu-kin{top:0;z-index:300}body.co-phu-kin{overflow:hidden}" in h
+    assert '$("#fs-full").onclick = fs_toan_man;' in h and "const req = f.requestFullscreen || f.webkitRequestFullscreen;" in h
+    assert "if (!req) return phu();" in h and "if (p?.catch) p.catch(phu);" in h
+    assert '${fs_kin() ? "✕ Thu nhỏ" : "⛶ Toàn màn hình"}' in h and 'document.body.classList.remove("co-phu-kin");' in h
