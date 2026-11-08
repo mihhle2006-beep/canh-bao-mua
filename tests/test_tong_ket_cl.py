@@ -237,6 +237,9 @@ def test_dong_su_kien_bao_truoc_gdkhq(monkeypatch):
     d = T.dong_su_kien({"HDB": 28.0, "SBT": 22.7}, "2026-10-07 15:20")
     assert d[1].startswith("📅 SẮP GDKHQ") and len(d) == 3
     assert "HDB GDKHQ 09/10" in d[2] and "× 0.769" in d[2] and "≈ 21.54" in d[2] and "số CP × 1.30" in d[2]
+    x[pd.Timestamp("2026-10-27")] = {"he_so_cp": 1.0, "tien": 0.0, "mo_ta": "quyền mua 11.1111% (không tự quy đổi – xem giá tham chiếu)"}
+    d = T.dong_su_kien({"HDB": 28.0}, "2026-10-07 15:20")
+    assert "HDB GDKHQ 27/10: quyền mua 11.1111% → giá theo tham chiếu sở ngày GDKHQ" in d[3] and "× 1.000" not in "".join(d)
     monkeypatch.setattr(T.C, "BAO_SU_KIEN_QUYEN", False)
     assert T.dong_su_kien({"HDB": 28.0}, "2026-10-07") == []
 

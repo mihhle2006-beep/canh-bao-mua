@@ -43,17 +43,38 @@ NGUONG_THANG_GIA = 0.03                         # đóng cửa phiên trước l
 _MUC_GIA = ("gia", "tu", "den", "cl", "R", "mt1", "mt3", "atr")
 
 
+def _he_so_so(ma, bay_gio):
+    """Hệ số SỞ hôm nay = giá tham chiếu hôm nay (bảng giá Vietcap – chỉ khi đúng ngày giao dịch hôm nay) / giá cơ sở phiên
+    liền trước (VNDirect finfo, giá thô) – ptcp.kiem_quyen. Không lấy được → None."""
+    try:
+        from ptcp.kiem_quyen import he_so_so_hom_nay
+        from thi_truong.nguon import bang_gia
+        h = pd.Timestamp(bay_gio).normalize()
+        for x in bang_gia([ma]):
+            li = x.get("listingInfo") or {}
+            if li.get("symbol") == ma and str(li.get("tradingDate", ""))[:10] == f"{h:%Y-%m-%d}" and li.get("refPrice"):
+                return he_so_so_hom_nay(ma, float(li["refPrice"]) / 1000, h)
+    except Exception:                                            # noqa: BLE001 – không có bảng giá / ptcp cũ
+        return None
+    return None
+
+
 def _he_so_lich(ma, gia, bay_gio):
-    """Lịch quyền (ptcp.su_kien_quyen): GDKHQ đúng phiên hôm nay → hệ số giá tham chiếu, ngược lại None."""
+    """Lịch quyền (ptcp.su_kien_quyen, kể cả QUYỀN MUA) có GDKHQ đúng phiên hôm nay → hệ số: ưu tiên hệ số SỞ (giá tham
+    chiếu thật – đúng cả quyền mua, cổ tức nhiều đợt); không lấy được → hệ số tính từ lịch (quyền mua: không quy đổi).
+    Sở không đổi tham chiếu hôm nay → None (lịch lệch ngày). Không có sự kiện → None."""
     if not ma or not getattr(C, "BAO_SU_KIEN_QUYEN", False):
         return None
     try:
         from ptcp.su_kien_quyen import gop_theo_ngay, he_so_gia, lay_su_kien
-        x = gop_theo_ngay(lay_su_kien(ma)).get(pd.Timestamp(bay_gio).normalize())
+        x = gop_theo_ngay(lay_su_kien(ma, ca_quyen_mua=True)).get(pd.Timestamp(bay_gio).normalize())
     except Exception:                                            # noqa: BLE001 – không có lịch → giữ nguyên vùng
         return None
     if not x:
         return None
+    fs = _he_so_so(ma, bay_gio)
+    if fs is not None and 0.2 < fs < 5:
+        return fs if abs(np.log(fs)) > 0.004 else None
     f = he_so_gia(x, float(gia))
     return f if abs(f - 1) > 1e-6 else None
 

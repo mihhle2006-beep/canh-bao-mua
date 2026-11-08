@@ -326,7 +326,7 @@ def test_quy_thang_gia_theo_lich_khi_chuoi_tho(monkeypatch):
     from canh_bao import diem_vao
     S = pytest.importorskip("ptcp.su_kien_quyen")  # ptcp mới (danh-muc)
     monkeypatch.setattr(diem_vao.C, "BAO_SU_KIEN_QUYEN", True)
-    monkeypatch.setattr(S, "lay_su_kien", lambda ma: [{"ma": ma, "loai": "STOCKDIV", "ten_loai": "cổ tức bằng CP",
+    monkeypatch.setattr(S, "lay_su_kien", lambda ma, **k: [{"ma": ma, "loai": "STOCKDIV", "ten_loai": "cổ tức bằng CP",
                                                         "ngay": pd.Timestamp("2026-10-09"), "ty_le_pct": 30.0,
                                                         "tien": 0.0, "mo_ta": ""}])
     z = {"ma": "HDB", "gia": 28.0, "tu": 27.45, "den": 28.70, "cl": 26.6}
@@ -334,6 +334,43 @@ def test_quy_thang_gia_theo_lich_khi_chuoi_tho(monkeypatch):
     q = diem_vao.quy_thang_gia(z, dp, "2026-10-09 09:30")
     assert q["tu"] == pytest.approx(27.45 / 1.3) and q["he_so_quyen"] == pytest.approx(1 / 1.3)
     assert diem_vao.quy_thang_gia(z, dp, "2026-10-12 09:30") is z               # không phải ngày GDKHQ
+
+
+def test_quy_thang_gia_theo_he_so_so_ca_quyen_mua(monkeypatch):
+    """Hôm nay GDKHQ QUYỀN MUA (lịch không có tỷ lệ giá) → quy đổi theo hệ số SỞ (tham chiếu / đóng cửa trước), như BAF
+    27/10/2026 (31,30 → 29,65); sở không đổi tham chiếu → không quy đổi; không lấy được hệ số sở → quyền mua giữ nguyên."""
+    from canh_bao import diem_vao
+    S = pytest.importorskip("ptcp.su_kien_quyen")
+    monkeypatch.setattr(diem_vao.C, "BAO_SU_KIEN_QUYEN", True)
+    goi = []
+    monkeypatch.setattr(S, "lay_su_kien", lambda ma, **k: goi.append(k) or [
+        {"ma": ma, "loai": S.QUYEN_MUA, "ten_loai": "quyền mua", "ngay": pd.Timestamp("2026-10-27"), "ty_le_pct": 11.1111, "tien": 0.0, "mo_ta": ""}])
+    z = {"ma": "BAF", "gia": 31.3, "tu": 30.6, "den": 31.9, "cl": 29.4}
+    dp = pd.DataFrame({"close": [31.2, 31.3]}, index=pd.to_datetime(["2026-10-26 14:30", "2026-10-26 14:45"]))
+    monkeypatch.setattr(diem_vao, "_he_so_so", lambda ma, bay_gio: 29.65 / 31.3)
+    q = diem_vao.quy_thang_gia(z, dp, "2026-10-27 09:30")
+    assert q["cl"] == pytest.approx(29.4 * 29.65 / 31.3) and q["he_so_quyen"] == pytest.approx(29.65 / 31.3)
+    assert goi and goi[0].get("ca_quyen_mua") is True
+    monkeypatch.setattr(diem_vao, "_he_so_so", lambda ma, bay_gio: 1.0)
+    assert diem_vao.quy_thang_gia(z, dp, "2026-10-27 09:30") is z               # sở không đổi tham chiếu
+    monkeypatch.setattr(diem_vao, "_he_so_so", lambda ma, bay_gio: None)
+    assert diem_vao.quy_thang_gia(z, dp, "2026-10-27 09:30") is z               # quyền mua, không có hệ số sở
+
+
+def test_he_so_so_chi_dung_tham_chieu_dung_ngay(monkeypatch):
+    """Bảng giá chỉ dùng khi tradingDate = hôm nay (trước giờ sở công bố, bảng còn tham chiếu phiên trước → không dùng)."""
+    import sys
+    import types
+    from canh_bao import diem_vao
+    K = pytest.importorskip("ptcp.kiem_quyen")
+    goc = diem_vao._HE_SO_SO_GOC                                            # bản thật (conftest thay _he_so_so)
+    bang = [{"listingInfo": {"symbol": "BAF", "tradingDate": "2026-10-27", "refPrice": 29650}}]
+    monkeypatch.setitem(sys.modules, "thi_truong.nguon", types.SimpleNamespace(bang_gia=lambda ds: bang))
+    monkeypatch.setattr(K, "he_so_so_hom_nay", lambda ma, tc, ngay: tc / 31.3)
+    assert goc("BAF", "2026-10-27 09:30") == pytest.approx(29.65 / 31.3)
+    assert goc("BAF", "2026-10-28 09:30") is None                              # bảng còn ngày cũ
+    monkeypatch.setitem(sys.modules, "thi_truong.nguon", types.SimpleNamespace(bang_gia=lambda ds: 1 / 0))
+    assert goc("BAF", "2026-10-27 09:30") is None
 
 
 def test_quy_thang_cu_khi_nguon_dieu_chinh_quyen():
