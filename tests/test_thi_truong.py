@@ -235,6 +235,7 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     assert "const esc = " in h and "const url = u => /^https?:" in h
     t = open("docs/thi_truong/index.html", encoding="utf-8").read()
     assert 'href="../ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t
+    assert re.search(r'<div class="tab" role="tablist">.*?<a href="\.\./ma/#bieu-do"[^>]*>Biểu đồ</a>\s*</div>', t, re.S)   # mục Biểu đồ riêng cạnh Tổng quan / Lọc mã
 
 
 
