@@ -122,3 +122,12 @@ def test_trang_bieu_do_va_khung_phut():
     assert not re.search(r"fetch\(|https?://", v)                     # không gọi ra ngoài
     assert not re.search("[\U0001F300-\U0001FAFF★⭐]", v)
     assert "ma/#bieu-do" in open("canh_bao/trang_tong_hop.py", encoding="utf-8").read()
+
+
+def test_watchlist_co_nhom_tin_hieu_bot():
+    """Danh sách mã cạnh biểu đồ: nhóm 'Tín hiệu bot' (khuyến nghị mua phiên tới, kèm vùng mua / cắt lỗ); điện thoại: bảng
+    không nằm dưới cột nút bên phải (che giá + nút đóng)."""
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    assert 'bot: ["Tín hiệu bot", Object.keys(BOT)]' in h and '["bot", `Tín hiệu bot (${Object.keys(BOT).length})`]' in h
+    assert "vùng mua ${so(bt[2], 2)}–${so(bt[3], 2)} · cắt lỗ ${so(bt[4], 2)}" in h and '.dt-nhan.bot{' in h
+    assert ".fs .ds-td{position:absolute;left:0;right:44px;" in h

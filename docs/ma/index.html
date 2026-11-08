@@ -133,7 +133,7 @@ body.co-ds main{margin-right:300px}
 .dt-r .t{flex:1;min-width:0}.dt-r .t b{display:block;font-size:14.5px}.dt-r .t span{display:block;color:var(--phu);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dt-r .p{text-align:right;font-size:12.5px}.dt-r .p b{display:block;font-size:14.5px;color:var(--chu)}
 .dt-r .p .nn{display:block;color:var(--mo);font-size:11.5px}.dt-nhan{font-style:normal;font-weight:600;font-size:10.5px;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
-.dt-nhan.giu{background:#e3f2e5;color:#1b5e20}.dt-nhan.td{background:#fff4d6;color:#8a6100}.dt-tom{padding:2px 12px 6px;font-size:12.5px;color:var(--phu)}
+.dt-nhan.giu{background:#e3f2e5;color:#1b5e20}.dt-nhan.td{background:#fff4d6;color:#8a6100}.dt-nhan.bot{background:#e3ecff;color:#1f4fa8}.dt-tom{padding:2px 12px 6px;font-size:12.5px;color:var(--phu)}
 .dt-r .x{border:0;background:none;color:#b0b7c2;cursor:pointer;font-size:14px;padding:2px}.dt-r .x:hover{color:#d1342b}
 .dt-trong{padding:14px 12px;color:var(--phu);font-size:13px}
 @media (max-width:700px){body{padding-right:0}.rail{top:auto;bottom:14px;right:12px;width:auto;height:auto;padding:4px;border:1px solid var(--vien);border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
@@ -190,7 +190,7 @@ body.co-ds main{margin-right:300px}
 .fs-day{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:5px 10px;border-top:1px solid var(--vien);font-size:12.5px}
 .fs .rail{position:static;height:auto;border-radius:0;box-shadow:none;border:0;border-left:1px solid var(--vien);padding:10px 4px 0;width:44px}
 .fs .ds-td{position:static;width:300px;height:auto;box-shadow:none;border-radius:0}
-@media (max-width:700px){.fs-trai{width:38px}.fs .ds-td{position:absolute;left:0;right:0;bottom:0;height:60vh;width:auto;z-index:6}}
+@media (max-width:700px){.fs-trai{width:38px}.fs .ds-td{position:absolute;left:0;right:44px;bottom:0;height:60vh;width:auto;z-index:6}}
 #rail-cp{display:none}.fs #rail-cp{display:grid}.rail #rail-cp[aria-pressed="true"]{color:#2962ff;background:#eef3ff}
 .cp{width:330px;border-left:1px solid var(--vien);background:var(--the);display:flex;flex-direction:column;min-height:0;font:12.5px/1.42 Inter,"SF Pro Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.005em}
 .cp[hidden]{display:none}
@@ -2476,12 +2476,15 @@ function ds_td_ve() {
   const xem = ma_dang_xem(), r = dong_ds(xem);
   const dm = [...GIU].sort().concat([...TD].filter(m => !GIU.has(m)).sort());      // như khối "Danh mục & theo dõi" của Bảng thị trường
   const nhom = {dm: ["Danh mục & theo dõi", dm], td: ["Theo dõi", [...TD].sort()], giu: ["Đang giữ", [...GIU].sort()],
-    nganh: ["Cùng ngành", r.nganh ? (DS || []).filter(x => x.nganh === r.nganh).sort((a, b) => (b.von || 0) - (a.von || 0)).slice(0, 25).map(x => x.ma) : []]};
+    nganh: ["Cùng ngành", r.nganh ? (DS || []).filter(x => x.nganh === r.nganh).sort((a, b) => (b.von || 0) - (a.von || 0)).slice(0, 25).map(x => x.ma) : []],
+    bot: ["Tín hiệu bot", Object.keys(BOT)]};                                        // khuyến nghị mua phiên tới (tổng kết 15:20)
   const ds = (nhom[DT.ds] || nhom.dm)[1];
   const dong = ds.map(m => { const l = LIVE[m], d = dong_ds(m), g = l?.gia ?? (d.gia ? d.gia / 1000 : null), tc = l?.gia != null ? l.tc : null, ten = d.ten || MKT?.ten?.[m] || "";
     const ch_ = g != null && tc ? g - tc : null, p = ch_ != null && tc ? ch_ / tc : null;
     const giu = GIU.has(m), nn_ = l?.nn;
-    return `<div class="dt-r${m === xem ? " dang" : ""}" data-dtma="${esc(m)}" role="link" tabindex="0"><div class="t"><b>${esc(m)}${DT.ds === "dm" ? `<i class="dt-nhan ${giu ? "giu" : "td"}">${giu ? "Đang giữ" : "Theo dõi"}</i>` : ""}</b><span>${esc(ten)}</span></div>` +
+    const bt = DT.ds === "bot" ? BOT[m] : null;
+    return `<div class="dt-r${m === xem ? " dang" : ""}" data-dtma="${esc(m)}" role="link" tabindex="0"><div class="t"><b>${esc(m)}${DT.ds === "dm" ? `<i class="dt-nhan ${giu ? "giu" : "td"}">${giu ? "Đang giữ" : "Theo dõi"}</i>` : bt ? `<i class="dt-nhan bot">${esc(bt[1])}</i>` : ""}</b>` +
+      `<span>${bt ? `vùng mua ${so(bt[2], 2)}–${so(bt[3], 2)} · cắt lỗ ${so(bt[4], 2)}` : esc(ten)}</span></div>` +
       `<div class="p"><b>${g != null ? so(g, 2) : "–"}</b><span class="${mau(p)}">${ch_ != null ? `${ch_ > 0 ? "+" : ""}${so(ch_, 2)} / ${pt(p, 2)}` : ""}</span>` +
       (DT.ds === "dm" && nn_ != null ? `<span class="nn">NN ${nn_ > 0 ? "+" : ""}${so(nn_, 1)} tỷ</span>` : "") + `</div>` +
       ((DT.ds === "td" || (DT.ds === "dm" && !giu)) ? `<button class="x" data-dtx="${esc(m)}" title="Bỏ khỏi danh sách theo dõi">✕</button>` : "") + `</div>`; }).join("");
@@ -2490,9 +2493,9 @@ function ds_td_ve() {
     tb_ = ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : null;
     tom = `<div class="dt-tom">${ds.length} mã · <span class="t">${tang} tăng</span> · <span class="g">${giam} giảm</span>${tb_ != null ? ` · TB <span class="${mau(tb_)}">${tb_ > 0 ? "+" : ""}${so(tb_, 2)}%</span>` : ""}</div>`; }
   el.innerHTML = `<div class="dt-dau"><b>Watchlist</b><button id="dt-dong" title="Đóng">✕</button></div>
-    <div class="dt-chon">${[["dm", `Danh mục & theo dõi (${dm.length})`], ["td", `Theo dõi (${TD.size})`], ["giu", `Đang giữ (${GIU.size})`], ["nganh", r.nganh ? "Cùng ngành" : "Cùng ngành –"]].map(([k_, t]) => `<button data-dtds="${k_}" aria-pressed="${DT.ds === k_}">${esc(t)}</button>`).join("")}</div>
+    <div class="dt-chon">${[["dm", `Danh mục & theo dõi (${dm.length})`], ["td", `Theo dõi (${TD.size})`], ["giu", `Đang giữ (${GIU.size})`], ["nganh", r.nganh ? "Cùng ngành" : "Cùng ngành –"], ["bot", `Tín hiệu bot (${Object.keys(BOT).length})`]].map(([k_, t]) => `<button data-dtds="${k_}" aria-pressed="${DT.ds === k_}">${esc(t)}</button>`).join("")}</div>
     ${tom}${DT.ds === "td" || DT.ds === "dm" ? `<div class="dt-them"><input id="dt-o" placeholder="Thêm mã – VD HPG" maxlength="8"><button id="dt-them">+ Thêm</button>${MA_OK(xem) && !TD.has(xem) ? `<button id="dt-them-xem" title="Thêm mã đang xem">+ ${esc(xem)}</button>` : ""}</div>` : ""}
-    <div class="dt-ds">${dong || `<div class="dt-trong">${DT.ds === "td" || DT.ds === "dm" ? "Chưa có mã – thêm ở ô trên hoặc bấm “+ Theo dõi” ở trang mã. Danh sách chỉ lưu trong trình duyệt này." : DT.ds === "giu" ? "Không có mã đang giữ." : "Mở một mã để xem các mã cùng ngành."}</div>`}</div>`;
+    <div class="dt-ds">${dong || `<div class="dt-trong">${DT.ds === "td" || DT.ds === "dm" ? "Chưa có mã – thêm ở ô trên hoặc bấm “+ Theo dõi” ở trang mã. Danh sách chỉ lưu trong trình duyệt này." : DT.ds === "giu" ? "Không có mã đang giữ." : DT.ds === "bot" ? "Bot chưa có khuyến nghị mua phiên tới." : "Mở một mã để xem các mã cùng ngành."}</div>`}</div>`;
 }
 function dt_luu() { try { localStorage.setItem("ma_dt_ds", DT.ds); localStorage.setItem("ma_dt_mo", DT.mo ? "1" : "0"); } catch (e) {} }
 function dt_mo_ma(m) {                                // bấm mã trong watchlist: toàn màn hình → đổi mã biểu đồ; trang → mở mã (giữ tab)
