@@ -138,9 +138,11 @@ def test_toan_man_hinh_khi_khong_co_fullscreen_api():
     '✕ Thu nhỏ'; trình duyệt có API mà từ chối → cũng phủ kín; Esc / bấm lại → thu nhỏ; rời trang → bỏ khoá cuộn."""
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert ".fs.phu-kin{top:0;z-index:300}body.co-phu-kin{overflow:hidden}" in h
-    assert '$("#fs-full").onclick = fs_toan_man;' in h and "const req = f.requestFullscreen || f.webkitRequestFullscreen;" in h
+    assert 'if (t.closest("#rail-full")) { fs_toan_man(); return; }' in h and "const req = f.requestFullscreen || f.webkitRequestFullscreen;" in h
     assert "if (!req) return phu();" in h and "if (p?.catch) p.catch(phu);" in h
-    assert '${fs_kin() ? "✕ Thu nhỏ" : "⛶ Toàn màn hình"}' in h and 'document.body.classList.remove("co-phu-kin");' in h
+    assert 'b.title = k ? "Thu nhỏ (Esc)" : "Toàn màn hình"' in h and 'document.body.classList.remove("co-phu-kin");' in h
+    assert '<button id="rail-full" title="Toàn màn hình"' in h and "#rail-full{display:none}.fs.trang #rail-full{display:grid}" in h
+    assert 'id="fs-full"' not in h                                      # nút chữ trên thanh trên đã chuyển sang cột công cụ
 
 
 def test_xoay_may_giu_khoang_va_mo_tu_man_hinh_chinh():
