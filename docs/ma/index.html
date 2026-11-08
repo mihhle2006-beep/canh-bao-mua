@@ -163,6 +163,7 @@ body.co-ds main{margin-right:300px}
 .fs-trai button:hover{background:var(--nhat)}.fs-trai button[aria-pressed="true"]{background:#e3f2e5;color:var(--nhan-dam)}
 .fs-trai hr{width:24px;border:0;border-top:1px solid var(--vien);margin:4px 0}
 .fs.trang{top:var(--dau,56px);z-index:25}.fs:fullscreen{top:0}
+.fs.phu-kin{top:0;z-index:300}body.co-phu-kin{overflow:hidden}   /* toàn màn hình khi trình duyệt không cho (Safari iPhone) */
 .fs-trai{overflow-y:auto;padding-bottom:8px}.ve-nhom{position:relative;display:flex;align-items:center}
 .fs-trai .ve-mo{position:absolute;right:-6px;width:10px;height:22px;padding:0;font-size:12px;color:var(--mo);border-radius:4px}
 .fs-trai .ve-mo:hover{background:var(--nhat);color:var(--chu)}
@@ -2520,6 +2521,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id === "dt-o") $("#dt-them")?.click();
   if (e.key === "Enter" && e.target.closest?.("[data-dtma]")) dt_mo_ma(e.target.closest("[data-dtma]").dataset.dtma);
   if (e.key === "Escape" && FS && !FS.trang && !document.fullscreenElement) fs_dong();
+  if (e.key === "Escape" && $("#fs")?.classList.contains("phu-kin")) fs_toan_man();
 });
 function dat_dau() { const h = $("header.dau"); if (h) document.documentElement.style.setProperty("--dau", h.offsetHeight + "px"); }
 addEventListener("resize", dat_dau); dat_dau();
@@ -2540,7 +2542,7 @@ async function fs_mo(ma, o = {}) {                   // o.trang: trang Biểu đ
       <span class="nut">${nut([["1", "1m"], ["5", "5m"], ["15", "15m"], ["60", "1H"], ["D", "1D"], ["W", "1W"], ["M", "1M"]], ST.khung, "fsk")}</span>
       ${menu_khoi()}
       <span class="nut">${nut([["kl", "Khối lượng"]].concat(k.g?.nn ? [["nn", "Khối ngoại"]] : []), ST.duoi, "fsd")}</span>
-      <span class="ten">${esc(ten)}</span>${trang ? `<button class="thoat" id="fs-full" title="Toàn màn hình">⛶ Toàn màn hình</button>` : `<button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button>`}</div>
+      <span class="ten">${esc(ten)}</span>${trang ? `<button class="thoat" id="fs-full" title="Toàn màn hình">${fs_kin() ? "✕ Thu nhỏ" : "⛶ Toàn màn hình"}</button>` : `<button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button>`}</div>
     <div class="fs-than" id="fs-than"><div class="fs-trai" id="fs-trai"></div>
       <div class="fs-bd" id="fs-bd"></div><aside class="cp" id="cp" hidden aria-label="Đọc biểu đồ"></aside></div>
     <div class="fs-day"><span class="nut">${nut(NUT_KHOANG, ST.nen, "fsn")}</span><span class="nut"><button data-tua aria-pressed="${TUA.t != null || TUA.chon}" title="Tua lại: bấm nút rồi bấm vào nến – biểu đồ chỉ hiện tới phiên đó (lùi / tới / phát từng nến)">↺ Tua lại</button></span><span style="margin-left:auto" class="nut">
@@ -2565,7 +2567,7 @@ async function fs_ve(giu = false) {                    // vẽ (lại) biểu đ
 }
 function gan_fs() {
   if ($("#fs-thoat")) $("#fs-thoat").onclick = () => fs_dong();
-  if ($("#fs-full")) $("#fs-full").onclick = () => { const f = $("#fs"); if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); else f?.requestFullscreen?.().catch(() => {}); };
+  if ($("#fs-full")) $("#fs-full").onclick = fs_toan_man;
   const o = $("#fs-o"); o.onkeydown = e => { if (e.key === "Enter") { const m = tim_ma(o.value) || o.value.trim().toUpperCase(); if (MA_OK(m)) fs_mo(m); } };
   o.onfocus = () => o.select();
   document.querySelectorAll("[data-fsk]").forEach(b => b.onclick = () => { ST.khung = b.dataset.fsk; fs_mo(FS.ma); });
@@ -2573,8 +2575,23 @@ function gan_fs() {
   document.querySelectorAll("[data-fsn]").forEach(b => b.onclick = () => { ST.nen = +b.dataset.fsn; fs_mo(FS.ma); });
   document.querySelectorAll("#fs [data-bdc]").forEach(b => b.onclick = () => dk_bd(b.dataset.bdc));
 }
+const fs_kin = () => !!(document.fullscreenElement || document.webkitFullscreenElement || $("#fs")?.classList.contains("phu-kin"));
+function fs_nut() { const b = $("#fs-full"); if (b) b.textContent = fs_kin() ? "✕ Thu nhỏ" : "⛶ Toàn màn hình"; }
+function fs_toan_man() {                              // ⛶ trang Biểu đồ: Fullscreen API; không có / bị từ chối (Safari iPhone) → phủ kín cửa sổ bằng CSS
+  const f = $("#fs"); if (!f) return;
+  if (f.classList.contains("phu-kin")) { f.classList.remove("phu-kin"); document.body.classList.remove("co-phu-kin"); return fs_nut(); }
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    try { const p = (document.exitFullscreen || document.webkitExitFullscreen)?.call(document); p?.catch?.(() => {}); } catch (e) {}
+    return;
+  }
+  const phu = () => { f.classList.add("phu-kin"); document.body.classList.add("co-phu-kin"); fs_nut(); };
+  const req = f.requestFullscreen || f.webkitRequestFullscreen;
+  if (!req) return phu();
+  try { const p = req.call(f); if (p?.catch) p.catch(phu); } catch (e) { phu(); }
+}
 function fs_dong(khong_dinh_tuyen = false) {
   if (!FS) return;
+  document.body.classList.remove("co-phu-kin");
   FS = null; TUA.chay = false; TUA.chon = false;
   $("#rail-cp")?.setAttribute("aria-pressed", "false");
   document.body.appendChild($("#ds-td")); document.body.appendChild($("#rail"));
@@ -2583,7 +2600,8 @@ function fs_dong(khong_dinh_tuyen = false) {
   BD_GIA = null; BD_DK = null;
   if (!khong_dinh_tuyen) dinh_tuyen(); ds_td_ve();
 }
-document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && FS && !FS.trang) fs_dong(); });
+document.addEventListener("fullscreenchange", () => { fs_nut(); if (!document.fullscreenElement && FS && !FS.trang) fs_dong(); });
+document.addEventListener("webkitfullscreenchange", fs_nut);
 function bd_trang(m) {                                 // trang Biểu đồ: #bieu-do/<MÃ> (không mã → mã xem gần nhất)
   let ma = String(m || "").toUpperCase();
   if (!MA_OK(ma)) { try { ma = localStorage.getItem("bd_ma") || ""; } catch (e) {} }
