@@ -141,7 +141,11 @@ jobs:
 
       - name: Gói trang
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
-        run: mkdir -p _site && cp -r docs/. _site/
+        run: |
+          mkdir -p _site && cp -r docs/. _site/
+          # mã bản = băm CODE từng trang (không đổi khi chỉ dữ liệu đổi) → trang đang mở tự tải lại khi có bản mới
+          sed -i "s/__BAN__/$(cat docs/ma/index.html docs/ma/*.js | sha1sum | cut -c1-10)/" _site/ma/index.html
+          sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _site/thi_truong/index.html
 
       - uses: actions/upload-pages-artifact@v3
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'

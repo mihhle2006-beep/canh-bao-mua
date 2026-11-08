@@ -436,6 +436,7 @@ const KHO = {};                     // mã → {r, g, n, b}
 const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true, ema: [], dc: 0, mk: true, nguon: "vc", tin_n: 20, pel: "pe", pen: 1250, thang: null, ss_x: "roe", ss_y: "pb_h", ss_s: "von", ss_peers: {}, ss_an: {}};
 let CS_NGANH = null;
 const $ = s => document.querySelector(s);
+const BAN = "__BAN__";                                   // mã bản code – bước "Gói trang" (Bang thi truong) ghi khi triển khai
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const url = u => /^https?:\/\//i.test(u || "") ? esc(u) : "";
 const so = (v, l = 0) => v == null || !isFinite(v) ? "–" : Number(v).toLocaleString("vi-VN", {minimumFractionDigits: l, maximumFractionDigits: l});
@@ -1080,7 +1081,7 @@ const cp_luu = () => { try { localStorage.setItem("cp_mo", CPS.mo ? "1" : "0"); 
 let CP_P = null;
 function tai_cp() {
   CP_P = CP_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "doc_bd.js?v=6"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "doc_bd.js?v=6&b=" + BAN; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
   return CP_P;
 }
 const TEN_KHUNG = {1: "1 phút", 5: "5 phút", 15: "15 phút", 60: "1 giờ", D: "ngày", W: "tuần", M: "tháng"};
@@ -1095,7 +1096,7 @@ function cp_ve() {
 let VE_P = null;
 function tai_ve() {                                    // công cụ vẽ (bieu_do.js – file riêng, tải khi vẽ biểu đồ giá)
   VE_P = VE_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "bieu_do.js?v=3"; sc.onload = () => ok(window.BD_VE); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "bieu_do.js?v=3&b=" + BAN; sc.onload = () => ok(window.BD_VE); sc.onerror = loi; document.head.appendChild(sc); });
   return VE_P;
 }
 const t_chuoi = t => typeof t === "number" ? t : typeof t === "string" ? t : `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;
@@ -2735,6 +2736,21 @@ addEventListener("hashchange", () => {
     if (MA_OK((a || "").toUpperCase()) && (!b || ["tong-quan", "dinh-gia"].includes(b))) dinh_tuyen();
   }, 60000);
 })();
+// ---------------------------------------------------------------- TỰ CẬP NHẬT BẢN MỚI (ứng dụng ở màn hình chính iPhone giữ trang chạy nền;
+// GitHub Pages cho trình duyệt giữ trang 10 phút): quay lại trang / 3 giây sau khi mở → hỏi bản đang triển khai (mã BAN do bước
+// "Gói trang" của workflow Bang thi truong ghi = băm code trang); khác bản đang chạy → tải lại đúng bản mới.
+async function kiem_ban_moi() {
+  if (!/^[0-9a-f]{10}$/.test(BAN)) return;                       // chạy cục bộ / chưa qua bước triển khai
+  try {
+    const t = await (await fetch(location.pathname + "?ban=" + Date.now(), {cache: "no-store"})).text();
+    const m = t.match(/const BAN = "([0-9a-f]{10})"/);
+    if (!m || m[1] === BAN) return;
+    try { if (sessionStorage.getItem("ban_da_tai") === m[1]) return; sessionStorage.setItem("ban_da_tai", m[1]); } catch (e) {}
+    location.replace(location.pathname + "?v=" + m[1] + location.hash);
+  } catch (e) {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") kiem_ban_moi(); });
+setTimeout(kiem_ban_moi, 3000);
 </script>
 </body>
 </html>

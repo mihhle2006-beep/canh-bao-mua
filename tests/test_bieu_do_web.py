@@ -158,3 +158,19 @@ def test_xoay_may_giu_khoang_va_mo_tu_man_hinh_chinh():
     assert m["display"] == "standalone" and m["start_url"] == "./#bieu-do" and m["scope"] == "../"
     for f in ("icon-180.png", "icon-192.png", "icon-512.png"):
         assert open("docs/ma/" + f, "rb").read(8) == b"\x89PNG\r\n\x1a\n"
+
+
+def test_tu_cap_nhat_ban_moi():
+    """Ứng dụng ở màn hình chính / tab để lâu: bước 'Gói trang' ghi mã bản (băm code) vào __BAN__; trang quay lại / 3 giây
+    sau khi mở → so mã bản đang triển khai, khác → tải lại đúng bản mới (giữ #mã), không lặp; JS phụ đổi tham số theo mã bản."""
+    wf = open(".github/workflows/bang_thi_truong.yml", encoding="utf-8").read()
+    assert 'sed -i "s/__BAN__/$(cat docs/ma/index.html docs/ma/*.js | sha1sum | cut -c1-10)/" _site/ma/index.html' in wf
+    assert 'sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _site/thi_truong/index.html' in wf
+    for trang in ("docs/ma/index.html", "docs/thi_truong/index.html"):
+        h = open(trang, encoding="utf-8").read()
+        assert h.count("__BAN__") == 1 and 'const BAN = "__BAN__";' in h
+        assert 'document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") kiem_ban_moi(); });' in h
+        assert 'location.replace(location.pathname + "?v=" + m[1] + location.hash);' in h and 'sessionStorage.getItem("ban_da_tai")' in h
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    assert 'sc.src = "doc_bd.js?v=6&b=" + BAN;' in h and 'sc.src = "bieu_do.js?v=3&b=" + BAN;' in h
+    assert h.index('const BAN = "__BAN__";') < h.index("function tai_ve(") if "function tai_ve(" in h else True
