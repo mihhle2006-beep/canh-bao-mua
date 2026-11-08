@@ -820,8 +820,9 @@ function cb_wvf(c, l, pd = 22, bbl = 20, k = 2, lb = 50, ph = 0.85) {  // Willia
   }
   return {w, tren: b.tr, dinh};
 }
+const cb_tuan_cua = s => { const t = new Date(String(s).slice(0, 10) + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7); return t.toISOString().slice(0, 10); };   // thứ Hai của tuần
 function cb_ma10_tuan(d, c, n = 10) {               // MA n tuần trên khung ngày: (n − 1) tuần đã đóng + giá đóng cửa hiện tại của tuần đang chạy
-  const tuan = s => { const t = new Date(String(s).slice(0, 10) + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7); return t.toISOString().slice(0, 10); };
+  const tuan = cb_tuan_cua;
   const o = new Array(c.length).fill(null), dong = []; let k0 = null;
   for (let i = 0; i < c.length; i++) {
     const k = tuan(d[i]);
@@ -832,6 +833,24 @@ function cb_ma10_tuan(d, c, n = 10) {               // MA n tuần trên khung n
     o[i] = s / n;
   }
   return o;
+}
+function cb_macd_tuan(d, c, f = 12, s = 26, g = 9) {  // MACD tuần trên khung ngày (như bot: EMA khởi đầu = giá đầu, tuần chốt thứ Sáu). m / s / h: tuần đang
+  // chạy tạm tính theo giá hiện tại · dat: lọc tuần của hệ = MACD > tín hiệu của TUẦN ĐÃ ĐÓNG (thứ Hai–Năm: tuần trước; thứ Sáu: chính tuần đó)
+  const N = c.length, m = new Array(N).fill(null), sg = new Array(N).fill(null), h = new Array(N).fill(null), dat = new Array(N).fill(null);
+  const af = 2 / (f + 1), as = 2 / (s + 1), ag = 2 / (g + 1), du = s + g - 1;
+  const buoc = (A, x) => { const a = A ? A[0] + af * (x - A[0]) : x, b = A ? A[1] + as * (x - A[1]) : x, mm = a - b; return [a, b, A ? A[2] + ag * (mm - A[2]) : mm, mm]; };
+  let A = null, nw = 0, k0 = null, cl = null, ok = null;
+  for (let i = 0; i < N; i++) {
+    const k = cb_tuan_cua(d[i]);
+    if (k0 !== null && k !== k0 && cl != null) { A = buoc(A, cl); nw++; ok = nw >= du ? A[3] > A[2] : null; cl = null; }   // chốt tuần trước
+    k0 = k;
+    if (c[i] == null) { dat[i] = ok; continue; }
+    cl = c[i];
+    const R = buoc(A, c[i]);
+    if (nw + 1 >= du) { m[i] = R[3]; sg[i] = R[2]; h[i] = R[3] - R[2]; }
+    dat[i] = new Date(String(d[i]).slice(0, 10) + "T00:00:00Z").getUTCDay() === 5 && m[i] != null ? m[i] > sg[i] : ok;
+  }
+  return {m, s: sg, h, dat};
 }
 function cb_rs(c, v, nhin = 250) {                    // RS = (giá / VN-Index) chuẩn hoá 100 ở nhin phiên trước; đỉnh mới nhin phiên · RS đỉnh mới khi giá chưa
   const N = c.length, r = c.map((x, i) => x != null && v[i] ? x / v[i] : null), k = Math.max(0, N - 1 - nhin);
@@ -849,7 +868,8 @@ function cb_rs(c, v, nhin = 250) {                    // RS = (giá / VN-Index) 
 // ---------------------------------------------------------------- CHỈ BÁO: trạng thái (lưu trong trình duyệt) + menu ƒx (trang thường + toàn màn hình)
 const KHOA_CB = "ma_chi_bao";
 const CB_DUOI = [["rs", "RS so VN-Index (đỉnh mới 52 tuần)", ""], ["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
-  ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"]];
+  ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"],
+  ["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]];
 const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
@@ -1053,7 +1073,7 @@ const cp_luu = () => { try { localStorage.setItem("cp_mo", CPS.mo ? "1" : "0"); 
 let CP_P = null;
 function tai_cp() {
   CP_P = CP_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "doc_bd.js?v=4"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "doc_bd.js?v=5"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
   return CP_P;
 }
 const TEN_KHUNG = {1: "1 phút", 5: "5 phút", 15: "15 phút", 60: "1 giờ", D: "ngày", W: "tuần", M: "tháng"};
@@ -1205,6 +1225,22 @@ async function ve_bd_gia(el, x0, them = {}) {
       LW.createSeriesMarkers(s_, x.d.map((d, i) => r.dinh[i] && !r.dinh[i - 1] ? {time: d, position: "inBar", shape: "circle", color: r.som[i] ? "#e8a400" : "#1565c0", size: r.som[i] ? 1.4 : 0.8} : null).filter(Boolean));
       PH.push(i => `RS so VN-Index ${mau_chu("#1565c0", r.rs[i], 1)} <span class="phu">(${nh} ${({D: "phiên", W: "tuần", M: "tháng"})[kh]} trước = 100)</span>` +
         (r.dinh[i] ? (r.som[i] ? ` · <b style="color:#b07a00">RS đỉnh mới trước giá</b>` : ` · <b style="color:#1565c0">RS đỉnh mới</b>`) : "")); return; }
+    if (k === "macdt") {
+      let q = null;
+      if (kh === "D" || kh === "W") q = cb_macd_tuan(x.d, x.c);                // nến tuần mang ngày phiên cuối tuần → cùng cách tính
+      else if (PHUT(kh) && x0?.d?.length) { const qd = cb_macd_tuan(x0.d, x0.c), mp = new Map(x0.d.map((d, i) => [d, i]));
+        const j = x.d.map(t => mp.get(new Date(t * 1000).toISOString().slice(0, 10)) ?? null);
+        q = Object.fromEntries(["m", "s", "h", "dat"].map(z => [z, j.map(i => i == null ? null : qd[z][i])])); }
+      if (!q) { PH.push(() => "MACD tuần – chỉ khung ngày / tuần / phút"); return; }
+      const hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: false}, p);
+      hs.setData(T.map((d, i) => q.h[i] == null ? {time: d} : {time: d, value: q.h[i], color: q.h[i] >= 0 ? (q.dat[i] ? "#26a69a" : "#9fd8d2") : (q.dat[i] ? "#f4a3a1" : "#ef5350")}));
+      const lm = d_(q.m, {color: "#2962ff"}); d_(q.s, {color: "#ff6d00"}); nguong(lm, [0]);
+      LW.createSeriesMarkers(lm, x.d.map((d, i) => i && q.dat[i] != null && q.dat[i - 1] != null && q.dat[i] !== q.dat[i - 1] && q.m[i] != null
+        ? {time: d, position: q.dat[i] ? "belowBar" : "aboveBar", shape: q.dat[i] ? "arrowUp" : "arrowDown", color: q.dat[i] ? "#0f8a4a" : "#d1342b", size: 0.7} : null).filter(Boolean));
+      PH.push(i => `MACD tuần 12, 26, 9 ${mau_chu("#2962ff", q.m[i])} · tín hiệu ${mau_chu("#ff6d00", q.s[i])}` + (q.dat[i] == null ? "" :
+        ` · lọc tuần của hệ <b style="color:${q.dat[i] ? "#0f8a4a" : "#d1342b"}">${q.dat[i] ? "đạt" : "chưa đạt"}</b> <span class="phu">(tuần đã đóng: MACD ${q.dat[i] ? "trên" : "dưới"} tín hiệu)</span>`) +
+        (q.m[i] != null && q.dat[i] != null && (q.m[i] > q.s[i]) !== q.dat[i] ? ` · tuần đang chạy tạm tính: <b>${q.m[i] > q.s[i] ? "trên" : "dưới"}</b>` : ""));
+      return; }
     if (k === "rsi") { const v = cb_rsi(x.c, ts[0]); nguong(d_(v, {color: "#7e57c2", ...co_dinh}), [30, 70]);
       PH.push(i => `RSI ${ts[0]} ${mau_chu("#7e57c2", v[i], 1)}`); }
     else if (k === "macd") { const m = cb_macd(x.c, ...ts), hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: false}, p);
