@@ -25,7 +25,7 @@ jobs:
     needs: gac
     if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: gia_lap
@@ -37,15 +37,14 @@ jobs:
           persist-credentials: false
           path: gia_lap
 
-      - uses: actions/checkout@v5                 # bản đồ ngành + rổ top GTGD → nhắc mã chưa có ngành
-        with:
+      - uses: actions/checkout@v5                 # ptcp: bản đồ ngành + rổ top GTGD (mã chưa có ngành) + kiểm lịch quyền so
+        with:                                      # giá tham chiếu sở (ptcp/kiem_quyen.py, 11/2026)
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
           sparse-checkout: |
-            ptcp/nganh.py
-            ptcp/loc_quy_b.json
+            ptcp/
           sparse-checkout-cone-mode: false
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
         working-directory: .
@@ -56,7 +55,7 @@ jobs:
           python-version: "3.11"
 
       - name: Cài thư viện
-        run: pip install -q requests pandas > /dev/null
+        run: pip install -q requests pandas numpy matplotlib openpyxl > /dev/null      # matplotlib / openpyxl: ptcp cần khi import
 
       - name: Gửi tin sức khoẻ (kín)
         env:
