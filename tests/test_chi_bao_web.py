@@ -227,3 +227,33 @@ def test_squeeze_momentum_va_vix_fix():
         tren = seg.mean() + 2 * seg.std()
         mx = max(wv[i - 49:i + 1]) if i >= 21 + 49 else None
         assert kq["w"]["dinh"][i] == bool(wv[i] >= tren or (mx is not None and wv[i] >= mx * 0.85))
+
+
+def test_macd_tuan_tren_khung_ngay_khop_bot():
+    """cb_macd_tuan = MACD tuần của bot (gộp tuần W-FRI, EMA adjust=False) – lọc tuần: tuần ĐÃ ĐÓNG (ffill nhãn thứ Sáu),
+    giá trị tạm tính trong tuần = MACD tuần nếu tuần chốt ở giá hôm nay. Có tuần nghỉ thứ Sáu."""
+    import pandas as pd
+    x = _nen(700, 5)
+    idx = pd.bdate_range("2023-01-02", periods=700)
+    nghi = {idx[k] for k in (54, 159, 304, 509) if idx[k].dayofweek == 4} | {idx[k] for k in (99, 400)}
+    giu = [i for i, t in enumerate(idx) if t not in nghi]
+    idx, c = idx[giu], [x["c"][i] for i in giu]
+    d = [t.strftime("%Y-%m-%d") for t in idx]
+    kq = _js(f"const d = {json.dumps(d)}, c = {json.dumps(c)};\nconsole.log(JSON.stringify(cb_macd_tuan(d, c)));")
+    s = pd.Series(c, index=idx)
+
+    def macd_tuan(cs):
+        w = cs.resample("W-FRI").last().dropna()
+        m = w.ewm(span=12, adjust=False).mean() - w.ewm(span=26, adjust=False).mean()
+        return m, m.ewm(span=9, adjust=False).mean()
+    m, sg = macd_tuan(s)
+    ok = (m > sg).reindex(idx, method="ffill").fillna(False).to_numpy()
+    tu = 40 * 5                                                                     # sau 34 tuần khởi động
+    assert all(v is None for v in kq["m"][:100])
+    for i in range(tu, len(c)):
+        assert kq["dat"][i] == bool(ok[i]), i
+    for i in (tu, tu + 3, 450, len(c) - 1):                                         # tạm tính: tuần chốt ở giá phiên i
+        m2, s2 = macd_tuan(s.iloc[:i + 1])
+        assert abs(kq["m"][i] - m2.iloc[-1]) < 1e-9 and abs(kq["s"][i] - s2.iloc[-1]) < 1e-9
+        assert abs(kq["h"][i] - (m2.iloc[-1] - s2.iloc[-1])) < 1e-9
+    assert sum(kq["dat"][i] != kq["dat"][i - 1] for i in range(tu + 1, len(c))) >= 2   # có đổi trạng thái để kiểm

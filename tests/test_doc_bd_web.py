@@ -180,3 +180,35 @@ def test_doc_bd_co_smc_va_chi_bao_moi():
     assert "function cau_truc(" in v and "function fvg(" in v and '"BOS"' in v and '"CHoCH"' in v
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert '["sqz", "Squeeze Momentum (nén giá)", "sqz"]' in h and '["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"]' in h
+    assert '["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]' in h and 'k === "macdt"' in h
+    assert "function order_block(" in v and 'loai: "ob"' in v
+
+
+def test_order_block():
+    """OB tăng = nến giảm cuối cùng ở đáy nhịp trước BOS lên; chạm lại lần đầu sau cú phá; hết hiệu lực khi đóng cửa thủng
+    vùng. CHoCH xuống sau đó → OB giảm (nến tăng ở đỉnh nhịp) còn hiệu lực trên giá → hiện trong panel + lớp vẽ."""
+    R = [(9.9, 10.1, 9.8, 10.0), (10.0, 10.6, 9.95, 10.5), (10.5, 11.1, 10.45, 11.0), (11.0, 11.6, 10.95, 11.5),
+         (11.5, 12.2, 11.45, 12.0), (12.0, 12.05, 11.5, 11.6), (11.6, 11.65, 11.1, 11.2), (11.1, 11.15, 10.6, 10.8),
+         (10.8, 11.3, 10.75, 11.2), (11.2, 11.7, 11.15, 11.6), (11.6, 12.1, 11.55, 12.0), (12.0, 12.6, 11.95, 12.5),
+         (12.5, 12.9, 12.45, 12.8), (12.8, 13.1, 12.6, 13.0), (13.0, 13.05, 12.4, 12.45), (12.45, 12.5, 11.8, 11.85),
+         (11.85, 11.9, 11.1, 11.3), (11.3, 11.7, 11.25, 11.65), (11.65, 12.1, 11.6, 12.05), (12.05, 12.2, 11.9, 12.0),
+         (12.0, 12.3, 11.95, 12.2), (12.2, 12.25, 11.9, 11.95), (11.95, 12.0, 11.6, 11.7), (11.7, 11.8, 11.3, 11.4),
+         (11.4, 11.45, 11.0, 11.05), (11.0, 11.05, 10.3, 10.4)] + \
+        [(10.4 + 0.02 * k, 10.6 + 0.02 * k, 10.3 + 0.02 * k, 10.5 + 0.02 * k) for k in range(14)]
+    x = {"o": [r[0] for r in R], "h": [r[1] for r in R], "l": [r[2] for r in R], "c": [r[3] for r in R], "v": [1] * len(R),
+         "d": [f"2025-{1 + i // 28:02d}-{1 + i % 28:02d}" for i in range(len(R))]}
+    kq = _chay(f"const x = {json.dumps(x)}; const DATA = {{}};\n" + r"""
+      const CP = window.BD_DOC, T = CP._thu, ct = T.cau_truc(x), ob = T.order_block(x, ct.ev), s = T.smc(x, T.atr(x));
+      const B = {ch, nen, x, n: x.c.length, ma: "AAA"}; globalThis.BD_DK = B; const panel = {hidden: true, innerHTML: ""};
+      (async () => { await CP.ve(B, {el: mk(), panel, mo: true, ten_khung: "khung ngày"}); PR.paneViews().forEach(v => v.renderer().draw(target));
+        console.log(JSON.stringify({ev: ct.ev.map(e => [e.loai, e.huong, e.i]), ob, sob: s.ob, lop: PR.d.items.filter(i => i.loai === "ob").map(i => i.o.i), p: panel.innerHTML})); })();
+    """)
+    assert kq["ev"] == [["BOS", 1, 11], ["CHoCH", -1, 24]]
+    tang, giam = kq["ob"]
+    assert (tang["huong"], tang["i"], tang["duoi"], tang["tren"], tang["cham"], tang["vo"]) == (1, 7, 10.6, 11.15, 16, 25)
+    assert (giam["huong"], giam["i"], giam["tren"], giam["duoi"], giam["cham"], giam["vo"]) == (-1, 20, 12.3, 11.95, None, None)
+    s = kq["sob"]
+    assert s["tko"]["1"]["n"] == 1 and s["n"] == 1 and s["giu20"] == 0                     # chạm 1 lần rồi bị thủng sau 9 phiên
+    assert [o["i"] for o in s["tren"]] == [20] and s["duoi"] == [] and kq["lop"] == [20]
+    assert "Order Block còn hiệu lực: trên giá 11.95–12.30 (OB giảm)" in kq["p"] and "Order Block (OB)" in kq["p"]
+    assert 'data-cpg="O1"' in kq["p"]                                                     # giữ thành hình vẽ
