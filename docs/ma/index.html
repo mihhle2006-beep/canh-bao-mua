@@ -1073,7 +1073,7 @@ const cp_luu = () => { try { localStorage.setItem("cp_mo", CPS.mo ? "1" : "0"); 
 let CP_P = null;
 function tai_cp() {
   CP_P = CP_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "doc_bd.js?v=5"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "doc_bd.js?v=6"; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
   return CP_P;
 }
 const TEN_KHUNG = {1: "1 phút", 5: "5 phút", 15: "15 phút", 60: "1 giờ", D: "ngày", W: "tuần", M: "tháng"};

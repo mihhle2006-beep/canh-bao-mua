@@ -66,12 +66,18 @@ function wilson(k, n) {                                 // khoảng tin cậy 95
   return [Math.max(0, (g - e) / d), Math.min(1, (g + e) / d)];
 }
 const trung_vi = a => { if (!a.length) return null; const b = [...a].sort((p, q) => p - q), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+function nen_ma(x, sau) {                               // NỀN của chính mã: tỷ lệ phiên mà giá TỰ đi lên / xuống sau `sau` nến (cùng cách vào / ra)
+  const k = "_nen" + sau; if (x[k]) return x[k];
+  let len = 0, xuong = 0, n = 0; const N = x.c.length;
+  for (let i = 0; i + sau < N; i++) if (x.o[i + 1] > 0) { const r = x.c[i + sau] / x.o[i + 1] - 1; n++; if (r > 0) len++; else if (r < 0) xuong++; }
+  return (x[k] = {len: n ? len / n : 0.5, xuong: n ? xuong / n : 0.5});
+}
 function thong_ke(x, ds, huong, sau) {                  // kiểm thử trên chính mã: vào ở giá MỞ CỬA nến sau nến tín hiệu, ra ở giá đóng cửa sau `sau` nến
   const N = x.c.length, r = [];
   for (const i of ds) if (i + sau < N && x.o[i + 1] > 0) r.push(x.c[i + sau] / x.o[i + 1] - 1);
-  const dung = r.filter(v => Math.sign(v) === huong).length, [lo, hi] = wilson(dung, r.length);
-  return {n: r.length, dung, tl: r.length ? dung / r.length : null, lo, hi, tv: trung_vi(r), tb: r.length ? r.reduce((a, b) => a + b, 0) / r.length : null,
-    tin: r.length >= TIN_N && lo > 0.5, sai: r.length >= TIN_N && hi < 0.5};      // đáng tin: cả khoảng tin cậy trên 50%; thường sai: dưới 50%
+  const dung = r.filter(v => Math.sign(v) === huong).length, [lo, hi] = wilson(dung, r.length), nen = nen_ma(x, sau)[huong > 0 ? "len" : "xuong"];
+  return {n: r.length, dung, tl: r.length ? dung / r.length : null, lo, hi, nen, tv: trung_vi(r), tb: r.length ? r.reduce((a, b) => a + b, 0) / r.length : null,
+    tin: r.length >= TIN_N && lo > nen, sai: r.length >= TIN_N && hi < nen};     // đáng tin: cả khoảng tin cậy TRÊN NỀN của mã; thường sai: dưới nền
 }
 function bang_chung(x, ten, huong) {                    // mẫu nến trên CHÍNH mã: mọi lần xuất hiện → thong_ke sau SAU nến
   const m = MAU_NEN.find(z => z[0] === ten); if (!m) return null;
@@ -258,12 +264,14 @@ function phan_tich(x) {                                 // → {vung, xh, nen, g
   const gon = S.kieu === "gon";
   return {vung: vg, xh: xu_huong(x, pivots_dong(x, 5, Math.max(0, N - 250)), a), nen: mau_nen_cuoi(x, gon ? 5 : 20), gia: mau_gia(x, P, a), mh: mau_hinh(x, A, gon ? 10 : 30), smc: smc(x, A, gon ? 3 : 8), a, N, c};
 }
-CP._thu = {atr, pivots, pivots_dong, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh, cau_truc, fvg, order_block, smc};
+CP._thu = {atr, pivots, pivots_dong, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh, cau_truc, fvg, order_block, smc, SAU, SAU_MH};
 
 // ---------------------------------------------------------------- DỮ LIỆU HỆ THỐNG
 let HT_P = null; const TH_P = {};
 const tai_ht = () => (HT_P = HT_P || lay(DL + "he_thong.json", false).catch(() => null));
 const tai_th = ma => (TH_P[ma] = TH_P[ma] || lay(DL + `tin_hieu/${ma}.json`, false).catch(() => null));
+let TKM_P = null, TKM = null;                            // thống kê mẫu trên rổ mã thanh khoản (thi_truong/thong_ke_mau.js)
+const tai_tkm = () => (TKM_P = TKM_P || lay(DL + "thong_ke_mau.json", false).catch(() => null));
 function dieu_kien(ht, ma) {                            // điều kiện chọn mã Quỹ Bứt Phá → [{ten, dat (true / false / null = lưu ý / chưa rõ), chu}]
   if (!ht?.ma) return null;                             // he_thong.json chỉ có đạt / chưa đạt (1 / 0 / null) – không ngưỡng, không số liệu so
   const r = ht.ma[ma], san = String(LIVE[ma]?.san || dong_ds(ma).san || "").toUpperCase(), out = [];
@@ -353,13 +361,20 @@ function th_loc(B, th) {                                // tín hiệu MUA của
 CP._thu_th = th_loc; CP._dung = (...a) => dung(...a); CP._dk = (...a) => dieu_kien(...a);
 
 // ---------------------------------------------------------------- DỰNG CHÚ THÍCH + LỜI GIẢI THÍCH
-const muc_tin = b => !b?.n ? "chưa có lần nào trước trên mã" : b.tin ? "đáng tin" : b.sai ? "thường SAI trên mã này" : b.n < TIN_N ? "chưa đáng tin (ít lần)" : "chưa đáng tin";
+const muc_tin = b => !b?.n ? "chưa có lần nào trước trên mã" : b.tin ? "đáng tin" : b.sai ? "thường SAI trên mã này (kém nền)" : b.n < TIN_N ? "chưa đáng tin (ít lần)" : "chưa đáng tin (không hơn nền)";
 const pt1 = v => v == null ? "–" : pt(v, 1);
 const bang_tk = (b, sau, ten_n) => !b ? [] : [[ten_n, `${b.n} lần`], [`Đúng hướng sau ${sau} phiên`, b.tl == null ? "–" : `${pt(b.tl, 1, false)} (${pt(b.lo, 1, false)}–${pt(b.hi, 1, false)})`],
+  [`Nền: giá tự đi cùng hướng sau ${sau} phiên`, b.nen == null ? "–" : pt(b.nen, 1, false)],
   [`Thay đổi trung vị sau ${sau} phiên`, pt1(b.tv)], [`Thay đổi trung bình sau ${sau} phiên`, pt1(b.tb)]];
 function dung(B, kq, ht, th) {
   const x = B.x, N = B.n, c = x.c[N - 1], ma = B.ma, an = AN[ma] || (AN[ma] = new Set()), ngay = i => B.phut ? gio_vn(x.d[i]) : ngay_vn(x.d[i]);
   const items = [], cau = [];
+  // GỌN: mẫu nến / mẫu hình / SMC chỉ hiện khi trên rổ mã thanh khoản loại đó HƠN NỀN, hoặc trên chính mã "đáng tin"
+  const RO = TKM, gon = S.kieu === "gon";
+  let an_n = 0;
+  const an_gon = (k, b) => { if (!gon || !RO) return false; const z = RO.loai[k], an = !(z?.ket_luan === "hơn nền" || b?.tin); if (an) an_n++; return an; };
+  const dong_ro = k => { const z = RO?.loai[k]; return !z ? [] : [[`Trên ${RO.so_ma} mã thanh khoản (${z.n} lần)`,
+    `đúng hướng ${pt(z.tl, 1, false)} (${pt(z.lo, 0, false)}–${pt(z.hi, 0, false)}) · nền ${pt(z.nen, 1, false)} → ${z.ket_luan}`]]; };
   if (kq) {
     const ht_ = kq.vung.filter(z => z.loai === "ho_tro"), kc_ = kq.vung.filter(z => z.loai === "khang_cu"), trong = kq.vung.find(z => z.loai === "trong");
     const chon = S.kieu === "gon" ? [trong, ht_[0], kc_[0]].filter(Boolean) : kq.vung.slice(0, 8);
@@ -382,17 +397,19 @@ function dung(B, kq, ht, th) {
         cach: "Nối 2 đỉnh thấp dần (giảm) / 2 đáy cao dần (tăng) gần nhất theo GIÁ ĐÓNG CỬA; giữ khi giá chưa đóng cửa vượt qua"}); }
     else cau.push("Chưa có xu hướng rõ (đỉnh / đáy gần nhất chưa cùng chiều)");
     for (const m of kq.nen) { const b = m.bc, tin = muc_tin(b);
+      if (an_gon("nen:" + m.ten, b)) continue;
       cau.push(`Mẫu nến ${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}, ${ngay(m.i)}) – ${tin}${b?.n ? `: đúng hướng ${pt(b.tl, 0, false)} trong ${b.n} lần trước trên ${ma}` : ""}`);
       items.push({id: `N${items.filter(z => z.loai === "nen").length + 1}`, loai: "nen", i: m.i, huong: m.huong, ten: m.ten, nhom: "Mẫu nến", tin,
-        tieu_de: `${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}) · ${ngay(m.i)}`, bang: bang_tk(b, SAU, "Xuất hiện trên mã"),
+        tieu_de: `${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}) · ${ngay(m.i)}`, bang: bang_tk(b, SAU, "Xuất hiện trên mã").concat(dong_ro("nen:" + m.ten)),
         cach: `Bằng chứng: mọi lần mẫu này xuất hiện trong lịch sử ${ma}, vào ở giá mở cửa nến sau, ra sau ${SAU} nến`}); }
-    for (const g of kq.mh) { const b = g.bc, tin = muc_tin(b), xn = g.t != null;
+    const mh_hien = kq.mh.filter(g => !an_gon(`mh:${g.loai}:${g.huong}`, g.bc));
+    for (const g of mh_hien) { const b = g.bc, tin = muc_tin(b), xn = g.t != null;
       cau.push(`Mẫu hình ${g.ten}${xn ? ` – đã xác nhận ${ngay(g.t)} (${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)})` : ` – đang hình thành, ${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)} là xác nhận`}` +
         ` – ${tin}${b?.n ? `: đúng hướng ${pt(b.tl, 0, false)} trong ${b.n} lần trên ${ma}` : ""}`);
       items.push({id: `M${items.filter(z => ["tam_giac", "hai", "mh"].includes(z.loai)).length + 1}`, loai: "mh", kieu: g.loai, ten: g.ten, huong: g.huong, hinh: g.hinh,
         tu: g.tu, het: xn ? g.t : B.n - 1, xn, kich: g.kich, vo: g.vo, nhom: "Mẫu hình", tin,
         tieu_de: `${g.ten} · ${xn ? `đã xác nhận ${ngay(g.t)}` : "đang hình thành"}`,
-        bang: [[xn ? "Mức kích hoạt đã " + (g.huong > 0 ? "vượt" : "thủng") : "Mức kích hoạt", so(g.kich, 2)], ["Mức vô hiệu của mẫu", so(g.vo, 2)]].concat(bang_tk(b, SAU_MH, "Số lần xác nhận trên mã")),
+        bang: [[xn ? "Mức kích hoạt đã " + (g.huong > 0 ? "vượt" : "thủng") : "Mức kích hoạt", so(g.kich, 2)], ["Mức vô hiệu của mẫu", so(g.vo, 2)]].concat(bang_tk(b, SAU_MH, "Số lần xác nhận trên mã")).concat(dong_ro(`mh:${g.loai}:${g.huong}`)),
         cach: ({vdv: "3 đỉnh (đáy), đầu cao (thấp) nhất, 2 vai chênh ≤ 1,2 ATR; xác nhận khi đóng cửa qua đường cổ trong 30 nến, vô hiệu khi qua vai phải",
           co: "Cán cờ ≥ 3 ATR trong ≤ 10 nến, lá cờ 3–20 nến hồi ≤ 50% cán; xác nhận khi đóng cửa qua đỉnh (đáy) lá cờ, vô hiệu khi hồi quá 50%",
           nem: "2 đỉnh + 2 đáy cùng dốc và hội tụ (10–90 nến); xác nhận khi đóng cửa ra khỏi nêm theo hướng ngược độ dốc trong 30 nến"})[g.loai] +
@@ -409,7 +426,8 @@ function dung(B, kq, ht, th) {
     if (k0) td.push(`vượt ${so(k0.hi, 2)} là phá kháng cự`);
     if (xh.huong < 0 && xh.giu) td.push(`vượt ${so(xh.muc, 2)} là phá xu hướng giảm`);
     const sm = kq.smc;
-    if (sm?.ev.length) { const e = sm.ev[sm.ev.length - 1], b = sm.tk[e.loai + e.huong], tin = muc_tin(b), ten = h => h > 0 ? "tăng" : "giảm";
+    const e_ct = sm?.ev.length ? sm.ev[sm.ev.length - 1] : null;
+    if (e_ct && !an_gon(`ct:${e_ct.loai}:${e_ct.huong}`, sm.tk[e_ct.loai + e_ct.huong])) { const e = e_ct, b = sm.tk[e.loai + e.huong], tin = muc_tin(b), ten = h => h > 0 ? "tăng" : "giảm";
       const mo_ta = z => `${z.loai} ${ten(z.huong)} ${ngay(z.i)} (đóng cửa ${z.huong > 0 ? "vượt đỉnh" : "thủng đáy"} ${so(z.muc, 2)})`;
       cau.push(`Cấu trúc thị trường ${sm.ct.xu > 0 ? "tăng" : sm.ct.xu < 0 ? "giảm" : "chưa rõ"}: ${mo_ta(e)} – ${tin}${b?.n ? `: sau ${e.loai} ${ten(e.huong)} trên ${ma} đúng hướng ${pt(b.tl, 0, false)} trong ${b.n} lần (${SAU_MH} phiên)` : ""}`);
       items.push({id: "C1", loai: "ct", huong: sm.ct.xu, ds: sm.ev, tu: sm.ev[0].tu, het: e.i, nhom: "Cấu trúc thị trường", tin,
@@ -417,36 +435,40 @@ function dung(B, kq, ht, th) {
         bang: [["Xu hướng cấu trúc", sm.ct.xu > 0 ? "tăng (đỉnh / đáy cao dần)" : sm.ct.xu < 0 ? "giảm (đỉnh / đáy thấp dần)" : "chưa rõ"], ["Sự kiện gần nhất", mo_ta(e)]]
           .concat(sm.ct.H && !sm.ct.H.pha ? [["Đỉnh cấu trúc chờ phá", `${so(sm.ct.H.v, 2)} (${ngay(sm.ct.H.i)})`]] : [])
           .concat(sm.ct.L && !sm.ct.L.pha ? [["Đáy cấu trúc chờ thủng", `${so(sm.ct.L.v, 2)} (${ngay(sm.ct.L.i)})`]] : [])
-          .concat(bang_tk(b, SAU_MH, `Số lần ${e.loai} ${ten(e.huong)} trên mã`)),
+          .concat(bang_tk(b, SAU_MH, `Số lần ${e.loai} ${ten(e.huong)} trên mã`)).concat(dong_ro(`ct:${e.loai}:${e.huong}`)),
         cach: `Đỉnh / đáy cục bộ (3 nến hai bên) chỉ dùng sau khi đã xác nhận (không vẽ lại). BOS = đóng cửa phá đỉnh / đáy gần nhất CÙNG chiều xu hướng (tiếp diễn), CHoCH = phá NGƯỢC chiều (đổi xu hướng). Kiểm thử: mọi lần trên ${ma}, vào ở giá mở cửa nến sau, ra sau ${SAU_MH} phiên`});
       if (sm.ct.H && !sm.ct.H.pha) td.push(`vượt ${so(sm.ct.H.v, 2)} là ${sm.ct.xu > 0 ? "BOS" : "CHoCH"} tăng`);
       if (sm.ct.L && !sm.ct.L.pha) td.push(`thủng ${so(sm.ct.L.v, 2)} là ${sm.ct.xu < 0 ? "BOS" : "CHoCH"} giảm`); }
     if (sm) {
-      const chon = S.kieu === "gon" ? [sm.trong[0], sm.duoi[0], sm.tren[0]].filter(Boolean) : [...sm.trong, ...sm.duoi, ...sm.tren].slice(0, 6);
-      const nhan = f => `${so(f.duoi, 2)}–${so(f.tren, 2)}`;
-      if (chon.length) cau.push(`Khoảng trống giá (FVG) chưa lấp: ${[sm.duoi[0] ? `dưới giá ${nhan(sm.duoi[0])}` : "", sm.tren[0] ? `trên giá ${nhan(sm.tren[0])}` : "", sm.trong[0] ? `giá đang trong ${nhan(sm.trong[0])}` : ""].filter(Boolean).join(" · ")}` +
+      const chon = (S.kieu === "gon" ? [sm.trong[0], sm.duoi[0], sm.tren[0]].filter(Boolean) : [...sm.trong, ...sm.duoi, ...sm.tren].slice(0, 6))
+        .filter(f => !an_gon("fvg:" + f.huong, sm.tkf[f.huong]));
+      const nhan = f => `${so(f.duoi, 2)}–${so(f.tren, 2)}`, d0 = chon.find(f => f.tren < c), t0 = chon.find(f => f.duoi > c), g0 = chon.find(f => f.duoi <= c && f.tren >= c);
+      if (chon.length) cau.push(`Khoảng trống giá (FVG) chưa lấp: ${[d0 ? `dưới giá ${nhan(d0)}` : "", t0 ? `trên giá ${nhan(t0)}` : "", g0 ? `giá đang trong ${nhan(g0)}` : ""].filter(Boolean).join(" · ")}` +
         (sm.lap20 != null ? ` – trên ${ma} ${pt(sm.lap20, 0, false)} FVG bị lấp trong 20 phiên (${sm.n_fvg} lần)` : ""));
       chon.forEach((f, j) => { const b = sm.tkf[f.huong], tin = muc_tin(b);
         items.push({id: `G${j + 1}`, loai: "fvg", huong: f.huong, f, dau: f.i - 2, nhom: "Khoảng trống giá (FVG)", tin,
           tieu_de: `FVG ${f.huong > 0 ? "tăng" : "giảm"} ${nhan(f)} · ${ngay(f.i)}`,
           bang: [["Vị trí", f.duoi > kq.c ? "trên giá (kháng cự)" : f.tren < kq.c ? "dưới giá (hỗ trợ)" : "giá đang trong vùng"], ["Đã chạm lại", f.cham != null ? ngay(f.cham) : "chưa"],
-            ["FVG trên mã bị lấp trong 20 phiên", sm.lap20 == null ? "–" : `${pt(sm.lap20, 0, false)} (${sm.n_fvg} lần)`]].concat(bang_tk(b, SAU, "Số lần giá chạm lại FVG cùng chiều")),
+            ["FVG trên mã bị lấp trong 20 phiên", sm.lap20 == null ? "–" : `${pt(sm.lap20, 0, false)} (${sm.n_fvg} lần)`]].concat(bang_tk(b, SAU, "Số lần giá chạm lại FVG cùng chiều")).concat(dong_ro("fvg:" + f.huong)),
           cach: `3 nến: đáy nến 3 cao hơn đỉnh nến 1 (tăng) hoặc đỉnh nến 3 thấp hơn đáy nến 1 (giảm), rộng ≥ 0,1 ATR; "lấp" khi giá đi xuyên hết vùng. Kiểm thử: lần đầu giá quay lại chạm vùng, vào ở giá mở cửa nến sau, ra sau ${SAU} phiên – đúng hướng = bật theo chiều FVG`}); }); }
     if (sm?.ob) { const ob = sm.ob, nhan = o => `${so(o.duoi, 2)}–${so(o.tren, 2)}`, ten = h => h > 0 ? "tăng" : "giảm";
-      const chon = S.kieu === "gon" ? [ob.trong[0], ob.duoi[0], ob.tren[0]].filter(Boolean) : [...ob.trong, ...ob.duoi, ...ob.tren].slice(0, 6);
-      if (chon.length) cau.push(`Order Block còn hiệu lực: ${[ob.duoi[0] ? `dưới giá ${nhan(ob.duoi[0])} (OB tăng)` : "", ob.tren[0] ? `trên giá ${nhan(ob.tren[0])} (OB giảm)` : "",
-        ob.trong[0] ? `giá đang trong OB ${ten(ob.trong[0].huong)} ${nhan(ob.trong[0])}` : ""].filter(Boolean).join(" · ")}` +
+      const chon = (S.kieu === "gon" ? [ob.trong[0], ob.duoi[0], ob.tren[0]].filter(Boolean) : [...ob.trong, ...ob.duoi, ...ob.tren].slice(0, 6))
+        .filter(o => !an_gon("ob:" + o.huong, ob.tko[o.huong]));
+      const d0 = chon.find(o => o.tren < c), t0 = chon.find(o => o.duoi > c), g0_ = chon.find(o => o.duoi <= c && o.tren >= c);
+      if (chon.length) cau.push(`Order Block còn hiệu lực: ${[d0 ? `dưới giá ${nhan(d0)} (OB tăng)` : "", t0 ? `trên giá ${nhan(t0)} (OB giảm)` : "",
+        g0_ ? `giá đang trong OB ${ten(g0_.huong)} ${nhan(g0_)}` : ""].filter(Boolean).join(" · ")}` +
         (ob.giu20 != null ? ` – trên ${ma} ${pt(ob.giu20, 0, false)} OB còn giữ 20 phiên sau lần chạm lại đầu (${ob.n} lần)` : ""));
       chon.forEach((o, j) => { const b = ob.tko[o.huong], tin = muc_tin(b);
         items.push({id: `O${j + 1}`, loai: "ob", huong: o.huong, o, dau: o.i, nhom: "Order Block (OB)", tin,
           tieu_de: `OB ${ten(o.huong)} ${nhan(o)} · ${ngay(o.i)}`,
           bang: [["Vị trí", o.duoi > kq.c ? "trên giá (vùng cung)" : o.tren < kq.c ? "dưới giá (vùng cầu)" : "giá đang trong vùng"],
             ["Trước cú phá", `${o.loai} ${ten(o.huong)} ${ngay(o.pha)}`], ["Đã chạm lại", o.cham != null ? ngay(o.cham) : "chưa"],
-            ["OB trên mã còn giữ 20 phiên sau lần chạm đầu", ob.giu20 == null ? "–" : `${pt(ob.giu20, 0, false)} (${ob.n} lần)`]].concat(bang_tk(b, SAU, "Số lần giá chạm lại OB cùng chiều")),
+            ["OB trên mã còn giữ 20 phiên sau lần chạm đầu", ob.giu20 == null ? "–" : `${pt(ob.giu20, 0, false)} (${ob.n} lần)`]].concat(bang_tk(b, SAU, "Số lần giá chạm lại OB cùng chiều")).concat(dong_ro("ob:" + o.huong)),
           cach: `Nến ngược chiều cuối cùng (nến giảm trước cú phá lên / nến tăng trước cú phá xuống) tại đáy / đỉnh của nhịp ngay trước BOS / CHoCH; vùng = đáy–đỉnh nến đó, hết hiệu lực khi giá đóng cửa xuyên qua. Kiểm thử: lần đầu giá quay lại chạm vùng sau cú phá, vào ở giá mở cửa nến sau, ra sau ${SAU} phiên – đúng hướng = bật theo chiều OB`}); });
-      const g0 = ob.duoi[0] || (ob.trong[0]?.huong > 0 ? ob.trong[0] : null);
+      const g0 = d0 || (g0_?.huong > 0 ? g0_ : null);
       if (g0) td.push(`đóng cửa dưới ${so(g0.duoi, 2)} là mất OB tăng`); }
-    for (const g of kq.mh) if (g.t == null) td.push(`${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)} xác nhận ${g.ten.toLowerCase()}`);
+    if (an_n) cau.push(`Ẩn ${an_n} mục (mẫu nến / mẫu hình / cấu trúc SMC) không hơn nền: trên ${RO.so_ma} mã thanh khoản lẫn trên ${ma}, giá sau các mẫu này đi đúng hướng không nhiều hơn lúc bình thường – xem "Đầy đủ"`);
+    for (const g of mh_hien) if (g.t == null) td.push(`${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)} xác nhận ${g.ten.toLowerCase()}`);
     for (const g of kq.gia) { if (g.vuot != null && g.huong >= 0) td.push(`vượt ${so(g.vuot, 2)} xác nhận ${g.ten.toLowerCase()}`); if (g.thung != null && g.huong <= 0) td.push(`thủng ${so(g.thung, 2)} xác nhận ${g.ten.toLowerCase()}`); }
     if (td.length) cau.push("Theo dõi: " + [...new Set(td)].slice(0, 3).join(" · "));
   }
@@ -479,12 +501,13 @@ function panel_html(B, kq, dd, ht, th) {
     <label class="cp-dong"><input type="checkbox" data-cp="lop"${S.lop ? " checked" : ""}> Hiện chú thích trên biểu đồ</label>
     <label class="cp-dong"><input type="checkbox" data-cp="he"${S.he ? " checked" : ""}> Hiện tín hiệu hệ thống (bot) trên biểu đồ</label>
     <div class="cp-dong"><span class="nut"><button data-cpk="gon" aria-pressed="${S.kieu === "gon"}">Gọn</button><button data-cpk="du" aria-pressed="${S.kieu === "du"}">Đầy đủ</button></span>
-      <span class="cp-phu">${S.kieu === "gon" ? "Vùng gần giá, xu hướng, mẫu hình gần đây" : "Mọi vùng giá và mẫu hình tìm được"}</span></div>
+      <span class="cp-phu">${S.kieu === "gon" ? "Vùng gần giá, xu hướng, chỉ mẫu có bằng chứng hơn nền" : "Mọi vùng giá và mẫu hình tìm được"}</span></div>
     ${kq ? `<h3>${esc_(dd.cau[0])}</h3><p>${dd.cau.slice(1).map(esc_).join("<br>")}</p>` : `<p class="cp-phu">Chưa đủ dữ liệu (cần ≥ 30 nến).</p>`}
     <details class="cp-doc"><summary>Cách đọc</summary><p>Vùng hỗ trợ / kháng cự: các đỉnh, đáy cục bộ (cao / thấp nhất trong 5 nến hai bên) nằm sát nhau (≤ 0,6 ATR) gộp thành vùng; càng nhiều lần chạm càng đáng chú ý.
       Xu hướng: nối 2 đỉnh thấp dần hoặc 2 đáy cao dần gần nhất. Mẫu nến (sau ${SAU} phiên) và mẫu hình cờ, nêm, vai–đầu–vai (sau ${SAU_MH} phiên) được kiểm thử trên chính mã:
-      mọi lần xuất hiện / xác nhận trước đây, vào ở giá mở cửa nến sau. Tỷ lệ đúng hướng kèm khoảng tin cậy 95%: "đáng tin" khi ≥ ${TIN_N} lần và cả khoảng nằm trên 50%,
-      "thường SAI" khi cả khoảng dưới 50%. Cấu trúc thị trường (kiểu SMC): BOS = phá đỉnh / đáy gần nhất cùng chiều xu hướng, CHoCH = phá ngược chiều;
+      mọi lần xuất hiện / xác nhận trước đây, vào ở giá mở cửa nến sau. Tỷ lệ đúng hướng kèm khoảng tin cậy 95%, so với NỀN = tỷ lệ giá tự đi cùng hướng sau cùng số phiên
+      trên chính mã (không cần tín hiệu): "đáng tin" khi ≥ ${TIN_N} lần và cả khoảng nằm trên nền, "thường SAI" khi cả khoảng dưới nền. Mỗi mẫu còn kèm thống kê
+      trên rổ mã thanh khoản (từ khi niêm yết); chế độ Gọn chỉ hiện mẫu hơn nền trên rổ hoặc đáng tin trên chính mã. Cấu trúc thị trường (kiểu SMC): BOS = phá đỉnh / đáy gần nhất cùng chiều xu hướng, CHoCH = phá ngược chiều;
       FVG = khoảng trống giá 3 nến chưa bị lấp; Order Block (OB) = nến ngược chiều cuối cùng trước cú phá cấu trúc, vùng giá thường được thử lại. Tính trên khung đang xem${TUA_CHU()}.</p></details>
     <div class="cp-meta">${esc_(ma)} · ${esc_(B.ten_khung)} · dữ liệu tới ${esc_(B.phut ? gio_vn(x.d[B.n - 1]) : ngay_vn(x.d[B.n - 1]))}</div>
     <button class="cp-tinh" data-cp="tinh">Tính lại bằng chứng</button>
@@ -515,7 +538,7 @@ CP.ve = async (B, o) => {                               // B: BD_DK; o: {el (khu
   }
   TUA_CHU = () => o.tua ? ` (đang tua lại tới ${o.tua})` : "";
   B.tua = o.tua || null;
-  const [ht, th] = await Promise.all([tai_ht(), tai_th(B.ma)]); HT = ht;
+  const [ht, th, tkm] = await Promise.all([tai_ht(), tai_th(B.ma), tai_tkm()]); HT = ht; TKM = tkm?.loai ? tkm : null;
   const kq = phan_tich({o: B.x.o.slice(0, B.n), h: B.x.h.slice(0, B.n), l: B.x.l.slice(0, B.n), c: B.x.c.slice(0, B.n), v: B.x.v.slice(0, B.n)});
   B.ten_khung = o.ten_khung || ""; B.phut = !!o.phut;
   const dd = dung(B, kq, ht, th);

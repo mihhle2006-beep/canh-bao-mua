@@ -132,6 +132,10 @@ jobs:
         working-directory: .
         run: python -m thi_truong.he_thong_web --ra docs/ma/du_lieu --loc danh-muc/ptcp/loc_quy_b.json --cau_hinh danh-muc/ptcp/cau_hinh.py || echo "::warning::Dữ liệu hệ thống lỗi – trang giữ dữ liệu khác"
 
+      - name: Thống kê mẫu nến / mẫu hình / SMC trên 100 mã thanh khoản cho "Đọc biểu đồ" → thong_ke_mau.json
+        working-directory: .
+        run: node thi_truong/thong_ke_mau.js docs/ma/du_lieu danh-muc/ptcp/loc_quy_b.json 100 || echo "::warning::Thống kê mẫu lỗi – trang giữ dữ liệu cũ"
+
       - name: Lưu dữ liệu (cache cho Bang thi truong)
         uses: actions/cache/save@v5
         with:
