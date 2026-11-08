@@ -15,3 +15,14 @@ def _khong_doc_nav_that(monkeypatch):
     """Test không đọc NAV tài khoản thật (vi_the.nav_that) – tin MUA không kèm số CP trừ test tự đặt."""
     from canh_bao import vi_the
     monkeypatch.setattr(vi_the, "_NAV", {"v": None})
+
+
+@pytest.fixture(autouse=True)
+def _khong_quy_doi_quyen_khi_cham(monkeypatch):
+    """Bộ chấm chung (ptcp/nhat_ky) không gọi API lịch quyền khi quy đổi giá ngày GDKHQ – test tự giả lập."""
+    try:
+        from ptcp import nhat_ky as NK
+    except ImportError:
+        return
+    if hasattr(NK, "QUY_DOI_QUYEN"):
+        monkeypatch.setattr(NK, "QUY_DOI_QUYEN", False)
