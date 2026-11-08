@@ -47,10 +47,10 @@ def _chuoi():
     return {"d": d, "o": o, "h": h, "l": l_, "c": c, "v": [1000] * len(d)}
 
 
-def _chay(ma_js):
+def _chay(ma_js, truoc=""):
     if not shutil.which("node"):
         pytest.skip("không có node")
-    js = KHUNG + open(JS, encoding="utf-8").read() + "\n" + ma_js
+    js = KHUNG + truoc + open(JS, encoding="utf-8").read() + "\n" + ma_js
     kq = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
     assert kq.returncode == 0, kq.stderr[-3000:]
     return json.loads(kq.stdout)
@@ -212,3 +212,76 @@ def test_order_block():
     assert [o["i"] for o in s["tren"]] == [20] and s["duoi"] == [] and kq["lop"] == [20]
     assert "Order Block còn hiệu lực: trên giá 11.95–12.30 (OB giảm)" in kq["p"] and "Order Block (OB)" in kq["p"]
     assert 'data-cpg="O1"' in kq["p"]                                                     # giữ thành hình vẽ
+
+
+def _ob_chuoi():
+    R = [(9.9, 10.1, 9.8, 10.0), (10.0, 10.6, 9.95, 10.5), (10.5, 11.1, 10.45, 11.0), (11.0, 11.6, 10.95, 11.5),
+         (11.5, 12.2, 11.45, 12.0), (12.0, 12.05, 11.5, 11.6), (11.6, 11.65, 11.1, 11.2), (11.1, 11.15, 10.6, 10.8),
+         (10.8, 11.3, 10.75, 11.2), (11.2, 11.7, 11.15, 11.6), (11.6, 12.1, 11.55, 12.0), (12.0, 12.6, 11.95, 12.5),
+         (12.5, 12.9, 12.45, 12.8), (12.8, 13.1, 12.6, 13.0), (13.0, 13.05, 12.4, 12.45), (12.45, 12.5, 11.8, 11.85),
+         (11.85, 11.9, 11.1, 11.3), (11.3, 11.7, 11.25, 11.65), (11.65, 12.1, 11.6, 12.05), (12.05, 12.2, 11.9, 12.0),
+         (12.0, 12.3, 11.95, 12.2), (12.2, 12.25, 11.9, 11.95), (11.95, 12.0, 11.6, 11.7), (11.7, 11.8, 11.3, 11.4),
+         (11.4, 11.45, 11.0, 11.05), (11.0, 11.05, 10.3, 10.4)] + \
+        [(10.4 + 0.02 * k, 10.6 + 0.02 * k, 10.3 + 0.02 * k, 10.5 + 0.02 * k) for k in range(14)]
+    return {"o": [r[0] for r in R], "h": [r[1] for r in R], "l": [r[2] for r in R], "c": [r[3] for r in R], "v": [1] * len(R),
+            "d": [f"2025-{1 + i // 28:02d}-{1 + i % 28:02d}" for i in range(len(R))]}
+
+
+def test_gon_an_muc_khong_hon_nen():
+    """thong_ke_mau.json: loại 'như nền' trên rổ (và không đáng tin trên mã) → Gọn ẩn + câu 'Ẩn N mục'; Đầy đủ vẫn hiện, kèm
+    dòng thống kê trên rổ mã; per-mã so với NỀN của chính mã (không phải 50%)."""
+    x = _ob_chuoi()
+    tkm = {"so_ma": 97, "loai": {"ob:-1": {"n": 10753, "tl": 0.497, "lo": 0.467, "hi": 0.528, "nen": 0.47, "ket_luan": "như nền"},
+                                 "fvg:1": {"n": 39127, "tl": 0.491, "lo": 0.463, "hi": 0.519, "nen": 0.477, "ket_luan": "như nền"},
+                                 "fvg:-1": {"n": 35805, "tl": 0.485, "lo": 0.457, "hi": 0.513, "nen": 0.47, "ket_luan": "như nền"},
+                                 "ct:CHoCH:-1": {"n": 5382, "tl": 0.466, "lo": 0.433, "hi": 0.5, "nen": 0.469, "ket_luan": "như nền"}}}
+    ma_js = f"const x = {json.dumps(x)}; const DATA = {{'thong_ke_mau.json': {json.dumps(tkm)}}};\n" + r"""
+      const CP = window.BD_DOC, T = CP._thu, B = {ch, nen, x, n: x.c.length, ma: "AAA"}; globalThis.BD_DK = B;
+      const panel = {hidden: true, innerHTML: ""};
+      (async () => { await CP.ve(B, {el: mk(), panel, mo: true, ten_khung: "khung ngày"});
+        const b = T.thong_ke(x, [5, 10, 15], 1, 5);
+        console.log(JSON.stringify({p: panel.innerHTML, loai: PR.d.items.map(i => i.loai), b})); })();
+    """
+    gon = _chay(ma_js)
+    assert "ob" not in gon["loai"] and "fvg" not in gon["loai"] and "ct" not in gon["loai"]
+    assert re.search(r"Ẩn \d+ mục \(mẫu nến / mẫu hình / cấu trúc SMC\) không hơn nền", gon["p"])
+    b = gon["b"]
+    assert 0 < b["nen"] < 1 and b["tin"] == (b["n"] >= 10 and b["lo"] > b["nen"])
+    du = _chay(ma_js, truoc='localStorage.getItem = k => k === "cp_cai_dat" ? JSON.stringify({kieu: "du"}) : null;\n')
+    assert "ob" in du["loai"] and "Ẩn " not in du["p"]
+    assert "Trên 97 mã thanh khoản (10753 lần)" in du["p"] and "nền 47.0% → như nền" in du["p"]
+    assert "Nền: giá tự đi cùng hướng sau 5 phiên" in du["p"]
+
+
+def test_thong_ke_mau_tren_ro(tmp_path):
+    """thi_truong/thong_ke_mau.js: chạy hàm doc_bd.js trên rổ mã (gia_dai) → mỗi loại có n, tỷ lệ, khoảng tin cậy theo tuần, nền
+    của chính mã, kết luận; < 20 mã → giữ file cũ."""
+    import numpy as np
+    if not shutil.which("node"):
+        pytest.skip("không có node")
+    (tmp_path / "gia_dai").mkdir()
+    r = np.random.default_rng(5)
+    hang = {}
+    for k in range(25):
+        c = 20 * np.exp(np.cumsum(r.normal(0.0003, 0.022, 900)))
+        o = c * np.exp(r.normal(0, 0.006, 900))
+        h = np.maximum(o, c) * np.exp(np.abs(r.normal(0, 0.01, 900)))
+        l_ = np.minimum(o, c) * np.exp(-np.abs(r.normal(0, 0.01, 900)))
+        gd = {"d0": "2020-01-02", "g": [0] + [1] * 899, "o": list(np.round(o, 2)), "h": list(np.round(h, 2)), "l": list(np.round(l_, 2)),
+              "c": list(np.round(c, 2)), "v": [1000] * 900}
+        (tmp_path / "gia_dai" / f"M{k:02d}.json").write_text(json.dumps(gd))
+        hang[f"M{k:02d}"] = k + 1
+    (tmp_path / "loc.json").write_text(json.dumps({"hang_gtgd": hang}))
+    kq = subprocess.run(["node", "thi_truong/thong_ke_mau.js", str(tmp_path), str(tmp_path / "loc.json"), "30"], capture_output=True, text=True, timeout=120)
+    assert kq.returncode == 0, kq.stderr
+    assert "Thống kê mẫu: 25 mã" in kq.stdout
+    t = json.loads((tmp_path / "thong_ke_mau.json").read_text())
+    assert t["so_ma"] == 25 and t["sau"] == 5 and t["sau_mh"] == 10
+    assert {"fvg:1", "fvg:-1", "ob:1", "ob:-1"} <= set(t["loai"]) and any(k.startswith("nen:") for k in t["loai"])
+    for z in t["loai"].values():
+        assert z["n"] >= z["so_tuan"] > 0 and 0 <= z["lo"] <= z["tl"] <= z["hi"] <= 1 and 0 < z["nen"] < 1
+        assert z["ket_luan"] in ("ít mẫu", "hơn nền", "kém nền", "như nền")
+    (tmp_path / "thong_ke_mau.json").unlink()
+    (tmp_path / "loc.json").write_text(json.dumps({"hang_gtgd": {"M00": 1, "M01": 2}}))
+    kq = subprocess.run(["node", "thi_truong/thong_ke_mau.js", str(tmp_path), str(tmp_path / "loc.json")], capture_output=True, text=True, timeout=60)
+    assert kq.returncode == 0 and "giữ file cũ" in kq.stdout and not (tmp_path / "thong_ke_mau.json").exists()
