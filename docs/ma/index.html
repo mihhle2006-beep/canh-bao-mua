@@ -1508,7 +1508,9 @@ async function ve_bd_gia(el, x0, them = {}) {
   if (pn.length > 1) { const k = pn.length - 1; pn[0].setStretchFactor(fs ? 3 : cao0 / cao1); for (let j = 1; j <= k; j++) pn[j].setStretchFactor(fs ? Math.min(1, 2.4 / k) : 1); }
   // --- vùng xem
   const ytd = PHUT(kh) ? 0 : x.d.findIndex(d => d >= String(x.d[n - 1]).slice(0, 4) + "-01-01");
-  const so_nen = PHUT(kh) ? (ST.nen < 0 ? n : Math.min(n, ST.nen * ({1: 225, 5: 45, 15: 15, 60: 5})[kh])) : ST.nen < 0 ? Math.max(3, n - ytd) : kh === "D" ? ST.nen : kh === "W" ? Math.ceil(ST.nen / 5) : Math.ceil(ST.nen / 21);
+  // Tuần / Tháng: ít nhất đủ nến lấp khung (~9 px / nến) – giữ đúng khoảng của khung Ngày thì 6T chỉ còn 26 nến tuần / 7 nến tháng, nến to thô
+  const so_nen = PHUT(kh) ? (ST.nen < 0 ? n : Math.min(n, ST.nen * ({1: 225, 5: 45, 15: 15, 60: 5})[kh])) : kh === "D" ? (ST.nen < 0 ? Math.max(3, n - ytd) : ST.nen)
+    : Math.max(Math.floor((el.clientWidth || 600) / 9), ST.nen < 0 ? n - ytd : Math.ceil(ST.nen / (kh === "W" ? 5 : 21)));
   const phai = n + (CB.non && non ? H : 0) + 3;
   if (them.giu_vung) { const v = {...them.giu_vung};
     if (tua && them.n_cu != null && them.n_cu !== n && v.to >= them.n_cu - 3) { v.from += n - them.n_cu; v.to += n - them.n_cu; }   // tua từng nến: trượt khung theo
