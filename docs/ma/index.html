@@ -322,6 +322,7 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .gc-nut{border:1px solid #e3e7ee;background:#fff;border-radius:6px;padding:2px 6px;cursor:pointer}.gc-nut.co{background:#fff3c4;border-color:#e8a400}
 .fs-gc{padding:4px 8px;background:#fffbe6;border-bottom:1px solid #f0e2a8}.fs-gc textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13px;border:1px solid #e3d48f;border-radius:6px;padding:4px 6px;resize:vertical;background:#fff}
 .cb-ss{width:8em;margin-left:4px}
+.cb-fib{padding-left:24px;flex-wrap:wrap;gap:4px}.cb-fib input{width:4.2em;font:inherit;padding:2px 4px;border:1px solid var(--vien);border-radius:6px}
 .phim-tat{position:fixed;z-index:400;left:50%;top:20%;transform:translateX(-50%);background:#fff;border:1px solid #d7dde6;border-radius:10px;box-shadow:0 8px 30px #0003;padding:12px 16px;font-size:13px}.phim-tat td{padding:2px 8px}.phim-tat kbd{background:#f2f4f7;border:1px solid #d7dde6;border-radius:4px;padding:0 5px;font:inherit}
 .bao-mang{position:fixed;z-index:500;left:50%;bottom:12px;transform:translateX(-50%);background:#4b5565;color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;max-width:calc(100% - 32px)}
 .luoi-rong main{max-width:none;padding-top:6px}.luoi-tren{display:flex;gap:10px;align-items:center;margin-bottom:6px;font-size:13px}.luoi-tren a{text-decoration:none;color:inherit}.nhung [data-luoi-mo]{display:none}.luoi{display:grid;grid-template-columns:1fr 1fr;gap:6px}.luoi iframe{width:100%;height:calc((100vh - var(--dau,56px) - 48px) / 2);min-height:320px;border:1px solid #e3e7ee;border-radius:8px}
@@ -999,7 +1000,7 @@ const KHOA_CB = "ma_chi_bao";
 const CB_DUOI = [["rs", "RS so VN-Index (đỉnh mới 52 tuần)", ""], ["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
   ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"],
   ["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]];
-const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: true, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
+const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: true, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
   if (Array.isArray(v.ma_tb)) ST.ma_tb = v.ma_tb.filter(m => [10, 20, 50, 200].includes(m));
@@ -1011,6 +1012,7 @@ const CB = cb_mac();
   if (typeof v.ss === "string" && (v.ss === "" || v.ss === "VNINDEX" || MA_OK(v.ss))) CB.ss = v.ss;
   if (Array.isArray(v.duoi)) CB.duoi = [...new Set(v.duoi.filter(k => CB_DUOI.some(d => d[0] === k)))];
   if ([5, 20, 60].includes(v.non_h)) CB.non_h = v.non_h;
+  if (Number.isInteger(v.fib_n) && v.fib_n >= 10 && v.fib_n <= 2000) CB.fib_n = v.fib_n;
   if (["ls", "sigma"].includes(v.non_kieu)) CB.non_kieu = v.non_kieu;
   for (const k in CB_TS) if (Array.isArray(v.ts?.[k])) CB.ts[k] = cb_ts_dung(k, v.ts[k]);
 } catch (e) {} })();
@@ -1030,7 +1032,7 @@ function menu_cb() {
       <div class="cb-dong"><label title="CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán"><input type="checkbox" data-cbx="mk"${ST.mk ? " checked" : ""}>Sự kiện (cổ tức, ĐHCĐ, nội bộ)</label></div></div>
     <div class="cb-nhom"><b>Khung riêng bên dưới</b>${dong("kl_ma", CB.kl_ma, "Đường TB 20 khối lượng")}
       ${CB_DUOI.map(([k, t, ts]) => dong("p:" + k, CB.duoi.includes(k), t, ts)).join("")}</div>
-    <div class="cb-nhom"><b>Tự vẽ</b>${dong("kh", CB.kh, "Kế hoạch thoát của hệ (khi bot khuyến nghị mua)")}${dong("nen", CB.nen, "Nền tích lũy / VCP")}${dong("fib", CB.fib, "Fibonacci tự động")}${dong("vp", CB.vp, "Volume Profile tự động")}${dong("bg", CB.bg, "Khớp theo bước giá hôm nay")}</div>
+    <div class="cb-nhom"><b>Tự vẽ</b>${dong("kh", CB.kh, "Kế hoạch thoát của hệ (khi bot khuyến nghị mua)")}${dong("nen", CB.nen, "Nền tích lũy / VCP")}${dong("fib", CB.fib, "Fibonacci tự động")}<div class="cb-dong cb-fib">Tìm nhịp trong <span class="nut">${[30, 60, 120, 250].map(h => `<button type="button" data-cbf="${h}" aria-pressed="${CB.fib_n === h}">${h}</button>`).join("")}</span><input type="number" data-cbfn value="${CB.fib_n}" min="10" max="2000" step="1" aria-label="Số nến tự chọn cho Fibonacci tự động" title="Tự nhập số nến (10–2000)"> nến gần nhất</div>${dong("vp", CB.vp, "Volume Profile tự động")}${dong("bg", CB.bg, "Khớp theo bước giá hôm nay")}</div>
     <div class="cb-nhom"><b>Nón dự báo</b>${dong("non", CB.non, "Hiện nón xác suất")}
       <div class="cb-dong">Tầm <span class="nut">${[5, 20, 60].map(h => `<button type="button" data-cbh="${h}" aria-pressed="${CB.non_h === h}">${h}</button>`).join("")}</span> phiên</div>
       <div class="cb-dong"><span class="nut"><button type="button" data-cbk="ls" aria-pressed="${CB.non_kieu === "ls"}" title="Phân vị mức tăng / giảm thực tế của chính mã trong 3 năm (ngày) / 5 năm (tuần) / toàn bộ (tháng)">Phân vị lịch sử</button><button type="button" data-cbk="sigma" aria-pressed="${CB.non_kieu === "sigma"}" title="Biến động σ 60 phiên gần nhất, loe theo căn bậc hai thời gian">σ 60 phiên</button></span></div>
@@ -1039,6 +1041,13 @@ function menu_cb() {
     <div class="cb-cuoi"><button type="button" data-cbmd>Về mặc định</button></div>`;
 }
 const menu_khoi = () => `<div class="fs-cb"><button type="button" data-cbmo>ƒx Chỉ báo ▾</button><div class="fs-cb-ds" hidden>${menu_cb()}</div></div>`;
+function fib_n_dat(v) {                                 // số nến tìm nhịp của Fibonacci tự động (nút 30 / 60 / 120 / 250 hoặc tự nhập) → bật Fibonacci
+  CB.fib_n = v; CB.fib = true;
+  document.querySelectorAll("[data-cbf]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.cbf === v)));
+  document.querySelectorAll("[data-cbfn]").forEach(z => { z.value = v; });
+  document.querySelectorAll('[data-cbx="fib"]').forEach(b => { b.checked = true; });
+  return cb_doi();
+}
 function cb_doi() { cb_luu(); if (FS) return fs_ve(true); bd_ve_lai(); }
 function bd_ve_lai() { if (!BD_DK?.lai) return; let v = null; try { v = BD_GIA?.timeScale().getVisibleLogicalRange(); } catch (e) {} BD_DK.lai(v); }
 document.addEventListener("change", e => {
@@ -1053,6 +1062,7 @@ document.addEventListener("change", e => {
     return cb_doi();
   }
   if (t.matches?.("[data-cggon]")) return dat_cg(t.checked);
+  if (t.matches?.("[data-cbfn]")) { const v = Math.round(+t.value); if (v >= 10 && v <= 2000) fib_n_dat(v); else t.value = CB.fib_n; return; }
   if (t.matches?.("[data-cbss]")) { const v = t.value.trim().toUpperCase(); CB.ss = v === "VNINDEX" || MA_OK(v) ? v : ""; t.value = CB.ss; return cb_doi(); }
   if (t.matches?.("[data-cbt]")) {
     const [k, j] = t.dataset.cbt.split(":"), a = CB.ts[k].slice(); a[+j] = t.value; CB.ts[k] = cb_ts_dung(k, a); t.value = CB.ts[k][+j];
@@ -1066,6 +1076,8 @@ document.addEventListener("click", e => {
   if (mo) { e.stopPropagation(); const d = mo.parentElement.querySelector(".fs-cb-ds"); d.hidden = !d.hidden; return; }
   const g = t.closest("[data-cbg]");
   if (g) { const r = g.closest(".fs-cb-ds")?.querySelector(`[data-cbtk="${g.dataset.cbg}"]`); if (r) r.hidden = !r.hidden; return; }
+  const f = t.closest("[data-cbf]");
+  if (f) return fib_n_dat(+f.dataset.cbf);
   const h = t.closest("[data-cbh]"), k = t.closest("[data-cbk]");
   if (h || k) { if (h) CB.non_h = +h.dataset.cbh; if (k) CB.non_kieu = k.dataset.cbk; CB.non = true;
     document.querySelectorAll("[data-cbh]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.cbh === CB.non_h)));
@@ -1451,10 +1463,10 @@ async function ve_bd_gia(el, x0, them = {}) {
       (bc ? ` <span class="phu" title="Mọi lần trong quá khứ mã này đóng cửa vượt đỉnh một nền (≥ 15 ${u_}, biên độ ≤ 15%, gần đỉnh 52 tuần): sau đó lên +10% trước khi thủng đáy nền bao nhiêu % số lần; trung vị lãi 20 ${u_} sau ngày vượt">· trên mã: ${bc.n} lần vượt nền, ${pt(bc.thang, 0, false)} lên +10% trước khi thủng đáy nền${bc.tv20 != null ? `, trung vị 20 ${u_} ${pt(bc.tv20, 1)}` : ""}</span>` : "");
   }
   if (CB.fib && n > 20) {
-    const f = fib_tu_dong(x);
+    const f = fib_tu_dong(x, CB.fib_n);
     nen.attachPrimitive(new FibPrim(ch, nen, {i0: Math.min(f.ih, f.il), i1: Math.max(f.ih, f.il), a: f.len ? x.l[f.il] : x.h[f.ih], b: f.len ? x.h[f.ih] : x.l[f.il], muc: f.muc}));
     f.muc.forEach(([k, v], j) => nen.createPriceLine({price: v, color: MAU_FIB_TD[j], lineVisible: false, axisLabelVisible: true, title: ""}));
-    tv_chu += `<br><span style="color:#8a6100">Fibonacci tự động: nhịp ${f.len ? "tăng" : "giảm"} ${ngay_vn(x.d[f.len ? f.il : f.ih])} → ${ngay_vn(x.d[f.len ? f.ih : f.il])} (120 ${u_} gần nhất) · thoái lui 38,2–61,8% ${ty_(f.muc[2][1])}–${ty_(f.muc[4][1])}</span>`;
+    tv_chu += `<br><span style="color:#8a6100">Fibonacci tự động: nhịp ${f.len ? "tăng" : "giảm"} ${ngay_vn(x.d[f.len ? f.il : f.ih])} → ${ngay_vn(x.d[f.len ? f.ih : f.il])} (${CB.fib_n} ${u_} gần nhất) · thoái lui 38,2–61,8% ${ty_(f.muc[2][1])}–${ty_(f.muc[4][1])}</span>`;
   }
   if (CB.vp && n > 10) {
     const p_ = vp_tinh(x, Math.max(0, n - Math.min(so_nen_vp(kh), n)), n - 1);
