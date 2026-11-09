@@ -836,6 +836,59 @@ function non_do_trung(c, H, kieu, L, Ls, so_moc = 60) {  // tại ~60 mốc tron
   }
   return n >= 20 ? {n, p: trong.map(v => v / n)} : null;
 }
+// ---- TỰ VẼ: nền tích lũy / VCP · Fibonacci · Volume Profile (hàm thuần trên chuỗi nến x)
+const so_nen_vp = kh => ({D: 120, W: 104, M: 60})[kh] || 225;   // VP: ~6 tháng ngày / 2 năm tuần / 5 năm tháng / 1 phiên phút
+function nen_tai(x, i, Lmin = 15, Lmax = 60, rong = 0.18) {   // nền dài nhất kết thúc ở nến i: (cao nhất − thấp nhất) / cao nhất ≤ rong
+  let cao = -Infinity, thap = Infinity, tot = null;
+  for (let L = 1; L <= Math.min(Lmax, i + 1); L++) {
+    const j = i - L + 1; if (!(x.h[j] > 0) || !(x.l[j] > 0)) break;
+    cao = Math.max(cao, x.h[j]); thap = Math.min(thap, x.l[j]);
+    if ((cao - thap) / cao > rong) break;
+    if (L >= Lmin) tot = {i0: j, i1: i, cao, thap, L};
+  }
+  if (!tot) return null;
+  const {i0, i1} = tot, ba = Math.floor(tot.L / 3), v = x.v || [];
+  const sau = k => { let h = -Infinity, l = Infinity; for (let j = i0 + k * ba; j < (k === 2 ? i1 + 1 : i0 + (k + 1) * ba); j++) { h = Math.max(h, x.h[j]); l = Math.min(l, x.l[j]); } return (h - l) / h; };
+  const tbv = (a, b) => { let t = 0, m = 0; for (let j = a; j <= b; j++) if (v[j] > 0) { t += v[j]; m++; } return m ? t / m : null; };
+  const d = [0, 1, 2].map(sau), k1 = tbv(Math.max(i0, i1 - 9), i1), k0 = tbv(i0, i1);
+  return {...tot, bien: (tot.cao - tot.thap) / tot.cao, co: d, vcp: d[0] > d[1] && d[1] > d[2], kl: k1 && k0 ? k1 / k0 : null};
+}
+function nen_bang_chung(x, Lmin = 15) {               // các lần VƯỢT NỀN trên chính mã: đóng cửa > đỉnh nền ≤ 20 nến sau nền → lên +10% trước khi thủng đáy nền?
+  const N = x.c.length, lai = []; let n = 0, thang = 0;
+  for (let i = Lmin; i < N - 21;) {
+    const b = nen_tai(x, i); if (!b) { i++; continue; }
+    let j = -1;
+    for (let k = i + 1; k <= Math.min(N - 1, i + 20); k++) { if (x.l[k] < b.thap) break; if (x.c[k] > b.cao) { j = k; break; } }
+    if (j < 0) { i++; continue; }
+    n++; let kq = 0;
+    for (let k = j + 1; k < Math.min(N, j + 61) && !kq; k++) { if (x.l[k] < b.thap) kq = -1; else if (x.h[k] >= x.c[j] * 1.1) kq = 1; }
+    if (kq === 1) thang++;
+    if (j + 20 < N) lai.push(x.c[j + 20] / x.c[j] - 1);
+    i = j + 1;
+  }
+  return n ? {n, thang: thang / n, tv20: trung_vi(lai)} : null;
+}
+function fib_tu_dong(x, so = 120) {                   // nhịp lớn nhất trong so nến gần nhất: đáy trước đỉnh → thoái lui từ đỉnh xuống; ngược lại từ đáy lên
+  const N = x.c.length, a = Math.max(0, N - so); let ih = a, il = a;
+  for (let i = a; i < N; i++) { if (x.h[i] > x.h[ih]) ih = i; if (x.l[i] < x.l[il]) il = i; }
+  const H = x.h[ih], L = x.l[il], len = il < ih;
+  return {len, ih, il, muc: [0, .236, .382, .5, .618, .786, 1].map(f => [f, len ? H - (H - L) * f : L + (H - L) * f])};
+}
+function vp_tinh(x, i0, i1, so = 24) {                 // KL theo giá: KL mỗi nến rải đều trên khoảng cao–thấp → so ô giá; POC + vùng giá trị 70%
+  let lo = Infinity, hi = -Infinity;
+  for (let i = i0; i <= i1; i++) if (x.h[i] > 0 && x.l[i] > 0) { lo = Math.min(lo, x.l[i]); hi = Math.max(hi, x.h[i]); }
+  if (!(hi > lo)) return null;
+  const b = (hi - lo) / so, v = new Array(so).fill(0);
+  for (let i = i0; i <= i1; i++) {
+    if (!(x.v?.[i] > 0) || !(x.h[i] > 0)) continue;
+    const a = Math.min(so - 1, Math.floor((x.l[i] - lo) / b)), z = Math.min(so - 1, Math.floor((x.h[i] - lo) / b));
+    for (let k = a; k <= z; k++) v[k] += x.v[i] / (z - a + 1);
+  }
+  const tong = v.reduce((p, q) => p + q, 0); if (!tong) return null;
+  let poc = v.indexOf(Math.max(...v)), d = poc, t = poc, s_ = v[poc];
+  while (s_ < 0.7 * tong && (d > 0 || t < so - 1)) { if (t >= so - 1 || (d > 0 && v[d - 1] >= v[t + 1])) s_ += v[--d]; else s_ += v[++t]; }
+  return {lo, b, v, poc, d, t, gia_poc: lo + (poc + .5) * b, va: [lo + d * b, lo + (t + 1) * b], n: i1 - i0 + 1};
+}
 function ngay_toi(d, k, khung) {                         // k mốc thời gian sau ngày d theo khung (D: bỏ T7 / CN; W: +7 ngày; M: +1 tháng)
   const o = []; let t = d;
   if (/^\d+$/.test(String(khung))) {                     // khung phút: d = giây theo giờ VN; phiên 9:15–11:30, 13:00–14:45
@@ -931,14 +984,14 @@ const KHOA_CB = "ma_chi_bao";
 const CB_DUOI = [["rs", "RS so VN-Index (đỉnh mới 52 tuần)", ""], ["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
   ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"],
   ["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]];
-const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
+const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, vp: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
   if (Array.isArray(v.ma_tb)) ST.ma_tb = v.ma_tb.filter(m => [10, 20, 50, 200].includes(m));
   if (Array.isArray(v.ema)) ST.ema = v.ema.filter(m => [9, 21, 50, 200].includes(m));
   if ([0, 20, 52].includes(v.dc)) ST.dc = v.dc;
   if (typeof v.mk === "boolean") ST.mk = v.mk;
-  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
+  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "fib", "vp", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
   if (typeof v.ss === "string" && (v.ss === "" || v.ss === "VNINDEX" || MA_OK(v.ss))) CB.ss = v.ss;
   if (Array.isArray(v.duoi)) CB.duoi = [...new Set(v.duoi.filter(k => CB_DUOI.some(d => d[0] === k)))];
   if ([5, 20, 60].includes(v.non_h)) CB.non_h = v.non_h;
@@ -961,6 +1014,7 @@ function menu_cb() {
       <div class="cb-dong"><label title="CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán"><input type="checkbox" data-cbx="mk"${ST.mk ? " checked" : ""}>Sự kiện (cổ tức, ĐHCĐ, nội bộ)</label></div></div>
     <div class="cb-nhom"><b>Khung riêng bên dưới</b>${dong("kl_ma", CB.kl_ma, "Đường TB 20 khối lượng")}
       ${CB_DUOI.map(([k, t, ts]) => dong("p:" + k, CB.duoi.includes(k), t, ts)).join("")}</div>
+    <div class="cb-nhom"><b>Tự vẽ</b>${dong("kh", CB.kh, "Kế hoạch thoát của hệ (khi bot khuyến nghị mua)")}${dong("nen", CB.nen, "Nền tích lũy / VCP")}${dong("fib", CB.fib, "Fibonacci tự động")}${dong("vp", CB.vp, "Volume Profile tự động")}</div>
     <div class="cb-nhom"><b>Nón dự báo</b>${dong("non", CB.non, "Hiện nón xác suất")}
       <div class="cb-dong">Tầm <span class="nut">${[5, 20, 60].map(h => `<button type="button" data-cbh="${h}" aria-pressed="${CB.non_h === h}">${h}</button>`).join("")}</span> phiên</div>
       <div class="cb-dong"><span class="nut"><button type="button" data-cbk="ls" aria-pressed="${CB.non_kieu === "ls"}" title="Phân vị mức tăng / giảm thực tế của chính mã trong 3 năm (ngày) / 5 năm (tuần) / toàn bộ (tháng)">Phân vị lịch sử</button><button type="button" data-cbk="sigma" aria-pressed="${CB.non_kieu === "sigma"}" title="Biến động σ 60 phiên gần nhất, loe theo căn bậc hai thời gian">σ 60 phiên</button></span></div>
@@ -1028,6 +1082,19 @@ class DaiPrim {
         run.push(p);
       }
       xong();
+    });
+  }
+}
+class VpPrim {                                           // Volume Profile: thanh ngang ở mép phải khung giá (vùng giá trị đậm hơn) + POC
+  constructor(s, d) { this.s = s; this.d = d; this.v = [{zOrder: () => "bottom", renderer: () => ({draw: t => this.ve(t)})}]; }
+  paneViews() { return this.v; }
+  ve(t) {
+    const {lo, b, v, d, t: tr, poc} = this.d, m = Math.max(...v);
+    t.useBitmapCoordinateSpace(({context: c, bitmapSize: bs, verticalPixelRatio: vr}) => {
+      const rong = bs.width * 0.22;
+      v.forEach((q, k) => { const y1 = this.s.priceToCoordinate(lo + (k + 1) * b), y0 = this.s.priceToCoordinate(lo + k * b); if (y1 == null || y0 == null) return;
+        const w = rong * q / m; c.fillStyle = k === poc ? "rgba(232,113,10,.55)" : k >= d && k <= tr ? "rgba(31,111,235,.30)" : "rgba(122,132,148,.20)";
+        c.fillRect(bs.width - w, y1 * vr + 1, w, Math.max(1, (y0 - y1) * vr - 2)); });
     });
   }
 }
@@ -1243,8 +1310,9 @@ async function ve_bd_gia(el, x0, them = {}) {
   for (const m of ST.ma_tb) { ma[m] = sma(x.c, m); duong(ma[m], {color: MAU_MA[m]}); }
   const MAU_EMA = {9: "#c2185b", 21: "#00897b", 50: "#6d4c41", 200: "#455a64"}, em = {};
   for (const m of ST.ema) { em[m] = ema_bd(x.c, m); duong(em[m], {color: MAU_EMA[m], lineStyle: 2}); }
+  const kh_bot = CB.kh && them.ma && !PHUT(kh) && !tua ? BOT[them.ma] : null;   // kế hoạch thoát: cần MA10 tuần
   let m10t = null;
-  if (CB.ma10t && kh !== "M") {
+  if ((CB.ma10t || kh_bot) && kh !== "M") {
     if (kh === "D") m10t = cb_ma10_tuan(x.d, x.c);
     else if (kh === "W") m10t = sma(x.c, 10);
     else if (PHUT(kh) && x0?.d?.length) { const md = cb_ma10_tuan(x0.d, x0.c), mp = new Map(x0.d.map((d, i) => [d, md[i]]));
@@ -1299,6 +1367,42 @@ async function ve_bd_gia(el, x0, them = {}) {
     non = non_du_bao(x.c, H, CB.non_kieu, ({D: 750, W: 260})[kh] || 1e6, ({D: 60, W: 26})[kh] || 12);
     if (non) { non.H = H; non.i0 = n - 1; non.p = non.q.map(a => a.map(r => r * x.c[n - 1])); nen.attachPrimitive(new NonPrim(ch, nen, non));
       if (!PHUT(kh)) non.trung = non_do_trung(x.c, H, CB.non_kieu, ({D: 750, W: 260})[kh] || 1e6, ({D: 60, W: 26})[kh] || 12); }
+  }
+  // --- tự vẽ: kế hoạch thoát (tín hiệu bot) · nền tích lũy / VCP · Fibonacci · Volume Profile
+  const ty_ = v => so(v, 2), u_ = {D: "phiên", W: "tuần", M: "tháng"}[kh] || "nến";
+  let tv_chu = "";
+  if (kh_bot) {
+    const vao = (kh_bot[2] + kh_bot[3]) / 2, cl = kh_bot[4], R = vao - cl;
+    if (R > 0) {
+      for (const [v, t, c, s_] of [[cl, "Cắt lỗ", "#d1342b", 0], [vao, "Vào", "#1f6feb", 0], [vao + R, "1R", "#7a8494", 2], [vao + 2 * R, "2R", "#0f8a4a", 2]])
+        nen.createPriceLine({price: v, color: c, lineWidth: 1, lineStyle: s_, axisLabelVisible: true, title: t});
+      for (const v of [cl, vao + 2 * R]) duong(x.d.map((_, i) => i === n - 1 ? v : null), {color: "rgba(0,0,0,0)", lastValueVisible: false});   // trục giá tự co giãn đủ cắt lỗ … 2R
+      const het = kh === "D" && n ? ngay_toi(x.d[n - 1], 63, "D").pop() : null;
+      tv_chu += `<br><span style="color:#1f4fa8">Kế hoạch thoát (giả sử mua ${ty_(vao)} giữa vùng mua): cắt lỗ ${ty_(cl)} (${pt(cl / vao - 1, 1)}) · đạt 1R ${ty_(vao + R)} → cắt lỗ lên hoà vốn / đóng cửa cao nhất − 3×ATR · đạt 2R ${ty_(vao + 2 * R)} → bán khi tuần đóng dưới MA10 tuần (cam), sàn khoá 1R${het ? ` · tới ${ngay_vn(het)} (63 phiên) chưa đạt 1R → bán` : ""}</span>`;
+    }
+  } else if (CB.kh && !PHUT(kh)) tv_chu += `<br><span class="phu">Kế hoạch thoát: chỉ vẽ khi bot đang khuyến nghị mua mã này</span>`;
+  if (CB.nen && n > 30) {
+    let b = nen_tai(x, n - 1), vua = false;
+    if (!b) for (let k = 1; k <= 5 && !b; k++) { const z = nen_tai(x, n - 1 - k); if (z && x.c[n - 1] > z.cao) { b = z; vua = true; } }
+    if (b) {
+      const a = x.d.map((_, i) => i >= b.i0 && i <= b.i1 ? b.cao : null), d_ = x.d.map((_, i) => i >= b.i0 && i <= b.i1 ? b.thap : null);
+      nen.attachPrimitive(new DaiPrim(ch, nen, a, d_, () => "rgba(155,63,209,.13)"));
+      nen.createPriceLine({price: b.cao, color: "#9b3fd1", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Đỉnh nền"});
+    }
+    const bc = kh === "D" || kh === "W" ? nen_bang_chung(x) : null;
+    tv_chu += `<br><span style="color:#7b2fa8">` + (b ? `${vua ? "Vừa vượt nền" : "Đang trong nền"} ${b.L} ${u_} · biên độ ${pt(b.bien, 0, false)}${b.vcp ? ` · VCP co hẹp ${b.co.map(z => pt(z, 0, false)).join(" → ")}` : ""}${b.kl ? ` · KL 10 ${u_} cuối = ${pt(b.kl, 0, false)} TB nền` : ""}${vua ? "" : ` · vượt nền khi đóng cửa > ${ty_(b.cao)}`}`
+      : "Chưa có nền tích lũy (≥ 15 nến biên độ ≤ 18%)") + `</span>` +
+      (bc ? ` <span class="phu" title="Mọi lần trong quá khứ mã này đóng cửa vượt đỉnh một nền (≥ 15 ${u_} biên độ ≤ 18%): sau đó lên +10% trước khi thủng đáy nền bao nhiêu % số lần; trung vị lãi 20 ${u_} sau ngày vượt">· trên mã: ${bc.n} lần vượt nền, ${pt(bc.thang, 0, false)} lên +10% trước khi thủng đáy nền${bc.tv20 != null ? `, trung vị 20 ${u_} ${pt(bc.tv20, 1)}` : ""}</span>` : "");
+  }
+  if (CB.fib && n > 20) {
+    const f = fib_tu_dong(x);
+    f.muc.forEach(([k, v]) => nen.createPriceLine({price: v, color: "#b88a00", lineWidth: 1, lineStyle: k === 0 || k === 1 ? 0 : 1, axisLabelVisible: true, title: `Fib ${so(k * 100, 1)}%`}));
+    tv_chu += `<br><span style="color:#8a6100">Fibonacci tự động: nhịp ${f.len ? "tăng" : "giảm"} ${ngay_vn(x.d[f.len ? f.il : f.ih])} → ${ngay_vn(x.d[f.len ? f.ih : f.il])} (120 ${u_} gần nhất) · thoái lui 38,2–61,8% ${ty_(f.muc[2][1])}–${ty_(f.muc[4][1])}</span>`;
+  }
+  if (CB.vp && n > 10) {
+    const p_ = vp_tinh(x, Math.max(0, n - Math.min(so_nen_vp(kh), n)), n - 1);
+    if (p_) { nen.attachPrimitive(new VpPrim(nen, p_)); nen.createPriceLine({price: p_.gia_poc, color: "#e8710a", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "POC"});
+      tv_chu += `<br><span style="color:#b85a00">Volume Profile ${p_.n} ${u_} gần nhất: giá khớp nhiều nhất (POC) ${ty_(p_.gia_poc)} · vùng 70% khối lượng ${ty_(p_.va[0])}–${ty_(p_.va[1])}</span>`; }
   }
   // --- khung riêng bên dưới (mỗi chỉ báo 1 khung, trục giá riêng)
   const PH = [], co_dinh = {autoscaleInfoProvider: () => ({priceRange: {minValue: 0, maxValue: 100}})};
@@ -1418,7 +1522,7 @@ async function ve_bd_gia(el, x0, them = {}) {
       (ich && ich.tenkan[i] != null ? `<br>Ichimoku <span style="color:#0496ff">Tenkan ${so(ich.tenkan[i], 2)}</span> · <span style="color:#991515">Kijun ${so(ich.kijun[i], 2)}</span>${ich.spa[i] != null ? ` · Mây ${so(Math.min(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}–${so(Math.max(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}` : ""}` : "") +
       (sar && sar.v[i] != null ? `<br><span style="color:${sar.len[i] ? "#0f8a4a" : "#d1342b"}">SAR ${so(sar.v[i], 2)}</span>` : "") +
       (dc && dc.tr[i] != null ? `<br><span style="color:#a87b00">DC ${dc.p} Trên ${so(dc.tr[i], 2)} · Giữa ${so(dc.gi[i], 2)} · Dưới ${so(dc.du[i], 2)}</span>` : "") +
-      (ss && ss.v[i] != null ? `<br><span style="color:#9b3fd1">${esc(ss.ten)} ${so(ss.v[i], 2)}</span> <span class="phu">(thang % từ nến đầu vùng xem)</span>` : "") + sap_chu + lh_chu + non_chu;
+      (ss && ss.v[i] != null ? `<br><span style="color:#9b3fd1">${esc(ss.ten)} ${so(ss.v[i], 2)}</span> <span class="phu">(thang % từ nến đầu vùng xem)</span>` : "") + sap_chu + lh_chu + tv_chu + non_chu;
     PH.forEach((f, j) => { cp[j].innerHTML = f(i); });
   };
   viet(n - 1); BD_DK.viet = viet;
