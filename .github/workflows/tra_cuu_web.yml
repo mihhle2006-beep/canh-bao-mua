@@ -93,7 +93,10 @@ jobs:
           restore-keys: tra-cuu-
 
       - name: Dựng dữ liệu tra cứu (BCTC, định giá, kế hoạch, bất thường, chiến lược)
-        run: python -m ptcp.web_tra_cuu --ra "$GITHUB_WORKSPACE/docs/ma/du_lieu"
+        run: |
+          python -m ptcp.web_tra_cuu --ra "$GITHUB_WORKSPACE/docs/ma/du_lieu"
+          # lệnh backtest luật hệ B theo mã (ptcp/lich_su_ma – workflow "Loc quy But Pha") → biểu đồ "Lệnh của hệ"
+          cp ptcp/lich_su_lenh.json "$GITHUB_WORKSPACE/docs/ma/du_lieu/lenh_he.json" 2>/dev/null || echo "Chưa có lich_su_lenh.json"
 
       - name: Dữ liệu doanh nghiệp & giá (Vietcap IQ / CafeF / Simplize – xoay vòng)
         working-directory: .
