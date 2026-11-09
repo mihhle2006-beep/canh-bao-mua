@@ -31,9 +31,7 @@ def gui(noi_dung, rieng_tu=False, anh=None, nut=None):
     from .trinh_bay import dinh_dang_html, vn_hoa
     noi_dung = vn_hoa(noi_dung)
     token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-    if rieng_tu and os.environ.get("GITHUB_ACTIONS"):
-        print(f"(tin riêng tư {len(noi_dung)} ký tự – chỉ gửi Telegram, không in log)")
-    else:
+    if not (rieng_tu and os.environ.get("GITHUB_ACTIONS")):     # log công khai: tin riêng tư không để lại dấu (vị trí, độ dài)
         print(noi_dung)
     if not (token and chat):
         print("(chưa đặt TELEGRAM_TOKEN / TELEGRAM_CHAT_ID → chỉ in ra màn hình)")

@@ -701,6 +701,40 @@ def test_trong_phien_mua_cung_luc_gom_tin(monkeypatch, tmp_path):
     assert gui[3][0].startswith("📋 3 MÃ BÁO MUA CÙNG LÚC") and gui[3][2] is None
 
 
+def test_log_15p_khong_phu_thuoc_danh_muc(monkeypatch, tmp_path, capsys):
+    """Repo CÔNG KHAI: log vòng 15' (Actions) phải GIỐNG HỆT dù đang giữ mã nào – trước 09/11/2026 dòng "(tin riêng tư …)" ngay
+    dưới 1 mã, và mã trạng thái MUA thiếu tin MUA công khai, đều lộ mã đang giữ."""
+    from canh_bao import thong_bao
+
+    class Tra:
+        status_code = 200
+
+        def json(self):
+            return {"ok": True, "result": {"message_id": 1}}
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("TELEGRAM_TOKEN", "x")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "1")
+    monkeypatch.setattr(thong_bao.requests, "post", lambda *a, **k: Tra())
+    k = {"nhom": "VAO_NHU_MOI", "tu": 14.0, "den": 15.0, "cl": 13.5, "mt1": 15.5, "mt3": 17.0, "atc": True,
+         "trang_thai": "MUA", "ly_do": "vào trễ – lệnh ATC trong vùng", "gia_nay": 14.5, "gia_mua": 14.5,
+         "thoi_diem": None, "tieu_chi": []}
+    ds = [{"ma": m, "uu_tien": u} for m, u in (("CCC", 8.0), ("AAA", 1.0), ("HHH", 2.0), ("BBB", 3.0))]
+    monkeypatch.setattr(diem_vao, "doc_ds_mua", lambda bay_gio: ds)
+    monkeypatch.setattr(diem_vao, "danh_gia", lambda z, dp, bay_gio, bt: {**k, **z})
+    monkeypatch.setattr(tong_ket_cl, "cach_vao", lambda kq: ("15P+GIO", "cấu hình"))
+    for ten, gt in (("nen_15p", lambda ma, bay_gio: pd.DataFrame()), ("bo_nen_chua_dong", lambda df, *a: df),
+                    ("doc_trang_thai", lambda: {}), ("ghi_trang_thai", lambda tt: None), ("_anh_mua_ngay", lambda *a: None),
+                    ("_canh_bao_ban", lambda *a: None), ("_trang", lambda *a: None), ("_in_nguon", lambda: None)):
+        monkeypatch.setattr(chay, ten, gt)
+    monkeypatch.setattr(chay.C, "GHI_NHAT_KY", False)
+    log = []
+    for vt in ({}, {"HHH": {"ma": "HHH", "so_cp": 100, "gia_von": 14.0}}, {"AAA": {"ma": "AAA", "so_cp": 50, "gia_von": 14.2}}):
+        chay.trong_phien_15p(pd.Timestamp("2026-10-29 14:30"), vt)
+        log.append(capsys.readouterr().out)
+    assert log[0] == log[1] == log[2] and "AAA" in log[0]           # bảng vẫn in đủ mã, chỉ tin là riêng tư
+
+
 def test_tin_mua_ghi_so_co_phieu_theo_nav_that(monkeypatch):
     from canh_bao import diem_vao, vi_the
     monkeypatch.setattr(vi_the, "_NAV", {"v": 32e6})
