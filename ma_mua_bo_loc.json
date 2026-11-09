@@ -1,12 +1,18 @@
 {
- "ngay_quet": "2026-11-06",
- "luc": "2026-11-06 15:03",
- "phien": "2026-11-06",
+ "ngay_quet": "2026-11-09",
+ "luc": "2026-11-09 15:04",
+ "phien": "2026-11-09",
  "chien_luoc": [
   "quy_b",
   "xu_huong"
  ],
  "ma": {
+  "CTG": [
+   "quy_b"
+  ],
+  "DBC": [
+   "quy_b"
+  ],
   "DXG": [
    "quy_b"
   ],
@@ -19,6 +25,9 @@
   "HSG": [
    "quy_b"
   ],
+  "HUT": [
+   "quy_b"
+  ],
   "KBC": [
    "quy_b"
   ],
@@ -26,8 +35,7 @@
    "quy_b"
   ],
   "NAB": [
-   "quy_b",
-   "xu_huong"
+   "quy_b"
   ],
   "NLG": [
    "quy_b"
@@ -38,8 +46,8 @@
   "SSI": [
    "quy_b"
   ],
-  "VCK": [
-   "quy_b ½"
+  "VJC": [
+   "quy_b"
   ]
  },
  "loi": {}
