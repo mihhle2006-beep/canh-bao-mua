@@ -7,7 +7,7 @@ Du lieu tra cuu. Ghi thêm vào từng dòng ds.json (giá đóng cửa phiên g
   rsi               RSI 14 (Wilder)          kl_d   KL phiên cuối ÷ TB 20 phiên trước
   atr               ATR 14 ÷ giá (biến động ngày)
   d52               1 = đóng cửa cao nhất 52 tuần trong 5 phiên gần nhất
-  nen vcp vuot      nền tích lũy (≥ 15 phiên, biên độ ≤ 18%) như "Nền tích lũy / VCP" của trang Biểu đồ: số phiên nền đang có
+  nen vcp vuot      nền tích lũy (≥ 15 phiên, biên độ ≤ 15%, đỉnh nền ≥ 85% đỉnh 52 tuần) như "Nền tích lũy / VCP" của trang Biểu đồ: số phiên nền đang có
                     (0 = không) · 1 = co hẹp dần (VCP) · 1 = vừa vượt đỉnh nền trong 5 phiên
   python -m thi_truong.ky_thuat_web --ra docs/ma/du_lieu
 """
@@ -21,8 +21,9 @@ def _tb(x):
     return sum(x) / len(x) if x else None
 
 
-def nen_tai(h, lo, i, lmin=15, lmax=60, rong=0.18):
-    """Nền dài nhất kết thúc ở phiên i: (cao nhất − thấp nhất) / cao nhất ≤ rong (giống nen_tai của docs/ma/index.html)."""
+def nen_tai(h, lo, i, lmin=15, lmax=60, rong=0.15, gan_dinh=0.85):
+    """Nền dài nhất kết thúc ở phiên i: (cao nhất − thấp nhất) / cao nhất ≤ rong VÀ đỉnh nền ≥ gan_dinh × đỉnh 250 phiên (nền gần
+    đỉnh – bỏ mã đi ngang ở đáy / ít giao dịch; lượt 09/11: chỉ biên độ 18% → 610/750 mã "trong nền"). Giống docs/ma/index.html."""
     cao, thap, tot = float("-inf"), float("inf"), None
     for L in range(1, min(lmax, i + 1) + 1):
         j = i - L + 1
@@ -33,7 +34,7 @@ def nen_tai(h, lo, i, lmin=15, lmax=60, rong=0.18):
             break
         if L >= lmin:
             tot = {"i0": j, "i1": i, "cao": cao, "thap": thap, "L": L}
-    if not tot:
+    if not tot or tot["cao"] < gan_dinh * max(h[max(0, i - 249):i + 1]):
         return None
     i0, ba = tot["i0"], tot["L"] // 3
 
@@ -73,7 +74,7 @@ def chi_so(g):
     out["atr"] = round(sum(tr) / 14 / c[-1], 4)
     out["d52"] = int(max(c[-5:]) >= max(c[-250:]))
     b, vuot = None, 0
-    for k in range(1, 6):                       # vượt nền trước: nến vượt (< +18%) vẫn lọt vào "nền" tính tới nến cuối
+    for k in range(1, 6):                       # vượt nền trước: nến vượt (< +15%) vẫn lọt vào "nền" tính tới nến cuối
         z = nen_tai(h, lo, n - 1 - k)
         if z and c[-1] > z["cao"]:
             b, vuot = z, 1
