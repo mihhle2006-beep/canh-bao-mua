@@ -153,6 +153,8 @@ tbody tr{background:var(--the)}
 .sao[aria-pressed=true]{color:#e0a800}
 .lk-ma{color:inherit;text-decoration:none}.lk-ma:hover{color:var(--nhan);text-decoration:underline}
 .td-the{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;align-items:stretch}
+.wl{width:100%;border-collapse:collapse;font-size:13px}.wl th{font-weight:500;color:var(--chu2);font-size:12px;padding:4px 8px;text-align:right}.wl td{padding:6px 8px;text-align:right;border-top:1px solid var(--vien)}.wl .trai{text-align:left}.wl tbody tr{cursor:pointer}.wl tbody tr:hover{background:var(--nen)}.wl .ten{display:block;font-size:11px;color:var(--mo);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtn-mo td{background:var(--nen);padding:8px 10px}.dtn tr[data-n]{cursor:pointer}.tk-ds{cursor:help;text-decoration:underline dotted}
 .td-the button{flex:0 0 auto;border:1px solid var(--vien);background:var(--the);border-radius:8px;padding:6px 10px;text-align:left;min-width:96px}
 .td-the b{display:block;font-size:13px}
 .td-the .so{font-size:12.5px;font-weight:600}
@@ -183,9 +185,9 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
   <section id="tq">
     <div class="cs" id="cs"></div>
     <div class="the" id="td-khoi" hidden style="margin-bottom:16px">
-      <div class="khoi-dau"><h2>💼 Danh mục & ★ theo dõi</h2><span class="phu so" id="td-tom"></span>
-        <button class="bat" style="margin-left:auto;padding:3px 10px" id="td-mo">Xem bảng</button></div>
-      <div class="td-the" id="td-ds"></div>
+      <div class="khoi-dau"><h2>Danh sách theo dõi</h2><span class="phu so" id="td-tom"></span>
+        <div class="nut" id="td-tab"></div><button class="bat" style="margin-left:8px;padding:3px 10px" id="td-mo">Xem bảng</button></div>
+      <div class="bang-boc" id="td-ds"></div>
     </div>
     <div class="luoi2">
       <div class="the">
@@ -448,16 +450,62 @@ function ve_duong(hop, diem, tc, nhan_x, x_max, ten_tc) {
 function nice(x) { const m = Math.pow(10, Math.floor(Math.log10(x))), r = x / m; return (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * m; }
 
 // ---------- dải theo dõi (tổng quan) ----------
+// 09/11/2026: dạng watchlist – chuyển 💼 Danh mục · ★ Theo dõi · 🤖 Bot mua bằng nút (như Vốn hóa · GTGD …);
+// bấm mã → trang phân tích mã (Tra cứu mã), rê chuột → ảnh nhanh biểu đồ 3 tháng
+const DS_TD = () => ({dm: ["💼 Danh mục", GIU], td: ["★ Theo dõi", TD.filter(m => !GIU.includes(m))],
+  bot: ["🤖 Bot mua", (D.tin_hieu || []).map(x => x[0]).filter(m => /^[A-Z0-9]{3,8}$/.test(m))]});
 function ve_theo_doi() {
-  const tdx = TDX(), khoi = $("#td-khoi"); khoi.hidden = !tdx.length; if (!tdx.length) return;
-  const ds = tdx.map(m => L.find(r => r.ma === m) || {ma: m});
-  const co = ds.filter(r => r.pt != null), tang = co.filter(r => r.pt > 0).length, giam = co.filter(r => r.pt < 0).length;
-  const tb = co.length ? co.reduce((a, r) => a + r.pt, 0) / co.length : null;
-  $("#td-tom").innerHTML = `${tdx.length} mã · <span class="t">${tang} tăng</span> · <span class="g">${giam} giảm</span>${tb != null ? ` · TB <span class="${lop(tb)}">${dau(tb)}%</span>` : ""}`;
-  $("#td-ds").innerHTML = ds.map(r => `<button data-ma="${esc(r.ma)}" title="${esc(r.ten || "")}"><b>${GIU.includes(r.ma) ? "💼 " : "★ "}${esc(r.ma)}</b>${r.pt == null ? `<span class="so" style="color:var(--mo)">–</span>`
-    : `<span class="so ${lop_gia(r)}">${nf(r.gia)} · ${dau(r.pt)}%</span><span class="so" style="display:block;font-weight:400;color:var(--mo)">NN ${r.nn == null ? "–" : dau(r.nn, 1)} tỷ</span>`}</button>`).join("");
-  $("#td-ds").querySelectorAll("button").forEach(b => b.onclick = () => { ST.nhom = "theo_doi"; ST.sap = null; luu_st(); doi_tab("loc"); });
+  const nh = DS_TD(), co = Object.keys(nh).filter(k => nh[k][1].length), khoi = $("#td-khoi");
+  khoi.hidden = !co.length; if (!co.length) return;
+  const k = co.includes(ST.wl) ? ST.wl : co[0], ma = [...new Set(nh[k][1])];
+  $("#td-tab").innerHTML = co.map(x => `<button data-wl="${x}" aria-pressed="${x === k}">${nh[x][0]} <span class="so">${new Set(nh[x][1]).size}</span></button>`).join("");
+  $("#td-tab").querySelectorAll("button").forEach(b => b.onclick = () => { ST.wl = b.dataset.wl; luu_st(); ve_theo_doi(); });
+  const ds = ma.map(m => L.find(r => r.ma === m) || {ma: m}), co_gia = ds.filter(r => r.pt != null);
+  const tang = co_gia.filter(r => r.pt > 0).length, giam = co_gia.filter(r => r.pt < 0).length;
+  const tb = co_gia.length ? co_gia.reduce((a, r) => a + r.pt, 0) / co_gia.length : null;
+  $("#td-tom").innerHTML = `${ma.length} mã · <span class="t">${tang} tăng</span> · <span class="g">${giam} giảm</span>${tb != null ? ` · TB <span class="${lop(tb)}">${dau(tb)}%</span>` : ""}`;
+  $("#td-ds").innerHTML = `<table class="wl"><thead><tr><th class="trai">Mã</th><th>Giá</th><th>±%</th><th>GTGD tỷ</th><th class="an-dt">NN tỷ</th><th class="an-dt">Mua CĐ</th></tr></thead><tbody>${
+    ds.map(r => `<tr data-ma="${esc(r.ma)}"><td class="trai"><b>${esc(r.ma)}</b><span class="ten">${esc((D.ten || {})[r.ma] || "")}</span></td>
+      <td class="so ${lop_gia(r)}">${r.gia == null ? "–" : nf(r.gia)}</td><td class="so ${lop_gia(r)}">${r.pt == null ? "–" : dau(r.pt) + "%"}</td>
+      <td class="so">${r.gt == null ? "–" : nf(r.gt, 1)}</td><td class="so an-dt ${lop(r.nn)}">${r.nn == null ? "–" : dau(r.nn, 1)}</td>
+      <td class="so an-dt">${r.mcd == null ? "–" : nf(r.mcd, 0) + "%"}</td></tr>`).join("")}</tbody></table>`;
 }
+// ---------- mã ở Tổng quan: bấm → phân tích mã (Tra cứu mã) · rê chuột → ảnh nhanh biểu đồ (giá ngày 3 tháng) ----------
+function mo_ma(ma) { location.href = "../ma/#" + encodeURIComponent(ma); }
+const ANH = {};
+const gia_ma = ma => ANH[ma] || (ANH[ma] = fetch("../ma/du_lieu/gia/" + encodeURIComponent(ma) + ".json").then(r => r.ok ? r.json() : null).catch(() => null));
+function ve_anh(g) {
+  const c = ((g && g.c) || []).slice(-63).filter(v => v != null && isFinite(v)); if (c.length < 5) return "";
+  const W = 200, H = 64, mn = Math.min(...c), mx = Math.max(...c), k = (H - 6) / ((mx - mn) || 1), p = (c[c.length - 1] / c[0] - 1) * 100;
+  const pts = c.map((v, i) => `${(i / (c.length - 1) * W).toFixed(1)},${(H - 3 - (v - mn) * k).toFixed(1)}`).join(" ");
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin-top:6px"><polyline points="${pts}" fill="none" stroke="${p >= 0 ? MAU.tang : MAU.giam}" stroke-width="1.6"/></svg>`
+    + `<span class="so" style="font-size:11px;opacity:.8">3 tháng ${dau(p)}% · bấm để mở phân tích</span>`;
+}
+let GY_MA = null, GY_XY = [0, 0];
+function anh_gy(ma, x, y, dau_html) {
+  const r = (L || []).find(z => z.ma === ma) || {};
+  GY_XY = [x, y];
+  if (GY_MA === ma && GY.style.display === "block") return hien_gy(GY.innerHTML, x, y);
+  GY_MA = ma;
+  hien_gy((dau_html || `<b>${esc(ma)}</b> ${esc((D.ten || {})[ma] || "")}${r.pt != null ? `<br><span class="so">${nf(r.gia)} · ${dau(r.pt)}%</span>` : ""}`)
+    + `<div class="gy-anh" style="font-size:11px;opacity:.7">đang tải biểu đồ…</div>`, x, y);
+  gia_ma(ma).then(g => { const a = GY.querySelector(".gy-anh"); if (GY_MA !== ma || GY.style.display !== "block" || !a) return;
+    a.outerHTML = ve_anh(g) || `<div style="font-size:11px;opacity:.7">chưa có biểu đồ</div>`; hien_gy(GY.innerHTML, ...GY_XY); });
+}
+const an_anh = () => { GY_MA = null; an_gy(); };
+$("#td-ds").addEventListener("click", e => { const t = e.target.closest("tr[data-ma]"); if (t) mo_ma(t.dataset.ma); });
+$("#td-ds").addEventListener("pointermove", e => { const t = e.target.closest("tr[data-ma]"); if (!t || e.pointerType === "touch") return an_anh(); anh_gy(t.dataset.ma, e.clientX, e.clientY); });
+$("#td-ds").addEventListener("pointerleave", an_anh);
+// thống kê phiên: rê / chạm "N trần" · "N sàn" → các mã đó (HOSE, GTGD lớn trước)
+function gy_tran_san(e) {
+  const x = e.target.closest && e.target.closest(".tk-ds"); if (!x) return an_gy();
+  const tt = +x.dataset.tt, ds = (L || []).filter(r => r.tt === tt && r.san === "HSX").sort((a, b) => (b.gt || 0) - (a.gt || 0));
+  hien_gy(`<b>${tt === 1 ? "Mã trần" : "Mã sàn"} HOSE (${ds.length})</b><br>` + (ds.length ? ds.slice(0, 30).map(r =>
+    `${esc(r.ma)} <span class="so">${dau(r.pt)}% · ${nf(r.gt, 1)} tỷ</span>`).join("<br>") + (ds.length > 30 ? `<br>… +${ds.length - 30} mã` : "") : "Chưa có mã"), e.clientX, e.clientY);
+}
+$("#tk").addEventListener("pointermove", gy_tran_san);
+$("#tk").addEventListener("pointerdown", gy_tran_san);
+$("#tk").addEventListener("pointerleave", an_gy);
 $("#td-mo").onclick = () => { ST.nhom = "theo_doi"; ST.sap = null; luu_st(); doi_tab("loc"); };
 $("#td-xoa").onclick = () => { if (confirm("Bỏ hết mã ★ đánh dấu thêm trên máy này? (mã 💼 đang giữ vẫn hiện)")) { TD = []; luu_td(); ve_tat(); } };
 $("#td-chep").onclick = async () => {
@@ -535,14 +583,13 @@ function ve_ban_do() {
       }
     }
   }
-  s.addEventListener("pointermove", e => { const i = e.target.dataset && e.target.dataset.i; if (i == null) return an_gy();
+  s.addEventListener("pointermove", e => { const i = e.target.dataset && e.target.dataset.i; if (i == null) return an_anh();
     const o = O_ND[+i], ten = (D.ten || {})[o.ma] || "";
-    hien_gy(`<b>${esc(o.ma)}</b> ${esc(ten)}<br>${esc(D.nganh[o.ng] || "")}<br>Thay đổi <span class="so">${dau(o.pt)}%</span>${o.tt === 1 ? " (trần)" : o.tt === -1 ? " (sàn)" : ""}<br>
+    anh_gy(o.ma, e.clientX, e.clientY, `<b>${esc(o.ma)}</b> ${esc(ten)}<br>${esc(D.nganh[o.ng] || "")}<br>Thay đổi <span class="so">${dau(o.pt)}%</span>${o.tt === 1 ? " (trần)" : o.tt === -1 ? " (sàn)" : ""}<br>
       Vốn hóa <span class="so">${nf(o.vh, 0)} tỷ</span> · GTGD <span class="so">${nf(o.gt, 1)} tỷ</span><br>
-      Nước ngoài <span class="so">${ty(o.nn, 1)}</span> · Tự doanh (${ngay_vn(D.tu_doanh.phien)}) <span class="so">${ty(o.td, 1)}</span>`, e.clientX, e.clientY); });
-  s.addEventListener("pointerleave", an_gy);
-  s.addEventListener("click", e => { const i = e.target.dataset && e.target.dataset.i; if (i == null) return;
-    ST.tim = O_ND[+i].ma; $("#loc-tim").value = ST.tim; doi_tab("loc"); });
+      Nước ngoài <span class="so">${ty(o.nn, 1)}</span> · Tự doanh (${ngay_vn(D.tu_doanh.phien)}) <span class="so">${ty(o.td, 1)}</span>`); });
+  s.addEventListener("pointerleave", an_anh);
+  s.addEventListener("click", e => { const i = e.target.dataset && e.target.dataset.i; if (i == null) return; mo_ma(O_ND[+i].ma); });
   const giai = $("#nd-giai");
   giai.innerHTML = la_rong
     ? `<span>Bán ròng</span><i style="background:${mau_rong(-1, 1)}"></i><i style="background:${mau_rong(-.2, 1)}"></i><i style="background:${mau_rong(.2, 1)}"></i><i style="background:${mau_rong(1, 1)}"></i><span>Mua ròng</span><span style="margin-left:10px">Kích thước = |giá trị ròng|${k === "td" ? " · phiên " + ngay_vn(D.tu_doanh.phien) : ""}</span>`
@@ -572,7 +619,7 @@ function ve_dtn() {
   const t = $("#dtn"); if (!t || !L) return;
   const n = [1, 5, 10, 20].includes(ST.dtn_n) ? ST.dtn_n : 1, kp = n === 1 ? "pt" : "p" + n, kn = n === 1 ? "nn" : "nn" + n;
   nut_n("dtn-n", n, v => ST.dtn_n = v);
-  $("#dtn-phu").textContent = `toàn thị trường · ${n === 1 ? "phiên này" : n + " phiên gần nhất"} · % giá gia quyền GTGD 20 phiên · bấm ngành để lọc`;
+  $("#dtn-phu").textContent = `toàn thị trường · ${n === 1 ? "phiên này" : n + " phiên gần nhất"} · % giá gia quyền GTGD 20 phiên · bấm ngành xem tiền vào từng mã`;
   $("#dtn-gt").textContent = n === 1 ? "GTGD" : "GTGD TB20"; $("#dtn-so").textContent = n === 1 ? "So TB20" : "";
   const g = {};
   for (const r of L) {
@@ -585,13 +632,29 @@ function ve_dtn() {
   }
   const ds = Object.values(g).filter(x => x.gt > 0 || x.gt20 > 0).sort((a, b) => n === 1 ? b.gt - a.gt : b.gt20 - a.gt20);
   const mx = Math.max(...ds.map(x => x.gt20 ? x.gt / x.gt20 : 0), 1.5);
+  if (!ds.some(x => String(x.n) === String(ST.dtn_mo))) ST.dtn_mo = null;
   t.innerHTML = ds.map(x => { const p = x.w ? x.wp / x.w : null, k = x.gt20 ? x.gt / x.gt20 : null;
     return `<tr data-n="${x.n}"><td class="trai"><b>${esc(D.nganh[x.n])}</b></td><td class="so ${p > 0 ? "t" : p < 0 ? "g" : "d"}">${p == null ? "–" : dau(p) + "%"}</td>
       <td class="so"><span class="t">${x.tang}</span> / <span class="g">${x.giam}</span></td><td class="so">${nf(n === 1 ? x.gt : x.gt20, 0)} tỷ</td>
       <td class="trai so">${n > 1 || k == null ? "" : `<span class="vach" style="width:${Math.round(k / mx * 90)}px"></span>${nf(k, 2)}×`}</td>
-      <td class="so ${x.nn > 0 ? "t" : x.nn < 0 ? "g" : ""}">${x.co_nn ? ty(x.nn, 1) : "–"}</td></tr>`; }).join("") || `<tr><td class="trai" colspan="6">Chưa có dữ liệu</td></tr>`;
-  t.onclick = e => { const tr = e.target.closest("tr[data-n]"); if (!tr) return;
-    ST.nganh = tr.dataset.n; ST.so_dong = 100; luu_st(); const s = $("#loc-nganh"); if (s) s.value = tr.dataset.n; doi_tab("loc"); };
+      <td class="so ${x.nn > 0 ? "t" : x.nn < 0 ? "g" : ""}">${x.co_nn ? ty(x.nn, 1) : "–"}</td></tr>`
+      + (String(x.n) === String(ST.dtn_mo) ? `<tr class="dtn-mo"><td class="trai" colspan="6"><div class="phu" style="margin-bottom:4px">Tiền vào từng mã –
+        GTGD ròng mua chủ động (GTGD × (2 × % mua chủ động − 1)); mã chưa có số mua chủ động: GTGD theo chiều giá · bấm mã → phân tích</div>
+        <div id="dtn-chi"></div><button class="bat" data-loc-n="${x.n}" style="margin-top:6px">Lọc ngành này trong tab Lọc mã →</button></td></tr>` : ""); }).join("")
+      || `<tr><td class="trai" colspan="6">Chưa có dữ liệu</td></tr>`;
+  const chi = $("#dtn-chi");
+  if (chi) {
+    const ma = L.filter(r => String(r.nganh) === String(ST.dtn_mo) && r.gt > 0)
+      .map(r => [r.ma, r.mcd != null ? r.gt * (2 * r.mcd / 100 - 1) : r.gt * Math.sign(r.pt || 0), r.pt, r]);
+    const top = ma.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 15).sort((a, b) => a[1] - b[1]);
+    if (top.length) cot_ngang(chi, top, Math.max(chi.clientWidth - 4, 280), d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Tiền vào <span class="so">${dau(d[1], 1)} tỷ</span> · GTGD <span class="so">${nf(d[3].gt, 1)} tỷ</span>`
+      + (d[3].mcd != null ? ` · mua chủ động <span class="so">${nf(d[3].mcd, 0)}%</span>` : "") + `<br>Giá <span class="so">${dau(d[2])}%</span>`, v => dau(v, 1), "Tiền vào từng mã của ngành");
+  }
+  t.onclick = e => {
+    const loc = e.target.closest("[data-loc-n]");
+    if (loc) { ST.nganh = loc.dataset.locN; ST.so_dong = 100; luu_st(); const s = $("#loc-nganh"); if (s) s.value = loc.dataset.locN; return doi_tab("loc"); }
+    const tr = e.target.closest("tr[data-n]"); if (!tr) return;
+    ST.dtn_mo = String(ST.dtn_mo) === tr.dataset.n ? null : tr.dataset.n; luu_st(); ve_dtn(); };
 }
 function ve_tk() {
   const v = D.chi_so.find(x => x.ma === "VNINDEX") || {}, tk = D.thanh_khoan, kn = D.khoi_ngoai, tdo = D.tu_doanh;
@@ -605,7 +668,7 @@ function ve_tk() {
   if (dau1 && v.td && Math.abs(v.td) > .5 && dau1[1] / v.td > .5 && v.td > 0) xet.push(`${dau1[0]} góp ${dau(dau1[1])} / ${dau(v.td)} điểm (${Math.round(dau1[1] / v.td * 100)}%).`);
   const t = $("#tk");
   t.innerHTML = `<p class="nhan-xet" id="nx">${esc(xet.join(" "))}</p>
-  <div class="muc"><div class="hang"><span class="nhan">Độ rộng</span><span class="nho" style="margin-left:auto"><span class="tr">${v.tran ?? 0} trần</span> · <span class="sa">${v.san ?? 0} sàn</span></span></div>
+  <div class="muc"><div class="hang"><span class="nhan">Độ rộng</span><span class="nho" style="margin-left:auto"><span class="tr tk-ds" data-tt="1">${v.tran ?? 0} trần</span> · <span class="sa tk-ds" data-tt="-1">${v.san ?? 0} sàn</span></span></div>
     <div class="thanh" role="img" aria-label="${v.tang} tăng, ${v.dung} đứng giá, ${v.giam} giảm">
       <span style="width:${v.tang / tong * 100}%;background:${MAU.tang}"></span><span style="width:${v.dung / tong * 100}%;background:#d8b84a"></span><span style="width:${v.giam / tong * 100}%;background:${MAU.giam}"></span></div>
     <div class="hang so"><span class="t"><b>${v.tang ?? "–"}</b> tăng</span><span class="d"><b>${v.dung ?? "–"}</b> đứng giá</span><span class="g"><b>${v.giam ?? "–"}</b> giảm</span></div></div>
@@ -624,6 +687,29 @@ function ve_tk() {
 }
 
 // ---------- tác động ----------
+function cot_ngang(hop, ds, W, nhan_gy, nhan_so, aria) {   // cột ngang 1 mã / dòng: ds [[mã, giá trị, % giá]] tăng dần
+  // mã quá lớn (gấp > 2,2 lần mã thứ 2) → cắt cột, vẽ dấu gãy · cột: mã · % giá · nhãn âm · vùng cột · nhãn dương
+  const tr = ds.map(d => Math.abs(d[1])).sort((a, b) => b - a), tran = tr[0] > 2.2 * (tr[1] || 0) && tr[1] ? tr[1] * 1.5 : tr[0];
+  const dai = v => Math.min(Math.abs(v), tran), gay = v => Math.abs(v) > tran;
+  const mx_d = Math.max(...ds.map(d => d[1] > 0 ? dai(d[1]) : 0), 0), mx_a = Math.max(...ds.map(d => d[1] < 0 ? dai(d[1]) : 0), 0);
+  const hang = 21, H = ds.length * hang + 8, x_pt = 100, nhan = 50, vung_w = W - x_pt - (mx_a ? nhan : 6) - nhan;
+  const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": aria}, hop);
+  const k = vung_w / ((mx_d + mx_a) || 1), x0 = x_pt + (mx_a ? nhan : 6) + mx_a * k;
+  el("line", {x1: x0, x2: x0, y1: 0, y2: H, stroke: "#cfd5de"}, s);
+  ds.slice().reverse().forEach((d, i) => {
+    const y = 4 + i * hang, w = Math.max(dai(d[1]) * k, 2), duong = d[1] >= 0, mau = duong ? MAU.tang : MAU.giam;
+    el("text", {x: 0, y: y + 14, "font-size": 12, "font-weight": 650, fill: MAU.chu}, s).textContent = d[0];
+    el("text", {x: x_pt, y: y + 14, "font-size": 11, "text-anchor": "end", fill: d[2] > 0 ? MAU.tang : d[2] < 0 ? MAU.giam : MAU.truc, class: "so"}, s).textContent = d[2] == null ? "" : dau(d[2]) + "%";
+    const bx = duong ? x0 : x0 - w;
+    el("rect", {x: bx, y: y + 4, width: w, height: 12, rx: 3, fill: mau}, s);
+    if (gay(d[1])) for (const dx of [-14, -9]) el("line", {x1: (duong ? bx + w : bx) + (duong ? dx : -dx) - 2, x2: (duong ? bx + w : bx) + (duong ? dx : -dx) + 2, y1: y + 18, y2: y + 2, stroke: "#fff", "stroke-width": 2}, s);
+    el("text", {x: duong ? bx + w + 4 : bx - 4, y: y + 14, "font-size": 11, "font-weight": 600, "text-anchor": duong ? "start" : "end", fill: MAU.chu, class: "so"}, s).textContent = nhan_so(d[1]);
+    const v = el("rect", {x: 0, y, width: W, height: hang, fill: "transparent"}, s);
+    v.style.cursor = "pointer"; v.addEventListener("click", () => mo_ma(d[0]));
+    v.addEventListener("pointermove", e => { if (e.pointerType !== "touch") anh_gy(d[0], e.clientX, e.clientY, nhan_gy(d)); });
+    v.addEventListener("pointerleave", an_anh);
+  });
+}
 function ve_tac() {
   const hop = $("#tac"); hop.innerHTML = "";
   const co_n = D.tac_dong?.n && Object.keys(D.tac_dong.n).length, n = co_n && [5, 10, 20].includes(ST.tac_n) ? ST.tac_n : 1;
@@ -636,28 +722,11 @@ function ve_tac() {
   const tr = ds.map(d => Math.abs(d[1])).sort((a, b) => b - a);
   const tran = tr[0] > 2.2 * (tr[1] || 0) && tr[1] ? tr[1] * 1.5 : tr[0];
   const dai = v => Math.min(Math.abs(v), tran), gay = v => Math.abs(v) > tran;
-  const gy = d => hien_gy(`<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Tác động <span class="so">${dau(d[1])} điểm</span><br>Giá <span class="so">${dau(d[2])}%</span>`, ...gy.xy);
-  const tro = (vung, d) => { vung.addEventListener("pointermove", e => { gy.xy = [e.clientX, e.clientY]; gy(d); }); vung.addEventListener("pointerleave", an_gy); };
+  const nhan_gy = d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Tác động <span class="so">${dau(d[1])} điểm</span><br>Giá <span class="so">${dau(d[2])}%</span>`;
+  const tro = (vung, d) => { vung.style.cursor = "pointer"; vung.addEventListener("click", () => mo_ma(d[0]));
+    vung.addEventListener("pointermove", e => { if (e.pointerType !== "touch") anh_gy(d[0], e.clientX, e.clientY, nhan_gy(d)); }); vung.addEventListener("pointerleave", an_anh); };
   const mx_d = Math.max(...ds.map(d => d[1] > 0 ? dai(d[1]) : 0), 0), mx_a = Math.max(...ds.map(d => d[1] < 0 ? dai(d[1]) : 0), 0);
-  if (W < 560) {                                                   // điện thoại: cột ngang, 1 mã / dòng
-    // cột: mã (0–44) · % giá căn phải tới x_pt · chỗ nhãn âm (nhan) · vùng cột · chỗ nhãn dương (nhan) – nhãn không đè cột %
-    const hang = 21, H = ds.length * hang + 8, x_pt = 100, nhan = 50;
-    const vung_w = W - x_pt - (mx_a ? nhan : 6) - nhan;
-    const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Mã tác động mạnh nhất lên VN-Index"}, hop);
-    const k = vung_w / ((mx_d + mx_a) || 1), x0 = x_pt + (mx_a ? nhan : 6) + mx_a * k;
-    el("line", {x1: x0, x2: x0, y1: 0, y2: H, stroke: "#cfd5de"}, s);
-    ds.slice().reverse().forEach((d, i) => {
-      const y = 4 + i * hang, w = Math.max(dai(d[1]) * k, 2), duong = d[1] >= 0, mau = duong ? MAU.tang : MAU.giam;
-      el("text", {x: 0, y: y + 14, "font-size": 12, "font-weight": 650, fill: MAU.chu}, s).textContent = d[0];
-      el("text", {x: x_pt, y: y + 14, "font-size": 11, "text-anchor": "end", fill: d[2] > 0 ? MAU.tang : d[2] < 0 ? MAU.giam : MAU.truc, class: "so"}, s).textContent = d[2] == null ? "" : dau(d[2]) + "%";
-      const bx = duong ? x0 : x0 - w;
-      el("rect", {x: bx, y: y + 4, width: w, height: 12, rx: 3, fill: mau}, s);
-      if (gay(d[1])) for (const dx of [-14, -9]) el("line", {x1: (duong ? bx + w : bx) + (duong ? dx : -dx) - 2, x2: (duong ? bx + w : bx) + (duong ? dx : -dx) + 2, y1: y + 18, y2: y + 2, stroke: "#fff", "stroke-width": 2}, s);
-      el("text", {x: duong ? bx + w + 4 : bx - 4, y: y + 14, "font-size": 11, "font-weight": 600, "text-anchor": duong ? "start" : "end", fill: MAU.chu, class: "so"}, s).textContent = dau(d[1]);
-      tro(el("rect", {x: 0, y, width: W, height: hang, fill: "transparent"}, s), d);
-    });
-    return;
-  }
+  if (W < 560) return cot_ngang(hop, ds, W, nhan_gy, v => dau(v), "Mã tác động mạnh nhất lên VN-Index");   // điện thoại: cột ngang
   const H = 300, P = {t: 22, b: 40 + (mx_a ? 16 : 0)};
   const s = el("svg", {viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Mã tác động mạnh nhất lên VN-Index"}, hop);
   const cot = W / ds.length, bw = Math.min(24, cot * .62);
