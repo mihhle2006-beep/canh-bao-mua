@@ -136,7 +136,7 @@ body.co-ds main{margin-right:300px}
 .dt-r .t{flex:1;min-width:0}.dt-r .t b{display:block;font-size:14.5px}.dt-r .t span{display:block;color:var(--phu);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dt-r .p{text-align:right;font-size:12.5px}.dt-r .p b{display:block;font-size:14.5px;color:var(--chu)}
 .dt-r .p .nn{display:block;color:var(--mo);font-size:11.5px}.dt-nhan{font-style:normal;font-weight:600;font-size:10.5px;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
-.dt-nhan.giu{background:#e3f2e5;color:#1b5e20}.dt-nhan.td{background:#fff4d6;color:#8a6100}.dt-nhan.bot{background:#e3ecff;color:#1f4fa8}.dt-tom{padding:2px 12px 6px;font-size:12.5px;color:var(--phu)}
+.dt-nhan.giu{background:#e3f2e5;color:#1b5e20}.dt-nhan.sk{background:#fdecc8;color:#8a4b00}.dt-nhan.td{background:#fff4d6;color:#8a6100}.dt-nhan.bot{background:#e3ecff;color:#1f4fa8}.dt-tom{padding:2px 12px 6px;font-size:12.5px;color:var(--phu)}
 .dt-r .x{border:0;background:none;color:#b0b7c2;cursor:pointer;font-size:14px;padding:2px}.dt-r .x:hover{color:#d1342b}
 .dt-trong{padding:14px 12px;color:var(--phu);font-size:13px}
 @media (max-width:700px){body{padding-right:0}.rail{top:auto;bottom:14px;right:12px;width:auto;height:auto;padding:4px;border:1px solid var(--vien);border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
@@ -462,6 +462,13 @@ const MA_OK = m => /^[A-Z0-9]{3,12}$/.test(m || "");            // ≤ 12 ký t�
 const CHI_SO_TEN = {VNINDEX: "VN-Index", VN30: "VN30", VN100: "VN100", VNMID: "VNMidcap", VNSML: "VNSmallcap", VNALL: "VNAllshare",
   VNDIAMOND: "VNDiamond", VNFINLEAD: "VNFin Lead", VNFINSELECT: "VNFin Select", VNX50: "VNX50", HNX: "HNX-Index", HNX30: "HNX30", UPCOM: "UPCoM-Index"};   // như thi_truong/vni_web.CHI_SO
 let CS_CO = null;                                                  // chỉ số đã có file (du_lieu/chi_so/ds.json)
+const CS_BTT = {HNX: "HNXIndex", UPCOM: "HNXUpcomIndex"};          // tên chỉ số ở Bảng thị trường (khác tên trang)
+function live_cs(ma) {                                             // chỉ số trong phiên (Bảng thị trường: giá, tham chiếu, đường 1') → như LIVE[mã]
+  const t = CHI_SO_TEN[ma] && (MKT?.chi_so || []).find(z => z.ma === (CS_BTT[ma] || ma));
+  if (!t?.gia) return null;
+  const c = (t.c || []).filter(v => v > 0);
+  return {gia: t.gia, tc: t.tc, pt: t.pt, cao: Math.max(t.gia, ...c), thap: Math.min(t.gia, ...c), co_gd: true};
+}
 const tb = a => { const x = a.filter(v => v != null && isFinite(v)); return x.length ? x.reduce((s, v) => s + v, 0) / x.length : null; };
 const trung_vi = a => { const x = a.filter(v => v != null && isFinite(v)).sort((p, q) => p - q); return x.length ? (x.length % 2 ? x[(x.length - 1) / 2] : (x[x.length / 2 - 1] + x[x.length / 2]) / 2) : null; };
 const W_RONG = () => innerWidth < 700 ? 400 : Math.max(640, Math.min(1100, innerWidth - 140));   // biểu đồ hết khung
@@ -533,7 +540,7 @@ function chuoi_gia(k, ma) {                    // lịch sử (gia_dai từ khi 
         v: D.v.slice(0, het).concat(x.v), nn: Array(het).fill(null).concat(x.nn)};
     }
   } else x = {d: [...D.d], o: [...D.o], h: [...D.h], l: [...D.l], c: [...D.c], v: [...D.v], nn: D.d.map(() => null)};
-  const l = LIVE[ma], ph = MKT?.phien, cuoi = x.d[x.d.length - 1];
+  const l = LIVE[ma] || live_cs(ma), ph = MKT?.phien, cuoi = x.d[x.d.length - 1];
   if (l && l.gia && ph && ph > cuoi && l.co_gd) {
     const c0 = x.c[x.c.length - 1];
     if (phien_sau(cuoi) !== ph) x.cu = cuoi;                     // lịch sử giá chưa cập nhật tới phiên trước
@@ -1080,7 +1087,7 @@ function gop_khung(x, khung) {                          // nến ngày → tuầ
   return o;
 }
 let BD_GIA = null, BD_DK = null;
-let CG_GON = (() => { try { return localStorage.getItem("cg_gon") === "1"; } catch (e) { return false; } })();   // khung chỉ số góc trái: thu gọn còn ▸
+let CG_GON = (() => { try { const v = localStorage.getItem("cg_gon"); return v == null ? CHAM && innerWidth < 700 : v === "1"; } catch (e) { return false; } })();   // điện thoại: mặc định thu gọn   // khung chỉ số góc trái: thu gọn còn ▸
 function dat_cg(v) {                                     // chế độ "Thu gọn khung chỉ số" (menu ƒx · mũi tên ▸ / ▾ trên biểu đồ)
   CG_GON = v; try { localStorage.setItem("cg_gon", v ? "1" : "0"); } catch (e) {}
   document.querySelectorAll("[data-cggon]").forEach(z => { z.checked = v; }); BD_DK?.viet?.();
@@ -1204,6 +1211,7 @@ function dk_bd(c, khung) {                           // điều khiển biểu �
 async function ve_bd_gia(el, x0, them = {}) {
   const LW = await tai_lwc();
   const VNM = CB.duoi.includes("rs") || CB.ss === "VNINDEX" ? await tai_vni() : null;            // tải trước khi dựng biểu đồ (không chen giữa lúc vẽ)
+  if (them.ma && !CHI_SO_TEN[them.ma]) await tai_sk().catch(() => null);
   const LH = CB.lh && them.ma ? ((await tai_lenh_he()) || {}) : null, k_ss = MA_OK(CB.ss) && CB.ss !== them.ma ? await tai_ma(CB.ss) : null;
   if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
   el.querySelectorAll(".chu-bd,.chu-pane").forEach(z => z.remove());
@@ -1390,6 +1398,8 @@ async function ve_bd_gia(el, x0, them = {}) {
   const dat_cp = () => { const ds = ch.panes(); let top = 0; ds.forEach((p, j) => { if (j && cp[j - 1]) cp[j - 1].style.top = (top + 2) + "px"; top += p.getHeight() + 1; }); };
   const u = {D: "phiên", W: "tuần", M: "tháng"}[kh] || "nến";
   const pt0 = v => so(v * 100, 0) + "%", tk = lh ? tk_lenh_he(lh) : null;
+  const sap = them.ma && !tua ? sk_sap(them.ma).slice(0, 3) : [], hb = them.ma && !tua && !CHI_SO_TEN[them.ma] ? han_bctc(hom_nay(), 1).filter(([d]) => d <= new Date(Date.now() + 15 * 864e5).toISOString().slice(0, 10)) : [];
+  const sap_chu = sap.length || hb.length ? `<br><span style="color:#8a6100">Sắp tới: ${[...sap.map(e => `${ngay_vn(e.ngay).slice(0, 5)} ${esc(NHOM_SK[e.nhom] || e.nhom)}${e.ten ? ` – ${esc(String(e.ten).slice(0, 50))}` : ""}`), ...hb.map(([d, t]) => `${ngay_vn(d).slice(0, 5)} hạn BCTC ${esc(t)}`)].join(" · ")}</span>` : "";
   const lh_chu = !lh ? "" : `<br><span style="color:#1f6feb">Lệnh của hệ trên ${esc(them.ma)} (backtest từ ${ngay_vn(LH.tu || "2012-01-01")}): ` + (tk ? `${tk.n} lệnh đã đóng · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R · tổng ${tk.tong > 0 ? "+" : ""}${so(tk.tong, 1)}R</span>${LH.chung != null ? ` <span class="phu">(mọi mã TB ${LH.chung > 0 ? "+" : ""}${so(LH.chung, 2)}R)</span>` : ""}` : `chưa có lệnh đã đóng${LH.ma ? "" : " – chưa có dữ liệu"}</span>`) + (lh.some(z => z[4]) ? ` <span class="phu">· 1 lệnh đang mở</span>` : "");
   const non_chu = non ? `<span class="chu-non"><br><span style="color:#1f4fa8">Nón ${H} ${u} (${non.kieu === "ls" ? "phân vị lịch sử" : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`}): 50% ${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)} · 95% ${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}</span>` +
     (non.trung ? `<br><span class="phu" title="Dựng lại nón tại ${non.trung.n} mốc trong quá khứ chỉ bằng dữ liệu tới mốc đó, rồi xem giá ${H} ${u} sau có nằm trong dải không. Gần 50 / 80 / 95% là nón đáng tin; thấp hơn nhiều là nón hẹp hơn thực tế.">Độ trúng ${non.trung.n} lần thử: dải 50% ${pt0(non.trung.p[0])} · 80% ${pt0(non.trung.p[1])} · 95% ${pt0(non.trung.p[2])}</span>` : "") + ` <span class="phu">· thống kê, không phải khuyến nghị</span></span>` : "";
@@ -1408,7 +1418,7 @@ async function ve_bd_gia(el, x0, them = {}) {
       (ich && ich.tenkan[i] != null ? `<br>Ichimoku <span style="color:#0496ff">Tenkan ${so(ich.tenkan[i], 2)}</span> · <span style="color:#991515">Kijun ${so(ich.kijun[i], 2)}</span>${ich.spa[i] != null ? ` · Mây ${so(Math.min(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}–${so(Math.max(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}` : ""}` : "") +
       (sar && sar.v[i] != null ? `<br><span style="color:${sar.len[i] ? "#0f8a4a" : "#d1342b"}">SAR ${so(sar.v[i], 2)}</span>` : "") +
       (dc && dc.tr[i] != null ? `<br><span style="color:#a87b00">DC ${dc.p} Trên ${so(dc.tr[i], 2)} · Giữa ${so(dc.gi[i], 2)} · Dưới ${so(dc.du[i], 2)}</span>` : "") +
-      (ss && ss.v[i] != null ? `<br><span style="color:#9b3fd1">${esc(ss.ten)} ${so(ss.v[i], 2)}</span> <span class="phu">(thang % từ nến đầu vùng xem)</span>` : "") + lh_chu + non_chu;
+      (ss && ss.v[i] != null ? `<br><span style="color:#9b3fd1">${esc(ss.ten)} ${so(ss.v[i], 2)}</span> <span class="phu">(thang % từ nến đầu vùng xem)</span>` : "") + sap_chu + lh_chu + non_chu;
     PH.forEach((f, j) => { cp[j].innerHTML = f(i); });
   };
   viet(n - 1); BD_DK.viet = viet;
@@ -1540,12 +1550,30 @@ function so_sanh_nganh(ma) {
 }
 
 // LỊCH SỰ KIỆN TOÀN THỊ TRƯỜNG (#lich – thi_truong/su_kien_web.py): GDKHQ cổ tức tiền / cổ phiếu, phát hành, ĐHCĐ
-let SK = null;
+let SK = null, SK_P = null;
 const NHOM_SK = {tien: "Cổ tức tiền", cp: "Phát hành / cổ tức CP", dh: "Đại hội cổ đông", khac: "Khác"};
+const tai_sk = () => SK ? Promise.resolve(SK) : (SK_P = SK_P || lay(DL + "su_kien.json", false).then(j => (SK = j || {dong: [], cot: []})));
+const hom_nay = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+function sk_sap(ma, ngay = 30) {                       // sự kiện của mã từ hôm nay tới +ngay ngày (GDKHQ / đại hội / phát hành)
+  if (!SK?.dong) return [];
+  const c = SK.cot || [], i = k => c.indexOf(k), nay = hom_nay(), den = new Date(Date.parse(nay) + ngay * 864e5).toISOString().slice(0, 10);
+  return SK.dong.filter(r => r[i("ma")] === ma && r[i("ngay")] >= nay && r[i("ngay")] <= den)
+    .map(r => ({ngay: r[i("ngay")], nhom: r[i("nhom")], ten: r[i("ten")]})).sort((a, b) => a.ngay < b.ngay ? -1 : 1);
+}
+function han_bctc(tu = hom_nay(), so = 3) {            // hạn công bố BCTC (TT96/2020): quý +20 ngày (riêng) / +30 (hợp nhất) · bán niên soát xét +45 · năm kiểm toán +90
+  const out = [], y0 = +tu.slice(0, 4);
+  for (let y = y0 - 1; y <= y0 + 1; y++) for (let q = 1; q <= 4; q++) {
+    const het = Date.UTC(y, q * 3, 0), d = n => new Date(het + n * 864e5).toISOString().slice(0, 10);
+    out.push([d(20), `quý ${q}/${y} (BCTC riêng)`], [d(30), `quý ${q}/${y} (hợp nhất)`]);
+    if (q === 2) out.push([d(45), `bán niên ${y} soát xét`]);
+    if (q === 4) out.push([d(90), `năm ${y} kiểm toán`]);
+  }
+  return out.filter(([d]) => d >= tu).sort((a, b) => a[0] < b[0] ? -1 : 1).slice(0, so);
+}
 const LICH = {nhom: "", td: false, cu: false};
 async function hien_lich() {
   document.title = "Lịch sự kiện – Tra cứu mã";
-  if (!SK) SK = (await lay(DL + "su_kien.json", false)) || {dong: [], cot: []};
+  await tai_sk();
   const c = SK.cot || [], ds0 = (SK.dong || []).map(r => Object.fromEntries(c.map((k, i) => [k, r[i]])));
   const nay = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
   const ds = ds0.filter(r => (!LICH.nhom || r.nhom === LICH.nhom) && (!LICH.td || TD.has(r.ma) || GIU.has(r.ma)) && (LICH.cu || r.ngay >= nay));
@@ -1556,7 +1584,8 @@ async function hien_lich() {
     <td>${r.chot ? ngay_vn(r.chot) : "–"}</td><td>${r.thuc_hien ? ngay_vn(r.thuc_hien) : "–"}</td></tr>`;
   const bo = [["", "Tất cả"], ...Object.entries(NHOM_SK)].map(([k, t]) => `<button class="bat" data-sk="${k}" aria-pressed="${LICH.nhom === k}">${esc(t)}</button>`).join("");
   $("#noi-dung").innerHTML = `<div class="loc-dau">${bo}<button class="bat" id="sk-td" aria-pressed="${LICH.td}">Chỉ mã theo dõi / đang giữ</button>
-    <button class="bat" id="sk-cu" aria-pressed="${LICH.cu}">Cả 14 ngày qua</button><span class="dem">${ds.length} sự kiện</span></div>`
+    <button class="bat" id="sk-cu" aria-pressed="${LICH.cu}">Cả 14 ngày qua</button><span class="dem">${ds.length} sự kiện</span></div>
+    <div class="phu" style="margin:-4px 0 10px">Hạn công bố BCTC sắp tới: ${han_bctc().map(([d, t]) => `<b>${ngay_vn(d)}</b> ${esc(t)}`).join(" · ")}</div>`
     + (Object.keys(nhom_ngay).length ? Object.entries(nhom_ngay).map(([d, x]) => the(`${thu(d)}, ${ngay_vn(d)}`, d === nay ? "hôm nay" : d < nay ? "đã qua" : "ngày GDKHQ / sự kiện",
       `<div class="bang-boc"><table class="sk"><thead><tr><th class="trai">Mã</th><th class="trai">Loại</th><th class="trai">Nội dung</th><th>Chốt quyền</th><th>Thực hiện</th></tr></thead><tbody>${x.map(dong).join("")}</tbody></table></div>`)).join("")
       : `<div class="the"><div class="trong">Không có sự kiện phù hợp.</div></div>`);
@@ -2576,11 +2605,12 @@ function ds_td_ve() {
     nganh: ["Cùng ngành", r.nganh ? (DS || []).filter(x => x.nganh === r.nganh).sort((a, b) => (b.von || 0) - (a.von || 0)).slice(0, 25).map(x => x.ma) : []],
     bot: ["Tín hiệu bot", Object.keys(BOT)], cs: ["Chỉ số", Object.keys(CHI_SO_TEN).filter(m => !CS_CO || CS_CO[m])]};                                        // khuyến nghị mua phiên tới (tổng kết 15:20)
   const ds = (nhom[DT.ds] || nhom.dm)[1];
-  const dong = ds.map(m => { const l = LIVE[m], d = dong_ds(m), g = l?.gia ?? (d.gia ? d.gia / 1000 : null), tc = l?.gia != null ? l.tc : null, ten = d.ten || MKT?.ten?.[m] || CHI_SO_TEN[m] || "";
+  if (!SK) tai_sk().then(() => { if (DT.mo) ds_td_ve(); }).catch(() => {});   // nhãn sự kiện: vẽ lại khi tải xong
+  const dong = ds.map(m => { const l = LIVE[m] || live_cs(m), d = dong_ds(m), g = l?.gia ?? (d.gia ? d.gia / 1000 : null), tc = l?.gia != null ? l.tc : null, ten = d.ten || MKT?.ten?.[m] || CHI_SO_TEN[m] || "";
     const ch_ = g != null && tc ? g - tc : null, p = ch_ != null && tc ? ch_ / tc : null;
     const giu = GIU.has(m), nn_ = l?.nn;
     const bt = DT.ds === "bot" ? BOT[m] : null;
-    return `<div class="dt-r${m === xem ? " dang" : ""}" data-dtma="${esc(m)}" role="link" tabindex="0"><div class="t"><b>${esc(m)}${DT.ds === "dm" ? `<i class="dt-nhan ${giu ? "giu" : "td"}">${giu ? "Đang giữ" : "Theo dõi"}</i>` : bt ? `<i class="dt-nhan bot">${esc(bt[1])}</i>` : ""}</b>` +
+    return `<div class="dt-r${m === xem ? " dang" : ""}" data-dtma="${esc(m)}" role="link" tabindex="0"><div class="t"><b>${esc(m)}${DT.ds === "dm" ? `<i class="dt-nhan ${giu ? "giu" : "td"}">${giu ? "Đang giữ" : "Theo dõi"}</i>` : bt ? `<i class="dt-nhan bot">${esc(bt[1])}</i>` : ""}${(e => e ? `<i class="dt-nhan sk" title="${esc(NHOM_SK[e.nhom] || e.nhom)} – ${esc(e.ten || "")}">${esc({tien: "GDKHQ", cp: "Phát hành", dh: "ĐHCĐ"}[e.nhom] || "Sự kiện")} ${ngay_vn(e.ngay).slice(0, 5)}</i>` : "")(sk_sap(m, 7)[0])}</b>` +
       `<span>${bt ? `vùng mua ${so(bt[2], 2)}–${so(bt[3], 2)} · cắt lỗ ${so(bt[4], 2)}` : esc(ten)}</span></div>` +
       `<div class="p"><b>${g != null ? so(g, 2) : "–"}</b><span class="${mau(p)}">${ch_ != null ? `${ch_ > 0 ? "+" : ""}${so(ch_, 2)} / ${pt(p, 2)}` : ""}</span>` +
       (DT.ds === "dm" && nn_ != null ? `<span class="nn">NN ${nn_ > 0 ? "+" : ""}${so(nn_, 1)} tỷ</span>` : "") + `</div>` +
@@ -2638,7 +2668,7 @@ async function fs_mo(ma, o = {}) {                   // o.trang: trang Biểu đ
   const r = dong_ds(ma), ten = (k.n?.ct?.viOrganName) || r.ten || MKT?.ten?.[ma] || "";
   el.innerHTML = `<div class="fs-tren"><input class="o" id="fs-o" value="${esc(ma)}" maxlength="12" aria-label="Đổi mã" spellcheck="false"${CHAM ? " readonly" : ""}>
       <span class="nut">${nut([["1", "1m"], ["5", "5m"], ["15", "15m"], ["60", "1H"], ["D", "1D"], ["W", "1W"], ["M", "1M"]], ST.khung, "fsk")}</span>
-      ${menu_khoi()}<button type="button" class="gc-nut${gc_doc()[ma] ? " co" : ""}" data-gc title="Ghi chú cho ${esc(ma)} (Shift+N) – chỉ lưu trong trình duyệt này">✎ Ghi chú</button><button type="button" class="gc-nut chi-rong" data-luoi-mo title="Chế độ 4 biểu đồ cùng lúc (Shift+G)">⊞ 2×2</button>
+      ${menu_khoi()}<button type="button" class="gc-nut${gc_doc()[ma] ? " co" : ""}" data-gc title="Ghi chú cho ${esc(ma)} (Shift+N) – chỉ lưu trong trình duyệt này">✎<span class="chi-rong"> Ghi chú</span></button><button type="button" class="gc-nut chi-rong" data-luoi-mo title="Chế độ 4 biểu đồ cùng lúc (Shift+G)">⊞ 2×2</button>
       <span class="nut">${nut([["kl", "Khối lượng"]].concat(k.g?.nn ? [["nn", "Khối ngoại"]] : []), ST.duoi, "fsd")}</span>
       <span class="ten">${esc(ten)}</span>${trang ? "" : `<button class="thoat" id="fs-thoat" title="Thoát (Esc)">✕ Thoát</button>`}</div>
     <div class="fs-gc" id="fs-gc"${gc_doc()[ma] ? "" : " hidden"}><textarea id="gc-o" rows="2" placeholder="Ghi chú cho ${esc(ma)}: lý do mua, kịch bản, mốc cần theo dõi… (chỉ lưu trong trình duyệt này)">${esc(gc_doc()[ma] || "")}</textarea></div>
