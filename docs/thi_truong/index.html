@@ -155,6 +155,12 @@ tbody tr{background:var(--the)}
 .lk-ma{color:inherit;text-decoration:none}.lk-ma:hover{color:var(--nhan);text-decoration:underline}
 .td-the{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;align-items:stretch}
 .wl{width:100%;border-collapse:collapse;font-size:13px}.wl th{font-weight:500;color:var(--chu2);font-size:12px;padding:4px 8px;text-align:right}.wl td{padding:6px 8px;text-align:right;border-top:1px solid var(--vien)}.wl .trai{text-align:left}.wl tbody tr{cursor:pointer}.wl tbody tr:hover{background:var(--nen)}.wl .ten{display:block;font-size:11px;color:var(--mo);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quy b{font-weight:600}.quy-ct{width:100%;border-collapse:collapse;font-size:12.5px;margin:4px 0}.quy-ct td,.quy-ct th{padding:3px 8px;text-align:right;border-top:1px solid var(--vien)}.quy-ct .trai{text-align:left}.quy-ct .vach{display:inline-block;height:8px;border-radius:4px;background:var(--nhan);vertical-align:middle;margin-right:6px;opacity:.55}
+.quy>tbody>tr>td:first-child,.quy .dtn-mo td{white-space:normal}.quy .dtn-mo .phu{white-space:normal}
+.quy .ngan{display:none}
+@media (max-width:600px){.quy .c3t,.quy-ct .ccp,.quy .dai{display:none}.quy .ngan{display:inline}.quy{font-size:12px}.quy th,.quy>tbody>tr>td{padding:6px 4px}
+  .quy th{letter-spacing:0}.quy .ten{font-size:10px}.quy{table-layout:fixed}.quy th:first-child{width:31%}.quy th[data-c=ts]{width:18%}.quy th{font-size:10px}
+  .quy-ct td,.quy-ct th{white-space:normal;padding:3px 4px}.quy-ct .vach{max-width:40px}}
 .dtn-mo td{background:var(--nen);padding:8px 10px}.dtn tr[data-n]{cursor:pointer}.tk-ds{cursor:help;text-decoration:underline dotted}
 .td-the button{flex:0 0 auto;border:1px solid var(--vien);background:var(--the);border-radius:8px;padding:6px 10px;text-align:left;min-width:96px}
 .td-the b{display:block;font-size:13px}
@@ -173,6 +179,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
     <div class="tab" role="tablist">
       <button role="tab" id="tab-tq" aria-selected="true" data-tab="tq">Tổng quan</button>
       <button role="tab" id="tab-loc" aria-selected="false" data-tab="loc">Lọc mã</button>
+      <button role="tab" id="tab-quy" aria-selected="false" data-tab="quy">Quỹ đầu tư</button>
       <a href="../ma/#bieu-do" title="Biểu đồ giá (mã xem gần nhất) – gõ mã ngay trên biểu đồ để đổi">Biểu đồ</a>
     </div>
     <div class="gg" id="tim-ma"><input placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu" maxlength="10"
@@ -244,6 +251,18 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
         <div class="bang-boc"><table><thead id="loc-dau-bang"></thead><tbody id="loc-than"></tbody></table></div>
         <button class="them" id="loc-them" hidden>Xem thêm</button>
       </div>
+    </div>
+  </section>
+  <section id="quy" hidden>
+    <div class="the">
+      <div class="khoi-dau"><h2>Danh sách các quỹ đầu tư</h2><span class="phu" id="quy-phu"></span><div class="nut" id="quy-loai"></div></div>
+      <div class="bang-boc"><table class="wl quy"><thead><tr id="quy-dau"></tr></thead><tbody id="quy-than"></tbody></table></div>
+    </div>
+    <div class="luoi2" style="margin-top:16px">
+      <div class="the"><div class="khoi-dau"><h2>Cổ phiếu quỹ nắm nhiều nhất</h2><span class="phu">tổng giá trị trong top 10 các quỹ · bấm mã → phân tích</span></div>
+        <div style="padding:6px 10px" id="quy-nam"></div></div>
+      <div class="the"><div class="khoi-dau"><h2>Quỹ mua / bán ròng</h2><span class="phu" id="quy-mb-phu">ước tính · 3 tháng gần nhất</span></div>
+        <div style="padding:6px 10px" id="quy-mb"></div></div>
     </div>
   </section>
 </main>
@@ -866,11 +885,65 @@ function dong_html(r) {
     <td class="trai">${bien_svg(r)}</td></tr>`;
 }
 
+// ---------- QUỸ ĐẦU TƯ (chủ quỹ 09/11/2026): quỹ mở cổ phiếu / cân bằng – nguồn Fmarket (thi_truong/quy_web.py) ----------
+const ky_vn = k => k ? `${k.slice(5)}/${k.slice(0, 4)}` : "–";
+const pt_mau = v => v == null ? "–" : `<span class="${v > 0 ? "t" : v < 0 ? "g" : ""}">${dau(v, innerWidth < 600 ? 1 : 2)}%</span>`;
+const COT_QUY = [["ten", "Tên quỹ", 1], ["ts", `<span class="dai">Tổng tài sản</span><span class="ngan">Tài sản</span>`], ["3t", "3 tháng"],
+  ["ytd", `<span class="dai">Từ đầu năm</span><span class="ngan">YTD</span>`], ["1n", "1 năm"], ["3n", "3 năm"]];
+function chi_tiet_quy(q) {
+  const mx = Math.max(...q.top.map(h => h[1] || 0), 1), gon = ds => (ds || []).filter(x => x[1] > 0).map(([t, p]) => `${esc(t)} <b class="so">${nf(p, 1)}%</b>`).join(" · ") || "–";
+  return `<div class="phu" style="margin-bottom:4px">Danh mục báo cáo tháng ${ky_vn(q.ky)} · NAV / CCQ <b class="so">${nf(q.nav, 0)}</b>${q.nav_ngay ? ` (${ngay_vn(q.nav_ngay)})` : ""}
+    · 1 tháng ${pt_mau(q.lai["1t"])} · 5 năm ${pt_mau(q.lai["5n"])}</div>
+    <table class="quy-ct"><thead><tr><th class="trai">Top 10 mã</th><th class="trai">% NAV</th><th>Giá trị</th><th class="ccp">Số CP</th></tr></thead><tbody>
+    ${q.top.slice().sort((a, b) => (b[1] || 0) - (a[1] || 0)).map(([m, p, kl, g, ng]) => `<tr><td class="trai"><a class="lk-ma" href="../ma/#${encodeURIComponent(m)}" data-ma="${esc(m)}"><b>${esc(m)}</b></a> <span class="phu">${esc(ng)}</span></td>
+      <td class="trai so"><span class="vach" style="width:${Math.round((p || 0) / mx * 80)}px"></span>${nf(p, 2)}%</td><td class="so">${nf(g, 1)} tỷ</td><td class="so ccp">${nf(kl, 0)}</td></tr>`).join("")
+      || `<tr><td class="trai" colspan="4">Quỹ chưa công bố danh mục</td></tr>`}</tbody></table>
+    <div class="phu">Tài sản: ${gon(q.tai_san)}</div><div class="phu">Ngành: ${gon((q.nganh || []).slice(0, 6))}</div>`;
+}
+function ve_quy() {
+  const Q = D.quy, than = $("#quy-than");
+  if (!Q || !(Q.quy || []).length) {
+    than.innerHTML = `<tr><td class="trong" colspan="6">Chưa có dữ liệu quỹ – dữ liệu dựng sau phiên (19:07)</td></tr>`;
+    $("#quy-nam").innerHTML = $("#quy-mb").innerHTML = ""; return; }
+  const loai = ST.quy_loai || "", sap = ST.quy_sap || "ts", chieu = ST.quy_chieu || -1;
+  $("#quy-loai").innerHTML = [["", "Tất cả"], ...Object.entries(Q.loai || {})].map(([k, t]) => `<button data-l="${k}" aria-pressed="${k === loai}">${esc(t)}</button>`).join("");
+  const gt = (q, c) => c === "ts" ? q.ts : c === "ten" ? q.m : (q.lai || {})[c];
+  const ds = Q.quy.filter(q => !loai || q.loai === loai).sort((a, b) => { const x = gt(a, sap), y = gt(b, sap);
+    return x == null ? 1 : y == null ? -1 : (x > y ? 1 : x < y ? -1 : 0) * chieu; });
+  $("#quy-phu").textContent = `${ds.length} quỹ · nguồn Fmarket · cập nhật ${Q.cap_nhat || ""} · bấm quỹ xem danh mục`;
+  $("#quy-dau").innerHTML = COT_QUY.map(([c, t, trai]) => `<th data-c="${c}" class="${trai ? "trai" : ""}${c === "3t" ? " c3t" : ""}" style="cursor:pointer"${c === sap ? ` aria-sort="${chieu > 0 ? "ascending" : "descending"}"` : ""}>${t}</th>`).join("");
+  than.innerHTML = ds.map(q => `<tr data-q="${esc(q.m)}"><td class="trai"><b>${esc(q.ten || q.m)}</b><span class="ten" style="max-width:none">${esc(q.cty)} | ${esc(q.m)} · ${esc((Q.loai || {})[q.loai] || "")}</span></td>
+    <td class="so">${q.ts == null ? "–" : nf(q.ts, 0) + " tỷ"}</td>${["3t", "ytd", "1n", "3n"].map(c => `<td class="so${c === "3t" ? " c3t" : ""}">${pt_mau((q.lai || {})[c])}</td>`).join("")}</tr>`
+    + (q.m === ST.quy_mo ? `<tr class="dtn-mo"><td class="trai" colspan="6">${chi_tiet_quy(q)}</td></tr>` : "")).join("");
+  for (const a of than.querySelectorAll("a[data-ma]")) {
+    a.addEventListener("pointermove", e => { if (e.pointerType !== "touch") anh_gy(a.dataset.ma, e.clientX, e.clientY, `<b>${esc(a.dataset.ma)}</b> ${esc((D.ten || {})[a.dataset.ma] || "")}`); });
+    a.addEventListener("pointerleave", an_anh); }
+  const pt_ma = m => ((L || []).find(r => r.ma === m) || {}).pt;
+  const nam = $("#quy-nam"); nam.innerHTML = "";
+  const top = (Q.nam || []).slice(0, 15).map(x => [x[0], x[1], pt_ma(x[0]), x]).reverse();
+  if (top.length) cot_ngang(nam, top, Math.max(nam.clientWidth - 4, 280), d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Trong top 10 của <b>${d[3][2]}</b> quỹ · tổng <span class="so">${nf(d[1], 0)} tỷ</span>`, v => nf(v, 0) + " tỷ", "Cổ phiếu quỹ nắm nhiều nhất");
+  const mb = $("#quy-mb"); mb.innerHTML = "";
+  const thang = [...new Set(Q.quy.map(q => q.ky).filter(Boolean))].sort().pop();
+  if ((Q.mb || []).length) {
+    const chon = [...Q.mb.slice(0, 8).filter(x => x[1] > 0), ...Q.mb.slice(-8).filter(x => x[1] < 0)];
+    const d2 = [...new Map(chon.map(x => [x[0], x])).values()].sort((a, b) => a[1] - b[1]).map(x => [x[0], x[1], pt_ma(x[0]), x]);
+    $("#quy-mb-phu").textContent = `ước tính · ${Q.mb_so_quy} quỹ · tháng ${ky_vn(Q.mb_tu)} → ${ky_vn(thang)}`;
+    cot_ngang(mb, d2, Math.max(mb.clientWidth - 4, 280), d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Ròng <span class="so">${dau(d[1], 1)} tỷ</span> · ${d[3][2]} quỹ tăng · ${d[3][3]} quỹ giảm`, v => dau(v, 0) + " tỷ", "Quỹ mua bán ròng");
+    mb.insertAdjacentHTML("beforeend", `<div class="phu" style="margin-top:6px">Chênh số CP của cùng mã trong top 10 mỗi quỹ giữa 2 kỳ báo cáo × giá báo cáo. Mã vào / rời top 10 không tính giá trị (không biết khối lượng ngoài top 10).</div>`);
+  } else mb.innerHTML = `<div class="phu" style="padding:8px 4px;line-height:1.5">Đang tích luỹ dữ liệu: Fmarket chỉ công bố danh mục tháng gần nhất (${ky_vn(thang)}), không có lịch sử.
+    Trang tự lưu danh mục mỗi tháng → có số quỹ mua / bán ròng khi các quỹ công bố tháng tiếp theo, đủ 3 tháng sau ~3 tháng.</div>`;
+}
+$("#quy-than").onclick = e => { if (e.target.closest("a")) return; const tr = e.target.closest("tr[data-q]"); if (!tr) return;
+  ST.quy_mo = ST.quy_mo === tr.dataset.q ? null : tr.dataset.q; luu_st(); ve_quy(); };
+$("#quy-dau").onclick = e => { const th = e.target.closest("th[data-c]"); if (!th) return; const c = th.dataset.c;
+  ST.quy_chieu = (ST.quy_sap || "ts") === c ? -(ST.quy_chieu || -1) : (c === "ten" ? 1 : -1); ST.quy_sap = c; luu_st(); ve_quy(); };
+$("#quy-loai").onclick = e => { const b = e.target.closest("button[data-l]"); if (!b) return; ST.quy_loai = b.dataset.l; luu_st(); ve_quy(); };
+
 // ---------- điều khiển ----------
 function doi_tab(t) {
   ST.tab = t; luu_st();
   for (const b of document.querySelectorAll(".tab button")) b.setAttribute("aria-selected", String(b.dataset.tab === t));
-  $("#tq").hidden = t !== "tq"; $("#loc").hidden = t !== "loc";
+  $("#tq").hidden = t !== "tq"; $("#loc").hidden = t !== "loc"; $("#quy").hidden = t !== "quy";
   ve_tat();
 }
 document.querySelectorAll(".tab button").forEach(b => b.onclick = () => doi_tab(b.dataset.tab));
@@ -892,6 +965,7 @@ function ve_tat() {
   // mỗi khối vẽ riêng: 1 khối lỗi không làm trống cả trang (09/11/2026: lỗi khung theo dõi chặn mọi khối sau)
   if (ST.tab === "tq") for (const f of [ve_the, ve_theo_doi, ve_bieu_do, ve_ban_do, ve_tk, ve_tac, ve_dtn]) {
     try { f(); } catch (e) { console.error(f.name, e); } }
+  else if (ST.tab === "quy") ve_quy();
   else ve_loc();
 }
 async function tai() {
@@ -905,7 +979,7 @@ async function tai() {
 }
 document.querySelectorAll("#nd-kich button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.k === ST.kich)));
 $("#loc-tim").value = ST.tim;
-doi_tab(ST.tab === "loc" ? "loc" : "tq");
+doi_tab(["loc", "quy"].includes(ST.tab) ? ST.tab : "tq");
 tai();
 setInterval(() => { if (!document.hidden) tai(); }, 60000);
 let hen; addEventListener("resize", () => { clearTimeout(hen); hen = setTimeout(ve_tat, 150); });
