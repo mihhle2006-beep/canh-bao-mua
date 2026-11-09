@@ -33,7 +33,7 @@ from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_anh, gui
 def main(argv=None):
     p = argparse.ArgumentParser(description="Cảnh báo mua theo chiến lược thị trường")
     p.add_argument("--che_do", default="tu_dong",
-                   choices=["tu_dong", "trong_phien", "tong_ket", "lich_su", "chien_luoc", "backtest", "tai_nen"])
+                   choices=["tu_dong", "trong_phien", "tong_ket", "lich_su", "chien_luoc", "backtest", "tai_nen", "lo_le"])
     p.add_argument("--ma", default=None, help="thêm mã theo dõi ngoài danh sách chiến lược (VD MWG,FPT)")
     p.add_argument("--chi_ma", default=None,
                    help="CHỈ xem mã này (VD FPT hoặc FPT,HPG) theo chiến lược – không ghi trạng thái / danh sách mua")
@@ -82,6 +82,8 @@ def main(argv=None):
         return tong_ket(bay_gio, vt, them, a.khong_gui)
     if che_do == "truoc_phien":
         return nhac_ato(bay_gio, vt, a.khong_gui)
+    if che_do == "lo_le":
+        return lo_le_1425(bay_gio, vt, a.khong_gui)
     return trong_phien_15p(bay_gio, vt, a.khong_gui)
 
 
@@ -446,6 +448,27 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     _canh_bao_ban(bay_gio, vt, khong_gui)
     _trang(bay_gio)
     _in_nguon()
+    return 0
+
+
+def lo_le_1425(bay_gio, vt, khong_gui=False):
+    """14:25 (người dùng 09/11/2026): mã VÀO TRỄ đủ điều kiện ATC (nến đã đóng tới 14:15, như lượt 14:30) mà NAV × tỷ trọng
+    chỉ đủ < 100 CP – ATC không nhận lô lẻ → tin riêng "MUA LÔ LẺ NGAY" + nút, kịp đặt trước 14:30. Đủ lô chẵn → vẫn ATC.
+    Backtest (danh-muc KET_LUAN atc_som): mua cuối phiên liên tục kém ATC 0,66 điểm %/lệnh nhưng vẫn +3,3 %/lệnh – hơn bỏ lệnh."""
+    bien_the, _ = tong_ket_cl.cach_vao(tong_ket_cl.doc_ket_qua_backtest())
+    for z in diem_vao.doc_ds_mua(bay_gio):
+        if z["ma"] in vt or not diem_vao.vao_tre_atc(z):
+            continue
+        kq = diem_vao.danh_gia(z, bo_nen_chua_dong(nen_15p(z["ma"], bay_gio), C.KHUNG_PHUT, bay_gio), bay_gio, bien_the)
+        if kq["trang_thai"] != "MUA" or not kq.get("atc"):
+            continue
+        gia, cl, _, _ = diem_vao.muc_sau_mua(kq)
+        n = diem_vao.so_cp_nav(kq, gia, cl)
+        if not 0 < n < 100:
+            continue
+        nd, nut = diem_vao.tin_lo_le(kq, bay_gio, n), diem_vao.nut_chon(kq["ma"], n, int(round(kq["den"] * 1000)) // 100 * 100)
+        gui(nd, rieng_tu=True, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
+    print("Lô lẻ 14:25: xong")                                      # log công khai: không in mã / số tin
     return 0
 
 

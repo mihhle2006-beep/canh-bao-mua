@@ -258,7 +258,7 @@ def _von_nav(kq, gia, cl):
         s += f" → {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr" + (" (lô lẻ)" if n < 100 else "")
     elif n0 > 0:                                       # ATC: tỷ trọng chỉ đủ lô lẻ → không có nút (09/11/2026: GAS ATC không nút)
         s += (f" → {n0} CP ≈ {n0 * gia * 1000 / 1e6:.1f} tr – ATC không nhận lô lẻ (< 100 CP) nên KHÔNG có nút mua; "
-              "lô lẻ chỉ khớp trong phiên liên tục")
+              "lô lẻ chỉ khớp trong phiên liên tục (vào trễ: đã báo mua lô lẻ lúc 14:25)")
     return s
 
 
@@ -362,6 +362,18 @@ def tin_tong_hop_mua(ds, bay_gio, rieng=None):
     d.append("Đặt lần lượt từ trên xuống tới khi hết tiền / hết suất mã mới tuần này"
              + ("; dự phòng chỉ khi còn tiền / suất sau mã có tin riêng" if len(co_rieng) < len(x) else ""))
     return "\n".join(d)
+
+
+def tin_lo_le(kq, bay_gio, n):
+    """14:25 – vào trễ đủ điều kiện ATC nhưng NAV × tỷ trọng chỉ đủ n < 100 CP (ATC không nhận lô lẻ) → mua lô lẻ ngay
+    trong phiên liên tục (chay.lo_le_1425). Có số CP theo NAV → tin riêng tư."""
+    gia, cl, mt1, mt3 = muc_sau_mua(kq)
+    return "\n".join([
+        f"⏰ MUA LÔ LẺ NGAY – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – đặt TRƯỚC 14:30",
+        f"Vào trễ, tỷ trọng theo NAV chỉ đủ {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr – phiên ATC không nhận lô lẻ nên mua ngay "
+        "trong phiên liên tục (bảng lô lẻ)",
+        f"👉 LO lô lẻ, không cao hơn {_f(kq['den'])} · Cắt lỗ {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
+        f"Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}"])
 
 
 def tin_bo(kq, bay_gio):

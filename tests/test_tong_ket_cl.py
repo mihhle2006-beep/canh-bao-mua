@@ -701,6 +701,30 @@ def test_trong_phien_mua_cung_luc_gom_tin(monkeypatch, tmp_path):
     assert gui[3][0].startswith("📋 3 MÃ BÁO MUA CÙNG LÚC") and gui[3][2] is None
 
 
+def test_lo_le_1425_chi_khi_ty_trong_duoi_100_cp(monkeypatch, capsys):
+    """14:25: vào trễ đủ điều kiện ATC + NAV chỉ đủ lô lẻ → tin riêng + nút lô lẻ; đủ lô chẵn / đang giữ / không vào trễ → im."""
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    k = {"nhom": "VAO_NHU_MOI", "tu": 70.0, "den": 76.3, "cl": 72.3, "mt1": 76.1, "mt3": 79.9, "atc": True,
+         "trang_thai": "MUA", "ly_do": "vào trễ – lệnh ATC trong vùng", "gia_nay": 74.2, "gia_mua": 74.2, "thoi_diem": None}
+    ds = [{"ma": m} for m in ("GAS", "VNM", "HPG", "FPT")]
+    monkeypatch.setattr(diem_vao, "doc_ds_mua", lambda bay_gio: ds)
+    monkeypatch.setattr(diem_vao, "vao_tre_atc", lambda z: z["ma"] != "FPT")
+    monkeypatch.setattr(diem_vao, "danh_gia", lambda z, dp, bay_gio, bt: {**k, **z})
+    monkeypatch.setattr(diem_vao, "muc_sau_mua", lambda kq: (74.2, 72.3, 76.1, 79.9))
+    monkeypatch.setattr(diem_vao, "so_cp_nav", lambda kq, g, c: {"GAS": 86, "VNM": 237}.get(kq["ma"], 50))
+    monkeypatch.setattr(tong_ket_cl, "cach_vao", lambda kq: ("15P+GIO", "cấu hình"))
+    monkeypatch.setattr(chay, "nen_15p", lambda ma, bay_gio: pd.DataFrame())
+    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda df, *a: df)
+    gui = []
+    monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, anh=None, nut=None: gui.append((nd, rieng_tu, nut)))
+    vt = {"HPG": {"ma": "HPG", "so_cp": 100}}
+    assert chay.lo_le_1425(pd.Timestamp("2026-11-10 14:25"), vt) == 0
+    (nd, rieng, nut), = gui                                         # chỉ GAS: VNM đủ lô chẵn (ATC), HPG đang giữ, FPT không vào trễ
+    assert rieng and nd.startswith("⏰ MUA LÔ LẺ NGAY – GAS") and "TRƯỚC 14:30" in nd and "86 CP" in nd
+    assert nut[0] == [("🛒 Mua 86 lẻ", "dl|M|GAS|86|76300")]
+    assert "GAS" not in capsys.readouterr().out                      # log công khai không lộ mã
+
+
 def test_log_15p_khong_phu_thuoc_danh_muc(monkeypatch, tmp_path, capsys):
     """Repo CÔNG KHAI: log vòng 15' (Actions) phải GIỐNG HỆT dù đang giữ mã nào – trước 09/11/2026 dòng "(tin riêng tư …)" ngay
     dưới 1 mã, và mã trạng thái MUA thiếu tin MUA công khai, đều lộ mã đang giữ."""
