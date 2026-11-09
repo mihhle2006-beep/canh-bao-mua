@@ -13,8 +13,12 @@ on:
       ma:
         description: "Mã, phân cách dấu phẩy (để trống = danh mục + bản đồ ngành + mã gần top 150 GTGD HOSE/HNX)"
         default: ""
+      lich:
+        description: "Đồng hồ (dong_ho.yml) gọi THAY lịch: chuỗi cron UTC – \"37 18 * * *\" = lượt BỔ SUNG đêm. Bấm tay để trống"
+        default: ""
   schedule:
     - cron: "47 17 * * 6"          # 00:47 Chủ nhật giờ VN (≤ 2 giờ → xong trước Boi so nganh 03:13)
+    - cron: "37 18 * * *"          # 01:37 giờ VN mỗi đêm: BỔ SUNG dần – mã UPCoM chưa có trong kho + mã thiếu BCTC dài VNDirect (từ 09/11/2026)
 
 permissions:
   contents: read
@@ -41,7 +45,7 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v5
         with:
@@ -70,11 +74,15 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Tải BCTC
-        timeout-minutes: 100
+        timeout-minutes: 125
         env:
           MA: ${{ inputs.ma }}
+          LICH: ${{ inputs.lich || github.event.schedule }}
         run: |
-          if [ -n "$MA" ]; then
+          if [ "$LICH" = "37 18 * * *" ]; then        # lượt đêm: danh sách sàn mới nhất (có UPCoM) rồi bổ sung trong 110 phút
+            python -m ptcp.san || echo "Danh sách sàn lỗi – dùng file cũ"
+            python -m ptcp.kho_bctc --bo_sung UPCOM --han_phut 110
+          elif [ -n "$MA" ]; then
             python -m ptcp.kho_bctc --ma "$MA"
           else
             python -m ptcp.kho_bctc
@@ -90,6 +98,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
           git add du_lieu/bctc
+          for f in ptcp/san_niem_yet.json du_lieu/bctc_da_thu.json; do [ -e "$f" ] && git add "$f"; done
           git commit -q -m "Kho BCTC $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
           for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
           echo "Không đẩy được – kiểm tra Settings → Actions → Workflow permissions"; exit 1

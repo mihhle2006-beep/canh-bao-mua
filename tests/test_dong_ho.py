@@ -22,7 +22,7 @@ KHONG_GAC = {"canh_bao.yml",        # vòng lặp: lượt trùng xếp hàng r�
              "bang_thi_truong.yml",  # dựng lại trang – chạy thêm vô hại
              "lenh_tele.yml"}       # đọc tin bot – chạy thêm vô hại
 # workflow phân biệt lịch / bấm tay bằng input riêng (đồng hồ truyền input đó) thay vì input "lich"
-INPUT_RIENG = {"canh_bao.yml": {"vong", "che_do"}, "bang_thi_truong.yml": {"chuan_bi"}}
+INPUT_RIENG = {"canh_bao.yml": {"vong", "che_do"}, "bang_thi_truong.yml": {"chuan_bi"}, "ke_hoach_dhcd.yml": {"con_lai"}}
 
 
 def _yml(ten):
