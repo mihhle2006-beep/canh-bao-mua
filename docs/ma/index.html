@@ -2739,43 +2739,49 @@ const FMT_TY = "#,##0.0;[Red]\\-#,##0.0", FMT_DONG = "#,##0;[Red]\\-#,##0";
 async function xlsx_mau(ten_file, o) {
   // o: {ma, loai, thoi_gian, don_vi, nhom: [[nhãn dải, [kỳ…]]…], phan: [[tên phần, [{t, me, lui, v: [[giá trị theo nhóm]…], fmt}]]…], chu_thich}
   let EJ; try { EJ = await tai_exceljs(); } catch (e) { return alert("Không tải được thư viện Excel – thử lại sau"); }
-  const XANH = "FF2E7D32", DAM = "FF1B5E20", nen = argb => ({type: "pattern", pattern: "solid", fgColor: {argb}});
+  const XANH = "FF2E7D32", DAM = "FF1B5E20", CHU = "FF262626", nen = argb => ({type: "pattern", pattern: "solid", fgColor: {argb}});
+  const F = (x = {}) => ({name: "Arial", size: 10, color: {argb: CHU}, ...x}), KE = {bottom: {style: "hair", color: {argb: "FFDDDDDD"}}};
   const wb = new EJ.Workbook(), ws = wb.addWorksheet(o.ma, {views: [{state: "frozen", xSplit: 1, ySplit: 10, showGridLines: false}],
     properties: {outlineProperties: {summaryBelow: false}}});
   const vt = []; let col = 2;
   o.nhom.forEach(([, ky], g) => { vt.push(col); col += ky.length + (g < o.nhom.length - 1 ? 1 : 0); });
   const het = col - 1, cach = new Set(vt.slice(1).map(c => c - 1));            // cột trống hẹp giữa Năm và Quý
-  ws.getColumn(1).width = 52;
-  for (let c = 2; c <= het; c++) ws.getColumn(c).width = cach.has(c) ? 3 : vt.includes(c) ? 17 : 13;
-  const trang = {bold: true, size: 12, color: {argb: "FFFFFFFF"}}, hn = new Date(), ngay = `${String(hn.getDate()).padStart(2, "0")}/${String(hn.getMonth() + 1).padStart(2, "0")}/${hn.getFullYear()}`;
+  const dai = Math.max(...o.phan.flatMap(([t, d]) => [t.length, ...d.map(x => String(x.t).length + (x.me ? 0 : x.lui ?? 2))]));
+  ws.getColumn(1).width = Math.min(60, Math.max(26, Math.ceil(dai * 1.05) + 2));                  // vừa nhãn dài nhất
+  for (let c = 2; c <= het; c++) ws.getColumn(c).width = cach.has(c) ? 2 : o.rong || 12;
+  const trang = F({bold: true, color: {argb: "FFFFFFFF"}}), hn = new Date(), ngay = `${String(hn.getDate()).padStart(2, "0")}/${String(hn.getMonth() + 1).padStart(2, "0")}/${hn.getFullYear()}`;
   const ten = ten_ma((DS || []).find(r => r.ma === o.ma) || {ma: o.ma});
-  ws.getCell("A1").value = ten ? `${o.ma} – ${ten}` : o.ma; ws.getCell("A1").font = {bold: true, size: 16, color: {argb: DAM}}; ws.getRow(1).height = 21;
-  ws.getCell("A2").value = o.loai; ws.getCell("A2").font = {size: 12, color: {argb: XANH}};
+  ws.getCell("A1").value = ten ? `${o.ma} – ${ten}` : o.ma; ws.getCell("A1").font = F({bold: true, size: 15, color: {argb: DAM}}); ws.getRow(1).height = 22;
+  ws.getCell("A2").value = o.loai; ws.getCell("A2").font = F({size: 11, color: {argb: XANH}});
   [["Ngày xuất", ngay], ["Mã", o.ma], ["Thời gian", o.thoi_gian], ["Đơn vị", o.don_vi]].forEach(([a, b], i) => {
     const r = ws.getRow(4 + i); r.getCell(1).value = a; r.getCell(1).font = trang; r.getCell(1).fill = nen(XANH);
-    r.getCell(2).value = b; r.getCell(2).font = {size: 12}; r.getCell(2).alignment = {horizontal: "left"}; });
-  const r9 = ws.getRow(9), r10 = ws.getRow(10); r10.height = 16;
+    r.getCell(1).alignment = {indent: 1}; r.getCell(2).value = b; r.getCell(2).font = F({bold: true}); r.getCell(2).alignment = {horizontal: "left", indent: 1}; });
+  const r9 = ws.getRow(9), r10 = ws.getRow(10); r9.height = 16; r10.height = 18;
   for (let c = 1; c <= het; c++) if (!cach.has(c)) for (const r of [r9, r10]) {
-    const x = r.getCell(c); x.font = trang; x.fill = nen(XANH); x.alignment = {horizontal: "center"};
+    const x = r.getCell(c); x.font = r === r9 ? F({bold: true, size: 9, color: {argb: "FFC8E6C9"}}) : trang; x.fill = nen(r === r9 ? DAM : XANH);
+    x.alignment = {horizontal: r === r9 ? "left" : "right", vertical: "middle", indent: r === r9 ? 1 : 0};
     if (r === r10) x.border = {bottom: {style: "medium", color: {argb: DAM}}}; }
+  r10.getCell(1).value = o.cot1 || "Chỉ tiêu"; r10.getCell(1).alignment = {horizontal: "left", vertical: "middle", indent: 1};
   o.nhom.forEach(([nhan, ky], g) => { if (ky.length > 1) ws.mergeCells(9, vt[g], 9, vt[g] + ky.length - 1);
     r9.getCell(vt[g]).value = nhan; ky.forEach((k, j) => { r10.getCell(vt[g] + j).value = k; }); });
   let r = 11;
   for (const [ten_phan, dong] of o.phan) {
     if (!dong.length) continue;
     const rp = ws.getRow(r++); rp.getCell(1).value = ten_phan;
-    for (let c = 1; c <= het; c++) { const x = rp.getCell(c); x.font = {bold: true, size: 12, color: {argb: DAM}}; x.fill = nen("FFE8F5E9");
-      x.border = {bottom: {style: "thin", color: {argb: "FFC8E6C9"}}}; }
+    rp.height = 18;
+    for (let c = 1; c <= het; c++) { const x = rp.getCell(c); x.font = F({bold: true, size: 11, color: {argb: DAM}}); x.fill = nen("FFE8F5E9");
+      x.alignment = {vertical: "middle"}; x.border = {bottom: {style: "thin", color: {argb: "FFA5D6A7"}}}; }
     for (const d of dong) {
       const rr = ws.getRow(r++); rr.outlineLevel = 1;
-      rr.getCell(1).value = d.t; rr.getCell(1).alignment = {indent: d.me ? 0 : (d.lui ?? 2)};
+      rr.getCell(1).value = d.t; rr.getCell(1).alignment = {indent: d.me ? 0 : (d.lui ?? 1)};
+      for (let c = 1; c <= het; c++) if (!cach.has(c)) { const x = rr.getCell(c); x.font = F(d.me ? {bold: true, color: {argb: DAM}} : {});
+        x.border = KE; if (d.me) x.fill = nen("FFF4FAF4"); }
       o.nhom.forEach((_, g) => (d.v[g] || []).forEach((v, j) => { if (v != null && isFinite(v)) { const x = rr.getCell(vt[g] + j); x.value = v; x.numFmt = d.fmt; } }));
-      if (d.me) for (let c = 1; c <= het; c++) if (!cach.has(c)) { const x = rr.getCell(c); x.font = {bold: true, size: 11, color: {argb: DAM}}; x.fill = nen("FFF4FAF4"); }
     }
     r++;
   }
   const rc = ws.getRow(r); rc.getCell(1).value = `${o.chu_thich} · ô trống = chưa có số kỳ đó · xuất ${ngay}`;
-  rc.getCell(1).font = {italic: true, size: 9, color: {argb: "FF7A7A7A"}};
+  rc.getCell(1).font = F({italic: true, size: 8, color: {argb: "FF7A7A7A"}});
   const buf = await wb.xlsx.writeBuffer(), a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([buf], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
   a.download = ten_file; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -2813,10 +2819,14 @@ function xlsx_so_huu(ma, k) {
 function xlsx_chi_so(ma, k) {
   const cs = k.n?.cs; if (!cs) return;
   const FMT = {"%": "0.00%;[Red]\\-0.00%", "%a": "0.00%", d: "#,##0", ty: "#,##0;[Red]\\-#,##0"};
-  const phan = NHOM_CS.map(([t, ds]) => [t.toUpperCase(), ds.filter(([key]) => cs[key]).map(([key, ten, kieu]) => ({t: ten, lui: 0,
-    fmt: FMT[kieu] || "#,##0.00;[Red]\\-#,##0.00", v: [kieu === "%a" ? cs[key].map(v => v == null ? v : Math.abs(v)) : cs[key]]}))]);
-  xlsx_mau(`${ma}_chi_so.xlsx`, {ma, loai: "Chỉ số tài chính", thoi_gian: "Quý", don_vi: "% · lần (x) · ngày · tỷ đồng – theo từng chỉ số",
-    nhom: [["Quý", cs.ky.map(nhan_quy)]], phan, chu_thich: "Nguồn: Vietcap (chỉ số tài chính theo quý)"});
+  const nam = [], quy = [];                                                  // Vietcap: "Q5" = số cả năm
+  cs.ky.forEach((k, i) => (/^Q5\b/.test(k) ? nam : quy).push(i));
+  const nhom = [["Năm", nam.map(i => "20" + cs.ky[i].slice(-2))], ["Quý", quy.map(i => nhan_quy(cs.ky[i]))]].filter(x => x[1].length);
+  const lay = a => [nam, quy].filter(x => x.length).map(ii => ii.map(i => a[i]));
+  const phan = NHOM_CS.map(([t, ds]) => [t.toUpperCase(), ds.filter(([key]) => cs[key]).map(([key, ten, kieu]) => ({t: ten, lui: 1,
+    fmt: FMT[kieu] || "#,##0.00;[Red]\\-#,##0.00", v: lay(kieu === "%a" ? cs[key].map(v => v == null ? v : Math.abs(v)) : cs[key])}))]);
+  xlsx_mau(`${ma}_chi_so.xlsx`, {ma, loai: "Chỉ số tài chính", thoi_gian: nam.length ? "Năm, Quý" : "Quý", rong: 10, cot1: "Chỉ số",
+    don_vi: "% · lần (x) · ngày · tỷ đồng – theo từng chỉ số", nhom, phan, chu_thich: "Nguồn: Vietcap (chỉ số tài chính)"});
 }
 
 // ---------------------------------------------------------------- điều hướng
