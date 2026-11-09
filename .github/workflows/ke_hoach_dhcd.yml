@@ -1,4 +1,4 @@
-# KẾ HOẠCH ĐHCĐ (chạy tay): kế hoạch doanh thu / LNTT / LNST năm Y từ Nghị quyết – Biên bản ĐHCĐ thường niên (tin công bố
+# KẾ HOẠCH ĐHCĐ (chạy tay + MỖI ĐÊM từ 09/11/2026: --con_lai – mã CHƯA có file, HOSE + HNX theo GTGD rồi UPCoM, 4 nhóm × 150'): kế hoạch doanh thu / LNTT / LNST năm Y từ Nghị quyết – Biên bản ĐHCĐ thường niên (tin công bố
 # Vietcap) + tỷ lệ hoàn thành (thực tế kho BCTC ÷ kế hoạch; câu "đạt X % kế hoạch" của BCTN) – danh-muc
 # ptcp/ke_hoach_dhcd.py, nền cho dự phóng tự làm. Tài liệu công bố công khai → in log được; KHÔNG đọc danh mục thật.
 # Kết quả commit vào danh-muc du_lieu/ke_hoach/<MÃ>.json. Đệm chữ tài liệu (OCR) dùng chung với "Tra tai lieu".
@@ -27,6 +27,11 @@ on:
         description: "Lưu chữ trang 'kế hoạch' của văn bản không trích được số (du_lieu/van_ban – soát tay)"
         type: boolean
         default: false
+      con_lai:
+        description: "Sàn: đọc mọi mã CHƯA có file kế hoạch (VD HOSE,HNX,UPCOM) – lịch đêm / đồng hồ dùng"
+        default: ""
+  schedule:
+    - cron: "23 17 * * *"          # 00:23 giờ VN mỗi đêm: mã còn lại (đồng hồ truyền con_lai)
 
 permissions:
   contents: read                   # repo này; ghi danh-muc bằng DANH_MUC_TOKEN_GHI
@@ -36,7 +41,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml)
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: ke_hoach_dhcd.yml
+    permissions:
+      actions: read
+      contents: read
   doc:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 330
     strategy:
@@ -78,8 +93,14 @@ jobs:
       - name: Đọc kế hoạch ĐHCĐ (nhóm ${{ matrix.nhom }}/4)
         env:
           MA: ${{ inputs.ma }}
+          CON_LAI: ${{ inputs.con_lai || (github.event_name == 'schedule' && 'HOSE,HNX,UPCOM' || '') }}
           CONG_KHAI: "1"
-        run: python -m ptcp.ke_hoach_dhcd ${MA:+--ma "$MA"} --top ${{ inputs.ma == '' && inputs.top || 0 }} --tu ${{ inputs.tu }} --den ${{ inputs.den }} --chia ${{ matrix.nhom }}/4 --han_phut 300 ${{ inputs.lam_moi && '--lam_moi' || '' }} ${{ inputs.luu_hong && '--luu_hong' || '' }}
+        run: |
+          if [ -n "$CON_LAI" ]; then                  # đêm: mã còn lại, 150 phút / nhóm
+            python -m ptcp.ke_hoach_dhcd --con_lai "$CON_LAI" --tu ${{ inputs.tu || '2021' }} --den ${{ inputs.den || '2026' }} --chia ${{ matrix.nhom }}/4 --han_phut 150
+          else
+            python -m ptcp.ke_hoach_dhcd ${MA:+--ma "$MA"} --top ${{ inputs.ma == '' && inputs.top || 0 }} --tu ${{ inputs.tu || '2021' }} --den ${{ inputs.den || '2026' }} --chia ${{ matrix.nhom }}/4 --han_phut 300 ${{ inputs.lam_moi && '--lam_moi' || '' }} ${{ inputs.luu_hong && '--luu_hong' || '' }}
+          fi
       - name: Lưu kết quả vào danh-muc (du_lieu/ke_hoach)
         if: always()
         env:

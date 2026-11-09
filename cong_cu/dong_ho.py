@@ -58,7 +58,9 @@ LICH = [
     ("doc_bctn.yml", "17 22 * * *", {}, 300),
     ("lenh_tele.yml", "37 * * * *", {}, 40),
     ("tra_cuu.yml", "53 7 * * 6", {"lich": "53 0 * * 6"}, 600),
-    ("kho_bctc.yml", "47 0 * * 7", {}, 600),
+    ("kho_bctc.yml", "47 0 * * 7", {"lich": "47 17 * * 6"}, 600),
+    ("kho_bctc.yml", "37 1 * * *", {"lich": "37 18 * * *"}, 240),         # bổ sung đêm: UPCoM + BCTC dài VNDirect
+    ("ke_hoach_dhcd.yml", "23 0 * * *", {"con_lai": "HOSE,HNX,UPCOM"}, 240),  # kế hoạch ĐHCĐ mã còn lại
     ("tai_nen_15p.yml", "43 1 * * 7", {}, 600),
     ("boi_so_nganh.yml", "13 3 * * 7", {}, 600),
     ("backtest_quy_b.yml", "13 9 1 * *", {}, 1440),
