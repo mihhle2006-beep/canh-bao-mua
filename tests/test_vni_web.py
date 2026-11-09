@@ -24,8 +24,9 @@ def test_ghi_chi_so(tmp_path):
     def tai_(ma, so_lan=2):
         goi.append(ma)
         return nen if ma in ("VN30", "HNXINDEX") else None
-    co, thieu = V.ghi_chi_so(str(tmp_path), tai_)
-    assert co == ["VN30", "HNX"] and "VNDIAMOND" in thieu and goi.count("HNX") == 1 and "HNXINDEX" in goi
+    co, thieu = V.ghi_chi_so(str(tmp_path), tai_, lambda ma: nen if ma in ("VNDIAMOND", "VNMIDCAP") else None)
+    assert co == ["VN30", "VNMID", "VNDIAMOND", "HNX"] and "VNFINLEAD" in thieu and goi.count("HNX") == 1 and "HNXINDEX" in goi
     d = json.loads((tmp_path / "chi_so" / "VN30.json").read_text())
     assert d["d0"] == "2024-01-01" and len(d["o"]) == len(d["c"]) == len(d["v"]) == 300 and d["h"][0] == 12.0
-    assert json.loads((tmp_path / "chi_so" / "ds.json").read_text())["ds"] == {"VN30": "VN30", "HNX": "HNX-Index"}
+    assert json.loads((tmp_path / "chi_so" / "ds.json").read_text())["ds"] == {"VN30": "VN30", "VNMID": "VNMidcap", "VNDIAMOND": "VNDiamond",
+                                                                             "HNX": "HNX-Index"}
