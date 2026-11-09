@@ -14,15 +14,13 @@ permissions:
 jobs:
   doc:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 25
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - run: |
+          timeout 900 python .github/tam/do.py
           X="--extra-index-url https://vnstocks.com/api/simple"
-          pip download --no-deps -q -d /tmp/v "vnstock==4.0.9" $X 2>&1 | tail -1; cd /tmp/v && python3 -m zipfile -e vnstock-*.whl w && grep -rn "ezchart" w --include=*.py | head -20; cd -
-          mkdir -p /tmp/st/vnstock_ezchart && printf '[project]\nname = "vnstock_ezchart"\nversion = "1.0.2"\n[build-system]\nrequires = ["setuptools"]\nbuild-backend = "setuptools.build_meta"\n' > /tmp/st/pyproject.toml && touch /tmp/st/vnstock_ezchart/__init__.py
-          pip install -q /tmp/st "vnstock==4.0.9" "vnai>=2.6.2" $X 2>&1 | tail -3
-          python -c "import vnstock; from vnstock import Listing, Quote, Vnstock; print('import ok', vnstock.__version__ if hasattr(vnstock,'__version__') else '')" 2>&1 | tail -5
-          python -c "from vnstock import Listing; df = Listing(source='VCI').symbols_by_exchange(); print(df.shape)" 2>&1 | tail -3
+          pip download --no-deps -q -d /tmp/v "vnstock==4.0.9" $X 2>&1 | tail -1; cd /tmp/v && python3 -m zipfile -e vnstock-*.whl w && grep -rhn "fmarket\|api\.fmarket\|/res/" w --include=*.py | head -40
