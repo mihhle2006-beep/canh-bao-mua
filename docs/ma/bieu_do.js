@@ -88,7 +88,8 @@ function l2t(l) {
   if (l >= n - 1) return A[n - 1] + (l - n + 1) * C.du;
   const i = Math.floor(l); return A[i] + (A[i + 1] - A[i]) * (l - i);
 }
-const X = l => { const v = C.ch.timeScale().logicalToCoordinate(l); return v == null ? null : v; };
+const X = l => { const ts = C.ch.timeScale(), a = Math.floor(l), v = ts.logicalToCoordinate(a);      // vị trí lẻ (giữa 2 nến): thư viện trả 0 → nội suy
+  if (v == null || l === a) return v ?? null; const w = ts.logicalToCoordinate(a + 1); return w == null ? null : v + (w - v) * (l - a); };
 const Y = v => { const y = C.nen.priceToCoordinate(v); return y == null ? null : y; };
 const px = p => { if (p.fx != null) return {x: p.fx * W_(), y: p.fy * H_(), l: null, v: null, neo: true};
   const l = t2l(p.t); return {x: X(l), y: Y(p.v), l, v: p.v}; };
@@ -312,6 +313,18 @@ function muc_fib(g, x0, x1, gia_r, ds = FIB, ghi = true) {
 }
 T("fib_tl", "Fibonacci thoái lui", 2, (g, P) => { if (!P[1]) return g.seg(P[0], P[1]); const [A, B] = P; g.seg(A, B, {k: 1, w: 1, m: "#787b86"});
   muc_fib(g, Math.min(A.x, B.x), W_(), r => B.v + (A.v - B.v) * r); }, {phim: "Alt+F", goi_y: "Điểm 1 = đầu sóng, điểm 2 = cuối sóng; các mức kéo dài sang phải"});
+function nhip_kc(i, j) {                                // nhịp lớn nhất trong nến i..j: đáy trước đỉnh → nhịp tăng (thoái lui từ đỉnh xuống), ngược lại nhịp giảm
+  const x = C.x; let ih = i, il = i;
+  for (let k = i; k <= j; k++) { if (x.h[k] > x.h[ih]) ih = k; if (x.l[k] < x.l[il]) il = k; }
+  const len = il < ih;
+  return {len, i0: len ? il : ih, i1: len ? ih : il, dau: len ? x.l[il] : x.h[ih], cuoi: len ? x.h[ih] : x.l[il]};
+}
+T("fib_kc", "Fibonacci tự động khoảng chọn", 2, (g, P) => { if (!P[1]) return g.seg(P[0], P[1]); const [i, j] = vung_nen(P[0].l, P[1].l); if (j - i < 1) return;
+  const f = nhip_kc(i, j), A = g.diem(f.i0, f.dau), B = g.diem(f.i1, f.cuoi), x0 = X(i - .5), x1 = X(j + .5);
+  if (x0 != null && x1 != null) { g.doc(x0, {m: "#9aa3af", w: 1, k: 1}); g.doc(x1, {m: "#9aa3af", w: 1, k: 1}); }
+  if (A.x == null || B.x == null) return;
+  g.seg(A, B, {k: 1, w: 1, m: "#787b86"}); muc_fib(g, A.x, W_(), r => f.cuoi + (f.dau - f.cuoi) * r, FIB.slice(0, 7)); },
+  {goi_y: "Chọn khoảng nến (2 điểm như Volume Profile khoảng cố định): tự tìm đỉnh cao nhất & đáy thấp nhất trong khoảng, vẽ thoái lui theo chiều nhịp"});
 T("fib_mr", "Fibonacci mở rộng", 3, (g, P) => { g.poly(P, {k: 1, w: 1}); if (!P[2]) return; const [A, B, C_] = P;
   muc_fib(g, C_.x, W_(), r => C_.v + (B.v - A.v) * r, [0, 0.382, 0.618, 1, 1.272, 1.618, 2, 2.618]); }, {goi_y: "3 điểm: đầu sóng, cuối sóng, điểm hồi – mục tiêu mở rộng tính từ điểm hồi"});
 T("kenh_fib", "Kênh Fibonacci", 3, (g, P) => { if (!P[2]) return kenh(g, P, false); const [A, B, C_] = P;
@@ -902,5 +915,5 @@ function nhap_net(j) {                                  // file ngoài = dữ li
 }
 document.addEventListener("pointerdown", e => { if (!e.target.closest(".ve-ds,.ve-tim,[data-vmo],[data-vn],[data-vtim],[data-vds]")) dong_bang(); }, true);
 VE.CONG = CONG; VE.NHOM = NHOM;
-VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }, nhap_net, tom_net};
+VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, nhip_kc, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }, nhap_net, tom_net};
 })();
