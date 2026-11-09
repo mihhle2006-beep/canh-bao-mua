@@ -406,7 +406,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     print(f"Điểm vào 15': {len(ds)} mã trong danh sách mua phiên {bay_gio:%d/%m} · cách vào {bien_the} ({nguon})")
     tt = doc_trang_thai()
     luu = tt.setdefault("_15p", {})
-    bang, so_bao, moi_mua = [], 0, []
+    bang, so_bao, moi_mua, cho_gui = [], 0, [], []
     for z in ds:
         dp = bo_nen_chua_dong(nen_15p(z["ma"], bay_gio), C.KHUNG_PHUT, bay_gio)
         kq = diem_vao.danh_gia(z, dp, bay_gio, bien_the)
@@ -422,12 +422,13 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                 nd = diem_vao.tin_mua(kq, bay_gio, bien_the, vt.get(kq["ma"])) if kq["trang_thai"] == "MUA" else \
                     diem_vao.tin_bo(kq, bay_gio)
                 anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
-                rt = kq["ma"] in vt or diem_vao.co_so_cp_nav(nd)
-                gui(nd, rieng_tu=rt, anh=anh) if not khong_gui else _in(nd, rieng_tu=rt)
+                cho_gui.append((nd, kq["ma"] in vt or diem_vao.co_so_cp_nav(nd), anh))
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
             so_bao += 1
+    for nd, rt, anh in cho_gui:                             # gửi SAU khi in hết bảng: dòng "(tin riêng tư …)" ngay dưới 1 mã
+        gui(nd, rieng_tu=rt, anh=anh) if not khong_gui else _in(nd, rieng_tu=rt)   # trong log công khai = lộ mã đang giữ
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
         nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
