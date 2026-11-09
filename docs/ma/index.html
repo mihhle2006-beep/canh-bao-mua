@@ -999,21 +999,22 @@ const KHOA_CB = "ma_chi_bao";
 const CB_DUOI = [["rs", "RS so VN-Index (đỉnh mới 52 tuần)", ""], ["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
   ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"],
   ["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]];
-const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
+const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: true, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
   if (Array.isArray(v.ma_tb)) ST.ma_tb = v.ma_tb.filter(m => [10, 20, 50, 200].includes(m));
   if (Array.isArray(v.ema)) ST.ema = v.ema.filter(m => [9, 21, 50, 200].includes(m));
   if ([0, 20, 52].includes(v.dc)) ST.dc = v.dc;
   if (typeof v.mk === "boolean") ST.mk = v.mk;
-  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "fib", "vp", "bg", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
+  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "vp", "bg", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
+  if (typeof v.fib === "boolean" && v.fib2) CB.fib = v.fib;           // Fibonacci tự động bật sẵn từ 09/11/2026: lựa chọn lưu trước đó (mặc định tắt) bỏ qua
   if (typeof v.ss === "string" && (v.ss === "" || v.ss === "VNINDEX" || MA_OK(v.ss))) CB.ss = v.ss;
   if (Array.isArray(v.duoi)) CB.duoi = [...new Set(v.duoi.filter(k => CB_DUOI.some(d => d[0] === k)))];
   if ([5, 20, 60].includes(v.non_h)) CB.non_h = v.non_h;
   if (["ls", "sigma"].includes(v.non_kieu)) CB.non_kieu = v.non_kieu;
   for (const k in CB_TS) if (Array.isArray(v.ts?.[k])) CB.ts[k] = cb_ts_dung(k, v.ts[k]);
 } catch (e) {} })();
-const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB})); } catch (e) {} };
+const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB, fib2: true})); } catch (e) {} };
 const ts_chu = k => CB.ts[k].map(v => String(v).replace(".", ",")).join(", ");
 function menu_cb() {
   const chip = (ten, khoa, ds, gt) => `<div class="cb-dong cb-chip"><span>${ten}</span>${ds.map(m => `<label><input type="checkbox" data-cbx="${khoa}:${m}"${gt.includes(m) ? " checked" : ""}>${m}</label>`).join("")}</div>`;
@@ -1127,6 +1128,27 @@ class VpPrim {                                           // Volume Profile: than
       v.forEach((q, k) => { const y1 = this.s.priceToCoordinate(lo + (k + 1) * b), y0 = this.s.priceToCoordinate(lo + k * b); if (y1 == null || y0 == null) return;
         const w = rong * q / m; c.fillStyle = k === poc ? "rgba(232,113,10,.55)" : k >= d && k <= tr ? "rgba(31,111,235,.30)" : "rgba(122,132,148,.20)";
         c.fillRect(bs.width - w, y1 * vr + 1, w, Math.max(1, (y0 - y1) * vr - 2)); });
+    });
+  }
+}
+const MAU_FIB_TD = ["#787b86", "#f23645", "#ff9800", "#4caf50", "#089981", "#00bcd4", "#787b86"];
+class FibPrim {                                          // Fibonacci tự động: mỗi mức 1 màu + dải nhạt giữa 2 mức (như TradingView), từ đầu nhịp sang mép phải
+  constructor(ch, s, d) { this.ch = ch; this.s = s; this.d = d; this.v = [{zOrder: () => "bottom", renderer: () => ({draw: t => this.ve(t)})}]; }
+  paneViews() { return this.v; }
+  ve(t) {
+    const {i0, i1, a, b, muc} = this.d, ts = this.ch.timeScale();
+    t.useBitmapCoordinateSpace(({context: c, bitmapSize: bs, horizontalPixelRatio: hr, verticalPixelRatio: vr}) => {
+      const Y = v => { const y = this.s.priceToCoordinate(v); return y == null ? null : y * vr; }, xa = ts.logicalToCoordinate(i0), xb = ts.logicalToCoordinate(i1);
+      const x0 = Math.max(0, (xa ?? 0) * hr), ys = muc.map(([, v]) => Y(v));
+      for (let k = 0; k + 1 < muc.length; k++) if (ys[k] != null && ys[k + 1] != null) {
+        c.fillStyle = MAU_FIB_TD[k + 1] + "1c"; c.fillRect(x0, Math.min(ys[k], ys[k + 1]), bs.width - x0, Math.abs(ys[k + 1] - ys[k])); }
+      c.lineWidth = Math.max(1, Math.round(hr)); c.font = `600 ${Math.round(11 * vr)}px system-ui, sans-serif`; c.textBaseline = "bottom";
+      muc.forEach(([f, v], k) => { const y = ys[k]; if (y == null) return; const yy = Math.round(y) + .5;
+        c.strokeStyle = c.fillStyle = MAU_FIB_TD[k]; c.beginPath(); c.moveTo(x0, yy); c.lineTo(bs.width, yy); c.stroke();
+        c.fillText(`${String(f).replace(".", ",")} (${so(v, 2)})`, x0 + 4 * hr, yy - 2 * vr); });
+      const ya = Y(a), yb = Y(b);
+      if (xa != null && xb != null && ya != null && yb != null) {
+        c.setLineDash([5 * hr, 4 * hr]); c.strokeStyle = "#787b86"; c.beginPath(); c.moveTo(xa * hr, ya); c.lineTo(xb * hr, yb); c.stroke(); c.setLineDash([]); }
     });
   }
 }
@@ -1430,7 +1452,8 @@ async function ve_bd_gia(el, x0, them = {}) {
   }
   if (CB.fib && n > 20) {
     const f = fib_tu_dong(x);
-    f.muc.forEach(([k, v]) => nen.createPriceLine({price: v, color: "#b88a00", lineWidth: 1, lineStyle: k === 0 || k === 1 ? 0 : 1, axisLabelVisible: true, title: `Fib ${so(k * 100, 1)}%`}));
+    nen.attachPrimitive(new FibPrim(ch, nen, {i0: Math.min(f.ih, f.il), i1: Math.max(f.ih, f.il), a: f.len ? x.l[f.il] : x.h[f.ih], b: f.len ? x.h[f.ih] : x.l[f.il], muc: f.muc}));
+    f.muc.forEach(([k, v], j) => nen.createPriceLine({price: v, color: MAU_FIB_TD[j], lineVisible: false, axisLabelVisible: true, title: ""}));
     tv_chu += `<br><span style="color:#8a6100">Fibonacci tự động: nhịp ${f.len ? "tăng" : "giảm"} ${ngay_vn(x.d[f.len ? f.il : f.ih])} → ${ngay_vn(x.d[f.len ? f.ih : f.il])} (120 ${u_} gần nhất) · thoái lui 38,2–61,8% ${ty_(f.muc[2][1])}–${ty_(f.muc[4][1])}</span>`;
   }
   if (CB.vp && n > 10) {
