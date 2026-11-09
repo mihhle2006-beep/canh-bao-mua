@@ -71,15 +71,15 @@ def test_moi_cong_cu_ve_khong_loi_va_tinh_dung():
         if (k === "vt_mua") p[1].v = p[0].v * .95; if (k === "vt_ban") p[1].v = p[0].v * 1.05;
         const d = {id: k, c: k, p, s: {}, chu: cg.chu ? "Ghi chú\nhai dòng" : undefined, r: 2}; if (cg.tao) cg.tao(d); K.AAA.push(d); });
       K._cfg.an = false; ve();
-      const hq = T.hoi_quy(20, 80), vw = T.vwap(150), hs = T.ho_so_kl(30, 90), tu = T.xu_huong_tu_dong(n - 1);
+      const hq = T.hoi_quy(20, 80), vw = T.vwap(150), hs = T.ho_so_kl(30, 90), tu = T.xu_huong_tu_dong(n - 1), nk = T.nhip_kc(30, 90);
       console.log(JSON.stringify({so: ds.length, loi: BD_VE._loi, hit: T.HIT.length, vong, hq, vw_cuoi: vw[vw.length - 1], vw_n: vw.length,
-        hs_tong: hs.tong.reduce((a, b) => a + b, 0), hs_va: hs.va, hs_poc: hs.poc, tu, ten: ds.map(k => BD_VE.CONG[k].ten)}));
+        hs_tong: hs.tong.reduce((a, b) => a + b, 0), hs_va: hs.va, hs_poc: hs.poc, tu, nk, ten: ds.map(k => BD_VE.CONG[k].ten)}));
     """)
     assert kq["so"] >= 90 and kq["loi"] == [], kq["loi"]            # ~92 công cụ vẽ, không công cụ nào lỗi
     assert kq["hit"] > 100 and max(kq["vong"]) < 1e-6
     for ten in ("Đường xu hướng", "Chĩa ba Schiff điều chỉnh", "Đường xu hướng tự động", "Quạt Gann", "Mẫu XABCD", "Sóng đẩy Elliott (12345)",
                 "Vị thế mua", "VWAP neo", "Volume Profile khoảng cố định", "Bút dạ quang", "Hình chữ nhật xoay", "Chữ neo khung", "Biển chỉ dẫn",
-                "Đo giá và thời gian"):
+                "Đo giá và thời gian", "Fibonacci tự động khoảng chọn"):
         assert ten in kq["ten"], ten
     c, h, l_, v = (np.array(x[k]) for k in ("c", "h", "l", "v"))
     b, a = np.polyfit(np.arange(61), c[20:81], 1)                     # hồi quy giá đóng cửa
@@ -91,6 +91,10 @@ def test_moi_cong_cu_ve_khong_loi_va_tinh_dung():
     assert abs(kq["hs_tong"] - v[30:91].sum()) < 1e-3                # hồ sơ KL: chia hết KL vào các mức giá
     lo, hi = kq["hs_va"]
     assert lo <= kq["hs_poc"] <= hi
+    ih, il = 30 + int(np.argmax(h[30:91])), 30 + int(np.argmin(l_[30:91]))      # Fibonacci khoảng chọn: đỉnh / đáy trong khoảng
+    nk = kq["nk"]
+    assert nk["len"] == (il < ih) and (nk["i0"], nk["i1"]) == ((il, ih) if il < ih else (ih, il))
+    assert nk["dau"] == (l_[il] if il < ih else h[ih]) and nk["cuoi"] == (h[ih] if il < ih else l_[il])
     s1, s2, r1, r2 = kq["tu"]                                         # xu hướng tự động: hỗ trợ đi lên, kháng cự đi xuống
     assert s1 is None or s2["v"] > s1["v"]
     assert r1 is None or r2["v"] < r1["v"]

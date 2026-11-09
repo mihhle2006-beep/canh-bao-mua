@@ -1000,7 +1000,7 @@ const KHOA_CB = "ma_chi_bao";
 const CB_DUOI = [["rs", "RS so VN-Index (đỉnh mới 52 tuần)", ""], ["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
   ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"],
   ["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]];
-const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: true, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
+const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
   if (Array.isArray(v.ma_tb)) ST.ma_tb = v.ma_tb.filter(m => [10, 20, 50, 200].includes(m));
@@ -1008,7 +1008,7 @@ const CB = cb_mac();
   if ([0, 20, 52].includes(v.dc)) ST.dc = v.dc;
   if (typeof v.mk === "boolean") ST.mk = v.mk;
   for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "vp", "bg", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
-  if (typeof v.fib === "boolean" && v.fib2) CB.fib = v.fib;           // Fibonacci tự động bật sẵn từ 09/11/2026: lựa chọn lưu trước đó (mặc định tắt) bỏ qua
+  if (typeof v.fib === "boolean" && v.fib3) CB.fib = v.fib;           // 09/11/2026 bật sẵn vài giờ rồi tắt lại: lựa chọn lưu trong lúc đó bỏ qua
   if (typeof v.ss === "string" && (v.ss === "" || v.ss === "VNINDEX" || MA_OK(v.ss))) CB.ss = v.ss;
   if (Array.isArray(v.duoi)) CB.duoi = [...new Set(v.duoi.filter(k => CB_DUOI.some(d => d[0] === k)))];
   if ([5, 20, 60].includes(v.non_h)) CB.non_h = v.non_h;
@@ -1016,7 +1016,7 @@ const CB = cb_mac();
   if (["ls", "sigma"].includes(v.non_kieu)) CB.non_kieu = v.non_kieu;
   for (const k in CB_TS) if (Array.isArray(v.ts?.[k])) CB.ts[k] = cb_ts_dung(k, v.ts[k]);
 } catch (e) {} })();
-const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB, fib2: true})); } catch (e) {} };
+const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB, fib3: true})); } catch (e) {} };
 const ts_chu = k => CB.ts[k].map(v => String(v).replace(".", ",")).join(", ");
 function menu_cb() {
   const chip = (ten, khoa, ds, gt) => `<div class="cb-dong cb-chip"><span>${ten}</span>${ds.map(m => `<label><input type="checkbox" data-cbx="${khoa}:${m}"${gt.includes(m) ? " checked" : ""}>${m}</label>`).join("")}</div>`;
