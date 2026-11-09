@@ -90,6 +90,7 @@ main{max-width:1440px;margin:0 auto;padding:16px}
 .goi-y{position:fixed;pointer-events:none;background:#1d2430;color:#fff;font-size:12px;line-height:1.4;
   padding:6px 9px;border-radius:6px;z-index:50;display:none;max-width:260px;box-shadow:0 4px 14px #0003}
 .goi-y b{font-weight:650}
+.goi-y.sang{background:var(--the,#fff);color:var(--chu,#1d2430);border:1px solid var(--vien,#e3e7ee);box-shadow:0 6px 20px #0002}
 .chu-giai{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--mo);padding:6px 14px 12px}
 .chu-giai i{display:inline-block;width:20px;height:9px;border-radius:2px}
 .tk{padding:4px 16px 8px}
@@ -318,8 +319,8 @@ function el(tag, at = {}, cha) { const e = document.createElementNS(SVGNS, tag);
 
 // ---------- gợi ý (tooltip) ----------
 const GY = $("#goi-y");
-function hien_gy(html, x, y) {
-  GY.innerHTML = html; GY.style.display = "block";
+function hien_gy(html, x, y, sang = false) {           // sang: nền sáng (ảnh nhanh biểu đồ – người dùng 09/11/2026)
+  GY.classList.toggle("sang", sang); GY.innerHTML = html; GY.style.display = "block";
   const r = GY.getBoundingClientRect();
   let l = x + 14, t = y + 14;
   if (l + r.width > innerWidth - 8) l = x - r.width - 14;
@@ -485,12 +486,12 @@ let GY_MA = null, GY_XY = [0, 0];
 function anh_gy(ma, x, y, dau_html) {
   const r = (L || []).find(z => z.ma === ma) || {};
   GY_XY = [x, y];
-  if (GY_MA === ma && GY.style.display === "block") return hien_gy(GY.innerHTML, x, y);
+  if (GY_MA === ma && GY.style.display === "block") return hien_gy(GY.innerHTML, x, y, true);
   GY_MA = ma;
   hien_gy((dau_html || `<b>${esc(ma)}</b> ${esc((D.ten || {})[ma] || "")}${r.pt != null ? `<br><span class="so">${nf(r.gia)} · ${dau(r.pt)}%</span>` : ""}`)
-    + `<div class="gy-anh" style="font-size:11px;opacity:.7">đang tải biểu đồ…</div>`, x, y);
+    + `<div class="gy-anh" style="font-size:11px;opacity:.7">đang tải biểu đồ…</div>`, x, y, true);
   gia_ma(ma).then(g => { const a = GY.querySelector(".gy-anh"); if (GY_MA !== ma || GY.style.display !== "block" || !a) return;
-    a.outerHTML = ve_anh(g) || `<div style="font-size:11px;opacity:.7">chưa có biểu đồ</div>`; hien_gy(GY.innerHTML, ...GY_XY); });
+    a.outerHTML = ve_anh(g) || `<div style="font-size:11px;opacity:.7">chưa có biểu đồ</div>`; hien_gy(GY.innerHTML, ...GY_XY, true); });
 }
 const an_anh = () => { GY_MA = null; an_gy(); };
 $("#td-ds").addEventListener("click", e => { const t = e.target.closest("tr[data-ma]"); if (t) mo_ma(t.dataset.ma); });
