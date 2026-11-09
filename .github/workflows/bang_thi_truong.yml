@@ -139,6 +139,17 @@ jobs:
               --tin_hieu docs/thi_truong/du_lieu.json --bo_loc ma_mua_bo_loc.json
           else echo "Ngoài giờ giao dịch – bỏ qua"; fi
 
+      - name: Khớp theo bước giá hôm nay (trang Biểu đồ – Tự vẽ)
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        timeout-minutes: 3
+        continue-on-error: true
+        run: |
+          GIO=$(TZ=Asia/Ho_Chi_Minh date +%H%M); THU=$(TZ=Asia/Ho_Chi_Minh date +%u)
+          if [ "$THU" -le 5 ] && [ "$GIO" -ge 912 ] && [ "$GIO" -le 1515 ] && [ -d docs/ma/du_lieu/gia ]; then
+            # KHÔNG thêm mã đang giữ (--them_file): danh sách file bước giá công khai sẽ lộ danh mục; quỹ chỉ mua top 100 GTGD
+            python -m thi_truong.buoc_gia_web --ra docs/ma/du_lieu --tin_hieu docs/thi_truong/du_lieu.json --bo_loc ma_mua_bo_loc.json
+          else echo "Ngoài giờ giao dịch – bỏ qua"; fi
+
       - name: Gói trang
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
         run: |
