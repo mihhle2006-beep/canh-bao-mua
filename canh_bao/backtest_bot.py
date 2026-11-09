@@ -303,7 +303,8 @@ def _so_vao_tre(ct):
     from ptcp.diem_vao_15p import tong_hop_15p
     if not len(ct) or not {"ATC", "ATC_SOM"} <= set(ct["Biến thể"]):
         return
-    x = ct[ct["Biến thể"].isin(["ATC", "ATC_SOM"]) & ct["Nhóm"].astype(str).str.startswith("VAO")]
+    bts = [b for b in ("ATC", "ATC_SOM", "ATC_1425") if b in set(ct["Biến thể"])]
+    x = ct[ct["Biến thể"].isin(bts) & ct["Nhóm"].astype(str).str.startswith("VAO")]
     try:
         from ptcp import cau_hinh as pc, loc_quy_b
         hang = (loc_quy_b.doc(han_ngay=None) or {}).get("hang_gtgd", {})
@@ -311,7 +312,7 @@ def _so_vao_tre(ct):
     except (ImportError, AttributeError):
         top = set()
     for ten, y in (("cả rổ", x), ("top GTGD", x[x["Mã"].isin(top)])):
-        b = tong_hop_15p(y, ["ATC", "ATC_SOM"])["bang"] if len(y) else None
+        b = tong_hop_15p(y, bts)["bang"] if len(y) else None
         if b is not None and len(b):
             print(f"\n  Vào trễ – ATC vs báo sớm 14:15 ({ten}, {y['Mã'].nunique()} mã):\n"
                   + b.drop(columns=["Mô tả"]).round(2).to_string(index=False))

@@ -180,7 +180,12 @@ jobs:
               chay=1
               python chay.py --che_do tu_dong || { loi=$((loi + 1)); echo "⚠ lượt $(TZ=Asia/Ho_Chi_Minh date +%H:%M) lỗi – lượt sau chạy tiếp"; }
               kiem_nhap || true
-              cho_tin $(( ($(date +%s) / 900 + 1) * 900 + 5 ))
+              ke=$(( ($(date +%s) / 900 + 1) * 900 + 5 ))
+              if [ "$(TZ=Asia/Ho_Chi_Minh date -d @$ke +%H%M)" = 1430 ]; then   # 14:25: vào trễ chỉ đủ lô lẻ → mua ngay (ATC không nhận lô lẻ)
+                cho_tin $(( ke - 300 ))
+                python chay.py --che_do lo_le || echo "⚠ lượt lô lẻ 14:25 lỗi"
+              fi
+              cho_tin $ke
             done
             # lượt chạy trùng (lịch dự phòng xếp hàng, tới lượt khi vòng đã hết giờ) → không gọi lại danh mục / vòng sau
             # lịch GitHub hay bỏ / trễ (03/11: bỏ 08:35, 15:20; vòng chiều kích trễ 44') → vòng tự nối, lịch chỉ còn là dự phòng
