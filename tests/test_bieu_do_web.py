@@ -170,7 +170,9 @@ def test_tu_cap_nhat_ban_moi():
         h = open(trang, encoding="utf-8").read()
         assert h.count("__BAN__") == 1 and 'const BAN = "__BAN__";' in h
         assert 'document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") kiem_ban_moi(); });' in h
-        assert 'location.replace(location.pathname + "?v=" + m[1] + location.hash);' in h and 'sessionStorage.getItem("ban_da_tai")' in h
+        assert ('location.replace(location.pathname + "?v=" + m[1] + location.hash);' in h or      # ô Lưới 2×2 giữ ?nhung=1
+                'location.replace(location.pathname + "?v=" + m[1] + (NHUNG ? "&nhung=1" : "") + location.hash);' in h)
+        assert 'sessionStorage.getItem("ban_da_tai")' in h
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert 'sc.src = "doc_bd.js?v=6&b=" + BAN;' in h and 'sc.src = "bieu_do.js?v=3&b=" + BAN;' in h
     assert h.index('const BAN = "__BAN__";') < h.index("function tai_ve(") if "function tai_ve(" in h else True
