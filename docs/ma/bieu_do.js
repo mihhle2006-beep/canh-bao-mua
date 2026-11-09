@@ -54,12 +54,13 @@ const IC = {
   nam: '<path d="M6 3v8a6 6 0 0 0 12 0V3M6 7h4M14 7h4"/>', them: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   lui: '<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2"/>', toi: '<path d="m15 7 5 5-5 5M20 12H9a5 5 0 0 0 0 10h2"/>',
   mat: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>', khoa: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
-  xoa: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>'};
+  xoa: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+  ds: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/>'};
 const svg = (p, w = 18) => `<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 
 // ---------------------------------------------------------------- TRẠNG THÁI BIỂU ĐỒ HIỆN TẠI
 let C = null;                 // {ch, nen, x, n, ma, T (thời gian các nến + tương lai), du (giây / nến), khung, tuong_tac, req}
-let HIT = [], NEO = [], CHON = null, TAM = null, CONG_HT = null, KEO = null, HOVER = null, CHUOT = null;
+let HIT = [], NEO = [], CHON = null, TAM = null, CONG_HT = null, KEO = null, HOVER = null, CHUOT = null, CAM = false;   // CAM: đang vẽ bằng ngón tay
 const W_ = () => C?.W || 800, H_ = () => C?.H || 400;
 function tg_sau(t, k) {                                 // k mốc thời gian sau t theo khung đang xem (bỏ T7 / CN, nghỉ trưa, sau 14:45)
   const out = [], kh = C.khung;
@@ -97,7 +98,7 @@ function tu_chuot(x, y, nam = true) {                   // toạ độ chuột �
   if (nam && KHO._cfg.nam && !TAM?.tu_do) {
     const i = Math.round(l), x_ = C.x;
     if (i >= 0 && i < C.n) { l = i; const ung = [x_.o[i], x_.h[i], x_.l[i], x_.c[i]].filter(z => z != null);
-      const g = ung.reduce((a, z) => Math.abs(Y(z) - y) < Math.abs(Y(a) - y) ? z : a, ung[0]); if (Math.abs(Y(g) - y) < 14) v = g; }
+      const g = ung.reduce((a, z) => Math.abs(Y(z) - y) < Math.abs(Y(a) - y) ? z : a, ung[0]); if (Math.abs(Y(g) - y) < (CAM ? 24 : 14)) v = g; }
   }
   return {t: l2t(l), v: +v.toFixed(4)};
 }
@@ -538,7 +539,7 @@ let NEO_THEM = [];
 function ve_tat_ca(ctx) {
   HIT = []; NEO = [];
   if (!C) return;
-  const ds = (KHO._cfg.an ? [] : (KHO[C.ma] || [])).concat(TAM ? [TAM] : []);
+  const ds = (KHO._cfg.an ? [] : (KHO[C.ma] || []).filter(d => !d.an)).concat(TAM ? [TAM] : []);
   for (const d of ds) {
     const cg = CONG[d.c]; if (!cg?.ve) continue;
     try {
@@ -595,6 +596,7 @@ function gan_su_kien(el, B) {
   const nuot = e => { e.stopPropagation(); if (e.cancelable && e.type !== "pointermove") e.preventDefault(); };
   pane.addEventListener("pointerdown", e => {
     if (!C?.tuong_tac || e.button > 0) return;
+    CAM = e.pointerType === "touch";
     const p = toa_do(e); if (p.ngoai) return;
     dang = false;
     const shift_do = e.shiftKey && !CONG_HT && !TAM;
@@ -623,6 +625,7 @@ function gan_su_kien(el, B) {
   pane.addEventListener("touchmove", e => { if (dang && e.cancelable) e.preventDefault(); }, {capture: true, passive: false});
   pane.addEventListener("pointermove", e => {
     if (!C?.tuong_tac) return; const p = toa_do(e); CHUOT = p;
+    if (dang && e.pointerType === "touch") kinh(p);
     if (TAM && !TAM.xong) {
       const d0 = CONG[TAM.c].neo ? {fx: p.x / W_(), fy: p.y / H_()} : tu_chuot(p.x, p.y); if (!d0) return;
       if (TAM.tu_do) { if (e.buttons) { const cu = px(TAM.p[TAM.p.length - 1]); if (kc(cu, p) > 3) { TAM.p.push(d0); cap_nhat(); } } return; }
@@ -647,6 +650,7 @@ function gan_su_kien(el, B) {
     cham_dau = null; xuat = null;
     if (KEO) { if (KEO.co) luu(); else LS[C.ma]?.lui.pop(); KEO = null; }
     if (dang) { dang = false; chan(B, false); }
+    kinh_tat();
   };
   pane.addEventListener("pointerup", tha, true);
   pane.addEventListener("pointercancel", tha, true);
@@ -657,6 +661,28 @@ function gan_su_kien(el, B) {
   }, true);
   pane.addEventListener("pointerleave", () => { if (HOVER) { HOVER = null; cap_nhat(); } });
 }
+// KÍNH LÚP (điện thoại): ngón tay che đúng chỗ đặt điểm → kéo / vẽ bằng tay thì hiện vùng quanh ngón tay phóng 2× ở góc trên
+// phía đối diện, kèm chữ thập + giá / ngày điểm sẽ đặt (đã bám nam châm)
+let KINH_HEN = 0;
+function kinh(p) {
+  if (KINH_HEN || !C?.ch?.takeScreenshot) return;
+  KINH_HEN = requestAnimationFrame(() => { KINH_HEN = 0;
+    try {
+      const goc = C.ch.chartElement(), rg = goc.getBoundingClientRect(), rp = C.vung.getBoundingClientRect(), shot = C.ch.takeScreenshot();
+      const k = shot.width / rg.width, cx = (rp.left - rg.left + p.x) * k, cy = (rp.top - rg.top + p.y) * k, R = 30 * k;
+      let b = document.querySelector(".ve-kinh");
+      if (!b) { b = Object.assign(document.createElement("canvas"), {className: "ve-kinh", width: 240, height: 240}); document.body.appendChild(b); }
+      b.style.left = (p.x > rp.width / 2 ? rp.left + 8 : rp.right - 136) + "px"; b.style.top = (rp.top + 8) + "px";
+      const g = b.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 240, 240);
+      g.drawImage(shot, cx - R, cy - R, 2 * R, 2 * R, 0, 0, 240, 240);
+      g.strokeStyle = "#2962ff"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(120, 96); g.lineTo(120, 144); g.moveTo(96, 120); g.lineTo(144, 120); g.stroke();
+      const m = tu_chuot(p.x, p.y);
+      if (m) { g.fillStyle = "rgba(255,255,255,.9)"; g.fillRect(40, 160, 160, 56); g.fillStyle = "#1f2430"; g.textAlign = "center";   // giá / ngày 2 dòng (vừa vòng tròn)
+        g.font = "700 24px system-ui,sans-serif"; g.fillText(gia(m.v), 120, 186); g.font = "16px system-ui,sans-serif"; g.fillText(ngay_chu(m.t), 120, 208); }
+    } catch (e) { kinh_tat(); }
+  });
+}
+function kinh_tat() { if (KINH_HEN) cancelAnimationFrame(KINH_HEN); KINH_HEN = 0; document.querySelector(".ve-kinh")?.remove(); }
 function hoan_tat() {
   const d = TAM; if (!d) return; TAM = null;
   const cg = CONG[d.c]; d.xong = true;
@@ -750,6 +776,8 @@ VE.dat_cong = dat_cong;
 VE.thanh = el => {                                      // dựng thanh công cụ dọc vào el (.fs-trai)
   el.innerHTML = NHOM.map(g => `<div class="ve-nhom"><button class="ve-nut" data-vn="${g.k}" title="${esc(g.ten)}">${svg(g.icon)}</button><button class="ve-mo" data-vmo="${g.k}" title="Mở ${esc(g.ten)}">›</button></div>`).join("") +
     `<hr><button class="ve-nut" data-vnam aria-pressed="${KHO._cfg.nam}" title="Nam châm: bám giá mở / cao / thấp / đóng của nến">${svg(IC.nam)}</button>
+     <button class="ve-nut" data-vds title="Danh sách nét vẽ: chọn / ẩn / khoá / xoá từng nét · xuất / nhập file">${svg(IC.ds)}</button>
+     <button class="ve-nut" data-van aria-pressed="${!!KHO._cfg.an}" title="Ẩn / hiện mọi hình vẽ">${svg(IC.mat)}</button>
      <button class="ve-nut" data-vtim title="Tìm công cụ, ẩn / khoá / xoá hình vẽ">${svg(IC.them)}</button>
      <button class="ve-nut" data-vlui title="Hoàn tác (Ctrl+Z)">${svg(IC.lui)}</button><button class="ve-nut" data-vtoi title="Làm lại (Ctrl+Y)">${svg(IC.toi)}</button>`;
   el.onclick = e => {
@@ -759,6 +787,8 @@ VE.thanh = el => {                                      // dựng thanh công c�
       if (CONG_HT && CONG[CONG_HT]?.nhom === g) return mo_ds(g, n); return dat_cong(k); }
     if (e.target.closest("[data-vnam]")) { KHO._cfg.nam = !KHO._cfg.nam; luu(); e.target.closest("[data-vnam]").setAttribute("aria-pressed", String(KHO._cfg.nam)); return; }
     if (e.target.closest("[data-vtim]")) return mo_tim();
+    if (e.target.closest("[data-vds]")) return mo_danh_sach();
+    if (e.target.closest("[data-van]")) return dat_cfg("an", !KHO._cfg.an);
     if (e.target.closest("[data-vlui]")) return hoan_tac(false);
     if (e.target.closest("[data-vtoi]")) return hoan_tac(true);
   };
@@ -796,9 +826,81 @@ function mo_tim() {
   b.onclick = e => { const k = e.target.closest("[data-vk2]")?.dataset.vk2; if (k) { dong_bang(); return dat_cong(k); }
     if (e.target.closest("[data-vxm]") && C && confirm(`Xoá mọi hình vẽ của ${C.ma}?`)) { chup(C.ma); KHO[C.ma] = []; luu(); CHON = null; cap_nhat(); dong_bang(); }
     if (e.target.closest("[data-vxt]") && confirm("Xoá hình vẽ của MỌI mã? Không hoàn tác được.")) { for (const k_ of Object.keys(KHO)) if (k_ !== "_cfg") delete KHO[k_]; luu(); CHON = null; cap_nhat(); dong_bang(); } };
-  b.onchange = e => { const k = e.target.dataset.vt; if (k) { KHO._cfg[k] = e.target.checked; luu(); cap_nhat(); } };
+  b.onchange = e => { const k = e.target.dataset.vt; if (k) dat_cfg(k, e.target.checked); };
 }
-document.addEventListener("pointerdown", e => { if (!e.target.closest(".ve-ds,.ve-tim,[data-vmo],[data-vn],[data-vtim]")) dong_bang(); }, true);
+function dat_cfg(k, v) {                               // ẩn / khoá / giữ công cụ – đồng bộ nút thanh trái + ô trong bảng
+  KHO._cfg[k] = v; luu(); if (k === "an" && v) CHON = null;
+  document.querySelectorAll(`[data-vt="${k}"]`).forEach(z => { z.checked = v; });
+  if (k === "an") document.querySelectorAll("[data-van]").forEach(z => z.setAttribute("aria-pressed", String(v)));
+  cap_nhat();
+}
+// ---------------------------------------------------------------- DANH SÁCH NÉT VẼ (chọn / ẩn / khoá / xoá từng nét) + XUẤT / NHẬP FILE
+function tom_net(d) {                                  // mô tả ngắn: ngày · giá điểm đầu
+  const p = d.p?.[0]; if (!p) return "";
+  if (p.fx != null) return "neo theo khung";
+  return `${ngay_chu(p.t)} · ${gia(p.v)}${d.p.length > 1 && d.p[1].v != null ? ` → ${gia(d.p[d.p.length - 1].v)}` : ""}`;
+}
+function mo_danh_sach() {
+  const cu = document.querySelector(".ve-dsnet"); dong_bang(); if (cu || !C) return;
+  const b = document.createElement("div"); b.className = "ve-tim ve-dsnet"; document.body.appendChild(b);
+  const ve = () => {
+    const ds = KHO[C.ma] || [], ma_khac = Object.keys(KHO).filter(k => k !== "_cfg" && k !== C.ma && (KHO[k] || []).length);
+    b.innerHTML = `<div class="dau">NÉT VẼ CỦA ${esc(C.ma)} · ${ds.length}${ma_khac.length ? ` · còn ${ma_khac.reduce((a, k) => a + KHO[k].length, 0)} nét ở ${ma_khac.length} mã khác` : ""}</div>` +
+      (ds.length ? ds.map(d => `<div class="net-r${d.id === CHON ? " chon" : ""}${d.an ? " an" : ""}" data-nid="${esc(d.id)}"><button data-nchon title="Chọn và đưa tới nét này"><span>${esc(CONG[d.c]?.ten || d.c)}</span><i>${esc(tom_net(d))}</i></button>` +
+        `<button data-nan aria-pressed="${!d.an}" title="${d.an ? "Hiện" : "Ẩn"}">${svg(IC.mat, 15)}</button><button data-nkhoa aria-pressed="${!!d.khoa}" title="Khoá: không kéo nhầm">${svg(IC.khoa, 15)}</button><button data-nxoa title="Xoá">${svg(IC.xoa, 15)}</button></div>`).join("")
+        : `<div class="trong">Chưa có nét vẽ nào trên mã này.</div>`) +
+      `<div class="tac"><label><input type="checkbox" data-vt="an"${KHO._cfg.an ? " checked" : ""}> Ẩn mọi hình vẽ</label><label><input type="checkbox" data-vt="khoa"${KHO._cfg.khoa ? " checked" : ""}> Khoá mọi hình vẽ</label>
+      <button data-nxuat title="Tải file JSON chứa nét vẽ của mọi mã – mở ở máy khác bằng Nhập file">Xuất file (mọi mã)</button><button data-nnhap title="Gộp nét vẽ từ file đã xuất (không xoá nét đang có)">Nhập file</button>
+      <input type="file" accept=".json,application/json" data-nfile hidden></div>`;
+  };
+  ve();
+  b.onclick = e => {
+    const r_ = e.target.closest("[data-nid]"), d = r_ && tim(r_.dataset.nid);
+    if (d && e.target.closest("[data-nchon]")) {
+      if (d.an) { chup(C.ma); d.an = false; luu(); }
+      CHON = d.id; const p = d.p?.[0];
+      if (p?.t != null) { const l = t2l(p.t), ts_ = C.ch.timeScale(), v = ts_.getVisibleLogicalRange();
+        if (v && (l < v.from || l > v.to)) { const w = v.to - v.from; ts_.setVisibleLogicalRange({from: l - w / 2, to: l + w / 2}); } }
+      cap_nhat(); return ve();
+    }
+    if (d && e.target.closest("[data-nan]")) { chup(C.ma); d.an = !d.an; if (d.an && CHON === d.id) CHON = null; luu(); cap_nhat(); return ve(); }
+    if (d && e.target.closest("[data-nkhoa]")) { chup(C.ma); d.khoa = !d.khoa; luu(); cap_nhat(); return ve(); }
+    if (d && e.target.closest("[data-nxoa]")) { chup(C.ma); KHO[C.ma] = KHO[C.ma].filter(z => z.id !== d.id); if (CHON === d.id) CHON = null; luu(); cap_nhat(); return ve(); }
+    if (e.target.closest("[data-nxuat]")) return xuat_file();
+    if (e.target.closest("[data-nnhap]")) return b.querySelector("[data-nfile]").click();
+  };
+  b.onchange = e => {
+    const k = e.target.dataset.vt; if (k) return dat_cfg(k, e.target.checked);
+    const f = e.target.files?.[0]; if (!f) return;
+    if (f.size > 5e6) return alert("File quá lớn (> 5 MB) – không phải file nét vẽ xuất từ trang này?");
+    f.text().then(t => { const kq = nhap_net(JSON.parse(t)); alert(`Đã nhập ${kq.net} nét vẽ cho ${kq.ma} mã${kq.bo ? ` · bỏ ${kq.bo} nét không hợp lệ / đã có` : ""}.`); cap_nhat(); ve(); })
+      .catch(() => alert("Không đọc được file – cần file JSON xuất từ nút \"Xuất file\"."));
+  };
+}
+function xuat_file() {
+  const hinh = Object.fromEntries(Object.entries(KHO).filter(([k, v]) => k !== "_cfg" && Array.isArray(v) && v.length));
+  const a = document.createElement("a"), ngay = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({loai: "net-ve", ban: 1, luc: new Date().toISOString(), hinh})], {type: "application/json"}));
+  a.download = `net-ve-${ngay}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+function nhap_net(j) {                                  // file ngoài = dữ liệu không tin cậy: chỉ nhận mã hợp lệ, công cụ có thật, điểm là số; gộp, bỏ trùng id
+  const hinh = j && typeof j === "object" ? (j.hinh && typeof j.hinh === "object" ? j.hinh : j) : {};
+  const so = v => typeof v === "number" && isFinite(v), kq = {net: 0, ma: 0, bo: 0};
+  for (const [ma, ds] of Object.entries(hinh)) {
+    if (!/^[A-Z0-9]{2,12}$/.test(ma) || !Array.isArray(ds)) continue;
+    const cu = KHO[ma] || [], co = new Set(cu.map(d => d.id)); let them = 0;
+    for (const d of ds) {
+      const ok = d && typeof d === "object" && CONG[d.c] && Array.isArray(d.p) && d.p.length && d.p.length <= 500 &&
+        d.p.every(q => q && ((so(q.t) && so(q.v)) || (so(q.fx) && so(q.fy)))) && (d.anh == null || (typeof d.anh === "string" && d.anh.startsWith("data:image/")));
+      if (!ok || co.has(d.id)) { kq.bo++; continue; }
+      const c = JSON.parse(JSON.stringify(d)); c.id = typeof c.id === "string" && c.id.length <= 20 ? c.id : uid(); c.s = c.s && typeof c.s === "object" ? c.s : {};
+      cu.push(c); co.add(c.id); them++;
+    }
+    if (them) { if (C?.ma === ma) chup(ma); KHO[ma] = cu; kq.net += them; kq.ma++; }
+  }
+  luu(); return kq;
+}
+document.addEventListener("pointerdown", e => { if (!e.target.closest(".ve-ds,.ve-tim,[data-vmo],[data-vn],[data-vtim],[data-vds]")) dong_bang(); }, true);
 VE.CONG = CONG; VE.NHOM = NHOM;
-VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }};
+VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }, nhap_net, tom_net};
 })();
