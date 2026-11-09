@@ -264,9 +264,7 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
 
 def _in(nd, rieng_tu=False):
     """In tin thay vì gửi (--khong_gui). Trên GitHub Actions (log CÔNG KHAI) KHÔNG in tin có danh mục thật."""
-    if rieng_tu and os.environ.get("GITHUB_ACTIONS"):
-        print(f"(tin riêng tư {len(nd)} ký tự – không in log công khai)")
-    else:
+    if not (rieng_tu and os.environ.get("GITHUB_ACTIONS")):   # log công khai: tin riêng tư không để lại dấu (kể cả độ dài)
         print(nd)
 
 
@@ -422,22 +420,24 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                 nd = diem_vao.tin_mua(kq, bay_gio, bien_the, vt.get(kq["ma"])) if kq["trang_thai"] == "MUA" else \
                     diem_vao.tin_bo(kq, bay_gio)
                 anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
-                cho_gui.append((nd, kq["ma"] in vt or diem_vao.co_so_cp_nav(nd), anh))
+                cho_gui.append((nd, anh))
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
             so_bao += 1
-    for nd, rt, anh in cho_gui:                             # gửi SAU khi in hết bảng: dòng "(tin riêng tư …)" ngay dưới 1 mã
-        gui(nd, rieng_tu=rt, anh=anh) if not khong_gui else _in(nd, rieng_tu=rt)   # trong log công khai = lộ mã đang giữ
+    # MỌI tin của vòng 15' là riêng tư (09/11/2026): mã trạng thái MUA trong bảng mà thiếu tin MUA công khai = mã đang giữ
+    # → log công khai giống hệt nhau dù giữ mã nào (tests/test_tong_ket_cl.py::test_log_15p_khong_phu_thuoc_danh_muc)
+    for nd, anh in cho_gui:
+        gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
         nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
         nut = diem_vao.nut_mua(kq)                          # chọn số CP → hỏi xác nhận ✅ (lenh_tele.xu_ly_nut)
-        rt = diem_vao.co_so_cp_nav(nd) or bool(nut)         # có số CP theo NAV thật → không in log công khai
-        gui(nd, rieng_tu=rt, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=rt)
+        gui(nd, rieng_tu=True, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
     if th:                                                  # mã dự phòng: nút mua (bấm → hỏi xác nhận ✅)
-        gui(th, nut=diem_vao.nut_du_phong([k for k in moi_mua if k not in rieng])) if not khong_gui else _in(th)
+        gui(th, rieng_tu=True, nut=diem_vao.nut_du_phong([k for k in moi_mua if k not in rieng])) if not khong_gui \
+            else _in(th, rieng_tu=True)
     tt["_15p_hom_nay"] = {"ngay": f"{bay_gio:%Y-%m-%d}", "cach_vao": bien_the,
                           "ds": [{k: (None if isinstance(v, float) and v != v else v) for k, v in r.items()}
                                  for r in bang]}

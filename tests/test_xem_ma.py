@@ -39,7 +39,7 @@ def test_khong_in_tin_rieng_tu_ra_log_cong_khai(monkeypatch, capsys):
     chay._in("💼 ĐANG GIỮ HPG 1.000 CP", rieng_tu=True)
     chay._in("📊 tin công khai", rieng_tu=False)
     out = capsys.readouterr().out
-    assert "HPG" not in out and "tin riêng tư" in out and "tin công khai" in out
+    assert "HPG" not in out and "tin riêng tư" not in out and "tin công khai" in out   # không cả dòng đánh dấu
     monkeypatch.delenv("GITHUB_ACTIONS")
     chay._in("💼 ĐANG GIỮ HPG", rieng_tu=True)                 # chạy trên máy: in bình thường
     assert "HPG" in capsys.readouterr().out
