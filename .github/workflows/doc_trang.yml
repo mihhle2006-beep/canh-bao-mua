@@ -1,5 +1,4 @@
-# ĐỌC TRANG CÔNG KHAI – bấm "Run workflow", nhập URL (VD trang hướng dẫn DNSE) → in nội dung ra log (đối chiếu luật sản
-# phẩm khi máy dev không vào được trang). Chỉ dùng cho trang công khai.
+# THĂM DÒ (nhánh tạm) – API quỹ mở Fmarket công khai: danh sách quỹ, NAV, top nắm giữ.
 name: Doc trang
 
 on:
@@ -17,6 +16,27 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - env:
-          URL: ${{ inputs.url }}
-        run: curl -sSL -m 60 -A "Mozilla/5.0" "$URL" | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | head -c 60000
+      - run: |
+          python3 - <<'PY'
+          import json, urllib.request as u
+          def goi(url, body=None):
+              r = u.Request(url, data=json.dumps(body).encode() if body is not None else None,
+                            headers={"Content-Type": "application/json"})
+              return json.load(u.urlopen(r, timeout=30))
+          j = goi("https://api.fmarket.vn/res/products/filter", {"types": ["NEW_FUND","TRADING_FUND"], "issuerIds": [],
+              "sortOrder": "DESC", "sortField": "navTo6Months", "page": 1, "pageSize": 200, "isIpo": False,
+              "fundAssetTypes": [], "bondRemainPeriods": [], "searchField": "", "isBuyByReward": False, "thirdAppIds": []})
+          ds = j["data"]["rows"]; print("so quy", len(ds)); print("khoa", sorted(ds[0].keys()))
+          cp = [q for q in ds if (q.get("dataFundAssetType") or {}).get("code") == "STOCK"]
+          print("quy co phieu", len(cp))
+          for q in cp[:40]:
+              print(q.get("shortName"), q.get("id"), q.get("nav"), json.dumps(q.get("productNavChange"))[:300])
+          q = cp[0]; d = goi(f"https://api.fmarket.vn/res/products/{q['id']}")["data"]
+          print("chi tiet khoa", sorted(d.keys()))
+          for k in ("productTopHoldingList", "productIndustriesHoldingList", "productAssetHoldingList"):
+              print(k, json.dumps(d.get(k), ensure_ascii=False)[:1500])
+          for k in ("totalAsset", "aum", "netAssetValue", "productFund"):
+              if k in d: print(k, json.dumps(d[k], ensure_ascii=False)[:500])
+          n = goi("https://api.fmarket.vn/res/product/get-nav-history", {"isAllData": 1, "productId": q["id"], "fromDate": None, "toDate": "20261109"})
+          print("nav lich su", len(n["data"]), n["data"][:2], n["data"][-2:])
+          PY
