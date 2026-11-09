@@ -4,7 +4,8 @@ VN-INDEX NGÀY TỪ 2010 CHO TRANG BIỂU ĐỒ (đường RS so VN-Index) – c
 Nguồn DNSE chart-api (index, 1D). File gọn như gia_dai: vni.json {"d0": ngày đầu, "g": [0, cách ngày phiên trước…],
 "c": [đóng cửa], "cap_nhat"}. Trang nối thêm các phiên mới nhất từ Bảng thị trường (vni_ngay) khi đang giao dịch.
 + CÁC CHỈ SỐ (VN-Index, VN30, VNDiamond, HNX…) đủ nến mở / cao / thấp / đóng / KL → chi_so/<MÃ>.json (như gia_dai) +
-chi_so/ds.json {mã: tên} – trang Biểu đồ mở như một mã (gõ VN30…) và so sánh được. Mã nào DNSE không có → bỏ, giữ file cũ.
+chi_so/ds.json {mã: tên} – trang Biểu đồ mở như một mã (gõ VN30…) và so sánh được. DNSE không có (VNDiamond, VNMidcap…,
+lượt 09/11/2026) → thử nến ngày Vietcap (thi_truong/nguon.nen); cả hai không có → bỏ, giữ file cũ.
   python -m thi_truong.vni_web --ra docs/ma/du_lieu
 """
 import argparse
@@ -25,6 +26,7 @@ CHI_SO = {"VNINDEX": "VN-Index", "VN30": "VN30", "VN100": "VN100", "VNMID": "VNM
           "VNX50": "VNX50", "HNX": "HNX-Index", "HNX30": "HNX30", "UPCOM": "UPCoM-Index"}
 TEN_DNSE = {"HNX": ("HNX", "HNXINDEX", "HNXIndex"), "UPCOM": ("UPCOM", "UPCOMINDEX", "HNXUpcomIndex"),
             "VNALL": ("VNALL", "VNALLSHARE")}                 # mã chỉ số phía DNSE chưa chắc → thử lần lượt
+TEN_VC = {"VNMID": ("VNMID", "VNMIDCAP"), "VNSML": ("VNSML", "VNSMALLCAP"), "VNALL": ("VNALL", "VNALLSHARE")}   # Vietcap
 
 
 def tai_nen(ma="VNINDEX", tu=TU, so_lan=3):
@@ -49,6 +51,28 @@ def tai_nen(ma="VNINDEX", tu=TU, so_lan=3):
     return None
 
 
+def tai_vc(ma, so_lan=1, so_nen=5000):                  # nguon.goi đã tự thử lại 3 lần
+    """Nến ngày chỉ số từ Vietcap gap-chart (dự phòng DNSE) → như tai_nen | None."""
+    from . import nguon
+    for k in range(so_lan):
+        try:
+            j = nguon.nen(ma, "ONE_DAY", so_nen)
+            t_ = (j or {}).get("t") or []
+            if t_:
+                c_ = j.get("c") or []
+                cot = [j.get(k_) or c_ for k_ in ("o", "h", "l")] + [c_, j.get("v") or [0] * len(c_)]
+                ds = {}
+                for t, o, h, lo, c, v in zip(t_, *cot):
+                    if c:
+                        ds[(datetime.fromtimestamp(int(t), timezone.utc) + timedelta(hours=7)).date().isoformat()] = (
+                            round(float(o or c), 2), round(float(h or c), 2), round(float(lo or c), 2), round(float(c), 2), int(v or 0))
+                return [(d, *x) for d, x in sorted(ds.items())] or None
+        except (ValueError, TypeError, KeyError):
+            pass
+        time.sleep(1 + k)
+    return None
+
+
 def gon_nen(dong):
     """[(ngày, o, h, l, c, v)] → {"d0", "g", "o", "h", "l", "c", "v"} (như gia_dai)."""
     if not dong:
@@ -57,13 +81,14 @@ def gon_nen(dong):
             "l": [x[3] for x in dong], "v": [x[5] for x in dong]}
 
 
-def ghi_chi_so(ra, tai_=tai_nen):
+def ghi_chi_so(ra, tai_=tai_nen, tai_vc_=tai_vc):
     """Mỗi chỉ số trong CHI_SO → ra/chi_so/<MÃ>.json; ra/chi_so/ds.json = các mã đang có file. → (có, thiếu)."""
     thu_muc = os.path.join(ra, "chi_so")
     os.makedirs(thu_muc, exist_ok=True)
     co, thieu = [], []
     for ma in CHI_SO:
-        d = next((x for x in (tai_(t, so_lan=2) for t in TEN_DNSE.get(ma, (ma,))) if x and len(x) >= 250), None)
+        d = next((x for x in (tai_(t, so_lan=2) for t in TEN_DNSE.get(ma, (ma,))) if x and len(x) >= 250), None) \
+            or next((x for x in (tai_vc_(t) for t in TEN_VC.get(ma, (ma,))) if x and len(x) >= 250), None)
         if d:
             with open(os.path.join(thu_muc, f"{ma}.json"), "w", encoding="utf-8") as f:
                 json.dump(gon_nen(d), f, separators=(",", ":"))
