@@ -2728,25 +2728,79 @@ async function hien_nganh() {
 }
 
 // ---------------------------------------------------------------- xuất Excel
+// File theo MẪU của chủ quỹ (09/11/2026 – file BCTC xuất từ danh-muc): tiêu đề + Ngày xuất / Mã / Thời gian / Đơn vị, dải
+// Năm | Quý nền xanh, phần CĐKT / KQKD / LCTT nền xanh nhạt, chỉ tiêu mẹ đậm, con thụt lề + gộp nhóm, số âm đỏ, cố định cột tên
+let EXJ_P = null;
+const tai_exceljs = () => EXJ_P || (EXJ_P = new Promise((ok, loi) => { const sc = document.createElement("script");
+  sc.src = "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"; sc.onload = () => ok(window.ExcelJS);
+  sc.onerror = () => { EXJ_P = null; loi(); }; document.head.appendChild(sc); }));
+const nhan_quy = s => String(s).replace(/^Q(\d)[./ ](\d{2})$/, (_, q, y) => `Q${q} 20${y}`);
+const FMT_TY = "#,##0.0;[Red]\\-#,##0.0", FMT_DONG = "#,##0;[Red]\\-#,##0";
+async function xlsx_mau(ten_file, o) {
+  // o: {ma, loai, thoi_gian, don_vi, nhom: [[nhãn dải, [kỳ…]]…], phan: [[tên phần, [{t, me, lui, v: [[giá trị theo nhóm]…], fmt}]]…], chu_thich}
+  let EJ; try { EJ = await tai_exceljs(); } catch (e) { return alert("Không tải được thư viện Excel – thử lại sau"); }
+  const XANH = "FF2E7D32", DAM = "FF1B5E20", nen = argb => ({type: "pattern", pattern: "solid", fgColor: {argb}});
+  const wb = new EJ.Workbook(), ws = wb.addWorksheet(o.ma, {views: [{state: "frozen", xSplit: 1, ySplit: 10, showGridLines: false}],
+    properties: {outlineProperties: {summaryBelow: false}}});
+  const vt = []; let col = 2;
+  o.nhom.forEach(([, ky], g) => { vt.push(col); col += ky.length + (g < o.nhom.length - 1 ? 1 : 0); });
+  const het = col - 1, cach = new Set(vt.slice(1).map(c => c - 1));            // cột trống hẹp giữa Năm và Quý
+  ws.getColumn(1).width = 52;
+  for (let c = 2; c <= het; c++) ws.getColumn(c).width = cach.has(c) ? 3 : vt.includes(c) ? 17 : 13;
+  const trang = {bold: true, size: 12, color: {argb: "FFFFFFFF"}}, hn = new Date(), ngay = `${String(hn.getDate()).padStart(2, "0")}/${String(hn.getMonth() + 1).padStart(2, "0")}/${hn.getFullYear()}`;
+  const ten = ten_ma((DS || []).find(r => r.ma === o.ma) || {ma: o.ma});
+  ws.getCell("A1").value = ten ? `${o.ma} – ${ten}` : o.ma; ws.getCell("A1").font = {bold: true, size: 16, color: {argb: DAM}}; ws.getRow(1).height = 21;
+  ws.getCell("A2").value = o.loai; ws.getCell("A2").font = {size: 12, color: {argb: XANH}};
+  [["Ngày xuất", ngay], ["Mã", o.ma], ["Thời gian", o.thoi_gian], ["Đơn vị", o.don_vi]].forEach(([a, b], i) => {
+    const r = ws.getRow(4 + i); r.getCell(1).value = a; r.getCell(1).font = trang; r.getCell(1).fill = nen(XANH);
+    r.getCell(2).value = b; r.getCell(2).font = {size: 12}; r.getCell(2).alignment = {horizontal: "left"}; });
+  const r9 = ws.getRow(9), r10 = ws.getRow(10); r10.height = 16;
+  for (let c = 1; c <= het; c++) if (!cach.has(c)) for (const r of [r9, r10]) {
+    const x = r.getCell(c); x.font = trang; x.fill = nen(XANH); x.alignment = {horizontal: "center"};
+    if (r === r10) x.border = {bottom: {style: "medium", color: {argb: DAM}}}; }
+  o.nhom.forEach(([nhan, ky], g) => { if (ky.length > 1) ws.mergeCells(9, vt[g], 9, vt[g] + ky.length - 1);
+    r9.getCell(vt[g]).value = nhan; ky.forEach((k, j) => { r10.getCell(vt[g] + j).value = k; }); });
+  let r = 11;
+  for (const [ten_phan, dong] of o.phan) {
+    if (!dong.length) continue;
+    const rp = ws.getRow(r++); rp.getCell(1).value = ten_phan;
+    for (let c = 1; c <= het; c++) { const x = rp.getCell(c); x.font = {bold: true, size: 12, color: {argb: DAM}}; x.fill = nen("FFE8F5E9");
+      x.border = {bottom: {style: "thin", color: {argb: "FFC8E6C9"}}}; }
+    for (const d of dong) {
+      const rr = ws.getRow(r++); rr.outlineLevel = 1;
+      rr.getCell(1).value = d.t; rr.getCell(1).alignment = {indent: d.me ? 0 : (d.lui ?? 2)};
+      o.nhom.forEach((_, g) => (d.v[g] || []).forEach((v, j) => { if (v != null && isFinite(v)) { const x = rr.getCell(vt[g] + j); x.value = v; x.numFmt = d.fmt; } }));
+      if (d.me) for (let c = 1; c <= het; c++) if (!cach.has(c)) { const x = rr.getCell(c); x.font = {bold: true, size: 11, color: {argb: DAM}}; x.fill = nen("FFF4FAF4"); }
+    }
+    r++;
+  }
+  const rc = ws.getRow(r); rc.getCell(1).value = `${o.chu_thich} · ô trống = chưa có số kỳ đó · xuất ${ngay}`;
+  rc.getCell(1).font = {italic: true, size: 9, color: {argb: "FF7A7A7A"}};
+  const buf = await wb.xlsx.writeBuffer(), a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([buf], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+  a.download = ten_file; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const PHAN_BCTC = [["cd", "CÂN ĐỐI KẾ TOÁN"], ["kd", "KẾT QUẢ KINH DOANH"], ["lc", "LƯU CHUYỂN TIỀN TỆ"]];
+const fmt_ct = t => /VND\)|cổ phiếu/i.test(t || "") ? FMT_DONG : FMT_TY;     // EPS, giá trị sổ sách / CP: đồng
 function xlsx_bctc(ma) {
   const b = KHO[ma]?.b; if (!b) return;
-  const sheets = [];
-  for (const [bang, ten] of [["kd", "KQKD"], ["cd", "CDKT"], ["lc", "LCTT"]]) for (const q of [true, false]) {
-    const nq = b.q.length, nhan = q ? b.q : b.y, cay = (CT_BCTC || {})[b.loai]?.[bang] || [], co = b[bang] || {};
+  const nq = b.q.length, phan = PHAN_BCTC.map(([bang, ten]) => {
+    const cay = (CT_BCTC || {})[b.loai]?.[bang] || [], co = b[bang] || {};
     const dong = cay.filter(x => co[x[0]]).map(x => [x[0], x[1], x[2]]);
     for (const c of Object.keys(co)) if (!dong.some(x => x[0] === c)) dong.push([c, 1, ten_ct(b, bang, c)]);
-    sheets.push([`${ten} ${q ? "quy" : "nam"}`, [["Tỷ đồng", ...nhan], ...dong.map(([c, lv, t]) => ["  ".repeat(Math.max(0, lv - 1)) + t, ...(q ? co[c].slice(0, nq) : co[c].slice(nq))])]]);
-  }
-  tai_xlsx(`${ma}_BCTC.xlsx`, sheets);
+    return [ten, dong.map(([c, lv, t], i) => ({t, me: (dong[i + 1]?.[1] || 0) > lv, lui: lv >= 4 ? 4 : 2, fmt: fmt_ct(t),
+      v: [co[c].slice(nq), co[c].slice(0, nq)]}))];
+  });
+  xlsx_mau(`${ma}_BCTC.xlsx`, {ma, loai: "Báo cáo tài chính", thoi_gian: "Năm, Quý", don_vi: "Tỷ đồng (EPS, giá trị / cổ phiếu: đồng)",
+    nhom: [["Năm", b.y], ["Quý", b.q.map(nhan_quy)]], phan, chu_thich: "Nguồn: BCTC doanh nghiệp công bố (Vietcap) · đơn vị tỷ đồng (EPS: đồng/cổ phiếu)"});
 }
 function xlsx_bctc_dai(ma) {
   const bd = KHO[ma]?.bd; if (!bd) return;
-  const nq = bd.q.length, T = TEN_VND || {}, sheets = [];
-  for (const [bang, ten] of [["kd", "KQKD"], ["cd", "CDKT"], ["lc", "LCTT"]]) for (const q of [true, false]) {
-    const co = bd[bang] || {};
-    sheets.push([`${ten} ${q ? "quy" : "nam"} VND`, [["Tỷ đồng", ...(q ? bd.q : bd.y)], ...Object.keys(co).map(c => [T[c] || c, ...(q ? co[c].slice(0, nq) : co[c].slice(nq))])]]);
-  }
-  tai_xlsx(`${ma}_BCTC_VNDirect.xlsx`, sheets);
+  const nq = bd.q.length, T = TEN_VND || {};
+  const phan = PHAN_BCTC.map(([bang, ten]) => [ten, Object.keys(bd[bang] || {}).map(c => ({t: T[c] || c, lui: 0, fmt: fmt_ct(T[c]),
+    v: [bd[bang][c].slice(nq), bd[bang][c].slice(0, nq)]}))]);
+  xlsx_mau(`${ma}_BCTC_VNDirect.xlsx`, {ma, loai: "Báo cáo tài chính (VNDirect, từ 2008)", thoi_gian: "Năm, Quý", don_vi: "Tỷ đồng (giá trị / cổ phiếu: đồng)",
+    nhom: [["Năm", bd.y], ["Quý", bd.q.map(nhan_quy)]], phan, chu_thich: "Nguồn: BCTC VNDirect · đơn vị tỷ đồng (giá trị / cổ phiếu: đồng)"});
 }
 function xlsx_so_huu(ma, k) {
   const n = k.n || {}, cc = n.cc || {};
@@ -2758,9 +2812,11 @@ function xlsx_so_huu(ma, k) {
 }
 function xlsx_chi_so(ma, k) {
   const cs = k.n?.cs; if (!cs) return;
-  const rows = [["Chỉ số", ...cs.ky]];
-  for (const [t, ds] of NHOM_CS) for (const [key, ten] of ds) if (cs[key]) rows.push([`${t} – ${ten}`, ...cs[key]]);
-  tai_xlsx(`${ma}_chi_so.xlsx`, [["Chi so", rows]]);
+  const FMT = {"%": "0.00%;[Red]\\-0.00%", "%a": "0.00%", d: "#,##0", ty: "#,##0;[Red]\\-#,##0"};
+  const phan = NHOM_CS.map(([t, ds]) => [t.toUpperCase(), ds.filter(([key]) => cs[key]).map(([key, ten, kieu]) => ({t: ten, lui: 0,
+    fmt: FMT[kieu] || "#,##0.00;[Red]\\-#,##0.00", v: [kieu === "%a" ? cs[key].map(v => v == null ? v : Math.abs(v)) : cs[key]]}))]);
+  xlsx_mau(`${ma}_chi_so.xlsx`, {ma, loai: "Chỉ số tài chính", thoi_gian: "Quý", don_vi: "% · lần (x) · ngày · tỷ đồng – theo từng chỉ số",
+    nhom: [["Quý", cs.ky.map(nhan_quy)]], phan, chu_thich: "Nguồn: Vietcap (chỉ số tài chính theo quý)"});
 }
 
 // ---------------------------------------------------------------- điều hướng
