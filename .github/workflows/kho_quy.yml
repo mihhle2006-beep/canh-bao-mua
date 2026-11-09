@@ -1,0 +1,61 @@
+# CHẠY Ở canh-bao-mua (repo CÔNG KHAI – log CÔNG KHAI); code & dữ liệu ở repo riêng tư danh-muc (checkout bằng secret
+# DANH_MUC_TOKEN_GHI – kết quả commit về danh-muc). CONG_KHAI=1: không đọc / in danh mục thật.
+# KHO QUỸ ĐẦU TƯ (chủ quỹ 09/11/2026: "lưu dữ liệu lại tạo thành file dữ liệu lớn"): mọi quỹ mở Fmarket → du_lieu/quy/
+# (NAV từng ngày, top nắm giữ theo tháng báo cáo, ngành, tài sản, tổng tài sản, % NAV) – ptcp/quy_dau_tu.py. Dữ liệu quỹ
+# công khai; log chỉ in số dòng thêm.
+name: Kho quy dau tu
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 13 * * *"          # 20:41 giờ VN mỗi ngày (quỹ cập nhật NAV buổi tối)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dm-kho-quy
+  cancel-in-progress: false
+
+jobs:
+  cap_nhat:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: danh-muc
+    env:
+      CONG_KHAI: "1"
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          persist-credentials: false
+          path: danh-muc
+      - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
+        working-directory: .
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv nhap*.txt trung_vang*.json
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Cài thư viện
+        run: pip install -q requests
+
+      - name: Tải dữ liệu quỹ
+        timeout-minutes: 20
+        run: python -m ptcp.quy_dau_tu
+
+      - name: Lưu kho
+        env:
+          TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+        run: |
+          [ -d du_lieu/quy ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN_GHI" | base64 -w0)"
+          git add du_lieu/quy
+          git commit -q -m "Kho quỹ $(date +%F)" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
+          for i in 1 2 3; do git pull --rebase --autostash && git push && exit 0; sleep $((i * 5)); done
+          echo "Không đẩy được – kiểm tra Settings → Actions → Workflow permissions"; exit 1
