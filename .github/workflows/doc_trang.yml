@@ -16,31 +16,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
       - run: |
-          python3 - <<'PY'
-          import json, re, urllib.request as u
-          def lay(url, body=None):
-              r = u.Request(url, data=json.dumps(body).encode() if body is not None else None, headers={"Content-Type": "application/json"})
-              return u.urlopen(r, timeout=40).read()
-          d = json.loads(lay("https://api.fmarket.vn/res/products/23"))["data"]
-          print("fundReport", json.dumps(d.get("fundReport"), ensure_ascii=False)[:800])
-          print("extra", json.dumps(d.get("extra"), ensure_ascii=False)[:300])
-          for x in (d.get("productDocuments") or [])[:40]:
-              print("TL", json.dumps({k: x.get(k) for k in ("name", "url", "fileName", "documentType", "createAt", "updateAt", "type")}, ensure_ascii=False)[:300])
-          try:
-              h = lay("https://fmarket.vn/quy/VESAF").decode("utf-8", "ignore")
-              js = sorted(set(re.findall(r'src="([^"]+\.js)"', h)))
-              print("so js", len(js))
-              ep = set()
-              for s in js:
-                  url = s if s.startswith("http") else "https://fmarket.vn" + s
-                  try: t = lay(url).decode("utf-8", "ignore")
-                  except Exception as e: continue
-                  ep |= set(re.findall(r'["\'`](/?res/[A-Za-z0-9_\-/{}$.]+)', t))
-              print("ENDPOINT", "\n".join(sorted(ep)))
-          except Exception as e: print("web loi", e)
-          try:
-              c = lay("https://web.archive.org/cdx/search/cdx?url=api.fmarket.vn/res/products/*&output=json&limit=20&filter=statuscode:200").decode()
-              print("wayback", c[:1500])
-          except Exception as e: print("wayback loi", e)
-          PY
+          X="--extra-index-url https://vnstocks.com/api/simple"
+          for p in vnstock vnstock_ezchart vnstock-ezchart vnai; do echo "== $p"; pip index versions $p $X 2>&1 | head -3; done
+          for u in vnstock-ezchart vnstock_ezchart vnstock; do echo "== simple $u"; curl -sS -m 30 -o /tmp/s.html -w '%{http_code} %{size_download}\n' https://vnstocks.com/api/simple/$u/; grep -o '[a-z_-]*-[0-9][0-9.]*[^"<]*\.whl' /tmp/s.html | tail -4; done
+          echo "== dry vnstock"; pip install --dry-run -q "vnstock>=4.0.9" $X 2>&1 | tail -5
+          pip download --no-deps -q -d /tmp/v "vnstock>=4.0.9" $X 2>&1 | tail -2; ls /tmp/v; python3 -c "import zipfile,glob; z=zipfile.ZipFile(glob.glob('/tmp/v/*.whl')[0]); m=[n for n in z.namelist() if n.endswith('METADATA')][0]; print([l for l in z.read(m).decode().splitlines() if l.startswith('Requires-Dist')])"
+          for v in 4.0.9 4.0.8 3.2.6; do echo "== dry vnstock==$v"; pip install --dry-run -q "vnstock==$v" $X 2>&1 | tail -2; done
