@@ -18,25 +18,29 @@ jobs:
     steps:
       - run: |
           python3 - <<'PY'
-          import json, urllib.request as u
-          def goi(url, body=None):
-              r = u.Request(url, data=json.dumps(body).encode() if body is not None else None,
-                            headers={"Content-Type": "application/json"})
-              return json.load(u.urlopen(r, timeout=30))
-          j = goi("https://api.fmarket.vn/res/products/filter", {"types": ["NEW_FUND","TRADING_FUND"], "issuerIds": [],
-              "sortOrder": "DESC", "sortField": "navTo6Months", "page": 1, "pageSize": 200, "isIpo": False,
-              "fundAssetTypes": [], "bondRemainPeriods": [], "searchField": "", "isBuyByReward": False, "thirdAppIds": []})
-          ds = j["data"]["rows"]; print("so quy", len(ds)); print("khoa", sorted(ds[0].keys()))
-          cp = [q for q in ds if (q.get("dataFundAssetType") or {}).get("code") == "STOCK"]
-          print("quy co phieu", len(cp))
-          for q in cp[:40]:
-              print(q.get("shortName"), q.get("id"), q.get("nav"), json.dumps(q.get("productNavChange"))[:300])
-          q = cp[0]; d = goi(f"https://api.fmarket.vn/res/products/{q['id']}")["data"]
-          print("chi tiet khoa", sorted(d.keys()))
-          for k in ("productTopHoldingList", "productIndustriesHoldingList", "productAssetHoldingList"):
-              print(k, json.dumps(d.get(k), ensure_ascii=False)[:1500])
-          for k in ("totalAsset", "aum", "netAssetValue", "productFund"):
-              if k in d: print(k, json.dumps(d[k], ensure_ascii=False)[:500])
-          n = goi("https://api.fmarket.vn/res/product/get-nav-history", {"isAllData": 1, "productId": q["id"], "fromDate": None, "toDate": "20261109"})
-          print("nav lich su", len(n["data"]), n["data"][:2], n["data"][-2:])
+          import json, re, urllib.request as u
+          def lay(url, body=None):
+              r = u.Request(url, data=json.dumps(body).encode() if body is not None else None, headers={"Content-Type": "application/json"})
+              return u.urlopen(r, timeout=40).read()
+          d = json.loads(lay("https://api.fmarket.vn/res/products/23"))["data"]
+          print("fundReport", json.dumps(d.get("fundReport"), ensure_ascii=False)[:800])
+          print("extra", json.dumps(d.get("extra"), ensure_ascii=False)[:300])
+          for x in (d.get("productDocuments") or [])[:40]:
+              print("TL", json.dumps({k: x.get(k) for k in ("name", "url", "fileName", "documentType", "createAt", "updateAt", "type")}, ensure_ascii=False)[:300])
+          try:
+              h = lay("https://fmarket.vn/quy/VESAF").decode("utf-8", "ignore")
+              js = sorted(set(re.findall(r'src="([^"]+\.js)"', h)))
+              print("so js", len(js))
+              ep = set()
+              for s in js:
+                  url = s if s.startswith("http") else "https://fmarket.vn" + s
+                  try: t = lay(url).decode("utf-8", "ignore")
+                  except Exception as e: continue
+                  ep |= set(re.findall(r'["\'`](/?res/[A-Za-z0-9_\-/{}$.]+)', t))
+              print("ENDPOINT", "\n".join(sorted(ep)))
+          except Exception as e: print("web loi", e)
+          try:
+              c = lay("https://web.archive.org/cdx/search/cdx?url=api.fmarket.vn/res/products/*&output=json&limit=20&filter=statuscode:200").decode()
+              print("wayback", c[:1500])
+          except Exception as e: print("wayback loi", e)
           PY
