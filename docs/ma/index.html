@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232E7D32'/%3E%3Crect x='7' y='14' width='4' height='11' rx='1' fill='%23fff'/%3E%3Crect x='14' y='8' width='4' height='17' rx='1' fill='%23fff'/%3E%3Crect x='21' y='11' width='4' height='14' rx='1' fill='%23fff'/%3E%3C/svg%3E">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Biểu đồ"><meta name="theme-color" content="#2E7D32">
 <link rel="apple-touch-icon" href="icon-180.png"><link rel="manifest" href="manifest.webmanifest">
@@ -180,6 +180,14 @@ body.co-ds main{margin-right:300px}
 .ve-dsnet .net-r button{border:0;background:none;padding:6px;border-radius:6px;cursor:pointer;color:var(--chu);font:inherit}.ve-dsnet .net-r button:hover{background:#eef3ff}
 .ve-dsnet [data-nchon]{flex:1;display:flex;justify-content:space-between;gap:12px;text-align:left}.ve-dsnet .net-r [aria-pressed="false"]{color:var(--mo)}
 .ve-dsnet .net-r [data-nkhoa][aria-pressed="true"]{color:#2962ff}.ve-dsnet .trong{padding:10px;color:var(--mo)}
+/* ĐIỆN THOẠI: chạm 2 lần nhanh (đặt điểm vẽ) / bấm ô nhập chữ nhỏ làm Safari PHÓNG TO cả trang (thanh công cụ bị cắt) →
+   tắt phóng to khi chạm đúp, ô nhập ≥ 16px (Safari chỉ tự phóng ô < 16px), vùng biểu đồ toàn màn hình nhận mọi cử chỉ */
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+@media (pointer:coarse){input,textarea,select{font-size:16px!important}}
+.fs .fs-bd{touch-action:none}
+/* điện thoại NẰM NGANG ở trang Biểu đồ: ẩn thanh đầu trang (xoay dọc để chuyển trang), thanh công cụ 1 hàng vuốt ngang */
+@media (pointer:coarse) and (max-height:520px){body:has(.fs.trang) header.dau{display:none}.fs.trang{top:0}.fs .fs-tren .ten{display:none}
+  .fs .fs-tren,.fs .fs-day{flex-wrap:nowrap;overflow-x:auto;padding:3px 8px;gap:6px}.fs .fs-tren>*,.fs .fs-day>*{flex-shrink:0}.fs .nut{flex-wrap:nowrap;white-space:nowrap}}   /* thanh vẽ trái / cột phải vẫn vuốt cuộn được */
 .ve-kinh{position:fixed;z-index:400;width:120px;height:120px;border-radius:50%;border:2px solid #2962ff;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none;background:#fff}.ve-tim>input{width:100%;box-sizing:border-box;font:inherit;padding:8px 10px;border:1px solid var(--vien);border-radius:8px}
 .ve-tim .kq{max-height:46vh;overflow:auto;margin:6px 0}.ve-tim .trong{padding:10px;color:var(--mo)}
 .ve-tim .tac{border-top:1px solid var(--vien);display:grid;gap:6px;padding:8px 10px 4px;font-size:13px}.ve-tim .tac button{border:1px solid var(--vien);background:var(--the);border-radius:6px;padding:5px 8px;cursor:pointer;font:inherit;text-align:left}
@@ -1178,7 +1186,7 @@ function gop_khung(x, khung) {                          // nến ngày → tuầ
   return o;
 }
 let BD_GIA = null, BD_DK = null;
-let CG_GON = (() => { try { const v = localStorage.getItem("cg_gon"); return v == null ? CHAM && innerWidth < 700 : v === "1"; } catch (e) { return false; } })();   // điện thoại: mặc định thu gọn   // khung chỉ số góc trái: thu gọn còn ▸
+let CG_GON = (() => { try { const v = localStorage.getItem("cg_gon"); return v == null ? CHAM && (innerWidth < 700 || innerHeight < 520) : v === "1"; } catch (e) { return false; } })();   // điện thoại: mặc định thu gọn   // khung chỉ số góc trái: thu gọn còn ▸
 function dat_cg(v) {                                     // chế độ "Thu gọn khung chỉ số" (menu ƒx · mũi tên ▸ / ▾ trên biểu đồ)
   CG_GON = v; try { localStorage.setItem("cg_gon", v ? "1" : "0"); } catch (e) {}
   document.querySelectorAll("[data-cggon]").forEach(z => { z.checked = v; }); BD_DK?.viet?.();
