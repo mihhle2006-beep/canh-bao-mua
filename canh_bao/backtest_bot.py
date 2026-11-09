@@ -298,6 +298,25 @@ def _diem_ban_loc_mua(ra, gia, vni, backtest_diem_ban):
         print("ptcp chưa có backtest_loc_mua – bỏ qua")
 
 
+def _so_vao_tre(ct):
+    """1a (09/11/2026): nhóm vào trễ – lệnh ATC (luật live) vs báo sớm 14:15 (ATC_SOM, lô lẻ được), cả rổ và top GTGD."""
+    from ptcp.diem_vao_15p import tong_hop_15p
+    if not len(ct) or not {"ATC", "ATC_SOM"} <= set(ct["Biến thể"]):
+        return
+    x = ct[ct["Biến thể"].isin(["ATC", "ATC_SOM"]) & ct["Nhóm"].astype(str).str.startswith("VAO")]
+    try:
+        from ptcp import cau_hinh as pc, loc_quy_b
+        hang = (loc_quy_b.doc(han_ngay=None) or {}).get("hang_gtgd", {})
+        top = {m for m, h in hang.items() if h <= int(pc.QUY_TOP_GTGD)}
+    except (ImportError, AttributeError):
+        top = set()
+    for ten, y in (("cả rổ", x), ("top GTGD", x[x["Mã"].isin(top)])):
+        b = tong_hop_15p(y, ["ATC", "ATC_SOM"])["bang"] if len(y) else None
+        if b is not None and len(b):
+            print(f"\n  Vào trễ – ATC vs báo sớm 14:15 ({ten}, {y['Mã'].nunique()} mã):\n"
+                  + b.drop(columns=["Mô tả"]).round(2).to_string(index=False))
+
+
 def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
     print(f"\n② Điểm vào 15 phút – tải nến 15' từ {C.BACKTEST_15P_TU}…", flush=True)
     n15 = _tai_song_song(lambda m: du_lieu.tai_lich_su_phut(m, C.BACKTEST_15P_TU), list(gia))
@@ -324,6 +343,7 @@ def _diem_vao(ra, gia, vni, du_lieu, backtest_15p, tin_hieu_qua_khu):
             with pd.option_context("display.width", 250, "display.max_columns", 30):
                 print(b.drop(columns=["Mô tả"]).round(2).to_string(index=False))
         print(kl)
+        _so_vao_tre(k15["chi_tiet"])
         try:
             from ptcp import cau_hinh as pc
             top = int(pc.QUY_TOP_GTGD)                               # ngưỡng ở ptcp/cau_hinh.py (repo kín) – không ghi ra
