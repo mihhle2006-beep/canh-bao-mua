@@ -2605,12 +2605,12 @@ function he_thong(ma, k) {
 function gia_h(r) { const l = LIVE[r.ma]; return l && l.gia ? l.gia * 1000 : r.gia; }
 function hien_dau() {
   document.title = "Tra cứu mã";
-  const tang = DS.filter(r => r.ln_yoy != null && r.ln_q >= 50 && r.lien >= 2).sort((a, b) => b.ln_yoy - a.ln_yoy).slice(0, 20).map(r => r.ma);
-  const re = DS.filter(r => r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
-  const f = DS.filter(r => r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
-  const cs = DS.filter(r => r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 20).map(r => r.ma);
-  const vA = DS.filter(r => (r.vgm || "").endsWith("A") && r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 20).map(r => r.ma);
-  const sieu = DS.filter(r => r.pc === "sieu" && r.von >= 1000).sort((a, b) => (b.vgm_d ?? 0) - (a.vgm_d ?? 0)).slice(0, 20).map(r => r.ma);
+  const tang = DS.filter(r => HH(r) && r.ln_yoy != null && r.ln_q >= 50 && r.lien >= 2).sort((a, b) => b.ln_yoy - a.ln_yoy).slice(0, 20).map(r => r.ma);
+  const re = DS.filter(r => HH(r) && r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
+  const f = DS.filter(r => HH(r) && r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
+  const cs = DS.filter(r => HH(r) && r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 20).map(r => r.ma);
+  const vA = DS.filter(r => HH(r) && (r.vgm || "").endsWith("A") && r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 20).map(r => r.ma);
+  const sieu = DS.filter(r => HH(r) && r.pc === "sieu" && r.von >= 1000).sort((a, b) => (b.vgm_d ?? 0) - (a.vgm_d ?? 0)).slice(0, 20).map(r => r.ma);
   const chip_pt = m => { const l = LIVE[m], p = l?.pt != null ? l.pt / 100 : null;
     return `<a class="chip" href="#${esc(m)}">${esc(m)}${p != null ? `<span class="pt ${mau(p)}">${pt(p, 1)}</span>` : ""}</a>`; };
   const du_tk = MKT?.loc?.du_tk ?? 2, lv = Object.values(LIVE).filter(l => MA_OK(l.ma) && (l.gt20 ?? l.gt ?? 0) >= du_tk);
@@ -2648,7 +2648,8 @@ function hien_dau() {
 const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["pe_h", "P/E"], ["pb_h", "P/B"], ["roe", "ROE"], ["ln_q", "LNST quý"],
   ["ln_yoy", "LN quý YoY"], ["ln4_yoy", "LN 4Q YoY"], ["dt_yoy", "DT YoY"], ["bien", "Biên gộp"], ["lien", "Quý tăng liền"], ["f", "F-Score"],
   ["dg_h", "So giá trị HL"], ["vgm_d", "VGM"], ["cs", "CANSLIM"], ["rs", "RS"], ["von", "Vốn hoá"], ["rui_ro_bctc", "Rủi ro BCTC"]];
-const LOC = {tim: "", san: "", nganh: "", sx: "von", tang: false, bat: new Set(), kt: false};
+const HH = r => r.san !== "UPCoM";                     // quỹ chỉ mua HOSE + HNX: lọc / gợi ý mặc định bỏ UPCoM (09/11/2026 thêm ~800 mã)
+const LOC = {tim: "", san: "hh", nganh: "", sx: "von", tang: false, bat: new Set(), kt: false};
 // chế độ KỸ THUẬT (thi_truong/ky_thuat_web.py + canslim_web.py ghi vào ds.json, giá đóng cửa phiên gần nhất)
 const COT_KT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["p1t", "1 tháng"], ["p3t", "3 tháng"], ["p6t", "6 tháng"], ["p1n", "1 năm"],
   ["tr50", "So MA50"], ["tr200", "So MA200"], ["rsi", "RSI 14"], ["kl_d", "KL / TB20"], ["atr", "Biến động ngày"], ["cach52", "Cách đỉnh 52T"], ["rs", "RS"], ["nen", "Nền tích lũy"], ["von", "Vốn hoá"]];
@@ -2691,7 +2692,7 @@ function hien_loc() {
   for (const r of DS) { r.gia_h = gia_h(r); r.pe_h = r.eps > 0 && r.gia_h ? r.gia_h / r.eps : null; r.pb_h = r.bvps > 0 && r.gia_h ? r.gia_h / r.bvps : null; r.dg_h = r.gia_tri && r.gia_h ? r.gia_tri / r.gia_h - 1 : null; }
   const san = [...new Set(DS.map(r => r.san))].filter(Boolean).sort(), ng = [...new Set(DS.map(r => r.nganh))].filter(Boolean).sort((a, b) => a.localeCompare(b, "vi"));
   $("#noi-dung").innerHTML = `<div class="loc-dau"><span class="nut">${nut([["0", "Cơ bản (KQKD)"], ["1", "Kỹ thuật"]], LOC.kt ? "1" : "0", "lkt")}</span><input id="l-tim" placeholder="Lọc mã / ngành…" value="${esc(LOC.tim)}">
-    <select id="l-san"><option value="">Mọi sàn</option>${san.map(s => `<option${s === LOC.san ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
+    <select id="l-san"><option value="hh"${LOC.san === "hh" ? " selected" : ""}>HOSE + HNX</option><option value=""${LOC.san ? "" : " selected"}>Mọi sàn</option>${san.map(s => `<option${s === LOC.san ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
     <select id="l-nganh"><option value="">Mọi ngành</option>${ng.map(s => `<option${s === LOC.nganh ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
     ${Object.entries(BAT).map(([k, [t]]) => `<button class="bat" data-bat="${k}" aria-pressed="${LOC.bat.has(k)}">${esc(t)}</button>`).join("")}<span class="dem" id="l-dem"></span></div>
     <div class="the"><div class="bang-boc"><table id="bang-loc" class="sort"><thead><tr>${COT.map(([k, t, tr]) => `<th data-k="${k}" class="${tr ? "trai" : ""}${k === "nganh" ? " an-dt" : ""}">${esc(t)}</th>`).join("")}</tr></thead><tbody></tbody></table></div></div>
@@ -2706,7 +2707,7 @@ function hien_loc() {
   $("#cuoi").textContent = `BCTC tới ${(META.quy || []).slice(-1)[0] || ""} · cập nhật ${META.cap_nhat || ""}`;
 }
 function ve_loc() {
-  const ds = DS.filter(r => (!LOC.san || r.san === LOC.san) && (!LOC.nganh || r.nganh === LOC.nganh)
+  const ds = DS.filter(r => (!LOC.san || (LOC.san === "hh" ? HH(r) : r.san === LOC.san)) && (!LOC.nganh || r.nganh === LOC.nganh)
     && (!LOC.tim || r.ma.includes(LOC.tim) || (r.nganh || "").toUpperCase().includes(LOC.tim) || (r.ten || "").toUpperCase().includes(LOC.tim)) && [...LOC.bat].every(k => bat_loc()[k]?.[1](r)));
   const COT = cot_loc();
   const k = LOC.sx, d = LOC.tang ? 1 : -1;
