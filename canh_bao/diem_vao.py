@@ -252,9 +252,13 @@ def _von_nav(kq, gia, cl):
     s = chu_von_lenh(_k_rui_ro(kq, gia, cl))
     if not s:
         return ""
-    n = _lo_atc(kq, so_cp_nav(kq, gia, cl))
+    n0 = so_cp_nav(kq, gia, cl)
+    n = _lo_atc(kq, n0)
     if n > 0:
         s += f" → {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr" + (" (lô lẻ)" if n < 100 else "")
+    elif n0 > 0:                                       # ATC: tỷ trọng chỉ đủ lô lẻ → không có nút (09/11/2026: GAS ATC không nút)
+        s += (f" → {n0} CP ≈ {n0 * gia * 1000 / 1e6:.1f} tr – ATC không nhận lô lẻ (< 100 CP) nên KHÔNG có nút mua; "
+              "lô lẻ chỉ khớp trong phiên liên tục")
     return s
 
 
