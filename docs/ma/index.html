@@ -838,7 +838,7 @@ function non_do_trung(c, H, kieu, L, Ls, so_moc = 60) {  // tại ~60 mốc tron
 }
 // ---- TỰ VẼ: nền tích lũy / VCP · Fibonacci · Volume Profile (hàm thuần trên chuỗi nến x)
 const so_nen_vp = kh => ({D: 120, W: 104, M: 60})[kh] || 225;   // VP: ~6 tháng ngày / 2 năm tuần / 5 năm tháng / 1 phiên phút
-function nen_tai(x, i, Lmin = 15, Lmax = 60, rong = 0.18) {   // nền dài nhất kết thúc ở nến i: (cao nhất − thấp nhất) / cao nhất ≤ rong
+function nen_tai(x, i, Lmin = 15, Lmax = 60, rong = 0.15, gan = 0.85) {   // nền dài nhất kết thúc ở nến i: biên độ ≤ rong VÀ đỉnh nền ≥ gan × đỉnh 250 nến (nền gần đỉnh)
   let cao = -Infinity, thap = Infinity, tot = null;
   for (let L = 1; L <= Math.min(Lmax, i + 1); L++) {
     const j = i - L + 1; if (!(x.h[j] > 0) || !(x.l[j] > 0)) break;
@@ -847,6 +847,8 @@ function nen_tai(x, i, Lmin = 15, Lmax = 60, rong = 0.18) {   // nền dài nh�
     if (L >= Lmin) tot = {i0: j, i1: i, cao, thap, L};
   }
   if (!tot) return null;
+  let d250 = 0; for (let j = Math.max(0, i - 249); j <= i; j++) if (x.h[j] > d250) d250 = x.h[j];
+  if (tot.cao < gan * d250) return null;
   const {i0, i1} = tot, ba = Math.floor(tot.L / 3), v = x.v || [];
   const sau = k => { let h = -Infinity, l = Infinity; for (let j = i0 + k * ba; j < (k === 2 ? i1 + 1 : i0 + (k + 1) * ba); j++) { h = Math.max(h, x.h[j]); l = Math.min(l, x.l[j]); } return (h - l) / h; };
   const tbv = (a, b) => { let t = 0, m = 0; for (let j = a; j <= b; j++) if (v[j] > 0) { t += v[j]; m++; } return m ? t / m : null; };
@@ -1400,7 +1402,7 @@ async function ve_bd_gia(el, x0, them = {}) {
     }
   } else if (CB.kh && !PHUT(kh)) tv_chu += `<br><span class="phu">Kế hoạch thoát: chỉ vẽ khi bot đang khuyến nghị mua mã này</span>`;
   if (CB.nen && n > 30) {
-    let b = null, vua = false;                   // vượt nền trước: nến vượt (< +18%) vẫn lọt vào "nền" tính tới nến cuối
+    let b = null, vua = false;                   // vượt nền trước: nến vượt (< +15%) vẫn lọt vào "nền" tính tới nến cuối
     for (let k = 1; k <= 5 && !b; k++) { const z = nen_tai(x, n - 1 - k); if (z && x.c[n - 1] > z.cao) { b = z; vua = true; } }
     b = b || nen_tai(x, n - 1);
     if (b) {
@@ -1410,8 +1412,8 @@ async function ve_bd_gia(el, x0, them = {}) {
     }
     const bc = kh === "D" || kh === "W" ? nen_bang_chung(x) : null;
     tv_chu += `<br><span style="color:#7b2fa8">` + (b ? `${vua ? "Vừa vượt nền" : "Đang trong nền"} ${b.L} ${u_} · biên độ ${pt(b.bien, 0, false)}${b.vcp ? ` · VCP co hẹp ${b.co.map(z => pt(z, 0, false)).join(" → ")}` : ""}${b.kl ? ` · KL 10 ${u_} cuối = ${pt(b.kl, 0, false)} TB nền` : ""}${vua ? "" : ` · vượt nền khi đóng cửa > ${ty_(b.cao)}`}`
-      : "Chưa có nền tích lũy (≥ 15 nến biên độ ≤ 18%)") + `</span>` +
-      (bc ? ` <span class="phu" title="Mọi lần trong quá khứ mã này đóng cửa vượt đỉnh một nền (≥ 15 ${u_} biên độ ≤ 18%): sau đó lên +10% trước khi thủng đáy nền bao nhiêu % số lần; trung vị lãi 20 ${u_} sau ngày vượt">· trên mã: ${bc.n} lần vượt nền, ${pt(bc.thang, 0, false)} lên +10% trước khi thủng đáy nền${bc.tv20 != null ? `, trung vị 20 ${u_} ${pt(bc.tv20, 1)}` : ""}</span>` : "");
+      : "Chưa có nền tích lũy (≥ 15 nến, biên độ ≤ 15%, gần đỉnh 52 tuần)") + `</span>` +
+      (bc ? ` <span class="phu" title="Mọi lần trong quá khứ mã này đóng cửa vượt đỉnh một nền (≥ 15 ${u_}, biên độ ≤ 15%, gần đỉnh 52 tuần): sau đó lên +10% trước khi thủng đáy nền bao nhiêu % số lần; trung vị lãi 20 ${u_} sau ngày vượt">· trên mã: ${bc.n} lần vượt nền, ${pt(bc.thang, 0, false)} lên +10% trước khi thủng đáy nền${bc.tv20 != null ? `, trung vị 20 ${u_} ${pt(bc.tv20, 1)}` : ""}</span>` : "");
   }
   if (CB.fib && n > 20) {
     const f = fib_tu_dong(x);
@@ -2643,7 +2645,7 @@ function hien_loc() {
     <select id="l-nganh"><option value="">Mọi ngành</option>${ng.map(s => `<option${s === LOC.nganh ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
     ${Object.entries(BAT).map(([k, [t]]) => `<button class="bat" data-bat="${k}" aria-pressed="${LOC.bat.has(k)}">${esc(t)}</button>`).join("")}<span class="dem" id="l-dem"></span></div>
     <div class="the"><div class="bang-boc"><table id="bang-loc" class="sort"><thead><tr>${COT.map(([k, t, tr]) => `<th data-k="${k}" class="${tr ? "trai" : ""}${k === "nganh" ? " an-dt" : ""}">${esc(t)}</th>`).join("")}</tr></thead><tbody></tbody></table></div></div>
-    <p class="m" style="font-size:12px">${LOC.kt ? "Kỹ thuật tính theo giá đóng cửa phiên gần nhất (giá điều chỉnh): lãi 1 / 3 / 6 tháng, 1 năm · % trên / dưới MA50, MA200 · RSI 14 · KL phiên cuối ÷ TB 20 phiên · ATR 14 ÷ giá · RS: hạng sức mạnh giá 0–99 · nền tích lũy ≥ 15 phiên biên độ ≤ 18% (như mục Tự vẽ của Biểu đồ)." : "Giá, P/E, P/B, so giá trị hợp lý theo giá trong phiên. LNST quý tỷ đồng."} Bấm tiêu đề cột để sắp xếp, bấm dòng để xem chi tiết.</p>`;
+    <p class="m" style="font-size:12px">${LOC.kt ? "Kỹ thuật tính theo giá đóng cửa phiên gần nhất (giá điều chỉnh): lãi 1 / 3 / 6 tháng, 1 năm · % trên / dưới MA50, MA200 · RSI 14 · KL phiên cuối ÷ TB 20 phiên · ATR 14 ÷ giá · RS: hạng sức mạnh giá 0–99 · nền tích lũy ≥ 15 phiên, biên độ ≤ 15%, đỉnh nền ≥ 85% đỉnh 52 tuần (như mục Tự vẽ của Biểu đồ)." : "Giá, P/E, P/B, so giá trị hợp lý theo giá trong phiên. LNST quý tỷ đồng."} Bấm tiêu đề cột để sắp xếp, bấm dòng để xem chi tiết.</p>`;
   document.querySelectorAll("[data-lkt]").forEach(b => b.onclick = () => { const v = b.dataset.lkt === "1"; if (v === LOC.kt) return; LOC.kt = v; LOC.bat.clear(); LOC.sx = v ? "rs" : "von"; LOC.tang = false; hien_loc(); });
   $("#l-tim").oninput = e => { LOC.tim = e.target.value.trim().toUpperCase(); ve_loc(); };
   $("#l-san").onchange = e => { LOC.san = e.target.value; ve_loc(); };
