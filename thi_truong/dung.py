@@ -61,6 +61,8 @@ def _r(x, n=2):
 
 def chuan_bi(ra=FILE_CB, luong=8, in_tien_do=print):
     """Dữ liệu ít đổi trong ngày (gọi sau phiên / khi cache thiếu)."""
+    from . import quy_web
+    quy = quy_web.lay((doc_chuan_bi(ra) or {}).get("quy") or quy_web.tu_trang_trien_khai(), in_tien_do)
     tat = nguon.tat_ca_ma()
     cp = [d for d in tat if d.get("type") == "STOCK" and d.get("board") in SAN]
     ten_icb = nguon.ten_nganh()
@@ -98,7 +100,7 @@ def chuan_bi(ra=FILE_CB, luong=8, in_tien_do=print):
           "nn_san": tinh.theo_ngay_cafef(nguon.cafef("GDKhoiNgoai", "VNINDEX", 30), "GtMua", "GtBan", "Ngay"),
           "td_san": tinh.theo_ngay_cafef(nguon.cafef("GDTuDoanh", "VNINDEX", 30), "GtMua", "GtBan", "Date"),
           "ho_so": tinh.ho_so_thanh_khoan(n1, so_phien=30), "vni_ngay": d1,
-          "nhom": {g: nguon.nhom(g) for g in ("VN30", "HNX30")}}
+          "nhom": {g: nguon.nhom(g) for g in ("VN30", "HNX30")}, "quy": quy}
     _ghi(cb, ra)
     in_tien_do(f"  xong: {ra} ({os.path.getsize(ra) / 1e6:.1f} MB)")
     return cb
@@ -317,8 +319,11 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
                    "dong": dong,
                    "bit": BIT, "du_tk": GT_DU_THANH_KHOAN},
            "ten": {m: cb.get("ten", {}).get(m, "") for m in cp.index},
-           "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot(), "danh_muc": ma_dang_giu()}
+           "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot(), "danh_muc": ma_dang_giu(),
+           "quy": {k: v for k, v in (cb.get("quy") or {}).items() if k != "ls"} or None}
     _ghi(out, ra)
+    if (cb.get("quy") or {}).get("ls"):                              # lịch sử danh mục quỹ: file riêng (trang không tải)
+        _ghi(cb["quy"]["ls"], os.path.join(os.path.dirname(ra), "quy_ls.json"))
     in_tien_do(f"  xong: {ra} ({os.path.getsize(ra) / 1e3:.0f} KB) · khớp {khop:,.0f} / tổng {tong:,.0f} tỷ · "
                f"NN {nn_nay:+,.0f} tỷ · {len(dong)} mã lọc · {len(hm)} ô bản đồ")
     return out
