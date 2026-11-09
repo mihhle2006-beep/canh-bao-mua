@@ -683,3 +683,11 @@ def test_tra_cuu_dn_bo_sung_gia_dai(tmp_path, monkeypatch):
     assert T._doc(f"{ra}/gia_dai/AAA.json")["c"] == [1.0] and T._doc(f"{ra}/gia_dai/BBB.json")["c"] == [2.0]
     assert T._doc(f"{ra}/gia_dai/CCC.json")["cap_nhat"] == "2026-11-07" and T._doc(f"{ra}/gia_dai/DDD.json") is None
     assert T.bo_sung_gia_dai(["EEE"], ra, phut=0, in_ra=lambda *_: None)[2] == 1          # hết giờ → không nhận mã
+
+
+def test_bang_tt_khoi_loi_khong_lam_trong_trang():
+    """09/11/2026: khung theo dõi đọc D.tin_hieu (dict {hieu_luc, ma}) như list → lỗi chặn mọi khối sau → trang trống."""
+    import pathlib
+    h = (pathlib.Path(__file__).parents[1] / "docs" / "thi_truong" / "index.html").read_text(encoding="utf-8")
+    assert "((D.tin_hieu || {}).ma || [])" in h and "(D.tin_hieu || []).map" not in h
+    assert "try { f(); } catch (e)" in h                                   # mỗi khối Tổng quan vẽ riêng
