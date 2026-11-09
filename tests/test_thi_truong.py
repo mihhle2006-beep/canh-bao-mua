@@ -691,3 +691,45 @@ def test_bang_tt_khoi_loi_khong_lam_trong_trang():
     h = (pathlib.Path(__file__).parents[1] / "docs" / "thi_truong" / "index.html").read_text(encoding="utf-8")
     assert "((D.tin_hieu || {}).ma || [])" in h and "(D.tin_hieu || []).map" not in h
     assert "try { f(); } catch (e)" in h                                   # mỗi khối Tổng quan vẽ riêng
+
+
+def test_quy_web_lay_va_mua_ban(monkeypatch):
+    from thi_truong import quy_web as Q
+
+    def mau(ky, top):
+        return {"productFund": {"updateAssetHoldingTime": ky}, "fundReport": {"totalAssetValue": 2.3e12},
+                "extra": {"lastNAVDate": 1794157200000},
+                "productTopHoldingList": [{"stockCode": m, "netAssetPercent": 5, "volume": kl, "assetValue": kl * 20000,
+                                           "type": "STOCK"} for m, kl in top],
+                "productIndustriesHoldingList": [{"industry": "Ngân hàng", "assetPercent": 40}],
+                "productAssetHoldingList": [{"assetType": {"name": "Cổ phiếu"}, "assetPercent": 90}]}
+    ds = {"rows": [{"id": 1, "shortName": "AAF", "name": "Quỹ A", "owner": {"shortName": "aa"},
+                    "dataFundAssetType": {"code": "STOCK"}, "productNavChange": {"navToLastYear": -7.1}},
+                   {"id": 2, "shortName": "BBF", "dataFundAssetType": {"code": "BOND"}}] +
+                  [{"id": 10 + i, "shortName": f"X{i}", "dataFundAssetType": {"code": "BALANCED"}} for i in range(5)]}
+    chi = {"09/2026": {1: [("ACB", 1000), ("HPG", 500), ("VIB", 300)]}}
+
+    def goi(duong, body=None):
+        if body is not None:
+            return ds
+        i = int(duong.split("/")[1])
+        return mau(chi["ky"], chi[chi["ky"]].get(i, [("FPT", 10)]))
+    monkeypatch.setattr(Q, "_goi", goi)
+    chi["ky"] = "09/2026"
+    a = Q.lay(None, in_tien_do=lambda *_: None)
+    assert [q["m"] for q in a["quy"]][0] == "AAF" and "BBF" not in [q["m"] for q in a["quy"]]
+    q = next(q for q in a["quy"] if q["m"] == "AAF")
+    assert q["ky"] == "2026-09" and q["ts"] == 2300.0 and q["cty"] == "AA" and q["lai"]["ytd"] == -7.1
+    assert a["ls"]["2026-09"]["AAF"] == {"ACB": 1000, "HPG": 500, "VIB": 300} and a["mb"] == [] and a["mb_so_quy"] == 0
+    # tháng sau: ACB tăng 200 CP, HPG giảm 100, VIB rời top 10, TCB vào → chỉ ACB / HPG có giá trị
+    chi["ky"], chi["10/2026"] = "10/2026", {1: [("ACB", 1200), ("HPG", 400), ("TCB", 50)]}
+    b = Q.lay(a, in_tien_do=lambda *_: None)
+    assert sorted(b["ls"]) == ["2026-09", "2026-10"] and b["mb_so_quy"] == 6 and b["mb_tu"] == "2026-09"
+    mb = {x[0]: x for x in b["mb"]}
+    assert mb["ACB"][1:] == [round(200 * 20000 / 1e9, 1), 1, 0] and mb["HPG"][1:] == [round(-100 * 20000 / 1e9, 1), 0, 1]
+    assert "VIB" not in mb and b["vao_roi"]["VIB"] == [0, 1] and b["vao_roi"]["TCB"] == [1, 0]
+    # quá 3 tháng thì không so
+    assert Q.mua_ban({"2026-05": b["ls"]["2026-09"], "2026-10": b["ls"]["2026-10"]}, b["quy"])[1] == 0
+    # Fmarket lỗi → giữ bản cũ
+    monkeypatch.setattr(Q, "_goi", lambda *a, **k: (_ for _ in ()).throw(ValueError("HTTP 503")))
+    assert Q.lay(b, in_tien_do=lambda *_: None) is b
