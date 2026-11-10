@@ -163,6 +163,41 @@ jobs:
         with:
           path: _site
 
+      - name: Dữ liệu nhanh (dự phòng khi Pages kẹt)
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v6
+        with:
+          name: du-lieu-nhanh
+          path: docs/thi_truong/du_lieu.json
+          retention-days: 1
+
+  # 10/11/2026: Pages kẹt "syncing_files" 10–20' (lượt 5' xếp hàng, bị huỷ nối tiếp → bảng đứng 50') → mỗi lượt đẩy RIÊNG
+  # du_lieu.json (vài trăm KB, cùng nội dung công khai trên Pages) lên nhánh du-lieu-nhanh (1 commit, ghi đè); trang đọc
+  # dự phòng qua raw.githubusercontent.com khi bản Pages cũ > 8' trong giờ giao dịch. Không phụ thuộc bước triển khai.
+  nhanh:
+    needs: dung
+    if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: du-lieu-nhanh
+          path: nhanh
+      - name: Đẩy du_lieu.json lên nhánh du-lieu-nhanh
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          cd nhanh
+          git init -q -b du-lieu-nhanh
+          git add du_lieu.json
+          git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Dữ liệu bảng thị trường $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${REPO}.git" du-lieu-nhanh
+
   trien_khai:
     needs: dung
     if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
