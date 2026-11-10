@@ -976,11 +976,22 @@ function ve_tat() {
   else if (ST.tab === "quy") ve_quy();
   else ve_loc();
 }
+// DỰ PHÒNG (10/11/2026 – Pages kẹt 10–20'/lượt, bảng đứng 50'): workflow đẩy riêng du_lieu.json lên nhánh du-lieu-nhanh mỗi
+// lượt → bản Pages cũ > 8' trong giờ giao dịch (hoặc lỗi) thì đọc bản đó qua raw.githubusercontent.com, lấy bản mới hơn.
+const URL_NHANH = /\.github\.io$/.test(location.hostname)
+  ? `https://raw.githubusercontent.com/${location.hostname.split(".")[0]}/${location.pathname.split("/")[1]}/du-lieu-nhanh/du_lieu.json` : null;
+const lay_dl = async u => { const r = await fetch(u + "?t=" + Date.now(), {cache: "no-store"}); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
+const cu_dl = x => !x || (x.dang_gd && Date.now() - new Date(x.cap_nhat.replace(" ", "T") + "+07:00") > 8 * 60000);
 async function tai() {
   try {
-    const r = await fetch(URL_DL + "?t=" + Date.now(), {cache: "no-store"});
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    D = await r.json(); dung_loc(); ve_tat();
+    let d = null, loi = null;
+    try { d = await lay_dl(URL_DL); } catch (e) { loi = e; }
+    if (URL_NHANH && cu_dl(d)) {
+      const n = await lay_dl(URL_NHANH).catch(() => null);
+      if (n && n.cap_nhat && (!d || n.cap_nhat > d.cap_nhat)) d = n;
+    }
+    if (!d) throw loi || new Error("không có dữ liệu");
+    D = d; dung_loc(); ve_tat();
   } catch (e) {
     if (!D) $("main").innerHTML = `<div class="the loi">Chưa tải được dữ liệu (${esc(e.message)}). Thử tải lại trang sau ít phút.</div>`;
   }
