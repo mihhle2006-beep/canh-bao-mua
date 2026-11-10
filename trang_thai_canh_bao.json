@@ -49,8 +49,8 @@
    ]
   },
   "DBC": {
-   "ngay": "2026-10-23",
-   "trang_thai": "BỎ",
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
    "da_bao": []
   },
   "TDP": {
@@ -88,11 +88,9 @@
    ]
   },
   "PDR": {
-   "ngay": "2026-11-09",
-   "trang_thai": "BỎ",
-   "da_bao": [
-    "BỎ"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "DIG": {
    "ngay": "2026-11-05",
@@ -159,11 +157,9 @@
    "da_bao": []
   },
   "SSI": {
-   "ngay": "2026-11-09",
-   "trang_thai": "BỎ",
-   "da_bao": [
-    "BỎ"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "VPL": {
    "ngay": "2026-10-21",
@@ -207,15 +203,13 @@
    "da_bao": []
   },
   "NAB": {
-   "ngay": "2026-11-09",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "VJC": {
-   "ngay": "2026-11-05",
-   "trang_thai": "BỎ",
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
    "da_bao": []
   },
   "HDC": {
@@ -224,7 +218,7 @@
    "da_bao": []
   },
   "KDH": {
-   "ngay": "2026-11-09",
+   "ngay": "2026-11-10",
    "trang_thai": "CHỜ",
    "da_bao": []
   },
@@ -234,11 +228,9 @@
    "da_bao": []
   },
   "NLG": {
-   "ngay": "2026-11-09",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "CEO": {
    "ngay": "2026-11-02",
@@ -246,29 +238,23 @@
    "da_bao": []
   },
   "HSG": {
-   "ngay": "2026-11-09",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "HHV": {
-   "ngay": "2026-11-09",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "KBC": {
-   "ngay": "2026-11-09",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "CTG": {
-   "ngay": "2026-11-06",
-   "trang_thai": "BỎ",
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
    "da_bao": []
   },
   "VIX": {
@@ -282,123 +268,164 @@
    "da_bao": []
   },
   "DXG": {
-   "ngay": "2026-11-09",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   },
   "GAS": {
-   "ngay": "2026-11-09",
-   "trang_thai": "MUA",
-   "da_bao": [
-    "MUA"
-   ]
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
+  },
+  "HUT": {
+   "ngay": "2026-11-10",
+   "trang_thai": "CHỜ",
+   "da_bao": []
   }
  },
  "_15p_hom_nay": {
-  "ngay": "2026-11-09",
+  "ngay": "2026-11-10",
   "cach_vao": "15P+GIO",
   "ds": [
    {
-    "Mã": "PDR",
+    "Mã": "DBC",
     "Nhóm": "MUA MỚI",
-    "Vùng": "11.55–12.10",
-    "Giá": 11.6,
-    "Trạng thái": "BỎ",
-    "Lý do": "giá rơi 11.45 < 11.55 trước khi mua",
-    "Giờ": "",
-    "Giá mua": null
-   },
-   {
-    "Mã": "SSI",
-    "Nhóm": "MUA MỚI",
-    "Vùng": "20.00–21.00",
-    "Giá": 20.05,
-    "Trạng thái": "BỎ",
-    "Lý do": "giá rơi 19.95 < 20.00 trước khi mua",
-    "Giờ": "",
-    "Giá mua": null
-   },
-   {
-    "Mã": "DXG",
-    "Nhóm": "MUA MỚI",
-    "Vùng": "10.80–11.30",
-    "Giá": 10.9,
-    "Trạng thái": "MUA",
-    "Lý do": "giá 10.90 dưới LO 10.95, còn trong vùng → mua giá hiện tại (đặt LO 10.90, không cần đặt cao hơn)",
-    "Giờ": "09:30",
-    "Giá mua": 10.9
-   },
-   {
-    "Mã": "KDH",
-    "Nhóm": "MUA MỚI",
-    "Vùng": "14.80–15.55",
-    "Giá": 15.05,
+    "Vùng": "15.90–16.65",
+    "Giá": 16.15,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
     "Giá mua": null
    },
    {
-    "Mã": "NLG",
+    "Mã": "HUT",
     "Nhóm": "MUA MỚI",
-    "Vùng": "22.50–23.60",
-    "Giá": 22.7,
-    "Trạng thái": "MUA",
-    "Lý do": "giá 22.70 dưới LO 23.20, còn trong vùng → mua giá hiện tại (đặt LO 22.70, không cần đặt cao hơn)",
-    "Giờ": "09:45",
-    "Giá mua": 22.7
+    "Vùng": "12.35–12.95",
+    "Giá": 12.6,
+    "Trạng thái": "CHỜ",
+    "Lý do": "chưa có điểm vào",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "SSI",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "19.65–20.45",
+    "Giá": 20.55,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "GAS",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "72.70–75.10",
+    "Giá": 73.7,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "HSG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.70–11.20",
-    "Giá": 10.8,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 10.8
-   },
-   {
-    "Mã": "GAS",
-    "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "73.30–76.30",
-    "Giá": 74.2,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 74.2
+    "Giá": 10.95,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "HHV",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
-    "Vùng": "9.40–9.84",
-    "Giá": 9.52,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 9.52
+    "Vùng": "9.37–9.78",
+    "Giá": 9.61,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "PDR",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "11.30–11.75",
+    "Giá": 11.9,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "KBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "26.45–27.65",
-    "Giá": 26.85,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 26.85
+    "Giá": 27.2,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "DXG",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "10.65–11.05",
+    "Giá": 11.4,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "VJC",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "131.30–134.60",
+    "Giá": 136.0,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "NLG",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "22.05–23.10",
+    "Giá": 23.25,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
    },
    {
     "Mã": "NAB",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "12.25–12.70",
-    "Giá": 12.55,
-    "Trạng thái": "MUA",
-    "Lý do": "vào trễ – lệnh ATC trong vùng",
-    "Giờ": "14:15",
-    "Giá mua": 12.55
+    "Giá": 12.7,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "CTG",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "30.85–31.70",
+    "Giá": 31.7,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
+   },
+   {
+    "Mã": "KDH",
+    "Nhóm": "VÀO NHƯ LỆNH MỚI",
+    "Vùng": "14.55–15.10",
+    "Giá": 15.8,
+    "Trạng thái": "CHỜ",
+    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giờ": "",
+    "Giá mua": null
    }
   ]
  }
