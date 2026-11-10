@@ -166,32 +166,38 @@ def test_non_du_bao_va_ngay_toi():
     assert kq["ts"] == [[14], [2, 5], [0.025, 0.2]]                    # tham số sai / ngoài khoảng → chặn
 
 
-def test_non_co_gian_theo_bien_dong():
-    """Nón "phân vị lịch sử" khung ngày: lãi quá khứ / (σ lúc đó / σ nền)^β × (σ hiện tại / σ nền)^β – so công thức phép đo
-    (danh-muc KET_LUAN "non": β 5 nến 0,75 · 20 nến 0,5 · 60 nến 0,25, σ EWMA 0,94, tỷ số kẹp 0,3–3)."""
+def test_non_ket_hop_3_khung():
+    """Nón "kết hợp" (danh-muc KET_LUAN "non" / ptcp/bt_non.py gopβ|λ): TB của [phân vị lãi quá khứ / (σ lúc đó / σ nền)^β ×
+    (σ hiện tại / σ nền)^β] và nón σ; λ, β theo khung như NON_CG – so hàm JS với đúng công thức phép đo."""
     c = np.array(_nen(900, 8)["c"])
     c[-15:] *= np.exp(np.cumsum(np.random.default_rng(1).normal(0, 0.05, 15)))       # 15 nến cuối biến động mạnh
     kq = _js(f"const c = {json.dumps(c.tolist())};\n" + """
-      console.log(JSON.stringify({k: [5, 20, 60].map(H => non_du_bao(c, H, "ls", 750, 60, true)), k0: non_du_bao(c, 20, "ls", 750),
-        b: [5, 10, 20, 60, 90].map(NON_BETA)}));""")
-    assert kq["b"][0] == 0.75 and abs(kq["b"][2] - 0.5) < 1e-12 and abs(kq["b"][3] - 0.25) < 1e-12 and kq["b"][4] == 0.25
-    assert kq["b"][0] > kq["b"][1] > kq["b"][2] and kq["k0"].get("ti") is None        # không co giãn: như cũ
+      const k = (kh, H, L, Ls) => non_du_bao(c, H, "ls", L, Ls, NON_CG[kh]);
+      console.log(JSON.stringify({D: [5, 20, 60].map(H => k("D", H, 750, 60)), W: [1, 4, 12].map(H => k("W", H, 260, 26)), M: [1, 3].map(H => k("M", H, 1e6, 12)),
+        k0: non_du_bao(c, 20, "ls", 750), phut: non_du_bao(c, 20, "ls", 1e6, 12, NON_CG["15"]), b: [5, 10, 20, 60].map(h => non_beta(NON_CG.D.be, h))}));""")
+    assert kq["b"][0] == 0.75 and abs(kq["b"][1] - 0.5) < 1e-12 and kq["b"][2] == kq["b"][3] == 0.25      # nội suy theo log
+    assert kq["k0"].get("ti") is None and kq["phut"].get("ti") is None                # không có bảng khung → phân vị thuần
     ln, P = np.log(c), [0.025, 0.1, 0.25, 0.5, 0.75, 0.9, 0.975]
+    Z = np.array([-1.959964, -1.281552, -0.67449, 0, 0.67449, 1.281552, 1.959964])
     t, r1 = len(ln) - 1, np.diff(ln, prepend=ln[0])
-    v, var = np.var(r1[1:21]), []
-    for i in range(len(ln)):
-        v = 0.94 * v + 0.06 * r1[i] ** 2 if i > 20 else v
-        var.append(v)
-    sg = np.sqrt(var)
-    for H, be, k in zip((5, 20, 60), (0.75, 0.5, 0.25), kq["k"]):
-        w, s = (ln[H:] - ln[:-H])[t - 750:t - H + 1], sg[t - 750:t - H + 1]
-        nen = np.sqrt(np.mean(s ** 2))
-        st, z = float(np.clip(sg[t] / nen, 0.3, 3)), w / np.clip(s / nen, 0.3, 3) ** be
-        ref = np.exp((np.quantile(z, P) - np.median(z)) * st ** be)
-        assert abs(k["ti"] - st) < 1e-9 and st > 1.3                             # đang biến động mạnh hơn nền
-        assert np.allclose([k["q"][j][H] for j in range(7)], ref, atol=1e-9)
+    for kh, L, Ls, lam, tam in (("D", 750, 60, 0.94, ((5, 0.75), (20, 0.25), (60, 0.25))),
+                                ("W", 260, 26, 0.73, ((1, 0.75), (4, 0.5), (12, 0.25))), ("M", 10 ** 6, 12, 0.5, ((1, 0.5), (3, 0.25)))):
+        v, var = np.var(r1[1:21]), []
+        for i in range(len(ln)):
+            v = lam * v + (1 - lam) * r1[i] ** 2 if i > 20 else v
+            var.append(v)
+        sg = np.sqrt(var)
+        for (H, be), k in zip(tam, kq[kh]):
+            i0 = max(0, t - L)
+            w, s = (ln[H:] - ln[:-H])[i0:t - H + 1], sg[i0:t - H + 1]
+            nen = np.sqrt(np.mean(s ** 2))
+            st, z = float(np.clip(sg[t] / nen, 0.3, 3)), w / np.clip(s / nen, 0.3, 3) ** be
+            sig = Z * r1[t - Ls + 1:t + 1].std(ddof=1) * np.sqrt(H)
+            ref = np.exp(((np.quantile(z, P) - np.median(z)) * st ** be + sig) / 2)
+            assert abs(k["ti"] - st) < 1e-9 and st > 1.2, (kh, H)                # đang biến động mạnh hơn nền
+            assert np.allclose([k["q"][j][H] for j in range(7)], ref, atol=1e-9), (kh, H)
     rong = lambda q, h: q[5][h] - q[1][h]
-    assert rong(kq["k"][1]["q"], 20) > rong(kq["k0"]["q"], 20)                     # mã đang biến động mạnh → nón rộng hơn nón cũ
+    assert rong(kq["D"][1]["q"], 20) > rong(kq["k0"]["q"], 20)                     # mã đang biến động mạnh → nón rộng hơn nón cũ
 
 
 def test_menu_chi_bao_va_thu_vien_v5():
