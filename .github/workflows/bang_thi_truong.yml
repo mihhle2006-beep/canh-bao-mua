@@ -28,14 +28,15 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: bang-thi-truong
-  cancel-in-progress: false
-
+# Khoá TỪNG JOB (10/11/2026, trước là khoá cả workflow): Pages kẹt chỉ làm chờ bước triển khai – dựng dữ liệu & đẩy nhánh
+# du-lieu-nhanh của lượt sau vẫn chạy. Mỗi khoá: 1 job chạy + 1 chờ (lượt chờ cũ hơn bị thay bởi lượt mới).
 jobs:
   dung:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    concurrency:
+      group: bang-thi-truong
+      cancel-in-progress: false
     permissions:
       contents: write              # chỉ dùng khi ghi_nhanh (nhánh thử nghiệm)
     outputs:
@@ -179,6 +180,9 @@ jobs:
     if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    concurrency:
+      group: bang-thi-truong-nhanh
+      cancel-in-progress: true
     permissions:
       contents: write
     steps:
@@ -203,6 +207,9 @@ jobs:
     if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 25                # 05/11/2026: Pages chậm / kẹt > 10' (3 lần liền) – chờ tới 20' trước khi huỷ
+    concurrency:
+      group: bang-thi-truong-trien-khai
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write
