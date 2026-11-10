@@ -16,11 +16,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
       - run: |
-          timeout 900 python .github/tam/do.py
-          X="--extra-index-url https://vnstocks.com/api/simple"
-          pip download --no-deps -q -d /tmp/v "vnstock==4.0.9" $X 2>&1 | tail -1; cd /tmp/v && python3 -m zipfile -e vnstock-*.whl w && grep -rhn "fmarket\|api\.fmarket\|/res/" w --include=*.py | head -40
+          U=https://raw.githubusercontent.com/mihhle2006-beep/canh-bao-mua/du-lieu-nhanh/du_lieu.json
+          for k in 1 2 3 4 5 6 7 8; do
+            for q in "" "?t=$(date +%s%N)"; do
+              h=$(curl -sS -D - -o /tmp/b.json "$U$q" | tr -d '\r' | grep -iE '^(cache-control|age|x-cache|x-cache-hits|etag|access-control-allow-origin):' | tr '\n' ' ')
+              echo "$(date -u +%T) q=${q:+co} cap_nhat=$(python3 -c "import json; print(json.load(open('/tmp/b.json'))['cap_nhat'])") | $h"
+            done
+            sleep 45
+          done
