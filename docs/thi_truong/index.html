@@ -270,6 +270,10 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
 <script>
 "use strict";
 const URL_DL = "du_lieu.json";
+// ĐỊA CHỈ CŨ canh-bao-mua/thi_truong/ → trang riêng /bang-thi-truong/ (giữ #theo_doi=…); bản ở đây vẫn triển khai cho Tra cứu mã
+// (đọc du_lieu.json) và làm dự phòng nếu trang riêng hỏng – mở thẳng với ?o_lai=1 để ở lại.
+if (/\.github\.io$/.test(location.hostname) && /\/canh-bao-mua\/thi_truong\//.test(location.pathname) && !/[?&]o_lai=1/.test(location.search))
+  location.replace("/bang-thi-truong/" + location.hash);
 // TRANG RIÊNG (10/11/2026): bảng chạy ở cả canh-bao-mua/thi_truong/ (cũ) lẫn repo riêng bang-thi-truong/ (Pages nhỏ, cập
 // nhật 2'). Cùng gốc github.io → Tra cứu mã / Tổng hợp / ảnh nhanh biểu đồ ở canh-bao-mua; localStorage (danh sách theo dõi) dùng chung.
 const GOC = /\.github\.io$/.test(location.hostname) && !/\/canh-bao-mua\//.test(location.pathname) ? "/canh-bao-mua/" : "../";
