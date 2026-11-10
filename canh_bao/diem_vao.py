@@ -287,7 +287,7 @@ def so_cp_nav(kq, gia, cl):
 
 def lenh_mua(kq):
     """Lệnh mua cho tin MUA → (số CP theo NAV – lô chẵn + lô lẻ, giá LO đồng = giới hạn vùng mua den làm tròn xuống 100đ →
-    khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin) | None khi 0 CP / không có giới hạn."""
+    khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin; phần lô lẻ máy Mac tự hạ ≤ giá khớp + 1 bước) | None khi 0 CP / không có giới hạn."""
     gia, cl, _, _ = muc_sau_mua(kq)
     n, den = _lo_atc(kq, so_cp_nav(kq, gia, cl)), kq.get("den")
     if n < 1 or not den or den != den:
@@ -372,7 +372,8 @@ def tin_lo_le(kq, bay_gio, n):
         f"⏰ MUA LÔ LẺ NGAY – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – đặt TRƯỚC 14:30",
         f"Vào trễ, tỷ trọng theo NAV chỉ đủ {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr – phiên ATC không nhận lô lẻ nên mua ngay "
         "trong phiên liên tục (bảng lô lẻ)",
-        f"👉 LO lô lẻ, không cao hơn {_f(kq['den'])} · Cắt lỗ {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
+        f"👉 LO lô lẻ ≤ giá khớp bảng chính + 1 bước (~{_f(min(kq['den'], (int(round(gia * 1000)) // 100 + 1) / 10))}) – bảng lô lẻ "
+        f"chào giá cao hơn, đừng đặt tới {_f(kq['den'])} · Cắt lỗ {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
         f"Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}"])
 
 
