@@ -169,8 +169,8 @@ def test_tu_cap_nhat_ban_moi():
     sau khi mở → so mã bản đang triển khai, khác → tải lại đúng bản mới (giữ #mã), không lặp; JS phụ đổi tham số theo mã bản."""
     wf = open(".github/workflows/bang_thi_truong.yml", encoding="utf-8").read()
     assert 'sed -i "s/__BAN__/$(cat docs/ma/index.html docs/ma/*.js | sha1sum | cut -c1-10)/" _site/ma/index.html' in wf
-    assert 'sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _site/thi_truong/index.html' in wf
-    for trang in ("docs/ma/index.html", "docs/thi_truong/index.html"):
+    assert 'sed -i "s/__BAN__/$(sha1sum < trang_bang/index.html | cut -c1-10)/" _bang/index.html' in wf   # bảng: trang riêng
+    for trang in ("docs/ma/index.html", "trang_bang/index.html"):
         h = open(trang, encoding="utf-8").read()
         assert h.count("__BAN__") == 1 and 'const BAN = "__BAN__";' in h
         assert 'document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") kiem_ban_moi(); });' in h

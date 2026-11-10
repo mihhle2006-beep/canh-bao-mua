@@ -5,7 +5,7 @@ DỰNG DỮ LIỆU bảng thị trường.
     thuật, khối ngoại 5 / 20 phiên, KL TB20), tự doanh từng mã HOSE, khối ngoại / tự doanh cả sàn, hồ sơ thanh khoản 1'
     20 phiên, VN-Index ngày 1 năm → cache_thi_truong/chuan_bi.json (giữ qua actions/cache).
   chup(): mỗi 5' trong phiên – chỉ số, nến 1', bảng giá mọi mã, tác động, mua / bán chủ động top GTGD → du_lieu.json
-    cho trang docs/thi_truong/index.html.
+    cho trang bảng (trang_bang/index.html → repo riêng bang-thi-truong).
 """
 import json
 import os

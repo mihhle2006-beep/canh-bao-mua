@@ -13,7 +13,7 @@ on:
     - cron: "7 12 * * 1-5"         # 19:07 chuẩn bị phiên sau
   push:
     branches: [main]
-    paths: ["docs/**", "thi_truong/**", ".github/workflows/bang_thi_truong.yml"]   # giao diện / code đổi → triển khai ngay
+    paths: ["docs/**", "thi_truong/**", "trang_bang/**", "bang_rieng/**", ".github/workflows/bang_thi_truong.yml"]   # giao diện / code đổi → triển khai ngay
   workflow_dispatch:
     inputs:
       chuan_bi:
@@ -161,7 +161,6 @@ jobs:
           mkdir -p _site && cp -r docs/. _site/
           # mã bản = băm CODE từng trang (không đổi khi chỉ dữ liệu đổi) → trang đang mở tự tải lại khi có bản mới
           sed -i "s/__BAN__/$(cat docs/ma/index.html docs/ma/*.js | sha1sum | cut -c1-10)/" _site/ma/index.html
-          sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _site/thi_truong/index.html
 
       - uses: actions/upload-pages-artifact@v3
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
@@ -171,9 +170,9 @@ jobs:
       - name: Gói bảng riêng (trang + dữ liệu)
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
         run: |
-          mkdir -p _bang && cp docs/thi_truong/du_lieu.json docs/thi_truong/index.html docs/thi_truong/icon-*.png \
-            docs/thi_truong/manifest.webmanifest bang_rieng/trien_khai.yml _bang/
-          sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _bang/index.html
+          mkdir -p _bang && cp docs/thi_truong/du_lieu.json trang_bang/index.html trang_bang/icon-*.png \
+            trang_bang/manifest.webmanifest bang_rieng/trien_khai.yml _bang/
+          sed -i "s/__BAN__/$(sha1sum < trang_bang/index.html | cut -c1-10)/" _bang/index.html
 
       - name: Dữ liệu nhanh (dự phòng khi Pages kẹt) + trang riêng
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'

@@ -235,7 +235,9 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     assert not re.search(r"fetch\(\s*['\"]https?:", h)
     assert not re.search("[\U0001F300-\U0001FAFF\u2605\u2B50]", h)                     # không emoji / sticker
     assert "const esc = " in h and "const url = u => /^https?:" in h
-    t = open("docs/thi_truong/index.html", encoding="utf-8").read()
+    t = open("trang_bang/index.html", encoding="utf-8").read()
+    cu = open("docs/thi_truong/index.html", encoding="utf-8").read()          # địa chỉ cũ: chỉ chuyển hướng sang trang riêng
+    assert 'location.replace("/bang-thi-truong/" + location.hash)' in cu and "du_lieu.json" not in cu
     assert 'href="${GOC}ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t       # GOC: "../" (canh-bao-mua) | "/canh-bao-mua/" (trang riêng)
     assert re.search(r'<div class="tab" role="tablist">.*?<a href="\.\./ma/#bieu-do"[^>]*>Biểu đồ</a>\s*</div>', t, re.S)   # mục Biểu đồ riêng cạnh Tổng quan / Lọc mã
 
@@ -690,7 +692,7 @@ def test_tra_cuu_dn_bo_sung_gia_dai(tmp_path, monkeypatch):
 def test_bang_tt_khoi_loi_khong_lam_trong_trang():
     """09/11/2026: khung theo dõi đọc D.tin_hieu (dict {hieu_luc, ma}) như list → lỗi chặn mọi khối sau → trang trống."""
     import pathlib
-    h = (pathlib.Path(__file__).parents[1] / "docs" / "thi_truong" / "index.html").read_text(encoding="utf-8")
+    h = (pathlib.Path(__file__).parents[1] / "trang_bang" / "index.html").read_text(encoding="utf-8")
     assert "((D.tin_hieu || {}).ma || [])" in h and "(D.tin_hieu || []).map" not in h
     assert "try { f(); } catch (e)" in h                                   # mỗi khối Tổng quan vẽ riêng
 
