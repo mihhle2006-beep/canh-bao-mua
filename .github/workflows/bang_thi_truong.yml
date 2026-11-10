@@ -171,7 +171,8 @@ jobs:
       - name: Gói bảng riêng (trang + dữ liệu)
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
         run: |
-          mkdir -p _bang && cp docs/thi_truong/du_lieu.json docs/thi_truong/index.html bang_rieng/trien_khai.yml _bang/
+          mkdir -p _bang && cp docs/thi_truong/du_lieu.json docs/thi_truong/index.html docs/thi_truong/icon-*.png \
+            docs/thi_truong/manifest.webmanifest bang_rieng/trien_khai.yml _bang/
           sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _bang/index.html
 
       - name: Dữ liệu nhanh (dự phòng khi Pages kẹt) + trang riêng
@@ -241,7 +242,7 @@ jobs:
             echo "::notice::Chưa có repo $REPO hoặc token chưa được cấp quyền → bỏ qua trang riêng"; exit 0; fi
           cd bang
           git init -q -b du-lieu
-          git add index.html du_lieu.json
+          git add index.html du_lieu.json icon-*.png manifest.webmanifest
           git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
             commit -qm "Bảng thị trường $(date -u +%FT%TZ)"
           U="https://x-access-token:${TOKEN}@github.com/${REPO}.git"
