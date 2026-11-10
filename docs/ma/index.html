@@ -333,8 +333,19 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .chu-bd{position:absolute;left:8px;top:6px;z-index:3;max-width:calc(100% - 78px);font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
 .chu-bd b{font-weight:650}
 .cg-g{color:#6b7280}.cg-n{pointer-events:auto;border:0;background:none;cursor:pointer;font-size:11px;line-height:1;padding:0 3px;color:#9aa3af}.cg-n:hover,.cg-n:focus-visible{color:#1f2937}
-.cg-d .cg-n:first-of-type{margin-left:4px}.cg-sua{position:absolute;z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:calc(100% - 8px);background:#fff;border:1px solid #d0d7de;border-radius:6px;box-shadow:0 4px 14px #0002;padding:5px 8px;font-size:12px}
-.cg-sua[hidden]{display:none}.cg-sua input[type=number]{width:58px}.cg-sua .cb-ss{width:96px}.cg-sua label{display:inline-flex;align-items:center;gap:2px}
+.cg-d .cg-n:first-of-type{margin-left:4px}.cg-n svg{vertical-align:-2px}.cg-an{opacity:.5}
+.hop-cb{position:fixed;left:50%;top:max(12px,12vh);transform:translateX(-50%);z-index:1000;width:min(460px,calc(100vw - 24px));max-height:calc(100vh - max(24px,12vh) - 12px);overflow:auto;background:#fff;color:#1f2328;border:1px solid #d0d7de;border-radius:10px;box-shadow:0 12px 40px #0003;font-size:14px}
+.hop-dau{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px}.hop-dau b{font-size:17px}.hop-x{border:0;background:none;font-size:24px;line-height:1;cursor:pointer;color:#57606a}
+.hop-tab{display:flex;gap:4px;border-bottom:1px solid #d8dee4;padding:0 10px}.hop-tab button{border:0;border-bottom:2px solid transparent;background:none;padding:9px 10px;cursor:pointer;color:#57606a;font:inherit}.hop-tab [aria-selected=true]{color:#1f2328;border-bottom-color:#1f6feb}
+.hop-than{display:grid;gap:10px;padding:14px 16px}.hop-than[hidden]{display:none}.hop-than p{margin:0}
+.hop-o{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:8px}.hop-o span{color:#57606a}
+.hop-cb input:not([type=checkbox]):not([type=color]),.hop-cb select{font:inherit;padding:6px 8px;border:1px solid #d0d7de;border-radius:6px;background:#f6f8fa;color:inherit;min-width:0}
+.hop-c{display:flex;align-items:center;gap:6px}.hop-d{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.hop-d .hop-c{min-width:104px}.hop-d input[type=number]{width:62px}
+.hop-d input[type=color]{width:42px;height:32px;padding:2px;border:1px solid #d0d7de;border-radius:6px;background:#fff;cursor:pointer}
+.hop-nhom{margin-top:4px;padding-top:12px;border-top:1px solid #d8dee4;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#6e7781}
+.hop-lk{justify-self:center;border:0;background:none;color:#1f6feb;cursor:pointer;font:inherit}
+.hop-cuoi{display:flex;gap:8px;padding:12px 16px 16px;border-top:1px solid #d8dee4}.hop-cuoi span{flex:1}.hop-cuoi button{font:inherit;padding:7px 14px;border:1px solid #d0d7de;border-radius:6px;background:#fff;cursor:pointer}
+.hop-cuoi .hop-ok{background:#1f6feb;border-color:#1f6feb;color:#fff}.hop-cuoi .hop-xoa{color:#d1342b}
 .cham-song{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tang);margin-right:5px;vertical-align:middle}
 .dai-cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
 .cs-o{display:flex;flex-direction:column;gap:2px;background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:10px 14px;color:inherit}
@@ -954,8 +965,7 @@ function cb_wvf(c, l, pd = 22, bbl = 20, k = 2, lb = 50, ph = 0.85) {  // Willia
   return {w, tren: b.tr, dinh};
 }
 const cb_tuan_cua = s => { const t = new Date(String(s).slice(0, 10) + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7); return t.toISOString().slice(0, 10); };   // thứ Hai của tuần
-function cb_ma10_tuan(d, c, n = 10) {               // MA n tuần trên khung ngày: (n − 1) tuần đã đóng + giá đóng cửa hiện tại của tuần đang chạy
-  const tuan = cb_tuan_cua;
+function cb_ma10_tuan(d, c, n = 10, tuan = cb_tuan_cua) {   // MA n tuần (khoá kỳ khác: tháng) trên khung ngày: (n − 1) kỳ đã đóng + giá hiện tại của kỳ đang chạy
   const o = new Array(c.length).fill(null), dong = []; let k0 = null;
   for (let i = 0; i < c.length; i++) {
     const k = tuan(d[i]);
@@ -964,6 +974,16 @@ function cb_ma10_tuan(d, c, n = 10) {               // MA n tuần trên khung n
     if (c[i] == null || dong.length < n - 1) continue;
     let s = c[i]; for (let j = dong.length - (n - 1); j < dong.length; j++) s += dong[j];
     o[i] = s / n;
+  }
+  return o;
+}
+function cb_ema_khung(d, c, n, khoa) {               // EMA n kỳ (tuần / tháng) trên khung nhỏ hơn: kỳ đang chạy tính theo giá hiện tại
+  const a = 2 / (n + 1), o = new Array(c.length).fill(null); let e = null, k0 = null, so_ky = 0;
+  for (let i = 0; i < c.length; i++) {
+    const k = khoa(d[i]);
+    if (k0 !== null && k !== k0 && c[i - 1] != null) { e = e == null ? c[i - 1] : c[i - 1] * a + e * (1 - a); so_ky++; }
+    k0 = k;
+    if (c[i] != null && so_ky + 1 >= n) o[i] = e == null ? c[i] : c[i] * a + e * (1 - a);
   }
   return o;
 }
@@ -1003,11 +1023,63 @@ const KHOA_CB = "ma_chi_bao";
 const CB_DUOI = [["rs", "RS so VN-Index (đỉnh mới 52 tuần)", ""], ["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
   ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"],
   ["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]];
-const cb_mac = () => ({bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
+// Kiểu từng đường (bảng ⚙ tab Kiểu): [id, tên, màu, nét (0 liền · 1 chấm · 2 gạch · 3 gạch dài), độ dày] – MA / EMA theo chu kỳ (cb_duong)
+const MAU_MA = {10: "#e8710a", 20: "#1f6feb", 50: "#9b3fd1", 200: "#0e9fb3"}, MAU_EMA = {9: "#c2185b", 21: "#00897b", 50: "#6d4c41", 200: "#455a64"};
+const MAU_PAL = ["#e8710a", "#1f6feb", "#9b3fd1", "#0e9fb3", "#c2185b", "#00897b", "#6d4c41", "#455a64"];
+const CB_DUONG = {ma10t: [["v", "MA10 tuần", "#ff6f00", 0, 2.2]],
+  bb: [["tr", "Trên", "#2962ff", 0, 1], ["gi", "Giữa", "#ff6d00", 0, 1], ["du", "Dưới", "#2962ff", 0, 1]],
+  st: [["len", "Tăng", "#0f8a4a", 0, 2], ["xuong", "Giảm", "#d1342b", 0, 2]],
+  ich: [["tenkan", "Tenkan", "#0496ff", 0, 1], ["kijun", "Kijun", "#991515", 0, 1], ["spa", "Span A", "#43a04799", 0, 1], ["spb", "Span B", "#e5393599", 0, 1]],
+  sar: [["len", "Tăng", "#0f8a4a", 0, 1.5], ["xuong", "Giảm", "#d1342b", 0, 1.5]],
+  dc: [["tr", "Trên", "#e8a400", 0, 1], ["gi", "Giữa", "#e8a400", 2, 1], ["du", "Dưới", "#e8a400", 0, 1]],
+  ss: [["v", "Đường so sánh", "#9b3fd1", 0, 2]], kl: [["tb", "TB20", "#e8710a", 0, 1]],
+  rs: [["v", "RS", "#1565c0", 0, 1.6]], rsi: [["v", "RSI", "#7e57c2", 0, 1.5]],
+  macd: [["m", "MACD", "#2962ff", 0, 1.5], ["s", "Tín hiệu", "#ff6d00", 0, 1.5]], macdt: [["m", "MACD", "#2962ff", 0, 1.5], ["s", "Tín hiệu", "#ff6d00", 0, 1.5]],
+  stoch: [["k", "%K", "#2962ff", 0, 1.5], ["d", "%D", "#ff6d00", 0, 1.5]], adx: [["adx", "ADX", "#37474f", 0, 2], ["pdi", "+DI", "#0f8a4a", 0, 1], ["mdi", "−DI", "#d1342b", 0, 1]],
+  atr: [["v", "ATR", "#00897b", 0, 1.5]], obv: [["v", "OBV", "#5d4037", 0, 1.5]], mfi: [["v", "MFI", "#ad1457", 0, 1.5]], wvf: [["tren", "Ngưỡng trên", "#e8710a", 0, 1]], sqz: []};
+const TS_NHAN = {bb: ["Chu kỳ", "Độ lệch chuẩn"], st: ["Chu kỳ ATR", "Hệ số"], ich: ["Tenkan", "Kijun", "Span B"], sar: ["Bước", "Tối đa"], rsi: ["Chu kỳ"],
+  macd: ["EMA nhanh", "EMA chậm", "Tín hiệu"], stoch: ["Chu kỳ %K", "Làm mượt %K", "Chu kỳ %D"], adx: ["Chu kỳ"], atr: ["Chu kỳ"], mfi: ["Chu kỳ"],
+  sqz: ["Chu kỳ BB", "Độ lệch BB", "Chu kỳ Keltner", "Hệ số Keltner"], wvf: ["Đỉnh N phiên", "Chu kỳ BB", "Độ lệch BB", "Nhìn lại", "Phân vị đỉnh"]};
+const MO_TA = {ma: "Trung bình giá đóng cửa N phiên. Giá trên MA dốc lên là xu hướng tăng.", ema: "Trung bình hàm mũ – nặng phiên gần nên bám giá nhanh hơn MA.",
+  ma10t: "Trung bình 10 tuần (tuần đang chạy tính theo giá hiện tại) – đường thoát lệnh của hệ.", bb: "Dải ± k độ lệch chuẩn quanh MA N. Dải co hẹp là giá đang nén.",
+  st: "Đường dừng theo ATR: giá trên đường xanh là xu hướng tăng, cắt xuống đường đỏ là đảo chiều.", ich: "Tenkan / Kijun / mây: giá trên mây là xu hướng tăng.",
+  sar: "Điểm dừng lùi dần theo xu hướng; giá cắt qua điểm là đảo chiều.", dc: "Giá cao nhất / thấp nhất N phiên – vượt cạnh trên là phá đỉnh.",
+  ss: "Vẽ thêm mã khác / VN-Index cùng trục, thang % từ nến đầu vùng xem.", kl: "Khối lượng khớp mỗi nến, kèm đường trung bình 20.",
+  "p:rsi": "Sức mạnh tương đối (Wilder): trên 70 quá mua, dưới 30 quá bán.", "p:macd": "Chênh EMA nhanh − chậm và đường tín hiệu; cắt lên là động lượng tăng."};
+const NGUON = {c: ["Đóng cửa", x => x.c], o: ["Mở cửa", x => x.o], h: ["Cao", x => x.h], l: ["Thấp", x => x.l],
+  hl2: ["(Cao + Thấp) / 2", x => x.h.map((v, i) => v == null || x.l[i] == null ? null : (v + x.l[i]) / 2)],
+  hlc3: ["(Cao + Thấp + Đóng) / 3", x => x.h.map((v, i) => v == null || x.l[i] == null || x.c[i] == null ? null : (v + x.l[i] + x.c[i]) / 3)],
+  ohlc4: ["(Mở + Cao + Thấp + Đóng) / 4", x => x.h.map((v, i) => [x.o[i], v, x.l[i], x.c[i]].some(z => z == null) ? null : (x.o[i] + v + x.l[i] + x.c[i]) / 4)]};
+const CO_NGUON = ["ma", "ema", "bb", "p:rsi", "p:macd"];
+const an_ = k => CB.an.includes(k);
+const mau_ok = m => typeof m === "string" && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(m);
+function cb_duong(k) {
+  if (k === "ma" || k === "ema") return (k === "ma" ? ST.ma_tb : ST.ema).map((m, i) => [String(m), `${k.toUpperCase()} ${m}`, (k === "ma" ? MAU_MA : MAU_EMA)[m] || MAU_PAL[i % MAU_PAL.length], k === "ema" ? 2 : 0, 1.5]);
+  return CB_DUONG[k.replace(/^p:/, "")] || [];
+}
+function kd(k, id, o = {}) {                            // tuỳ chọn 1 đường vẽ: mặc định CB_DUONG + kiểu người dùng chọn (CB.kieu)
+  const g = cb_duong(k).find(z => z[0] === id), u = CB.kieu[k] || {}, d = u.d?.[id] || {}, r = {...o};
+  if (g) Object.assign(r, {color: g[2], lineStyle: g[3], lineWidth: g[4]});
+  if (mau_ok(d.mau)) r.color = d.mau;
+  if ([0, 1, 2, 3].includes(d.net)) r.lineStyle = d.net;
+  if (d.day >= 1 && d.day <= 4) r.lineWidth = d.day;
+  if (typeof u.nhan === "boolean") r.lastValueVisible = u.nhan;
+  if (so_k(k, null) != null) r.priceFormat = {type: "price", precision: u.so, minMove: 10 ** -u.so};
+  if (d.tat) r.visible = false;
+  return r;
+}
+const mk = (k, id) => kd(k, id).color;
+const so_k = (k, l = 2) => { const v = CB.kieu[k]?.so; return Number.isInteger(v) && v >= 0 && v <= 4 ? v : l; };
+const cb_mac = () => ({kieu: {}, an: [], nguon: {}, khung_tinh: {}, bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
-  if (Array.isArray(v.ma_tb)) ST.ma_tb = v.ma_tb.filter(m => [10, 20, 50, 200].includes(m));
-  if (Array.isArray(v.ema)) ST.ema = v.ema.filter(m => [9, 21, 50, 200].includes(m));
+  const cky = a => [...new Set(a.filter(m => Number.isInteger(m) && m >= 2 && m <= 400))].slice(0, 8);
+  if (Array.isArray(v.ma_tb)) ST.ma_tb = cky(v.ma_tb);
+  if (Array.isArray(v.ema)) ST.ema = cky(v.ema);
+  if (v.kieu && typeof v.kieu === "object" && !Array.isArray(v.kieu)) CB.kieu = v.kieu;   // màu / nét / số chữ số kiểm lại lúc dùng (kd)
+  if (Array.isArray(v.an)) CB.an = v.an.filter(z => typeof z === "string");
+  if (v.nguon && typeof v.nguon === "object") for (const k of CO_NGUON) if (NGUON[v.nguon[k]]) CB.nguon[k] = v.nguon[k];
+  if (v.khung_tinh && typeof v.khung_tinh === "object") for (const k of ["ma", "ema"]) if (["W", "M"].includes(v.khung_tinh[k])) CB.khung_tinh[k] = v.khung_tinh[k];
   if ([0, 20, 52].includes(v.dc)) ST.dc = v.dc;
   if (typeof v.mk === "boolean") ST.mk = v.mk;
   for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "vp", "bg", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
@@ -1021,31 +1093,105 @@ const CB = cb_mac();
 } catch (e) {} })();
 const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB, fib3: true})); } catch (e) {} };
 const ts_chu = k => CB.ts[k].map(v => String(v).replace(".", ",")).join(", ");
-const cb_o_chip = (khoa, ds, gt, ten = m => m) => ds.map(m => `<label><input type="checkbox" data-cbx="${khoa}:${m}"${gt.includes(m) ? " checked" : ""}>${ten(m)}</label>`).join("");
+const cb_o_chip = (khoa, ds, gt) => ds.map(m => `<label><input type="checkbox" data-cbx="${khoa}:${m}"${gt.includes(m) ? " checked" : ""}>${m}</label>`).join("");
 const cb_o_ts = (ts, ten) => CB.ts[ts].map((v, j) => `<input type="number" data-cbt="${ts}:${j}" value="${v}" min="${CB_GH[ts][j][0]}" max="${CB_GH[ts][j][1]}" step="${CB_GH[ts][j][2]}" aria-label="${ten} – tham số ${j + 1}">`).join("");
-const CB_TEN = {bb: "Bollinger Bands", st: "Supertrend", ich: "Ichimoku", sar: "Parabolic SAR"};
-function cg_sua_html(k) {                               // bảng ⚙ cạnh 1 dòng chú giải góc trái / khung phụ
-  const d = CB_DUOI.find(z => "p:" + z[0] === k);
-  const [ten, noi] = k === "ma" ? ["MA", cb_o_chip("ma", [10, 20, 50, 200], ST.ma_tb)] : k === "ema" ? ["EMA", cb_o_chip("ema", [9, 21, 50, 200], ST.ema)]
-    : k === "dc" ? ["Donchian", cb_o_chip("dc", [20, 52], [ST.dc], m => m === 52 ? "52 tuần" : m)]
-    : k === "kl" ? ["Khối lượng", `<label><input type="checkbox" data-cbx="kl_ma"${CB.kl_ma ? " checked" : ""}>Đường TB 20</label>`]
-    : k === "ss" ? ["So sánh với", `<input class="cb-ss" data-cbss value="${esc(CB.ss)}" placeholder="mã / VN30…" maxlength="12" spellcheck="false" aria-label="Mã so sánh">`]
-    : d ? [d[1], cb_o_ts(d[2], d[1])] : [CB_TEN[k], cb_o_ts(k, CB_TEN[k])];
-  return `<b>${ten}</b>${noi}<button type="button" class="cg-n" data-cgdong title="Đóng" aria-label="Đóng">✕</button>`;
+const CB_TEN = {bb: "BB", st: "Supertrend", ich: "Ichimoku", sar: "SAR"};
+const MAT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const MAT_AN = MAT.replace("</svg>", `<path d="M3 3l18 18"/></svg>`);
+const NET = [[0, "━ Liền"], [2, "╍ Gạch"], [3, "— Gạch dài"], [1, "┈ Chấm"]];
+function cb_tieu_de(k) {
+  const d = CB_DUOI.find(z => "p:" + z[0] === k), kt = CB.khung_tinh[k] ? ` (${CB.khung_tinh[k] === "W" ? "tuần" : "tháng"})` : "";
+  return k === "ma" ? `MA ${ST.ma_tb.join(" ")}${kt}` : k === "ema" ? `EMA ${ST.ema.join(" ")}${kt}` : k === "dc" ? `DC ${ST.dc === 52 ? "52 tuần" : ST.dc}`
+    : k === "ss" ? `So sánh ${CB.ss}` : k === "kl" ? "Khối lượng" : k === "ma10t" ? "MA10 tuần"
+    : d ? d[1].replace(/ \(.*/, "") + (d[2] ? " " + ts_chu(d[2]) : "") : `${CB_TEN[k] || k} ${CB.ts[k] ? ts_chu(k) : ""}`;
 }
+const hop_sel = (thuoc, ds, gt, nhan) => `<select ${thuoc}${nhan ? ` aria-label="${nhan}"` : ""}>${ds.map(([v, t]) => `<option value="${v}"${String(v) === String(gt) ? " selected" : ""}>${t}</option>`).join("")}</select>`;
+const hop_o = (nhan, noi) => `<label class="hop-o"><span>${nhan}</span>${noi}</label>`;
+const nhan_mac = k => k === "kl" || k === "sar" ? false : k.startsWith("p:") || k === "ss" ? true : !!FS;   // nhãn giá trên trục khi chưa chọn
+function hop_kieu(k) {
+  const u = CB.kieu[k] || {};
+  return (cb_duong(k).map(([id, t, m0, s0, w0]) => { const z = kd(k, id);
+    return `<div class="hop-d" data-hd="${id}" data-m0="${m0.slice(0, 7)}" data-s0="${s0}" data-w0="${w0}"><label class="hop-c"><input type="checkbox" data-hk="hien"${u.d?.[id]?.tat ? "" : " checked"}>${esc(t)}</label>` +
+      `<input type="color" data-hk="mau" value="${z.color.slice(0, 7)}" aria-label="Màu – ${esc(t)}">${hop_sel('data-hk="net"', NET, z.lineStyle, "Kiểu nét – " + esc(t))}` +
+      `<input type="number" data-hk="day" value="${z.lineWidth}" min="1" max="4" step="0.5" aria-label="Độ dày – ${esc(t)}"></div>`; }).join("") || `<p class="phu">Chỉ báo dạng cột – không có đường để đổi kiểu.</p>`) +
+    `<div class="hop-nhom">Giá trị đầu ra</div>` + hop_o("Số chữ số", hop_sel('data-h="so"', [["", "Mặc định"], [0, "0"], [1, "1"], [2, "2"], [3, "3"], [4, "4"]], u.so ?? "")) +
+    `<label class="hop-c"><input type="checkbox" data-h="nhan" data-n0="${nhan_mac(k) ? 1 : 0}"${(u.nhan ?? nhan_mac(k)) ? " checked" : ""}>Nhãn trên thang giá</label>` +
+    `<label class="hop-c"><input type="checkbox" data-h="chu"${u.chu === false ? "" : " checked"}>Giá trị trên chú giải</label><button type="button" class="hop-lk" data-hmd>Về kiểu mặc định</button>`;
+}
+function hop_html(k) {
+  const d = CB_DUOI.find(z => "p:" + z[0] === k), tk = d ? d[2] : CB_TEN[k] ? k : "";
+  let ts = `<p class="phu">${MO_TA[k] || (d ? d[1] : "")}</p>`;
+  if (k === "ma" || k === "ema") ts += hop_o("Chu kỳ", `<input data-h="chu_ky" value="${(k === "ma" ? ST.ma_tb : ST.ema).join(" ")}" placeholder="vd: 9 26" spellcheck="false" autocomplete="off">`);
+  if (tk) ts += CB.ts[tk].map((v, j) => hop_o((TS_NHAN[tk] || [])[j] || `Tham số ${j + 1}`, `<input type="number" data-h="ts" value="${v}" min="${CB_GH[tk][j][0]}" max="${CB_GH[tk][j][1]}" step="${CB_GH[tk][j][2]}">`)).join("");
+  if (k === "dc") ts += hop_o("Chu kỳ", hop_sel('data-h="dc"', [[20, "20 phiên"], [52, "52 tuần"]], ST.dc));
+  if (k === "ss") ts += hop_o("Mã", `<input data-h="ss" value="${esc(CB.ss)}" maxlength="12" spellcheck="false" placeholder="mã / VNINDEX">`);
+  if (k === "kl") ts += `<label class="hop-c"><input type="checkbox" data-h="kl_ma"${CB.kl_ma ? " checked" : ""}>Đường TB 20 khối lượng</label>`;
+  if (CO_NGUON.includes(k)) ts += hop_o("Nguồn", hop_sel('data-h="nguon"', Object.entries(NGUON).map(([v, [t]]) => [v, t]), CB.nguon[k] || "c"));
+  const ht = k === "ma" || k === "ema" ? hop_o("Khung tính", hop_sel('data-h="khung"', [["", "Theo biểu đồ"], ["W", "Tuần"], ["M", "Tháng"]], CB.khung_tinh[k] || "")) +
+    `<p class="phu">Tính trên nến tuần / tháng rồi vẽ lên biểu đồ ngày (tháng: cả biểu đồ tuần); kỳ đang chạy tính theo giá hiện tại. Biểu đồ phút giữ theo biểu đồ.</p>` : "";
+  const tab = [["ts", "Tham số"], ["kieu", "Kiểu"], ...(ht ? [["ht", "Hiển thị"]] : [])];
+  return `<div class="hop-dau"><b>${esc(cb_tieu_de(k))}</b><button type="button" class="hop-x" data-hdong aria-label="Đóng">×</button></div>
+    <div class="hop-tab" role="tablist">${tab.map(([v, t], j) => `<button type="button" role="tab" data-htab="${v}" aria-selected="${!j}">${t}</button>`).join("")}</div>
+    <div class="hop-than" data-htk="ts">${ts}</div><div class="hop-than" data-htk="kieu" hidden>${hop_kieu(k)}</div>${ht ? `<div class="hop-than" data-htk="ht" hidden>${ht}</div>` : ""}
+    <div class="hop-cuoi"><button type="button" class="hop-ok" data-hok>Áp dụng</button><button type="button" data-hdong>Huỷ</button><span></span>` +
+    (k === "kl" ? "" : `<button type="button" data-han>${an_(k) ? "Hiện" : "Ẩn"}</button><button type="button" class="hop-xoa" data-hxoa>Xoá</button>`) + `</div>`;
+}
+let HOP = null;                                         // bảng cài đặt đang mở (ngoài khung biểu đồ: vẽ lại không mất ô đang gõ)
+function hop_dong() { HOP?.remove(); HOP = null; }
+function hop_mo(k) {
+  hop_dong();
+  HOP = (document.fullscreenElement || document.body).appendChild(Object.assign(document.createElement("div"), {className: "hop-cb", innerHTML: hop_html(k)}));
+  HOP.dataset.k = k; HOP.setAttribute("role", "dialog"); HOP.setAttribute("aria-label", "Cài đặt " + cb_tieu_de(k));
+  HOP.querySelector("[data-htk] input, [data-htk] select")?.focus();
+}
+function hop_ap() {                                     // Áp dụng: đọc cả 3 tab → CB / ST → vẽ lại
+  const el = HOP, k = el.dataset.k, q = z => el.querySelector(`[data-h="${z}"]`);
+  const d = CB_DUOI.find(z => "p:" + z[0] === k), tk = d ? d[2] : CB_TEN[k] ? k : "";
+  if (q("chu_ky")) { const a = [...new Set(q("chu_ky").value.split(/[\s,;]+/).map(Number).filter(m => Number.isInteger(m) && m >= 2 && m <= 400))].sort((x, y) => x - y).slice(0, 8);
+    if (a.length) { if (k === "ma") ST.ma_tb = a; else ST.ema = a; } }
+  if (tk) CB.ts[tk] = cb_ts_dung(tk, [...el.querySelectorAll('[data-h="ts"]')].map(z => z.value));
+  if (q("dc")) ST.dc = +q("dc").value;
+  if (q("ss")) { const v = q("ss").value.trim().toUpperCase(); CB.ss = v === "VNINDEX" || MA_OK(v) ? v : ""; }
+  if (q("kl_ma")) CB.kl_ma = q("kl_ma").checked;
+  if (q("nguon")) { if (q("nguon").value === "c") delete CB.nguon[k]; else CB.nguon[k] = q("nguon").value; }
+  if (q("khung")) { if (q("khung").value) CB.khung_tinh[k] = q("khung").value; else delete CB.khung_tinh[k]; }
+  const u = {d: {}};                                    // Kiểu: chỉ lưu chỗ khác mặc định
+  el.querySelectorAll("[data-hd]").forEach(r => { const g = z => r.querySelector(`[data-hk="${z}"]`), z = {}, w = +g("day").value;
+    if (g("mau").value !== r.dataset.m0) z.mau = g("mau").value;
+    if (+g("net").value !== +r.dataset.s0) z.net = +g("net").value;
+    if (w !== +r.dataset.w0 && w >= 1 && w <= 4) z.day = w;
+    if (!g("hien").checked) z.tat = true;
+    if (Object.keys(z).length) u.d[r.dataset.hd] = z; });
+  if (q("so").value !== "") u.so = +q("so").value;
+  if (q("nhan").checked !== (q("nhan").dataset.n0 === "1")) u.nhan = q("nhan").checked;
+  if (!q("chu").checked) u.chu = false;
+  if (Object.keys(u.d).length || "so" in u || "nhan" in u || "chu" in u) CB.kieu[k] = u; else delete CB.kieu[k];
+  hop_dong(); menu_lai(); return cb_doi();
+}
+function hop_bam(t) {
+  const el = HOP, k = el.dataset.k, tab = t.closest("[data-htab]");
+  if (tab) { el.querySelectorAll("[data-htab]").forEach(b => b.setAttribute("aria-selected", String(b === tab))); el.querySelectorAll("[data-htk]").forEach(z => { z.hidden = z.dataset.htk !== tab.dataset.htab; }); return; }
+  if (t.closest("[data-hdong]")) return hop_dong();
+  if (t.closest("[data-hok]")) return hop_ap();
+  if (t.closest("[data-han]")) { hop_dong(); return cb_an(k); }
+  if (t.closest("[data-hxoa]")) { hop_dong(); return cg_tat(k); }
+  if (t.closest("[data-hmd]")) { const u = CB.kieu[k]; delete CB.kieu[k]; el.querySelector('[data-htk="kieu"]').innerHTML = hop_kieu(k); if (u) CB.kieu[k] = u; }
+}
+document.addEventListener("keydown", e => { if (!HOP) return; if (e.key === "Escape") hop_dong(); else if (e.key === "Enter" && HOP.contains(e.target) && e.target.matches("input:not([type=checkbox]):not([type=color])")) hop_ap(); });
+const menu_lai = () => document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = menu_cb(); });
+function cb_an(k) { CB.an = an_(k) ? CB.an.filter(z => z !== k) : [...CB.an, k]; return cb_doi(); }   // 👁 ẩn / hiện – giữ cài đặt
 function cg_tat(k) {                                    // ✕ trên dòng chú giải: tắt cả chỉ báo đó
   if (k === "ma") ST.ma_tb = []; else if (k === "ema") ST.ema = []; else if (k === "dc") ST.dc = 0; else if (k === "ss") CB.ss = "";
   else if (k.startsWith("p:")) CB.duoi = CB.duoi.filter(z => z !== k.slice(2)); else CB[k] = false;
-  if (CG_SUA === k) CG_SUA = null;
-  document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = menu_cb(); });
-  return cb_doi();
+  CB.an = CB.an.filter(z => z !== k);
+  menu_lai(); return cb_doi();
 }
 function menu_cb() {
   const chip = (ten, khoa, ds, gt) => `<div class="cb-dong cb-chip"><span>${ten}</span>${cb_o_chip(khoa, ds, gt)}</div>`;
   const dong = (khoa, gt, ten, ts) => `<div class="cb-dong"><label><input type="checkbox" data-cbx="${khoa}"${gt ? " checked" : ""}>${ten}${ts ? ` <span class="phu" data-cbn="${ts}">(${ts_chu(ts)})</span>` : ""}</label>` +
     (ts ? `<button type="button" class="cb-g" data-cbg="${ts}" title="Sửa tham số">⚙</button></div><div class="cb-ts" data-cbtk="${ts}" hidden>` +
       cb_o_ts(ts, ten) : "") + `</div>`;
-  return `<div class="cb-nhom"><b>Vẽ trên nến giá</b>${chip("MA", "ma", [10, 20, 50, 200], ST.ma_tb)}${chip("EMA", "ema", [9, 21, 50, 200], ST.ema)}
+  return `<div class="cb-nhom"><b>Vẽ trên nến giá</b>${chip("MA", "ma", [...new Set([10, 20, 50, 200, ...ST.ma_tb])].sort((a, b) => a - b), ST.ma_tb)}${chip("EMA", "ema", [...new Set([9, 21, 50, 200, ...ST.ema])].sort((a, b) => a - b), ST.ema)}
       <div class="cb-dong"><label title="Trung bình giá đóng cửa 10 tuần (tuần đang chạy tính theo giá hiện tại) – đường thoát lệnh của hệ, hiện trên khung ngày / tuần / phút"><input type="checkbox" data-cbx="ma10t"${CB.ma10t ? " checked" : ""}>MA10 tuần (đường thoát của hệ)</label></div>
       ${dong("bb", CB.bb, "Bollinger Bands", "bb")}${dong("st", CB.st, "Supertrend", "st")}${dong("ich", CB.ich, "Ichimoku", "ich")}${dong("sar", CB.sar, "Parabolic SAR", "sar")}
       ${dong("dc:20", ST.dc === 20, "Donchian 20")}${dong("dc:52", ST.dc === 52, "Kênh 52 tuần")}
@@ -1107,10 +1253,11 @@ document.addEventListener("click", e => {
     document.querySelectorAll("[data-cbk]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cbk === CB.non_kieu)));
     document.querySelectorAll('[data-cbx="non"]').forEach(b => { b.checked = true; });
     return cb_doi(); }
-  const cs = t.closest("[data-cgs]"), cx = t.closest("[data-cgx]");
-  if (cs) { CG_SUA = CG_SUA === cs.dataset.cgs ? null : cs.dataset.cgs; return BD_DK?.sua?.(); }
+  const cs = t.closest("[data-cgs]"), cx = t.closest("[data-cgx]"), ca = t.closest("[data-cgan]");
+  if (cs) return hop_mo(cs.dataset.cgs);
   if (cx) return cg_tat(cx.dataset.cgx);
-  if (CG_SUA && (t.closest("[data-cgdong]") || !t.closest(".cg-sua"))) { CG_SUA = null; BD_DK?.sua?.(); }
+  if (ca) return cb_an(ca.dataset.cgan);
+  if (HOP?.contains(t)) return hop_bam(t);
   if (t.closest("[data-cbmd]")) { Object.assign(CB, cb_mac()); Object.assign(ST, {ma_tb: [20, 50], ema: [], dc: 0, mk: true});
     document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = menu_cb(); }); return cb_doi(); }
   document.querySelectorAll(".fs-cb-ds").forEach(d => { if (!d.hidden && !t.closest(".fs-cb")) d.hidden = true; });
@@ -1248,7 +1395,6 @@ function gop_khung(x, khung) {                          // nến ngày → tuầ
 }
 let BD_GIA = null, BD_DK = null;
 let CG_GON = (() => { try { const v = localStorage.getItem("cg_gon"); return v == null ? CHAM && (innerWidth < 700 || innerHeight < 520) : v === "1"; } catch (e) { return false; } })();   // điện thoại: mặc định thu gọn   // khung chỉ số góc trái: thu gọn còn ▸
-let CG_SUA = null;                                      // khoá dòng chú giải đang mở bảng ⚙ ("ma", "bb", "p:rsi"…)
 function dat_cg(v) {                                     // chế độ "Thu gọn khung chỉ số" (menu ƒx · mũi tên ▸ / ▾ trên biểu đồ)
   CG_GON = v; try { localStorage.setItem("cg_gon", v ? "1" : "0"); } catch (e) {}
   document.querySelectorAll("[data-cggon]").forEach(z => { z.checked = v; }); BD_DK?.viet?.();
@@ -1376,18 +1522,19 @@ async function ve_bd_gia(el, x0, them = {}) {
   const BG = CB.bg && them.ma && (ST.khung === "D" || PHUT(ST.khung)) ? await lay(DL + "buoc_gia/" + them.ma + ".json", false) : null;
   const LH = CB.lh && them.ma ? ((await tai_lenh_he()) || {}) : null, k_ss = MA_OK(CB.ss) && CB.ss !== them.ma ? await tai_ma(CB.ss) : null;
   if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
-  el.querySelectorAll(".chu-bd,.chu-pane,.cg-sua").forEach(z => z.remove());
+  el.querySelectorAll(".chu-bd,.chu-pane").forEach(z => z.remove());
   let kh = ST.khung, x = PHUT(kh) ? await chuoi_phut(them.ma, kh) : null, bao = "";
   if (PHUT(kh) && !x) { bao = "Mã này chưa có nến phút (chỉ ~400 mã thanh khoản cao nhất) – đang hiện khung ngày"; kh = "D"; }
   if (!x) x = gop_khung(x0, kh);
   const tua = !!them.fs && TUA.t != null;
   if (them.fs) { const k_ = x.ts || x.d.map(giay_ngay); TUA.phut = PHUT(kh); TUA.keys = TUA.phut ? k_.slice() : k_.map(t => t + 86399); }
   if (tua) x = PHUT(kh) ? cat_x(x, Math.max(1, so_den(x.ts, TUA.t))) : gop_khung(cat_x(x0, Math.max(1, so_den(x0.d.map(d => giay_ngay(d) + 86399), TUA.t))), kh);
+  const DUOI = CB.duoi.filter(k => !an_("p:" + k));   // khung phụ đang Ẩn: bỏ hẳn khung, còn dòng mờ trên chú giải
   const n = x.d.length, fs = !!them.fs, nhan = fs;   // toàn màn hình: nhãn giá từng chỉ báo trên trục
   const nho = matchMedia("(max-width:600px)").matches, cao0 = nho ? 380 : 480, cao1 = nho ? 90 : 110;
   const H = kh === "D" || PHUT(kh) ? CB.non_h : Math.max(1, Math.round(CB.non_h / (kh === "W" ? 5 : 21))), [ich_a, ich_b, ich_s] = CB.ts.ich;   // tầm tính theo phiên
   const du = n ? Math.max(CB.non ? H : 0, CB.ich ? ich_b : 0) : 0, fut = n ? ngay_toi(x.d[n - 1], du, kh) : [], T = x.d.concat(fut);
-  if (!fs) el.style.height = CB.duoi.length ? (cao0 + CB.duoi.length * cao1) + "px" : "";
+  if (!fs) el.style.height = DUOI.length ? (cao0 + DUOI.length * cao1) + "px" : "";
   const ch = LW.createChart(el, {autoSize: true, layout: {background: {color: "#ffffff"}, textColor: "#4b5565", fontFamily: "system-ui,-apple-system,Segoe UI,Roboto,sans-serif", fontSize: 11,
       panes: {separatorColor: "#e3e7ee", separatorHoverColor: "#c9d6cc", enableResize: true}},
     grid: {vertLines: {color: "#f2f4f7"}, horzLines: {color: "#f2f4f7"}}, rightPriceScale: {borderColor: "#e3e7ee"},
@@ -1401,39 +1548,38 @@ async function ve_bd_gia(el, x0, them = {}) {
   nen.setData(x.d.map((d, i) => ({time: d, open: x.o[i], high: x.h[i], low: x.l[i], close: x.c[i]})).concat(fut.map(d => ({time: d}))));
   nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}, autoScale: true, mode: che_do_thang(LW)});   // mặc định: "Tất cả" thang log
   // --- vẽ trên nến giá
-  const MAU_MA = {10: "#e8710a", 20: "#1f6feb", 50: "#9b3fd1", 200: "#0e9fb3"}, ma = {};
-  for (const m of ST.ma_tb) { ma[m] = sma(x.c, m); duong(ma[m], {color: MAU_MA[m]}); }
-  const MAU_EMA = {9: "#c2185b", 21: "#00897b", 50: "#6d4c41", 200: "#455a64"}, em = {};
-  for (const m of ST.ema) { em[m] = ema_bd(x.c, m); duong(em[m], {color: MAU_EMA[m], lineStyle: 2}); }
+  const kt_ = k => { const t = CB.khung_tinh[k]; return t && (kh === "D" || (kh === "W" && t === "M")) ? t : ""; }, khoa_kt = t => t === "W" ? cb_tuan_cua : d => String(d).slice(0, 7);
+  const ng_ = k => (NGUON[CB.nguon[k]] || NGUON.c)[1](x), ma = {}, em = {};
+  for (const m of an_("ma") ? [] : ST.ma_tb) { const t = kt_("ma"); ma[m] = t ? cb_ma10_tuan(x.d, ng_("ma"), m, khoa_kt(t)) : sma(ng_("ma"), m); duong(ma[m], kd("ma", String(m))); }
+  for (const m of an_("ema") ? [] : ST.ema) { const t = kt_("ema"); em[m] = t ? cb_ema_khung(x.d, ng_("ema"), m, khoa_kt(t)) : ema_bd(ng_("ema"), m); duong(em[m], kd("ema", String(m))); }
   const kh_bot = CB.kh && them.ma && !PHUT(kh) && !tua ? BOT[them.ma] : null;   // kế hoạch thoát: cần MA10 tuần
   let m10t = null;
-  if ((CB.ma10t || kh_bot) && kh !== "M") {
+  if (((CB.ma10t && !an_("ma10t")) || kh_bot) && kh !== "M") {
     if (kh === "D") m10t = cb_ma10_tuan(x.d, x.c);
     else if (kh === "W") m10t = sma(x.c, 10);
     else if (PHUT(kh) && x0?.d?.length) { const md = cb_ma10_tuan(x0.d, x0.c), mp = new Map(x0.d.map((d, i) => [d, md[i]]));
       m10t = x.d.map(t => { const k = new Date(t * 1000).toISOString().slice(0, 10); return mp.get(k) ?? null; }); }
-    if (m10t) duong(m10t, {color: "#ff6f00", lineWidth: 2.2}); }
+    if (m10t) duong(m10t, kd("ma10t", "v")); }
   let bb = null;
-  if (CB.bb) { const [p, k] = CB.ts.bb; bb = cb_bb(x.c, p, k);
-    duong(bb.tr, {color: "#2962ff", lineWidth: 1}); duong(bb.du, {color: "#2962ff", lineWidth: 1}); duong(bb.gi, {color: "#ff6d00", lineWidth: 1});
+  if (CB.bb && !an_("bb")) { const [p, k] = CB.ts.bb; bb = cb_bb(ng_("bb"), p, k);
+    duong(bb.tr, kd("bb", "tr")); duong(bb.du, kd("bb", "du")); duong(bb.gi, kd("bb", "gi"));
     nen.attachPrimitive(new DaiPrim(ch, nen, bb.tr, bb.du, () => "rgba(41,98,255,0.07)")); }
   let st = null;
-  if (CB.st) { const [p, k] = CB.ts.st; st = cb_supertrend(x.h, x.l, x.c, p, k);
+  if (CB.st && !an_("st")) { const [p, k] = CB.ts.st; st = cb_supertrend(x.h, x.l, x.c, p, k);
     const noi = len => st.v.map((v, i) => st.len[i] === len || (st.len[i + 1] === len && st.len[i] !== len) ? v : null);   // nối điểm đổi chiều
-    duong(noi(true), {color: "#0f8a4a", lineWidth: 2}); duong(noi(false), {color: "#d1342b", lineWidth: 2}); }
+    duong(noi(true), kd("st", "len")); duong(noi(false), kd("st", "xuong")); }
   let ich = null;
-  if (CB.ich) { ich = cb_ichimoku(x.h, x.l, x.c, ich_a, ich_b, ich_s);
+  if (CB.ich && !an_("ich")) { ich = cb_ichimoku(x.h, x.l, x.c, ich_a, ich_b, ich_s);
     nen.attachPrimitive(new DaiPrim(ch, nen, ich.spa, ich.spb, i => ich.spa[i] >= ich.spb[i] ? "rgba(67,160,71,0.16)" : "rgba(229,57,53,0.16)"));
-    duong(ich.spa, {color: "#43a04799", lineWidth: 1}); duong(ich.spb, {color: "#e5393599", lineWidth: 1});
-    duong(ich.tenkan, {color: "#0496ff", lineWidth: 1}); duong(ich.kijun, {color: "#991515", lineWidth: 1}); }
+    duong(ich.spa, kd("ich", "spa")); duong(ich.spb, kd("ich", "spb")); duong(ich.tenkan, kd("ich", "tenkan")); duong(ich.kijun, kd("ich", "kijun")); }
   let sar = null;
-  if (CB.sar) { const [a0, am] = CB.ts.sar; sar = cb_psar(x.h, x.l, a0, am);
-    for (const [len, m] of [[true, "#0f8a4a"], [false, "#d1342b"]])
-      duong(sar.v.map((v, i) => sar.len[i] === len ? v : null), {color: m, lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 1.6, lastValueVisible: false}); }
+  if (CB.sar && !an_("sar")) { const [a0, am] = CB.ts.sar; sar = cb_psar(x.h, x.l, a0, am);
+    for (const len of [true, false])
+      duong(sar.v.map((v, i) => sar.len[i] === len ? v : null), kd("sar", len ? "len" : "xuong", {lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 1.6, lastValueVisible: false})); }
   let dc = null;
-  if (ST.dc) { const p = ST.dc === 52 ? ({D: 250, W: 52, M: 12})[kh] || 20 : 20, cua = (a, f) => a.map((_, i) => i + 1 < p ? null : f(...a.slice(i + 1 - p, i + 1)));
+  if (ST.dc && !an_("dc")) { const p = ST.dc === 52 ? ({D: 250, W: 52, M: 12})[kh] || 20 : 20, cua = (a, f) => a.map((_, i) => i + 1 < p ? null : f(...a.slice(i + 1 - p, i + 1)));
     const tr = cua(x.h, Math.max), d_ = cua(x.l, Math.min); dc = {p, tr, du: d_, gi: tr.map((v, i) => v == null ? null : (v + d_[i]) / 2)};
-    duong(dc.tr, {color: "#e8a400", lineWidth: 1}); duong(dc.du, {color: "#e8a400", lineWidth: 1}); duong(dc.gi, {color: "#e8a400", lineWidth: 1, lineStyle: 2}); }
+    duong(dc.tr, kd("dc", "tr")); duong(dc.du, kd("dc", "du")); duong(dc.gi, kd("dc", "gi")); }
   if ((kh === "D" || PHUT(kh)) && them.gn && !tua) for (const [v, t, c] of [[them.gn.tran, "Trần", "#9b3fd1"], [them.gn.tc, "TC", "#b88a00"], [them.gn.san, "Sàn", "#0e9fb3"]])
     if (v > 0) nen.createPriceLine({price: v, color: c, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: t});
   const lh = LH && !PHUT(kh) ? (LH.ma?.[them.ma] || []).filter(z => z[0] <= x.d[n - 1]).map(z => z[1] > x.d[n - 1] ? [z[0], "", z[2], z[3], 1] : z) : null;   // tua lại: không lộ lệnh tương lai
@@ -1441,11 +1587,11 @@ async function ve_bd_gia(el, x0, them = {}) {
   if (mk_.length) LW.createSeriesMarkers(nen, mk_);
   // --- so sánh: mã khác / VN-Index cùng trục, thang % (mỗi đường tính từ nến đầu vùng xem)
   let ss = null;
-  if (CB.ss && !PHUT(kh) && (CB.ss === "VNINDEX" ? VNM?.size : k_ss)) {
+  if (CB.ss && !an_("ss") && !PHUT(kh) && (CB.ss === "VNINDEX" ? VNM?.size : k_ss)) {
     let v2;
     if (CB.ss === "VNINDEX") v2 = vni_theo(x.d, VNM);
     else { const y = chuoi_gia(k_ss, CB.ss), z = y ? gop_khung(y, kh) : null, m_ = new Map((z?.d || []).map((d, i) => [d, z.c[i]])); v2 = x.d.map(d => m_.get(d) ?? null); }
-    if (v2?.some(v => v != null)) { ss = {ten: CB.ss, v: v2}; duong(v2, {color: "#9b3fd1", lineWidth: 2, lastValueVisible: true, title: CB.ss});
+    if (v2?.some(v => v != null)) { ss = {ten: CB.ss, v: v2}; duong(v2, kd("ss", "v", {lastValueVisible: true, title: CB.ss}));
       nen.priceScale().applyOptions({mode: LW.PriceScaleMode.Percentage}); }
   }
   // --- khối lượng / khối ngoại: dải dưới khung giá (+ đường TB 20 KL)
@@ -1455,7 +1601,7 @@ async function ve_bd_gia(el, x0, them = {}) {
     if (v == null) return null; const tang = ST.duoi === "kl" ? x.c[i] >= x.o[i] : v >= 0;
     return {time: d, value: v, color: tang ? "#0f8a4a66" : "#d1342b66"}; }).filter(Boolean));
   let klma = null;
-  if (CB.kl_ma && ST.duoi === "kl") { klma = cb_sma(x.v.map(v => v || 0), 20); duong(klma, {priceScaleId: "duoi", color: "#e8710a", lineWidth: 1, lastValueVisible: false}); }
+  if (CB.kl_ma && ST.duoi === "kl") { klma = cb_sma(x.v.map(v => v || 0), 20); duong(klma, kd("kl", "tb", {priceScaleId: "duoi", lastValueVisible: false})); }
   // --- nón dự báo
   let non = null;
   if (CB.non && n > 2) {
@@ -1512,14 +1658,14 @@ async function ve_bd_gia(el, x0, them = {}) {
   const PH = [], co_dinh = {autoscaleInfoProvider: () => ({priceRange: {minValue: 0, maxValue: 100}})};
   const nguong = (s, ds) => ds.forEach(y => s.createPriceLine({price: y, color: "#9aa3af", lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: ""}));
   const mau_chu = (m, v, l = 2) => `<b style="color:${m}">${so(v, l)}</b>`;
-  CB.duoi.forEach((k, j) => {
-    const p = j + 1, ts = CB.ts[k], d_ = (v, o) => duong(v, {lastValueVisible: true, ...o}, p);
+  DUOI.forEach((k, j) => {
+    const p = j + 1, ts = CB.ts[k], d_ = (v, id, o) => duong(v, kd("p:" + k, id, {lastValueVisible: true, ...o}), p), c_ = id => mk("p:" + k, id), l_ = l => so_k("p:" + k, l);
     if (k === "rs") {
       const vv = PHUT(kh) || !VNM?.size ? null : vni_theo(x.d, VNM), nh = ({D: 250, W: 52, M: 12})[kh] || 250;
       if (!vv) { PH.push(() => `RS so VN-Index – ${PHUT(kh) ? "chỉ khung ngày / tuần / tháng" : "chưa có dữ liệu VN-Index"}`); return; }
-      const r = cb_rs(x.c, vv, nh), s_ = d_(r.rs, {color: "#1565c0", lineWidth: 1.6}); nguong(s_, [100]);
+      const r = cb_rs(x.c, vv, nh), s_ = d_(r.rs, "v"); nguong(s_, [100]);
       LW.createSeriesMarkers(s_, x.d.map((d, i) => r.dinh[i] && !r.dinh[i - 1] ? {time: d, position: "inBar", shape: "circle", color: r.som[i] ? "#e8a400" : "#1565c0", size: r.som[i] ? 1.4 : 0.8} : null).filter(Boolean));
-      PH.push(i => `RS so VN-Index ${mau_chu("#1565c0", r.rs[i], 1)} <span class="phu">(${nh} ${({D: "phiên", W: "tuần", M: "tháng"})[kh]} trước = 100)</span>` +
+      PH.push(i => `RS so VN-Index ${mau_chu(c_("v"), r.rs[i], l_(1))} <span class="phu">(${nh} ${({D: "phiên", W: "tuần", M: "tháng"})[kh]} trước = 100)</span>` +
         (r.dinh[i] ? (r.som[i] ? ` · <b style="color:#b07a00">RS đỉnh mới trước giá</b>` : ` · <b style="color:#1565c0">RS đỉnh mới</b>`) : "")); return; }
     if (k === "macdt") {
       let q = null;
@@ -1530,30 +1676,30 @@ async function ve_bd_gia(el, x0, them = {}) {
       if (!q) { PH.push(() => "MACD tuần – chỉ khung ngày / tuần / phút"); return; }
       const hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: false}, p);
       hs.setData(T.map((d, i) => q.h[i] == null ? {time: d} : {time: d, value: q.h[i], color: q.h[i] >= 0 ? (q.dat[i] ? "#26a69a" : "#9fd8d2") : (q.dat[i] ? "#f4a3a1" : "#ef5350")}));
-      const lm = d_(q.m, {color: "#2962ff"}); d_(q.s, {color: "#ff6d00"}); nguong(lm, [0]);
+      const lm = d_(q.m, "m"); d_(q.s, "s"); nguong(lm, [0]);
       LW.createSeriesMarkers(lm, x.d.map((d, i) => i && q.dat[i] != null && q.dat[i - 1] != null && q.dat[i] !== q.dat[i - 1] && q.m[i] != null
         ? {time: d, position: q.dat[i] ? "belowBar" : "aboveBar", shape: q.dat[i] ? "arrowUp" : "arrowDown", color: q.dat[i] ? "#0f8a4a" : "#d1342b", size: 0.7} : null).filter(Boolean));
-      PH.push(i => `MACD tuần 12, 26, 9 ${mau_chu("#2962ff", q.m[i])} · tín hiệu ${mau_chu("#ff6d00", q.s[i])}` + (q.dat[i] == null ? "" :
+      PH.push(i => `MACD tuần 12, 26, 9 ${mau_chu(c_("m"), q.m[i], l_(2))} · tín hiệu ${mau_chu(c_("s"), q.s[i], l_(2))}` + (q.dat[i] == null ? "" :
         ` · lọc tuần của hệ <b style="color:${q.dat[i] ? "#0f8a4a" : "#d1342b"}">${q.dat[i] ? "đạt" : "chưa đạt"}</b> <span class="phu">(tuần đã đóng: MACD ${q.dat[i] ? "trên" : "dưới"} tín hiệu)</span>`) +
         (q.m[i] != null && q.dat[i] != null && (q.m[i] > q.s[i]) !== q.dat[i] ? ` · tuần đang chạy tạm tính: <b>${q.m[i] > q.s[i] ? "trên" : "dưới"}</b>` : ""));
       return; }
-    if (k === "rsi") { const v = cb_rsi(x.c, ts[0]); nguong(d_(v, {color: "#7e57c2", ...co_dinh}), [30, 70]);
-      PH.push(i => `RSI ${ts[0]} ${mau_chu("#7e57c2", v[i], 1)}`); }
-    else if (k === "macd") { const m = cb_macd(x.c, ...ts), hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: false}, p);
+    if (k === "rsi") { const v = cb_rsi(ng_("p:rsi"), ts[0]); nguong(d_(v, "v", co_dinh), [30, 70]);
+      PH.push(i => `RSI ${ts[0]} ${mau_chu(c_("v"), v[i], l_(1))}`); }
+    else if (k === "macd") { const m = cb_macd(ng_("p:macd"), ...ts), hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: false}, p);
       hs.setData(T.map((d, i) => { const h = m.h[i]; if (h == null) return {time: d}; const t = i > 0 && m.h[i - 1] != null ? h - m.h[i - 1] : 0;
         return {time: d, value: h, color: h >= 0 ? (t >= 0 ? "#26a69a" : "#b2dfdb") : (t <= 0 ? "#ef5350" : "#ffcdd2")}; }));
-      d_(m.m, {color: "#2962ff"}); d_(m.s, {color: "#ff6d00"});
-      PH.push(i => `MACD ${ts.join(", ")} ${mau_chu("#2962ff", m.m[i])} · tín hiệu ${mau_chu("#ff6d00", m.s[i])} · histogram ${mau_chu(m.h[i] >= 0 ? "#26a69a" : "#ef5350", m.h[i])}`); }
-    else if (k === "stoch") { const s = cb_stoch(x.h, x.l, x.c, ...ts); nguong(d_(s.k, {color: "#2962ff", ...co_dinh}), [20, 80]); d_(s.d, {color: "#ff6d00", ...co_dinh});
-      PH.push(i => `Stochastic ${ts.join(", ")} %K ${mau_chu("#2962ff", s.k[i], 1)} · %D ${mau_chu("#ff6d00", s.d[i], 1)}`); }
-    else if (k === "adx") { const a = cb_dmi(x.h, x.l, x.c, ts[0]); nguong(d_(a.adx, {color: "#37474f", lineWidth: 2}), [25]); d_(a.pdi, {color: "#0f8a4a", lineWidth: 1}); d_(a.mdi, {color: "#d1342b", lineWidth: 1});
-      PH.push(i => `ADX ${ts[0]} ${mau_chu("#37474f", a.adx[i], 1)} · +DI ${mau_chu("#0f8a4a", a.pdi[i], 1)} · −DI ${mau_chu("#d1342b", a.mdi[i], 1)}`); }
-    else if (k === "atr") { const v = cb_atr_pt(x.h, x.l, x.c, ts[0]); d_(v, {color: "#00897b"});
-      PH.push(i => `ATR ${ts[0]} ${mau_chu("#00897b", v[i])}% giá`); }
-    else if (k === "obv") { const v = cb_obv(x.c, x.v); d_(v, {color: "#5d4037", priceFormat: {type: "volume"}});
-      PH.push(i => `OBV <b style="color:#5d4037">${kl(v[i])}</b>`); }
-    else if (k === "mfi") { const v = cb_mfi(x.h, x.l, x.c, x.v, ts[0]); nguong(d_(v, {color: "#ad1457", ...co_dinh}), [20, 80]);
-      PH.push(i => `MFI ${ts[0]} ${mau_chu("#ad1457", v[i], 1)}`); }
+      d_(m.m, "m"); d_(m.s, "s");
+      PH.push(i => `MACD ${ts.join(", ")} ${mau_chu(c_("m"), m.m[i], l_(2))} · tín hiệu ${mau_chu(c_("s"), m.s[i], l_(2))} · histogram ${mau_chu(m.h[i] >= 0 ? "#26a69a" : "#ef5350", m.h[i], l_(2))}`); }
+    else if (k === "stoch") { const s = cb_stoch(x.h, x.l, x.c, ...ts); nguong(d_(s.k, "k", co_dinh), [20, 80]); d_(s.d, "d", co_dinh);
+      PH.push(i => `Stochastic ${ts.join(", ")} %K ${mau_chu(c_("k"), s.k[i], l_(1))} · %D ${mau_chu(c_("d"), s.d[i], l_(1))}`); }
+    else if (k === "adx") { const a = cb_dmi(x.h, x.l, x.c, ts[0]); nguong(d_(a.adx, "adx"), [25]); d_(a.pdi, "pdi"); d_(a.mdi, "mdi");
+      PH.push(i => `ADX ${ts[0]} ${mau_chu(c_("adx"), a.adx[i], l_(1))} · +DI ${mau_chu(c_("pdi"), a.pdi[i], l_(1))} · −DI ${mau_chu(c_("mdi"), a.mdi[i], l_(1))}`); }
+    else if (k === "atr") { const v = cb_atr_pt(x.h, x.l, x.c, ts[0]); d_(v, "v");
+      PH.push(i => `ATR ${ts[0]} ${mau_chu(c_("v"), v[i], l_(2))}% giá`); }
+    else if (k === "obv") { const v = cb_obv(x.c, x.v); d_(v, "v", {priceFormat: {type: "volume"}});
+      PH.push(i => `OBV <b style="color:${c_("v")}">${kl(v[i])}</b>`); }
+    else if (k === "mfi") { const v = cb_mfi(x.h, x.l, x.c, x.v, ts[0]); nguong(d_(v, "v", co_dinh), [20, 80]);
+      PH.push(i => `MFI ${ts[0]} ${mau_chu(c_("v"), v[i], l_(1))}`); }
     else if (k === "sqz") { const q = cb_squeeze(x.h, x.l, x.c, ...ts), hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: true}, p);
       hs.setData(T.map((d, i) => { const v = q.val[i]; if (v == null) return {time: d}; const len = i > 0 && q.val[i - 1] != null ? v >= q.val[i - 1] : true;
         return {time: d, value: v, color: v >= 0 ? (len ? "#22c55e" : "#15803d") : (len ? "#7f1d1d" : "#ef4444")}; }));
@@ -1563,7 +1709,7 @@ async function ve_bd_gia(el, x0, them = {}) {
         (q.nen[i] === 1 ? ` · <b>đang nén</b> (chấm đen)` : q.nen[i] === 0 && q.nen[i - 1] === 1 ? ` · <b style="color:#1f4fa8">vừa bung</b>` : q.nen[i] === 0 ? " · đã bung (chấm xám)" : "")); }
     else if (k === "wvf") { const q = cb_wvf(x.c, x.l, ...ts), hs = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: true}, p);
       hs.setData(T.map((d, i) => q.w[i] == null ? {time: d} : {time: d, value: q.w[i], color: q.dinh[i] ? "#16a34a" : "#b8bec8"}));
-      d_(q.tren, {color: "#e8710a", lineWidth: 1, lastValueVisible: false});
+      d_(q.tren, "tren", {lastValueVisible: false});
       PH.push(i => `Williams Vix Fix ${ts.map(v => String(v).replace(".", ",")).join(", ")} ${mau_chu(q.dinh[i] ? "#16a34a" : "#6b7280", q.w[i])}` +
         (q.dinh[i] ? ` · <b style="color:#16a34a">hoảng loạn</b> (cột xanh – thường gần đáy ngắn hạn)` : "")); }
   });
@@ -1613,44 +1759,34 @@ async function ve_bd_gia(el, x0, them = {}) {
   const lh_chu = !lh ? "" : `<br><span style="color:#1f6feb">Lệnh của hệ trên ${esc(them.ma)} (backtest từ ${ngay_vn(LH.tu || "2012-01-01")}): ` + (tk ? `${tk.n} lệnh đã đóng · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R · tổng ${tk.tong > 0 ? "+" : ""}${so(tk.tong, 1)}R</span>${LH.chung != null ? ` <span class="phu">(mọi mã TB ${LH.chung > 0 ? "+" : ""}${so(LH.chung, 2)}R)</span>` : ""}` : `chưa có lệnh đã đóng${LH.ma ? "" : " – chưa có dữ liệu"}</span>`) + (lh.some(z => z[4]) ? ` <span class="phu">· 1 lệnh đang mở</span>` : "");
   const non_chu = non ? `<span class="chu-non"><br><span style="color:#1f4fa8">Nón ${H} ${u} (${non.kieu === "ls" ? "phân vị lịch sử" : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`}): 50% ${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)} · 95% ${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}</span>` +
     (non.trung ? `<br><span class="phu" title="Dựng lại nón tại ${non.trung.n} mốc trong quá khứ chỉ bằng dữ liệu tới mốc đó, rồi xem giá ${H} ${u} sau có nằm trong dải không. Gần 50 / 80 / 95% là nón đáng tin; thấp hơn nhiều là nón hẹp hơn thực tế.">Độ trúng ${non.trung.n} lần thử: dải 50% ${pt0(non.trung.p[0])} · 80% ${pt0(non.trung.p[1])} · 95% ${pt0(non.trung.p[2])}</span>` : "") + ` <span class="phu">· thống kê, không phải khuyến nghị</span></span>` : "";
-  // TradingView: dòng O H L C, mỗi chỉ báo 1 dòng có ⚙ sửa / ✕ tắt ngay tại chỗ (bảng sửa .cg-sua giữ riêng – rê chuột không làm mất ô đang gõ)
-  const nut = (k, sua = true, tat = true) => (sua ? `<button type="button" class="cg-n" data-cgs="${k}" title="Sửa" aria-label="Sửa">⚙</button>` : "") +
-    (tat ? `<button type="button" class="cg-n" data-cgx="${k}" title="Tắt" aria-label="Tắt">✕</button>` : "");
-  const gt = (m, v) => `<b style="color:${m}">${so(v, 2)}</b>`;
-  const dg = (k, noi, sua, tat) => `<br><span class="cg-d" data-cgk="${k}">${noi}${nut(k, sua, tat)}</span>`;
-  const ed = el.appendChild(Object.assign(document.createElement("div"), {className: "cg-sua", hidden: true}));
-  const sua_ve = () => {
-    const r = CG_SUA && el.querySelector(`[data-cgk="${CG_SUA}"]`);
-    if (!r) { ed.hidden = true; ed.dataset.k = ""; return; }
-    if (ed.dataset.k !== CG_SUA) { ed.innerHTML = cg_sua_html(CG_SUA); ed.dataset.k = CG_SUA; }
-    ed.hidden = false;
-    const a = r.getBoundingClientRect(), b = el.getBoundingClientRect(), h = ed.offsetHeight;
-    ed.style.left = Math.max(4, Math.min(a.left - b.left, el.clientWidth - ed.offsetWidth - 4)) + "px";
-    ed.style.top = (a.bottom + h + 2 > b.bottom ? Math.max(0, a.top - b.top - h - 2) : a.bottom - b.top + 2) + "px";
-  };
-  cp.forEach((d, j) => { d.dataset.cgk = "p:" + CB.duoi[j]; });
+  // TradingView: dòng O H L C, mỗi chỉ báo 1 dòng – ẩn / ⚙ cài đặt (bảng hop_mo) / ✕ xoá ngay tại dòng
+  const nut = (k, tat = true) => (tat ? `<button type="button" class="cg-n" data-cgan="${k}" title="${an_(k) ? "Hiện" : "Ẩn"}" aria-label="${an_(k) ? "Hiện" : "Ẩn"}">${an_(k) ? MAT_AN : MAT}</button>` : "") +
+    `<button type="button" class="cg-n" data-cgs="${k}" title="Cài đặt" aria-label="Cài đặt">⚙</button>` + (tat ? `<button type="button" class="cg-n" data-cgx="${k}" title="Xoá" aria-label="Xoá">✕</button>` : "");
+  const gt = (k, id, v) => `<b style="color:${mk(k, id)}">${so(v, so_k(k))}</b>`;
+  const dg = (k, f, tat) => `<br><span class="cg-d${an_(k) ? " cg-an" : ""}">${an_(k) || CB.kieu[k]?.chu === false ? esc(cb_tieu_de(k)) : f()}${nut(k, tat)}</span>`;
+  const kt_chu = k => kt_(k) ? ` <span class="phu">(khung ${kt_(k) === "W" ? "tuần" : "tháng"})</span>` : "";
   const viet = i => {
     if (i == null || i < 0 || i >= n) i = n - 1;
     if (i < 0) return;
     const goc = x.tam && i === n - 1 && x.tc ? x.tc : i > 0 ? x.c[i - 1] : null, p = goc ? x.c[i] / goc - 1 : null, m_ = mau(p);
     const o_ = (t, v) => ` <span class="cg-g">${t}</span> <b class="${m_}">${so(v, 2)}</b>`, an = CG_GON ? "Hiện chỉ báo" : "Ẩn chỉ báo";
-    PH.forEach((f, j) => { const k = CB.duoi[j]; cp[j].innerHTML = f(i) + " " + nut("p:" + k, !!CB_DUOI.find(z => z[0] === k)?.[2]); });
+    PH.forEach((f, j) => { const k = "p:" + DUOI[j]; cp[j].innerHTML = (CB.kieu[k]?.chu === false ? esc(cb_tieu_de(k)) : f(i)) + " " + nut(k); });
     cg.innerHTML = `<button type="button" class="cg-mo" data-cgmo title="${an}" aria-label="${an}" aria-expanded="${!CG_GON}">${CG_GON ? "▸" : "▾"}</button>` + (bao ? `<span class="g">${bao}</span><br>` : "") +
       `${PHUT(kh) ? gio_vn(x.d[i]) : ngay_vn(x.d[i])}${x.tam && i === n - 1 ? " (tạm)" : ""}` + o_("O", x.o[i]) + o_("H", x.h[i]) + o_("L", x.l[i]) + o_("C", x.c[i]) +
       (goc ? ` <span class="${m_}">${x.c[i] > goc ? "+" : ""}${so(x.c[i] - goc, 2)} (${pt(p, 2)})</span>` : "") + (CG_GON ? "" :
-      dg("kl", `KL <b>${kl(x.v[i])}</b>${klma?.[i] != null ? ` TB20 <b style="color:#e8710a">${kl(klma[i])}</b>` : ""}${x.nn?.[i] != null ? ` NN <b class="${mau(x.nn[i])}">${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ</b>` : ""}`, true, false) +
-      (ST.ma_tb.length ? dg("ma", ST.ma_tb.map(m => `MA${m} ${gt(MAU_MA[m], ma[m]?.[i])}`).join(" ")) : "") +
-      (ST.ema.length ? dg("ema", ST.ema.map(m => `EMA${m} ${gt(MAU_EMA[m], em[m]?.[i])}`).join(" ")) : "") +
-      (m10t ? dg("ma10t", `MA10 tuần ${gt("#ff6f00", m10t[i])}`, false, CB.ma10t) : "") +
-      (bb ? dg("bb", `BB ${ts_chu("bb")} Trên ${gt("#2962ff", bb.tr[i])} Giữa ${gt("#ff6d00", bb.gi[i])} Dưới ${gt("#2962ff", bb.du[i])}`) : "") +
-      (st ? dg("st", `Supertrend ${ts_chu("st")} ${gt(st.len[i] ? "#0f8a4a" : "#d1342b", st.v[i])}`) : "") +
-      (ich ? dg("ich", `Ichimoku ${ts_chu("ich")} Tenkan ${gt("#0496ff", ich.tenkan[i])} Kijun ${gt("#991515", ich.kijun[i])}${ich.spa[i] != null ? ` Mây <b>${so(Math.min(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}–${so(Math.max(ich.spa[i], ich.spb[i] ?? ich.spa[i]), 2)}</b>` : ""}`) : "") +
-      (sar ? dg("sar", `SAR ${ts_chu("sar")} ${gt(sar.len[i] ? "#0f8a4a" : "#d1342b", sar.v[i])}`) : "") +
-      (dc ? dg("dc", `DC ${dc.p} Trên ${gt("#a87b00", dc.tr[i])} Giữa ${gt("#a87b00", dc.gi[i])} Dưới ${gt("#a87b00", dc.du[i])}`) : "") +
-      (ss ? dg("ss", `${esc(ss.ten)} ${gt("#9b3fd1", ss.v[i])} <span class="phu">(thang % từ nến đầu vùng xem)</span>`) : "") + sap_chu + lh_chu + tv_chu + non_chu);
-    sua_ve();
+      dg("kl", () => `KL <b>${kl(x.v[i])}</b>${klma?.[i] != null ? ` TB20 <b style="color:${mk("kl", "tb")}">${kl(klma[i])}</b>` : ""}${x.nn?.[i] != null ? ` NN <b class="${mau(x.nn[i])}">${x.nn[i] > 0 ? "+" : ""}${so(x.nn[i], 1)} tỷ</b>` : ""}`, false) +
+      (ST.ma_tb.length ? dg("ma", () => ST.ma_tb.map(m => `MA${m} ${gt("ma", String(m), ma[m]?.[i])}`).join(" ") + kt_chu("ma")) : "") +
+      (ST.ema.length ? dg("ema", () => ST.ema.map(m => `EMA${m} ${gt("ema", String(m), em[m]?.[i])}`).join(" ") + kt_chu("ema")) : "") +
+      (CB.ma10t || m10t ? dg("ma10t", () => `MA10 tuần ${gt("ma10t", "v", m10t?.[i])}`, CB.ma10t) : "") +
+      (bb || (CB.bb && an_("bb")) ? dg("bb", () => `BB ${ts_chu("bb")} Trên ${gt("bb", "tr", bb.tr[i])} Giữa ${gt("bb", "gi", bb.gi[i])} Dưới ${gt("bb", "du", bb.du[i])}`) : "") +
+      (st || (CB.st && an_("st")) ? dg("st", () => `Supertrend ${ts_chu("st")} ${gt("st", st.len[i] ? "len" : "xuong", st.v[i])}`) : "") +
+      (ich || (CB.ich && an_("ich")) ? dg("ich", () => `Ichimoku ${ts_chu("ich")} Tenkan ${gt("ich", "tenkan", ich.tenkan[i])} Kijun ${gt("ich", "kijun", ich.kijun[i])}${ich.spa[i] != null ? ` Mây <b>${so(Math.min(ich.spa[i], ich.spb[i] ?? ich.spa[i]), so_k("ich"))}–${so(Math.max(ich.spa[i], ich.spb[i] ?? ich.spa[i]), so_k("ich"))}</b>` : ""}`) : "") +
+      (sar || (CB.sar && an_("sar")) ? dg("sar", () => `SAR ${ts_chu("sar")} ${gt("sar", sar.len[i] ? "len" : "xuong", sar.v[i])}`) : "") +
+      (dc || (ST.dc && an_("dc")) ? dg("dc", () => `DC ${dc.p} Trên ${gt("dc", "tr", dc.tr[i])} Giữa ${gt("dc", "gi", dc.gi[i])} Dưới ${gt("dc", "du", dc.du[i])}`) : "") +
+      (ss || (CB.ss && an_("ss")) ? dg("ss", () => `${esc(ss.ten)} ${gt("ss", "v", ss.v[i])} <span class="phu">(thang % từ nến đầu vùng xem)</span>`) : "") +
+      CB.duoi.filter(k => an_("p:" + k)).map(k => dg("p:" + k, () => "")).join("") + sap_chu + lh_chu + tv_chu + non_chu);
   };
-  viet(n - 1); BD_DK.viet = viet; BD_DK.sua = sua_ve;
+  viet(n - 1); BD_DK.viet = viet;
   const vi = new Map(x.d.map((d, i) => [d, i]));
   ch.subscribeCrosshairMove(e => { if (!e || !e.time) return viet(n - 1); viet(vi.get(t_chuoi(e.time))); });
   el._cap = () => { nut_bd(); dat_cp(); };                        // gắn sự kiện 1 lần / khung (vẽ lại không chồng sự kiện)
