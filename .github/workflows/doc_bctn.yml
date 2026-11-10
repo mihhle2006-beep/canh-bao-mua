@@ -30,6 +30,10 @@ on:
       vong_toi_da:
         description: "Số lượt tối đa"
         default: "8"
+      thu_lai:
+        description: "Đọc lại năm không tìm thấy BCTN / lỗi / không có phần chiến lược (dùng kèm ô Mã)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -85,7 +89,7 @@ jobs:
           MA: ${{ inputs.ma }}
         run: |
           [ "${{ steps.cache_py.outputs.cache-hit }}" = "true" ] || pip install -q -r requirements.txt > /dev/null
-          ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} ${{ inputs.den && format('--den {0}', inputs.den) || '' }} | tail -1)
+          ds=$(python -m ptcp.chien_luoc_dn con_lai ${MA:+--ma "$MA"} --tu ${{ inputs.tu || '2020' }} ${{ inputs.den && format('--den {0}', inputs.den) || '' }} ${{ inputs.thu_lai && '--thu_lai' || '' }} | tail -1)
           nhom=$(DS="$ds" python -c "
           import json, os
           ds = [m for m in os.environ['DS'].split(',') if m]
@@ -144,7 +148,7 @@ jobs:
           [ "$con" -lt 0 ] && con=$(( con + 1440 ))
           han=$(( con < 320 ? con : 320 )); [ "$han" -lt 20 ] && han=20
           echo "Đọc tối đa $han phút"
-          python -m ptcp.chien_luoc_dn doc --ma "$NHOM" --tu ${{ inputs.tu || '2020' }} ${{ inputs.den && format('--den {0}', inputs.den) || '' }} --han_phut $han
+          python -m ptcp.chien_luoc_dn doc --ma "$NHOM" --tu ${{ inputs.tu || '2020' }} ${{ inputs.den && format('--den {0}', inputs.den) || '' }} --han_phut $han ${{ inputs.thu_lai && '--thu_lai' || '' }}
       - name: Gom cache nhóm này
         if: always()
         env:
