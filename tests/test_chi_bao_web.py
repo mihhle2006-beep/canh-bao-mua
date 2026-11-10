@@ -166,6 +166,34 @@ def test_non_du_bao_va_ngay_toi():
     assert kq["ts"] == [[14], [2, 5], [0.025, 0.2]]                    # tham số sai / ngoài khoảng → chặn
 
 
+def test_non_co_gian_theo_bien_dong():
+    """Nón "phân vị lịch sử" khung ngày: lãi quá khứ / (σ lúc đó / σ nền)^β × (σ hiện tại / σ nền)^β – so công thức phép đo
+    (danh-muc KET_LUAN "non": β 5 nến 0,75 · 20 nến 0,5 · 60 nến 0,25, σ EWMA 0,94, tỷ số kẹp 0,3–3)."""
+    c = np.array(_nen(900, 8)["c"])
+    c[-15:] *= np.exp(np.cumsum(np.random.default_rng(1).normal(0, 0.05, 15)))       # 15 nến cuối biến động mạnh
+    kq = _js(f"const c = {json.dumps(c.tolist())};\n" + """
+      console.log(JSON.stringify({k: [5, 20, 60].map(H => non_du_bao(c, H, "ls", 750, 60, true)), k0: non_du_bao(c, 20, "ls", 750),
+        b: [5, 10, 20, 60, 90].map(NON_BETA)}));""")
+    assert kq["b"][0] == 0.75 and abs(kq["b"][2] - 0.5) < 1e-12 and abs(kq["b"][3] - 0.25) < 1e-12 and kq["b"][4] == 0.25
+    assert kq["b"][0] > kq["b"][1] > kq["b"][2] and kq["k0"].get("ti") is None        # không co giãn: như cũ
+    ln, P = np.log(c), [0.025, 0.1, 0.25, 0.5, 0.75, 0.9, 0.975]
+    t, r1 = len(ln) - 1, np.diff(ln, prepend=ln[0])
+    v, var = np.var(r1[1:21]), []
+    for i in range(len(ln)):
+        v = 0.94 * v + 0.06 * r1[i] ** 2 if i > 20 else v
+        var.append(v)
+    sg = np.sqrt(var)
+    for H, be, k in zip((5, 20, 60), (0.75, 0.5, 0.25), kq["k"]):
+        w, s = (ln[H:] - ln[:-H])[t - 750:t - H + 1], sg[t - 750:t - H + 1]
+        nen = np.sqrt(np.mean(s ** 2))
+        st, z = float(np.clip(sg[t] / nen, 0.3, 3)), w / np.clip(s / nen, 0.3, 3) ** be
+        ref = np.exp((np.quantile(z, P) - np.median(z)) * st ** be)
+        assert abs(k["ti"] - st) < 1e-9 and st > 1.3                             # đang biến động mạnh hơn nền
+        assert np.allclose([k["q"][j][H] for j in range(7)], ref, atol=1e-9)
+    rong = lambda q, h: q[5][h] - q[1][h]
+    assert rong(kq["k"][1]["q"], 20) > rong(kq["k0"]["q"], 20)                     # mã đang biến động mạnh → nón rộng hơn nón cũ
+
+
 def test_menu_chi_bao_va_thu_vien_v5():
     h = open(TRANG, encoding="utf-8").read()
     assert h.count("${menu_khoi()}") == 2                           # trang thường + toàn màn hình dùng chung menu
