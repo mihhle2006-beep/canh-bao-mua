@@ -259,9 +259,9 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
       <div class="bang-boc"><table class="wl quy"><thead><tr id="quy-dau"></tr></thead><tbody id="quy-than"></tbody></table></div>
     </div>
     <div class="luoi2" style="margin-top:16px">
-      <div class="the"><div class="khoi-dau"><h2>Cổ phiếu quỹ nắm nhiều nhất</h2><span class="phu">tổng giá trị trong top 10 các quỹ · bấm mã → phân tích</span></div>
+      <div class="the"><div class="khoi-dau"><h2>Cổ phiếu quỹ nắm nhiều nhất</h2><span class="phu">tỷ đồng · tổng giá trị trong top 10 các quỹ · bấm mã → phân tích</span></div>
         <div style="padding:6px 10px" id="quy-nam"></div></div>
-      <div class="the"><div class="khoi-dau"><h2>Quỹ mua / bán ròng</h2><span class="phu" id="quy-mb-phu">ước tính · 3 tháng gần nhất</span></div>
+      <div class="the"><div class="khoi-dau"><h2>Quỹ mua / bán ròng</h2><span class="phu" id="quy-mb-phu">ước tính · tỷ đồng · 3 tháng gần nhất</span></div>
         <div style="padding:6px 10px" id="quy-mb"></div></div>
     </div>
   </section>
@@ -886,6 +886,14 @@ function dong_html(r) {
 }
 
 // ---------- QUỸ ĐẦU TƯ (chủ quỹ 09/11/2026): quỹ mở cổ phiếu / cân bằng – nguồn Fmarket (thi_truong/quy_web.py) ----------
+// tên Fmarket viết HOA toàn bộ (VD "QUỸ ĐẦU TƯ CỔ PHIẾU CỔ TỨC MIRAE ASSET VIỆT NAM") → viết hoa chữ đầu; giữ HOA từ có số
+// hoặc nằm trong tên công ty / mã quỹ (VCBF, MIRAE ASSET, VN30…)
+function ten_quy(q) {
+  const t = q.ten || q.m;
+  if (t !== t.toUpperCase()) return t;
+  const giu = new Set(`${q.cty} ${q.m} ETF ESG`.toUpperCase().split(/[\s|-]+/));
+  return t.split(" ").map(w => /\d/.test(w) || giu.has(w) ? w : w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
+}
 const ky_vn = k => k ? `${k.slice(5)}/${k.slice(0, 4)}` : "–";
 const pt_mau = v => v == null ? "–" : `<span class="${v > 0 ? "t" : v < 0 ? "g" : ""}">${dau(v, innerWidth < 600 ? 1 : 2)}%</span>`;
 const COT_QUY = [["ten", "Tên quỹ", 1], ["ts", `<span class="dai">Tổng tài sản</span><span class="ngan">Tài sản</span>`], ["3t", "3 tháng"],
@@ -908,11 +916,11 @@ function ve_quy() {
   const loai = ST.quy_loai || "", sap = ST.quy_sap || "ts", chieu = ST.quy_chieu || -1;
   $("#quy-loai").innerHTML = [["", "Tất cả"], ...Object.entries(Q.loai || {})].map(([k, t]) => `<button data-l="${k}" aria-pressed="${k === loai}">${esc(t)}</button>`).join("");
   const gt = (q, c) => c === "ts" ? q.ts : c === "ten" ? q.m : (q.lai || {})[c];
-  const ds = Q.quy.filter(q => !loai || q.loai === loai).sort((a, b) => { const x = gt(a, sap), y = gt(b, sap);
+  const ds = Q.quy.filter(q => (!loai || q.loai === loai) && (q.ts != null || Object.values(q.lai || {}).some(v => v != null))).sort((a, b) => { const x = gt(a, sap), y = gt(b, sap);
     return x == null ? 1 : y == null ? -1 : (x > y ? 1 : x < y ? -1 : 0) * chieu; });
   $("#quy-phu").textContent = `${ds.length} quỹ · nguồn Fmarket · cập nhật ${Q.cap_nhat || ""} · bấm quỹ xem danh mục`;
   $("#quy-dau").innerHTML = COT_QUY.map(([c, t, trai]) => `<th data-c="${c}" class="${trai ? "trai" : ""}${c === "3t" ? " c3t" : ""}" style="cursor:pointer"${c === sap ? ` aria-sort="${chieu > 0 ? "ascending" : "descending"}"` : ""}>${t}</th>`).join("");
-  than.innerHTML = ds.map(q => `<tr data-q="${esc(q.m)}"><td class="trai"><b>${esc(q.ten || q.m)}</b><span class="ten" style="max-width:none">${esc(q.cty)} | ${esc(q.m)} · ${esc((Q.loai || {})[q.loai] || "")}</span></td>
+  than.innerHTML = ds.map(q => `<tr data-q="${esc(q.m)}"><td class="trai"><b>${esc(ten_quy(q))}</b><span class="ten" style="max-width:none">${esc(q.cty)} | ${esc(q.m)} · ${esc((Q.loai || {})[q.loai] || "")}</span></td>
     <td class="so">${q.ts == null ? "–" : nf(q.ts, 0) + " tỷ"}</td>${["3t", "ytd", "1n", "3n"].map(c => `<td class="so${c === "3t" ? " c3t" : ""}">${pt_mau((q.lai || {})[c])}</td>`).join("")}</tr>`
     + (q.m === ST.quy_mo ? `<tr class="dtn-mo"><td class="trai" colspan="6">${chi_tiet_quy(q)}</td></tr>` : "")).join("");
   for (const a of than.querySelectorAll("a[data-ma]")) {
@@ -921,14 +929,14 @@ function ve_quy() {
   const pt_ma = m => ((L || []).find(r => r.ma === m) || {}).pt;
   const nam = $("#quy-nam"); nam.innerHTML = "";
   const top = (Q.nam || []).slice(0, 15).map(x => [x[0], x[1], pt_ma(x[0]), x]).reverse();
-  if (top.length) cot_ngang(nam, top, Math.max(nam.clientWidth - 4, 280), d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Trong top 10 của <b>${d[3][2]}</b> quỹ · tổng <span class="so">${nf(d[1], 0)} tỷ</span>`, v => nf(v, 0) + " tỷ", "Cổ phiếu quỹ nắm nhiều nhất");
+  if (top.length) cot_ngang(nam, top, Math.max(nam.clientWidth - 4, 280), d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Trong top 10 của <b>${d[3][2]}</b> quỹ · tổng <span class="so">${nf(d[1], 0)} tỷ</span>`, v => nf(v, 0), "Cổ phiếu quỹ nắm nhiều nhất");
   const mb = $("#quy-mb"); mb.innerHTML = "";
   const thang = [...new Set(Q.quy.map(q => q.ky).filter(Boolean))].sort().pop();
   if ((Q.mb || []).length) {
     const chon = [...Q.mb.slice(0, 8).filter(x => x[1] > 0), ...Q.mb.slice(-8).filter(x => x[1] < 0)];
     const d2 = [...new Map(chon.map(x => [x[0], x])).values()].sort((a, b) => a[1] - b[1]).map(x => [x[0], x[1], pt_ma(x[0]), x]);
-    $("#quy-mb-phu").textContent = `ước tính · ${Q.mb_so_quy} quỹ · tháng ${ky_vn(Q.mb_tu)} → ${ky_vn(thang)}`;
-    cot_ngang(mb, d2, Math.max(mb.clientWidth - 4, 280), d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Ròng <span class="so">${dau(d[1], 1)} tỷ</span> · ${d[3][2]} quỹ tăng · ${d[3][3]} quỹ giảm`, v => dau(v, 0) + " tỷ", "Quỹ mua bán ròng");
+    $("#quy-mb-phu").textContent = `ước tính · tỷ đồng · ${Q.mb_so_quy} quỹ · tháng ${ky_vn(Q.mb_tu)} → ${ky_vn(thang)}`;
+    cot_ngang(mb, d2, Math.max(mb.clientWidth - 4, 280), d => `<b>${esc(d[0])}</b> ${esc((D.ten || {})[d[0]] || "")}<br>Ròng <span class="so">${dau(d[1], 1)} tỷ</span> · ${d[3][2]} quỹ tăng · ${d[3][3]} quỹ giảm`, v => dau(v, 0), "Quỹ mua bán ròng");
     mb.insertAdjacentHTML("beforeend", `<div class="phu" style="margin-top:6px">Chênh số CP của cùng mã trong top 10 mỗi quỹ giữa 2 kỳ báo cáo × giá báo cáo. Mã vào / rời top 10 không tính giá trị (không biết khối lượng ngoài top 10).</div>`);
   } else mb.innerHTML = `<div class="phu" style="padding:8px 4px;line-height:1.5">Đang tích luỹ dữ liệu: Fmarket chỉ công bố danh mục tháng gần nhất (${ky_vn(thang)}), không có lịch sử.
     Trang tự lưu danh mục mỗi tháng → có số quỹ mua / bán ròng khi các quỹ công bố tháng tiếp theo, đủ 3 tháng sau ~3 tháng.</div>`;
