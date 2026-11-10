@@ -270,6 +270,10 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
 <script>
 "use strict";
 const URL_DL = "du_lieu.json";
+// TRANG RIÊNG (10/11/2026): bảng chạy ở cả canh-bao-mua/thi_truong/ (cũ) lẫn repo riêng bang-thi-truong/ (Pages nhỏ, cập
+// nhật 2'). Cùng gốc github.io → Tra cứu mã / Tổng hợp / ảnh nhanh biểu đồ ở canh-bao-mua; localStorage (danh sách theo dõi) dùng chung.
+const GOC = /\.github\.io$/.test(location.hostname) && !/\/canh-bao-mua\//.test(location.pathname) ? "/canh-bao-mua/" : "../";
+if (GOC !== "../") document.querySelectorAll('a[href^="../"]').forEach(x => x.setAttribute("href", GOC + x.getAttribute("href").slice(3)));
 const $ = s => document.querySelector(s);
 const MAU = {tang: "#0f8a4a", giam: "#d1342b", dung: "#b88a00", luoi: "#edf0f4", truc: "#7a8494", chu: "#1d2430"};
 let D = null, L = null;            // dữ liệu, dòng lọc (đối tượng)
@@ -319,7 +323,7 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&
     kq = q ? Object.entries(ten).filter(([m]) => m.startsWith(q))
       .sort((a, b) => (b[0] === q) - (a[0] === q) || g(b[0]) - g(a[0]) || a[0].localeCompare(b[0])).slice(0, 10) : [];
     i = kq.length ? 0 : -1; ve(); };
-  const di = m => { m = (m || "").trim().toUpperCase(); if (/^[A-Z0-9]{2,10}$/.test(m)) location.href = "../ma/#" + encodeURIComponent(m); };
+  const di = m => { m = (m || "").trim().toUpperCase(); if (/^[A-Z0-9]{2,10}$/.test(m)) location.href = GOC + "ma/#" + encodeURIComponent(m); };
   inp.addEventListener("input", goi);
   inp.addEventListener("focus", () => inp.select());
   inp.addEventListener("blur", () => setTimeout(dong, 120));
@@ -491,9 +495,9 @@ function ve_theo_doi() {
       <td class="so an-dt">${r.mcd == null ? "–" : nf(r.mcd, 0) + "%"}</td></tr>`).join("")}</tbody></table>`;
 }
 // ---------- mã ở Tổng quan: bấm → phân tích mã (Tra cứu mã) · rê chuột → ảnh nhanh biểu đồ (giá ngày 3 tháng) ----------
-function mo_ma(ma) { location.href = "../ma/#" + encodeURIComponent(ma); }
+function mo_ma(ma) { location.href = GOC + "ma/#" + encodeURIComponent(ma); }
 const ANH = {};
-const gia_ma = ma => ANH[ma] || (ANH[ma] = fetch("../ma/du_lieu/gia/" + encodeURIComponent(ma) + ".json").then(r => r.ok ? r.json() : null).catch(() => null));
+const gia_ma = ma => ANH[ma] || (ANH[ma] = fetch(GOC + "ma/du_lieu/gia/" + encodeURIComponent(ma) + ".json").then(r => r.ok ? r.json() : null).catch(() => null));
 function ve_anh(g) {
   const c = ((g && g.c) || []).slice(-63).filter(v => v != null && isFinite(v)); if (c.length < 5) return "";
   const W = 200, H = 64, mn = Math.min(...c), mx = Math.max(...c), k = (H - 6) / ((mx - mn) || 1), p = (c[c.length - 1] / c[0] - 1) * 100;
@@ -873,7 +877,7 @@ function dong_html(r) {
   const nn = v => `<span class="${lop(v)}">${v == null ? "–" : dau(v, Math.abs(v) >= 100 ? 0 : 1)}</span>`;
   const co = TD.includes(r.ma), giu = GIU.includes(r.ma);
   return `<tr><td class="ma trai" title="${esc(r.ten)}">${giu ? `<span class="sao" title="Đang giữ (danh mục)">💼</span>`
-    : `<button class="sao" aria-pressed="${co}" data-ma="${esc(r.ma)}" aria-label="${co ? "Bỏ" : "Thêm"} theo dõi ${esc(r.ma)}">${co ? "★" : "☆"}</button>`}<a class="lk-ma" href="../ma/#${esc(r.ma)}" title="Tra cứu ${esc(r.ma)}">${esc(r.ma)}</a>${r.san !== "HSX" ? `<span class="nhan-san">${r.san === "UPCOM" ? "UPC" : r.san}</span>` : ""}</td>
+    : `<button class="sao" aria-pressed="${co}" data-ma="${esc(r.ma)}" aria-label="${co ? "Bỏ" : "Thêm"} theo dõi ${esc(r.ma)}">${co ? "★" : "☆"}</button>`}<a class="lk-ma" href="${GOC}ma/#${esc(r.ma)}" title="Tra cứu ${esc(r.ma)}">${esc(r.ma)}</a>${r.san !== "HSX" ? `<span class="nhan-san">${r.san === "UPCOM" ? "UPC" : r.san}</span>` : ""}</td>
     <td class="trai cot-nganh" style="color:var(--chu2)">${esc(D.nganh[r.nganh] || "")}</td>
     <td class="so ${lop_gia(r)}">${nf(r.gia)}</td>
     <td class="so"><span class="o-pt ${lop_gia(r)}" style="background:${nen_pt(r)}">${dau(r.pt)}%</span></td>
@@ -903,7 +907,7 @@ function chi_tiet_quy(q) {
   return `<div class="phu" style="margin-bottom:4px">Danh mục báo cáo tháng ${ky_vn(q.ky)} · NAV / CCQ <b class="so">${nf(q.nav, 0)}</b>${q.nav_ngay ? ` (${ngay_vn(q.nav_ngay)})` : ""}
     · 1 tháng ${pt_mau(q.lai["1t"])} · 5 năm ${pt_mau(q.lai["5n"])}</div>
     <table class="quy-ct"><thead><tr><th class="trai">Top 10 mã</th><th class="trai">% NAV</th><th>Giá trị</th><th class="ccp">Số CP</th></tr></thead><tbody>
-    ${q.top.slice().sort((a, b) => (b[1] || 0) - (a[1] || 0)).map(([m, p, kl, g, ng]) => `<tr><td class="trai"><a class="lk-ma" href="../ma/#${encodeURIComponent(m)}" data-ma="${esc(m)}"><b>${esc(m)}</b></a> <span class="phu">${esc(ng)}</span></td>
+    ${q.top.slice().sort((a, b) => (b[1] || 0) - (a[1] || 0)).map(([m, p, kl, g, ng]) => `<tr><td class="trai"><a class="lk-ma" href="${GOC}ma/#${encodeURIComponent(m)}" data-ma="${esc(m)}"><b>${esc(m)}</b></a> <span class="phu">${esc(ng)}</span></td>
       <td class="trai so"><span class="vach" style="width:${Math.round((p || 0) / mx * 80)}px"></span>${nf(p, 2)}%</td><td class="so">${nf(g, 1)} tỷ</td><td class="so ccp">${nf(kl, 0)}</td></tr>`).join("")
       || `<tr><td class="trai" colspan="4">Quỹ chưa công bố danh mục</td></tr>`}</tbody></table>
     <div class="phu">Tài sản: ${gon(q.tai_san)}</div><div class="phu">Ngành: ${gon((q.nganh || []).slice(0, 6))}</div>`;
@@ -979,7 +983,7 @@ function ve_tat() {
 // DỰ PHÒNG (10/11/2026 – Pages kẹt 10–20'/lượt, bảng đứng 50'): workflow đẩy riêng du_lieu.json lên nhánh du-lieu-nhanh mỗi
 // lượt → bản Pages cũ > 8' trong giờ giao dịch (hoặc lỗi) thì đọc bản đó qua raw.githubusercontent.com, lấy bản mới hơn.
 const URL_NHANH = /\.github\.io$/.test(location.hostname)
-  ? `https://raw.githubusercontent.com/${location.hostname.split(".")[0]}/${location.pathname.split("/")[1]}/du-lieu-nhanh/du_lieu.json` : null;
+  ? `https://raw.githubusercontent.com/${location.hostname.split(".")[0]}/canh-bao-mua/du-lieu-nhanh/du_lieu.json` : null;
 const lay_dl = async u => { const r = await fetch(u + "?t=" + Date.now(), {cache: "no-store"}); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
 const cu_dl = x => !x || (x.dang_gd && Date.now() - new Date(x.cap_nhat.replace(" ", "T") + "+07:00") > 8 * 60000);
 async function tai() {

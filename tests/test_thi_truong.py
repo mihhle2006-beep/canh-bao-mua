@@ -157,8 +157,10 @@ def test_workflow_bang_thi_truong_chi_lay_ma_dang_giu():
         for st in job.get("steps") or []:
             t = json.dumps(st, ensure_ascii=False)
             assert "danh-muc" not in str((st.get("with") or {}).get("repository", ""))
-            if "DANH_MUC" in t or "danh-muc" in t:
+            if ("DANH_MUC" in t or "danh-muc" in t) and "bang-thi-truong" not in t:
                 cham.append(st)
+            elif "DANH_MUC" in t:                                    # trang riêng: token chung chỉ để đẩy sang repo bang-thi-truong
+                assert "danh_muc" not in t and "contents/" not in t and "RUNNER_TEMP" not in t
     assert len(cham) == 1
     st = cham[0]
     assert st["if"] == "github.ref == 'refs/heads/main'" and "contents/danh_muc.csv" in st["run"]
@@ -234,7 +236,7 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     assert not re.search("[\U0001F300-\U0001FAFF\u2605\u2B50]", h)                     # không emoji / sticker
     assert "const esc = " in h and "const url = u => /^https?:" in h
     t = open("docs/thi_truong/index.html", encoding="utf-8").read()
-    assert 'href="../ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t
+    assert 'href="${GOC}ma/#${esc(r.ma)}"' in t and 'href="../ma/"' in t       # GOC: "../" (canh-bao-mua) | "/canh-bao-mua/" (trang riêng)
     assert re.search(r'<div class="tab" role="tablist">.*?<a href="\.\./ma/#bieu-do"[^>]*>Biểu đồ</a>\s*</div>', t, re.S)   # mục Biểu đồ riêng cạnh Tổng quan / Lọc mã
 
 

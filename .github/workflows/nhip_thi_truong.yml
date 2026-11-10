@@ -35,9 +35,18 @@ jobs:
           if [ "${KHAC:-0}" -gt 0 ]; then echo "Đã có máy nhịp khác đang chạy → thoát"; exit 0; fi
 
           phut() { local h m; h=$(TZ=Asia/Ho_Chi_Minh date +%H); m=$(TZ=Asia/Ho_Chi_Minh date +%M); echo $((10#$h * 60 + 10#$m)); }
+          # 10/11/2026: có trang riêng bang-thi-truong (Pages nhỏ) → 2' một lần, 2/3 lượt "chỉ bảng" (không triển khai Pages
+          # 95 MB của canh-bao-mua), 1/3 lượt đủ (Tra cứu mã: nến phút, bước giá). Chưa có repo riêng → 5' / lượt đủ như cũ.
+          RIENG=0; curl -sfo /dev/null "https://${GITHUB_REPOSITORY_OWNER}.github.io/bang-thi-truong/du_lieu.json" && RIENG=1   # trang riêng ĐÃ chạy
+          if [ "$RIENG" = 1 ]; then CHU_KY=120; else CHU_KY=300; fi
+          echo "Trang riêng: $RIENG · chu kỳ ${CHU_KY}s"
+          K=0
           goi() {
-            if curl -sf -X POST "${H[@]}" "$API/workflows/bang_thi_truong.yml/dispatches" -d '{"ref":"main"}'; then
-              echo "$(TZ=Asia/Ho_Chi_Minh date +%H:%M) đã gọi cập nhật"
+            local d='{"ref":"main"}' kieu="đủ"
+            if [ "$RIENG" = 1 ] && [ $((K % 3)) != 0 ] && [ "${1:-}" != du ]; then d='{"ref":"main","inputs":{"chi_bang":"true"}}'; kieu="chỉ bảng"; fi
+            K=$((K + 1))
+            if curl -sf -X POST "${H[@]}" "$API/workflows/bang_thi_truong.yml/dispatches" -d "$d"; then
+              echo "$(TZ=Asia/Ho_Chi_Minh date +%H:%M) đã gọi cập nhật ($kieu)"
             else echo "::warning::$(TZ=Asia/Ho_Chi_Minh date +%H:%M) gọi bang_thi_truong lỗi"; fi
           }
           if [ "$(phut)" -lt 695 ]; then HET=695; else HET=912; fi      # 11:35 | 15:12
@@ -45,7 +54,7 @@ jobs:
           while [ "$(phut)" -lt "$HET" ]; do
             P=$(phut)
             if { [ "$P" -ge 540 ] && [ "$P" -le 690 ]; } || { [ "$P" -ge 780 ] && [ "$P" -le 900 ]; }; then goi
-            elif [ "$P" -ge 905 ] && [ "$CHOT" = 0 ]; then goi; CHOT=1; fi     # chốt phiên (sau thoả thuận 15:00)
-            sleep $(( 300 - $(date +%s) % 300 + 5 ))                           # tới mốc 5' kế tiếp
+            elif [ "$P" -ge 905 ] && [ "$CHOT" = 0 ]; then goi du; CHOT=1; fi  # chốt phiên (sau thoả thuận 15:00) – lượt đủ
+            sleep $(( CHU_KY - $(date +%s) % CHU_KY + 5 ))                     # tới mốc kế tiếp (2' có trang riêng / 5')
           done
           echo "Hết buổi ($(TZ=Asia/Ho_Chi_Minh date +%H:%M))"

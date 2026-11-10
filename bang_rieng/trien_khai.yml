@@ -1,0 +1,36 @@
+# REPO bang-thi-truong – TRIỂN KHAI TRANG BẢNG THỊ TRƯỜNG (Pages riêng, nhỏ). Bản gốc lưu ở canh-bao-mua/bang_rieng/;
+# canh-bao-mua (bang_thi_truong.yml, job bang_rieng) đẩy index.html + du_lieu.json lên nhánh du-lieu rồi gọi workflow này.
+# Settings → Pages → Source: GitHub Actions.
+name: Trien khai
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true          # chỉ cần bản mới nhất
+
+jobs:
+  trien_khai:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.dp.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: du-lieu
+          path: _site
+          persist-credentials: false
+      - run: rm -rf _site/.git
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: dp
+        uses: actions/deploy-pages@v4

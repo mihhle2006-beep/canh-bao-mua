@@ -24,6 +24,10 @@ on:
         description: "(thử nghiệm) đẩy du_lieu.json về nhánh đang chạy"
         type: boolean
         default: false
+      chi_bang:
+        description: "Chỉ dựng bảng → trang riêng bang-thi-truong (bỏ nến phút / bước giá / triển khai Pages canh-bao-mua)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -120,7 +124,7 @@ jobs:
                echo "bat=0" >> "$GITHUB_OUTPUT"; fi
 
       - name: Lấy dữ liệu trang Tra cứu mã (workflow "Du lieu tra cuu" – cache mới nhất)
-        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
         uses: actions/cache/restore@v5
         with:
           path: docs/ma/du_lieu
@@ -130,7 +134,7 @@ jobs:
       # Nến 1' / 5' HÔM NAY cho trang Biểu đồ (trong giờ giao dịch, mỗi lần chạy): nối nến mới vào bản dựng sáng của "Du lieu tra cuu"
       # cho ~60 mã thanh khoản cao nhất + mã đang giữ + mã bot đang khuyến nghị / bộ lọc. Chỉ vào bản triển khai (không lưu cache).
       - name: Nến phút hôm nay (trang Biểu đồ)
-        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
         timeout-minutes: 4
         continue-on-error: true
         run: |
@@ -141,7 +145,7 @@ jobs:
           else echo "Ngoài giờ giao dịch – bỏ qua"; fi
 
       - name: Khớp theo bước giá hôm nay (trang Biểu đồ – Tự vẽ)
-        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
         timeout-minutes: 3
         continue-on-error: true
         run: |
@@ -152,7 +156,7 @@ jobs:
           else echo "Ngoài giờ giao dịch – bỏ qua"; fi
 
       - name: Gói trang
-        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
         run: |
           mkdir -p _site && cp -r docs/. _site/
           # mã bản = băm CODE từng trang (không đổi khi chỉ dữ liệu đổi) → trang đang mở tự tải lại khi có bản mới
@@ -160,16 +164,22 @@ jobs:
           sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _site/thi_truong/index.html
 
       - uses: actions/upload-pages-artifact@v3
-        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
         with:
           path: _site
 
-      - name: Dữ liệu nhanh (dự phòng khi Pages kẹt)
+      - name: Gói bảng riêng (trang + dữ liệu)
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p _bang && cp docs/thi_truong/du_lieu.json docs/thi_truong/index.html bang_rieng/trien_khai.yml _bang/
+          sed -i "s/__BAN__/$(sha1sum < docs/thi_truong/index.html | cut -c1-10)/" _bang/index.html
+
+      - name: Dữ liệu nhanh (dự phòng khi Pages kẹt) + trang riêng
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v6
         with:
           name: du-lieu-nhanh
-          path: docs/thi_truong/du_lieu.json
+          path: _bang
           retention-days: 1
 
   # 10/11/2026: Pages kẹt "syncing_files" 10–20' (lượt 5' xếp hàng, bị huỷ nối tiếp → bảng đứng 50') → mỗi lượt đẩy RIÊNG
@@ -202,9 +212,54 @@ jobs:
             commit -qm "Dữ liệu bảng thị trường $(date -u +%FT%TZ)"
           git push -qf "https://x-access-token:${TOKEN}@github.com/${REPO}.git" du-lieu-nhanh
 
-  trien_khai:
+  # 10/11/2026 chủ quỹ "tách repo": TRANG RIÊNG bang-thi-truong (Pages chỉ ~vài trăm KB – không kẹt theo 95 MB Tra cứu, cập
+  # nhật 2'): đẩy index.html + du_lieu.json lên nhánh du-lieu (1 commit ghi đè, không có file workflow → token không cần quyền
+  # Workflows) rồi gọi trien_khai.yml của repo đó (workflow_dispatch). Token DANH_MUC_TOKEN_GHI phải được cấp repo này
+  # (Contents + Actions + Workflows R/W); chưa cấp / chưa có repo → bỏ qua, không làm hỏng lượt. Repo còn trống (chưa có
+  # nhánh main) → lần đầu tự đẩy main = workflow trien_khai.yml (bản gốc canh-bao-mua/bang_rieng/).
+  bang_rieng:
     needs: dung
     if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    continue-on-error: true
+    concurrency:
+      group: bang-thi-truong-rieng
+      cancel-in-progress: true
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: du-lieu-nhanh
+          path: bang
+      - name: Đẩy trang bảng lên repo riêng + triển khai
+        env:
+          TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}
+          REPO: ${{ vars.BANG_REPO || format('{0}/bang-thi-truong', github.repository_owner) }}
+        run: |
+          H=(-H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json")
+          if ! curl -sf "${H[@]}" "https://api.github.com/repos/$REPO" > /dev/null; then
+            echo "::notice::Chưa có repo $REPO hoặc token chưa được cấp quyền → bỏ qua trang riêng"; exit 0; fi
+          cd bang
+          git init -q -b du-lieu
+          git add index.html du_lieu.json
+          git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Bảng thị trường $(date -u +%FT%TZ)"
+          U="https://x-access-token:${TOKEN}@github.com/${REPO}.git"
+          if [ -z "$(git ls-remote "$U" refs/heads/main)" ]; then            # repo mới: main (workflow) TRƯỚC – nhánh đầu = mặc định
+            mkdir -p ../main/.github/workflows && cp trien_khai.yml ../main/.github/workflows/
+            printf '# Bảng thị trường\nTrang riêng (GitHub Pages) – dữ liệu dựng ở canh-bao-mua, nhánh du-lieu ghi đè mỗi lượt.\n' > ../main/README.md
+            (cd ../main && git init -q -b main && git add -A \
+              && git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+                   commit -qm "Workflow triển khai Pages (từ canh-bao-mua/bang_rieng)" \
+              && git push -q "$U" main && echo "Đã tạo nhánh main + workflow triển khai")
+          fi
+          git push -qf "$U" du-lieu
+          curl -sf -X POST "${H[@]}" "https://api.github.com/repos/$REPO/actions/workflows/trien_khai.yml/dispatches" \
+            -d '{"ref":"main"}' && echo "Đã gọi triển khai $REPO"
+
+  trien_khai:
+    needs: dung
+    if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
     runs-on: ubuntu-24.04
     timeout-minutes: 25                # 05/11/2026: Pages chậm / kẹt > 10' (3 lần liền) – chờ tới 20' trước khi huỷ
     concurrency:
