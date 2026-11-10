@@ -422,7 +422,7 @@ dialog#pp::backdrop{background:#1d243066}
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../thi_truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
+  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../../bang-thi-truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
 </div></header>
 <main>
   <div id="noi-dung"><div class="trong">Đang tải dữ liệu…</div></div>
@@ -2621,7 +2621,7 @@ function hien_dau() {
   const o = (tieu, phu, ds, them = "") => ds.length ? `<section class="the o-dau"><div class="o-tieu"><h3>${tieu}</h3><span class="so-o">${ds.length}</span></div>
     ${phu ? `<p class="o-phu">${phu}</p>` : ""}<div class="nhom-chip">${ds.map(chip_pt).join("")}</div>${them}</section>` : "";
   const cs_dai = (MKT?.chi_so || []).filter(x => x.ma !== "VN30F1M").map(x => { const p = x.pt != null ? x.pt / 100 : null;
-    return `<a class="cs-o" href="../thi_truong/"><span class="n">${esc(x.ten)}</span><b>${so(x.gia, 2)}</b><span class="${mau(p)}">${x.td > 0 ? "+" : ""}${so(x.td, 2)} (${pt(p, 2)})</span></a>`; }).join("");
+    return `<a class="cs-o" href="../../bang-thi-truong/"><span class="n">${esc(x.ten)}</span><b>${so(x.gia, 2)}</b><span class="${mau(p)}">${x.td > 0 ? "+" : ""}${so(x.td, 2)} (${pt(p, 2)})</span></a>`; }).join("");
   const m = META.canslim?.m;
   let h = `<div class="dau-chinh"><h2>Tra cứu mã</h2><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
     placeholder="Nhập mã cổ phiếu – VD V, HPG" aria-label="Tìm mã cổ phiếu" maxlength="10" autocomplete="off"

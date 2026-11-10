@@ -329,7 +329,7 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
         muc.insert(0, ("danh-muc", "💼 Danh mục thật (riêng tư)", _khoi_rieng(giu)))
     nav = "".join(f'<a href="#{i}">{_e(t)}</a>' for i, t, _ in muc)
     if not giu:                                            # bản công khai (docs/) – cùng site Pages với bảng thị trường
-        nav += '<a href="thi_truong/">Bảng thị trường</a><a href="ma/">Tra cứu mã</a><a href="ma/#bieu-do">Biểu đồ</a>'
+        nav += '<a href="../bang-thi-truong/">Bảng thị trường</a><a href="ma/">Tra cứu mã</a><a href="ma/#bieu-do">Biểu đồ</a>'
     lop = {"danh-muc": ' class="rieng"'}
     than = "".join(f'<section id="{i}"{lop.get(i, "")}><h2>{_e(t)}</h2>{k}</section>' for i, t, k in muc)
     trang = (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
