@@ -1179,7 +1179,7 @@ function hop_bam(t) {
 }
 document.addEventListener("keydown", e => { if (!HOP) return; if (e.key === "Escape") hop_dong(); else if (e.key === "Enter" && HOP.contains(e.target) && e.target.matches("input:not([type=checkbox]):not([type=color])")) hop_ap(); });
 const menu_lai = () => document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = menu_cb(); });
-function cb_an(k) { CB.an = an_(k) ? CB.an.filter(z => z !== k) : [...CB.an, k]; return cb_doi(); }   // 👁 ẩn / hiện – giữ cài đặt
+function cb_an(k) { CB.an = an_(k) ? CB.an.filter(z => z !== k) : [...CB.an, k]; return cb_doi(); }   // nút ẩn / hiện – giữ cài đặt
 function cg_tat(k) {                                    // ✕ trên dòng chú giải: tắt cả chỉ báo đó
   if (k === "ma") ST.ma_tb = []; else if (k === "ema") ST.ema = []; else if (k === "dc") ST.dc = 0; else if (k === "ss") CB.ss = "";
   else if (k.startsWith("p:")) CB.duoi = CB.duoi.filter(z => z !== k.slice(2)); else CB[k] = false;
