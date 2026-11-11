@@ -33,6 +33,11 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
+          sparse-checkout: |              # bỏ kho BCTC + chiến lược DN (~585 MB / ~615 MB repo) – workflow này không đọc
+            /*
+            !/du_lieu/bctc/
+            !/du_lieu/chien_luoc_dn/
+          sparse-checkout-cone-mode: false
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
         working-directory: .
         run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv nhap*.txt trung_vang*.json
