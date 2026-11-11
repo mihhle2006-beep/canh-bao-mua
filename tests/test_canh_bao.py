@@ -446,6 +446,28 @@ def test_tu_dat_chi_luot_quet_that(monkeypatch):
     assert not chay._tu_dat(bg, False, "B", "VIX") and len(goi) == 1
 
 
+def test_gdkhq_khong_tu_dat_lenh_ban(monkeypatch):
+    """Ngày GDKHQ (vị thế vừa quy đổi theo hệ số sở): chạm cắt lỗ chỉ báo + nút, không tự gửi lệnh bán sang máy Mac."""
+    from canh_bao import vi_the as VT
+    dn = pd.DataFrame({"close": [10.0, 10.1]}, index=pd.bdate_range(end="2026-11-12", periods=2))
+    goi, tin = [], []
+    monkeypatch.setattr(chay, "tai", lambda *a, **k: dn)
+    monkeypatch.setattr(chay, "hom_nay_co_giao_dich", lambda *a: True)
+    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda *a: None)
+    monkeypatch.setattr(chay, "_tu_dat", lambda *a: goi.append(a) or True)
+    monkeypatch.setattr(chay, "gui", lambda nd, **k: tin.append(nd))
+    monkeypatch.setattr(VT, "can_bao_ban", lambda *a: True)
+    monkeypatch.setattr(VT, "tin_ban", lambda *a: "tin")
+    monkeypatch.setattr(VT, "doc_trang_thai_ban", lambda: {})
+    monkeypatch.setattr(C, "QUET_DANH_MUC_CU", False, raising=False)
+    monkeypatch.setattr(C, "GHI_NHAT_KY", False, raising=False)
+    for gdkhq, so_lan in ((0.77, 0), (None, 1)):
+        monkeypatch.setattr(VT, "danh_gia_ban", lambda *a, g=gdkhq: {"muc": "CAT_LO", "gdkhq": g, "he_thoat": False})
+        chay._canh_bao_ban(pd.Timestamp("2026-11-12 10:00"), {"AAA": {"ma": "AAA", "so_cp": 100}}, False)
+        assert len(goi) == so_lan
+    assert len(tin) == 2
+
+
 def test_tin_thu_nut_chi_ngoai_gio(monkeypatch):
     from datetime import datetime
     from canh_bao import tin_thu_nut as TN

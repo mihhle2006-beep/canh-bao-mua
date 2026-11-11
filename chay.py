@@ -504,7 +504,7 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
                 f"{ma} – {vi_the.NHAN.get(kb['muc'], kb['muc'])} @ {bieu_do_moc._f(gia)}", gia_nay=gia,
                 ngay_mua=v.get("ngay_mua") or None) if kb.get("he_thoat") else None
             nut = [[(f"🛑 Bán hết {ma} (giá khớp −2 %)", f"dl|B|{ma}")]] if kb["muc"] in vi_the.BAN_ATO else None
-            if kb["muc"] == "CAT_LO" and _tu_dat(bay_gio, khong_gui, "B", ma):
+            if kb["muc"] == "CAT_LO" and not kb.get("gdkhq") and _tu_dat(bay_gio, khong_gui, "B", ma):   # GDKHQ: chỉ báo
                 nd, nut = nd + f"\n🤖 Đã gửi máy Mac lệnh BÁN HẾT {ma} (lô chẵn + lẻ, giá khớp −2 %){DUYET}", None
             gui(nd, rieng_tu=True, anh=anh, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
             if anh and os.path.exists(anh):
