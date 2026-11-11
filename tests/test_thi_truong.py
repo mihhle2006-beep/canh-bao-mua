@@ -364,6 +364,7 @@ def test_tra_cuu_dn_nguon(monkeypatch):
     def khong_mang(*a, **k):
         raise ValueError("không gọi mạng trong test")
     monkeypatch.setattr(T.nguon, "_phien", lambda: type("S", (), {"get": khong_mang})())
+    monkeypatch.setattr(T, "VAN_IQ", T.CauDao(moi_giay=1e6, nghi=0))   # IQ lỗi liên tiếp → cầu dao thật nghỉ 90 giây
     kb = T.ho_so_kbs("TCB")
     assert kb["thanh_lap"] == "06/08/1993" and kb["gia_chao_san"] == 128000 and kb["nganh_nghe"] == "- A"
     assert kb["cong_ty"][0] == {"ten": "Con", "so_huu": 79.8, "von": None, "ngay": "2025-12-31", "ghi_chu": ""}
