@@ -160,6 +160,8 @@ def test_xoay_may_giu_khoang_va_mo_tu_man_hinh_chinh():
     assert '<link rel="apple-touch-icon" href="icon-180.png">' in h
     m = json.load(open("docs/ma/manifest.webmanifest", encoding="utf-8"))
     assert m["display"] == "standalone" and m["start_url"] == "./#bieu-do" and m["scope"] == "../"
+    b = json.load(open("trang_bang/manifest.webmanifest", encoding="utf-8"))
+    assert b["start_url"] == "./" and b["scope"] == "/"     # app Bảng thị trường (Dock / màn hình chính): bấm Biểu đồ / mã không bật ra trình duyệt
     for f in ("icon-180.png", "icon-192.png", "icon-512.png"):
         assert open("docs/ma/" + f, "rb").read(8) == b"\x89PNG\r\n\x1a\n"
 

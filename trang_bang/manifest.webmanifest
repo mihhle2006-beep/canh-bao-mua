@@ -2,7 +2,7 @@
  "name": "Bảng thị trường",
  "short_name": "Thị trường",
  "start_url": "./",
- "scope": "./",
+ "scope": "/",
  "display": "standalone",
  "orientation": "any",
  "background_color": "#ffffff",
