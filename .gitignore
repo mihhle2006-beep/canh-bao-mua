@@ -19,3 +19,4 @@ docs/ma/du_lieu/
 
 # trạng thái bot khi chạy trên máy / test (actions/cache lưu riêng – không commit)
 cache_ptcp/
+cache_gia/
