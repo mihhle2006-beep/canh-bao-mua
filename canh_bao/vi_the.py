@@ -16,8 +16,6 @@ HỆ THOÁT (tính lại mỗi lần chạy từ ngày mua – chỉ dùng phiê
   lãi ≥ 2R  KHUNG TUẦN: bán khi đóng cửa tuần < MA10 tuần; sàn khoá lãi 1R (C.NGUONG_KHUNG_TUAN_R)
   63 phiên mà lãi < 1R → lệnh không chạy. KHÔNG chốt lời ở mục tiêu cố định.
   Cắt lỗ hiệu lực = mức CAO HƠN giữa hệ thống và cat_lo_dat đã đặt trong danh mục.
-  Hệ thống (giả lập) giữ CÙNG mã (cột he_gia_mua / he_ngay_mua / he_cat_lo_goc do bot danh-muc ghi) → hệ thoát tính từ
-  giá mua, ngày mua, cắt lỗ gốc CỦA HỆ THỐNG (đúng cắt lỗ giả lập), không từ giá vốn thật.
 
 Mức cảnh báo (ưu tiên từ trên xuống):
   CAT_LO     giá ≤ cắt lỗ hiệu lực
@@ -222,9 +220,6 @@ def phan_tich_csv(noi_dung):
                    "so_lan_mua_them": _so(r.get("so_lan_mua_them")) or 0,
                    "ban_ato": _ngay(r.get("ban_ato")),                               # tuỳ chọn: bán ATO phiên này
                    "cap_nhat": _ngay(r.get("cap_nhat"))}                             # ngày bot danh-muc ghi (quy đổi quyền)
-        he = (_so(r.get("he_gia_mua")), str(r.get("he_ngay_mua", "")).strip(), _so(r.get("he_cat_lo_goc")))
-        if he[0] and he[1] and he[2] and he[2] < he[0]:     # bot danh-muc ghi: hệ thống (giả lập) giữ cùng mã
-            out[ma]["he"] = {"gia_mua": he[0], "ngay_mua": he[1], "cat_lo_goc": he[2]}
     return out
 
 
@@ -264,17 +259,6 @@ def _he_thoat(vt, dn, bay_gio):
         return None
     try:
         gv, nm, clg = float(vt["gia_von"]), _ngay(vt.get("ngay_mua")), vt.get("cat_lo_goc")
-        he = vt.get("he")
-        if he and _ngay(he.get("ngay_mua")) is not None:   # hệ thống giữ cùng mã → ĐÚNG hệ thoát của vị thế hệ thống
-            gv, nm, clg = float(he["gia_mua"]), _ngay(he["ngay_mua"]), float(he["cat_lo_goc"])   # (như giả lập)
-            ht = theo_doi_vi_the(tinh_chi_bao(d[["open", "high", "low", "close", "volume"]]), gv, nm, clg,
-                                 C.NGUONG_KHUNG_TUAN_R)
-            nm_that = _ngay(vt.get("ngay_mua"))             # T+2 theo ngày mua THẬT của tài khoản
-            if nm_that is not None:
-                from ptcp.cau_hinh import T_CONG
-                ht["ban_duoc"] = int((d.index.normalize() >= nm_that.normalize()).sum()) >= T_CONG
-            ht["gia_tham_chieu"] = gv
-            return ht
         if nm is not None:          # VỊ THẾ CŨ (như ptcp.theo_chien_luoc): giá vốn ngoài biên giá phiên "ngày mua" (mua từ
             j = min(int(d.index.searchsorted(pd.Timestamp(nm).normalize())), len(d) - 1)   # lâu) → theo dõi từ giá
             if not d.low.iloc[j] * 0.98 <= gv <= d.high.iloc[j] * 1.02:                    # đóng cửa phiên đó, không neo
@@ -342,8 +326,6 @@ def quy_doi_gdkhq(vt, bay_gio, dn=None):
     if not f or not 0.2 < f < 5:
         return vt, None
     moi = {**vt, **{k: vt[k] * f for k in _GIA_VT if isinstance(vt.get(k), (int, float)) and vt[k] == vt[k]}}
-    if vt.get("he"):
-        moi["he"] = {**vt["he"], "gia_mua": vt["he"]["gia_mua"] * f, "cat_lo_goc": vt["he"]["cat_lo_goc"] * f}
     return moi, f
 
 
