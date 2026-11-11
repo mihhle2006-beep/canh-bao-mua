@@ -16,3 +16,6 @@ docs/thi_truong/du_lieu.json
 docs/thi_truong/quy_ls.json
 cache_thi_truong/
 docs/ma/du_lieu/
+
+# trạng thái bot khi chạy trên máy / test (actions/cache lưu riêng – không commit)
+cache_ptcp/
