@@ -652,7 +652,7 @@ def test_nhac_lenh_ato_truoc_gio_mo_cua(monkeypatch, tmp_path):
     kb = {"AAA": {"muc": "GIU", "gia": 51.0, "ly_do": [], "ghi_chu": []},
           "BBB": {"muc": "BAN_TUAN", "gia": 25.0, "ly_do": ["đóng cửa tuần < MA10 tuần"], "ghi_chu": []}}
     monkeypatch.setattr(chay, "tai", lambda ma, *a, **k: _gia_dai(ma))
-    monkeypatch.setattr(vi_the, "_danh_gia_ban", lambda v, kq, dn=None, bay_gio=None: dict(kb[v["ma"]]))
+    monkeypatch.setattr(vi_the, "_danh_gia_ban", lambda v, kq, dn=None, bay_gio=None, f=None: dict(kb[v["ma"]]))
     monkeypatch.setattr(vi_the, "FILE_TRANG_THAI_BAN", str(tmp_path / "tt.json"))
     monkeypatch.setattr(vi_the.doc_trang_thai_ban, "__defaults__", (str(tmp_path / "tt.json"),))
     monkeypatch.setattr(vi_the.ghi_trang_thai_ban, "__defaults__", (str(tmp_path / "tt.json"),))

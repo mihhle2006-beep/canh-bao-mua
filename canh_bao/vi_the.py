@@ -220,7 +220,8 @@ def phan_tich_csv(noi_dung):
                    "ngay_mua": str(r.get("ngay_mua", "")).strip(),
                    "ngay_mua_them": str(r.get("ngay_mua_them", "")).strip(),          # tuỳ chọn
                    "so_lan_mua_them": _so(r.get("so_lan_mua_them")) or 0,
-                   "ban_ato": _ngay(r.get("ban_ato"))}                               # tuỳ chọn: bán ATO phiên này
+                   "ban_ato": _ngay(r.get("ban_ato")),                               # tuỳ chọn: bán ATO phiên này
+                   "cap_nhat": _ngay(r.get("cap_nhat"))}                             # ngày bot danh-muc ghi (quy đổi quyền)
         he = (_so(r.get("he_gia_mua")), str(r.get("he_ngay_mua", "")).strip(), _so(r.get("he_cat_lo_goc")))
         if he[0] and he[1] and he[2] and he[2] < he[0]:     # bot danh-muc ghi: hệ thống (giả lập) giữ cùng mã
             out[ma]["he"] = {"gia_mua": he[0], "ngay_mua": he[1], "cat_lo_goc": he[2]}
@@ -316,18 +317,53 @@ def _danh_gia_bat_day(vt, gia, bd):
             "ngay_lenh": bd.get("ngay_lenh"), "he_thoat": False}
 
 
+_GIA_VT = ("gia_von", "cat_lo", "cat_lo_goc", "muc_tieu")
+
+
+def quy_doi_gdkhq(vt, bay_gio, dn=None):
+    """NGÀY GDKHQ (cổ tức tiền / CP, thưởng, tách, quyền mua) của mã đang giữ mà danh_muc.csv CHƯA quy đổi (cột cap_nhat
+    trước hôm nay – bot danh-muc chỉ quy đổi lúc 15:02 sau khi sự kiện đã qua) → giá thị trường hôm nay đã giảm theo
+    tỷ lệ còn giá vốn / cắt lỗ vẫn thang cũ → báo CHẠM CẮT LỖ GIẢ. Nhân mọi mức giá của vị thế với hệ số SỞ (giá tham
+    chiếu hôm nay ÷ giá cơ sở phiên trước – diem_vao._he_so_lich, như vùng mua của tin MUA). → (vị thế, hệ số | None)."""
+    ma = vt.get("ma")
+    if not ma or bay_gio is None:
+        return vt, None
+    h = pd.Timestamp(bay_gio).normalize()
+    cn = vt.get("cap_nhat")
+    if cn is not None and pd.Timestamp(cn).normalize() >= h:     # bot danh-muc đã chạy hôm nay (đã quy đổi)
+        return vt, None
+    d = _phien_da_dong(dn, bay_gio)
+    g = float(d.close.iloc[-1]) if d is not None and len(d) else vt.get("gia_von")
+    try:
+        from .diem_vao import _he_so_lich
+        f = _he_so_lich(ma, g, bay_gio) if g else None
+    except Exception:                                            # noqa: BLE001 – không có lịch / bảng giá
+        f = None
+    if not f or not 0.2 < f < 5:
+        return vt, None
+    moi = {**vt, **{k: vt[k] * f for k in _GIA_VT if isinstance(vt.get(k), (int, float)) and vt[k] == vt[k]}}
+    if vt.get("he"):
+        moi["he"] = {**vt["he"], "gia_mua": vt["he"]["gia_mua"] * f, "cat_lo_goc": vt["he"]["cat_lo_goc"] * f}
+    return moi, f
+
+
 def danh_gia_ban(vt, kq, dn=None, bay_gio=None):
     """vt: vị thế; kq: kết quả phan_tich_ma của mã (giá, khung, ptcp); dn: giá ngày. → dict mức, lý do, số liệu.
     Mã hệ bắt đáy (bat_day_cua) → theo lệnh của hệ, không theo hệ thoát B. Cột ban_ato của danh_muc.csv (người dùng
     muốn bán) → BAN_YEU_CAU: bán ATO phiên đó, chưa bán được thì bán ngay – số liệu hệ thoát giữ nguyên."""
-    kb = _danh_gia_ban(vt, kq, dn, bay_gio)
+    vt, f = quy_doi_gdkhq(vt, bay_gio, dn)
+    kb = _danh_gia_ban(vt, kq, dn, bay_gio, f)
+    if f:
+        kb = {**kb, "gdkhq": f, "ghi_chu": kb.get("ghi_chu", []) + [
+            f"ngày GDKHQ: giá vốn / cắt lỗ trong danh mục đã quy đổi × {f:.3f} theo giá tham chiếu sở (bot danh-muc ghi "
+            "lại lúc 15:02) – bot KHÔNG tự đặt lệnh hôm nay, kiểm tra rồi bấm nút"]}
     ngay = vt.get("ban_ato")
     if ngay is None or kb.get("gia") is None or kb["gia"] != kb["gia"]:
         return kb
     return {**kb, "muc": "BAN_YEU_CAU", "ngay_lenh": ngay, "ly_do": [f"bạn yêu cầu bán – lệnh ATO phiên {ngay:%d/%m}"]}
 
 
-def _danh_gia_ban(vt, kq, dn=None, bay_gio=None):
+def _danh_gia_ban(vt, kq, dn=None, bay_gio=None, f_gdkhq=None):
     gia = kq.get("gia")
     if gia is None or gia != gia:
         return {"muc": "GIU", "ly_do": ["không có giá"], "gia": np.nan, "lai_lo_pct": np.nan, "cat_lo": None,
@@ -340,6 +376,8 @@ def _danh_gia_ban(vt, kq, dn=None, bay_gio=None):
         return _danh_gia_ban_cu(vt, kq, dn)
     gv, lo_dat = vt["gia_von"], vt.get("cat_lo")
     cl_he = ht["cat_lo"]
+    if f_gdkhq and lo_dat:              # ngày GDKHQ: chuỗi ngày có thể chưa điều chỉnh (thang cũ) → dùng cắt lỗ đã đặt
+        cl_he = lo_dat                  # cho hôm nay (bot danh-muc tính tới đóng cửa hôm qua) đã quy đổi
     lo = max(cl_he, lo_dat) if lo_dat else cl_he
     theo = ht["nguon_cat_lo"] if not lo_dat or cl_he >= lo_dat else "cắt lỗ đã đặt"
     lai = (gia / gv - 1) * 100

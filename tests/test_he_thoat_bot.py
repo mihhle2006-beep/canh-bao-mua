@@ -230,3 +230,27 @@ def test_doc_cot_vi_the_he_thong():
     out = vi_the.phan_tich_csv(csv)
     assert out["AAA"]["he"] == {"gia_mua": 19.8, "ngay_mua": "30/09/2026", "cat_lo_goc": 18.5}
     assert "he" not in out["BBB"] and "he" not in out["CCC"]          # trống / cắt lỗ gốc ≥ giá mua → bỏ
+
+
+def test_ngay_gdkhq_quy_doi_vi_the(monkeypatch):
+    """Ngày GDKHQ mà danh_muc.csv chưa quy đổi (cap_nhat hôm qua): giá hôm nay đã chia theo tỷ lệ → giá vốn / cắt lỗ
+    nhân hệ số sở, không báo chạm cắt lỗ giả, không tự đặt lệnh; danh mục đã chạy hôm nay → không quy đổi lần nữa."""
+    from canh_bao import diem_vao
+    dn = _nen(sau=[0.002] * 10)
+    vt = _vt(dn, -8)
+    gv = vt["gia_von"]
+    vt.update(cat_lo=gv * 0.97, cat_lo_goc=gv * 0.93, cap_nhat=dn.index[-1])
+    hom_nay = dn.index[-1] + pd.offsets.BDay(1)
+    bg = hom_nay + pd.Timedelta(hours=10)
+    f = 1 / 1.3                                                   # chia 1 : 1,3
+    monkeypatch.setattr(diem_vao, "_he_so_lich", lambda ma, g, t: f)
+    gia = float(dn.close.iloc[-1]) * f * 1.01                     # giá thị trường (thang mới) nhích nhẹ
+    cu = vi_the.danh_gia_ban({**vt, "cap_nhat": hom_nay}, {"gia": gia}, dn, bg)
+    assert cu["muc"] == "CAT_LO" and not cu.get("gdkhq")          # đã quy đổi (cap_nhat hôm nay) – không đổi thêm
+    kb = vi_the.danh_gia_ban(vt, {"gia": gia}, dn, bg)
+    assert kb["gdkhq"] == pytest.approx(f) and kb["muc"] != "CAT_LO"
+    assert kb["cat_lo"] == pytest.approx(vt["cat_lo"] * f) and "GDKHQ" in " ".join(kb["ghi_chu"])
+    thung = vi_the.danh_gia_ban(vt, {"gia": vt["cat_lo"] * f * 0.99}, dn, bg)
+    assert thung["muc"] == "CAT_LO" and thung["gdkhq"]           # thủng thật (thang mới) vẫn báo
+    monkeypatch.setattr(diem_vao, "_he_so_lich", lambda ma, g, t: None)
+    assert vi_the.quy_doi_gdkhq(vt, bg, dn) == (vt, None)         # không có sự kiện → giữ nguyên
