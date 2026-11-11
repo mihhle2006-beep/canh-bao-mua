@@ -459,6 +459,7 @@ def test_gdkhq_khong_tu_dat_lenh_ban(monkeypatch):
     monkeypatch.setattr(VT, "can_bao_ban", lambda *a: True)
     monkeypatch.setattr(VT, "tin_ban", lambda *a: "tin")
     monkeypatch.setattr(VT, "doc_trang_thai_ban", lambda: {})
+    monkeypatch.setattr(VT, "ghi_trang_thai_ban", lambda *a, **k: None)          # không ghi cache_ptcp/ trong repo
     monkeypatch.setattr(C, "QUET_DANH_MUC_CU", False, raising=False)
     monkeypatch.setattr(C, "GHI_NHAT_KY", False, raising=False)
     for gdkhq, so_lan in ((0.77, 0), (None, 1)):
