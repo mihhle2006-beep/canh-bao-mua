@@ -88,9 +88,10 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
-          sparse-checkout: |              # bỏ kho BCTC + chiến lược DN (~585 MB / ~615 MB repo) – workflow này không đọc
+          sparse-checkout: |              # bỏ kho BCTC + chiến lược DN (~585 MB / ~615 MB repo); giữ HPG.json – test_dinh_gia đọc file thật
             /*
-            !/du_lieu/bctc/
+            !/du_lieu/bctc/*
+            /du_lieu/bctc/HPG.json
             !/du_lieu/chien_luoc_dn/
           sparse-checkout-cone-mode: false
 
