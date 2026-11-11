@@ -11,16 +11,6 @@
    "dat_gan_nhat": "2026-11-10",
    "loc_gan_nhat": "2026-11-09"
   },
-  "DIG": {
-   "ngay_them": "2026-10-27",
-   "het_han": "2026-11-10",
-   "chien_luoc": [
-    "quy_b"
-   ],
-   "dat_mua": "2026-10-27",
-   "dat_gan_nhat": "2026-11-04",
-   "loc_gan_nhat": "2026-11-04"
-  },
   "NLG": {
    "ngay_them": "2026-10-28",
    "het_han": "2026-11-16",
@@ -33,33 +23,33 @@
   },
   "HHV": {
    "ngay_them": "2026-11-04",
-   "het_han": "2026-11-16",
+   "het_han": "2026-11-17",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-04",
-   "dat_gan_nhat": "2026-11-10",
-   "loc_gan_nhat": "2026-11-10"
+   "dat_gan_nhat": "2026-11-11",
+   "loc_gan_nhat": "2026-11-11"
   },
   "HSG": {
    "ngay_them": "2026-11-04",
-   "het_han": "2026-11-16",
+   "het_han": "2026-11-17",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-04",
-   "dat_gan_nhat": "2026-11-10",
-   "loc_gan_nhat": "2026-11-10"
+   "dat_gan_nhat": "2026-11-11",
+   "loc_gan_nhat": "2026-11-11"
   },
   "KBC": {
    "ngay_them": "2026-11-04",
-   "het_han": "2026-11-16",
+   "het_han": "2026-11-17",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-04",
-   "dat_gan_nhat": "2026-11-10",
-   "loc_gan_nhat": "2026-11-10"
+   "dat_gan_nhat": "2026-11-11",
+   "loc_gan_nhat": "2026-11-11"
   },
   "VCK": {
    "ngay_them": "2026-11-04",
@@ -120,13 +110,13 @@
   },
   "DBC": {
    "ngay_them": "2026-11-09",
-   "het_han": "2026-11-16",
+   "het_han": "2026-11-17",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-09",
-   "dat_gan_nhat": "2026-11-10",
-   "loc_gan_nhat": "2026-11-10"
+   "dat_gan_nhat": "2026-11-11",
+   "loc_gan_nhat": "2026-11-11"
   },
   "HUT": {
    "ngay_them": "2026-11-09",
@@ -136,7 +126,51 @@
    ],
    "dat_mua": "2026-11-09",
    "dat_gan_nhat": "2026-11-10"
+  },
+  "ANV": {
+   "ngay_them": "2026-11-11",
+   "het_han": "2026-11-17",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": null
+  },
+  "FRT": {
+   "ngay_them": "2026-11-11",
+   "het_han": "2026-11-17",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": "2026-11-11",
+   "dat_gan_nhat": "2026-11-11"
+  },
+  "IDC": {
+   "ngay_them": "2026-11-11",
+   "het_han": "2026-11-17",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": "2026-11-11",
+   "dat_gan_nhat": "2026-11-11"
+  },
+  "TPB": {
+   "ngay_them": "2026-11-11",
+   "het_han": "2026-11-17",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": "2026-11-11",
+   "dat_gan_nhat": "2026-11-11"
+  },
+  "VCG": {
+   "ngay_them": "2026-11-11",
+   "het_han": "2026-11-17",
+   "chien_luoc": [
+    "quy_b"
+   ],
+   "dat_mua": "2026-11-11",
+   "dat_gan_nhat": "2026-11-11"
   }
  },
- "ngay_quet_da_nhan": "2026-11-10 15:04"
+ "ngay_quet_da_nhan": "2026-11-11 15:03"
 }
