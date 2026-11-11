@@ -291,3 +291,49 @@ def test_macd_tuan_tren_khung_ngay_khop_bot():
         assert abs(kq["m"][i] - m2.iloc[-1]) < 1e-9 and abs(kq["s"][i] - s2.iloc[-1]) < 1e-9
         assert abs(kq["h"][i] - (m2.iloc[-1] - s2.iloc[-1])) < 1e-9
     assert sum(kq["dat"][i] != kq["dat"][i - 1] for i in range(tu + 1, len(c))) >= 2   # có đổi trạng thái để kiểm
+
+
+def test_do_trung_toan_lich_su_khop_non_du_bao_va_ket_tran_san():
+    """non_do_trung (lùi TOÀN lịch sử, chỉ tính tầm H cho nhanh) cho ĐÚNG nón như dựng lại non_du_bao trên c[:t+1] ở từng mốc
+    (kết hợp / phân vị / σ, có kẹp biên độ); số quãng độc lập = đoạn H nến không chồng; non_kep: không vượt (1 ± biên độ)^phiên."""
+    r = np.random.default_rng(8)
+    sig = 0.02 * np.exp(np.cumsum(r.normal(0, 0.04, 900)) * 0.3)
+    c = list(np.round(20 * np.exp(np.cumsum(r.standard_t(4, 900) * sig / np.sqrt(2))), 4))
+    kq = _js(f"const c = {json.dumps(c)};\n" + r"""
+      const out = {};
+      for (const [ten, kieu, cg, H, L, Ls, kep] of [["kh5", "ls", NON_CG.D, 5, 750, 60, {lim: 0.07, phien: 1}], ["kh20", "ls", NON_CG.D, 20, 750, 60, null],
+          ["tuan", "ls", NON_CG.W, 4, 260, 26, {lim: 0.1, phien: 5}], ["ls", "ls", null, 20, 750, 60, null], ["sg", "sigma", null, 5, 750, 60, {lim: 0.07, phien: 1}]]) {
+        const nh = non_do_trung(c, H, kieu, L, Ls, cg, kep, 250);
+        let n = 0; const trong = [0, 0, 0];                         // dựng lại non_du_bao từng mốc (cách chậm)
+        for (let t = 250; t + H < c.length; t += Math.max(1, Math.ceil(H / 4), Math.ceil((c.length - H - 250) / 600))) {
+          let k = non_du_bao(c.slice(0, t + 1), H, kieu, L, Ls, cg); if (!k) continue;
+          if (kep) k = {...k, q: non_kep(k.q, kep.lim, kep.phien)};
+          const x = c[t + H] / c[t]; n++;
+          [[2, 4], [1, 5], [0, 6]].forEach(([a, b], j) => { if (x >= k.q[a][H] * (1 - 1e-12) && x <= k.q[b][H] * (1 + 1e-12)) trong[j]++; });
+        }
+        out[ten] = {nh, cham: {n, p: trong.map(v => v / n)}};
+      }
+      const q = non_du_bao(c, 5, "ls", 750, 60, NON_CG.D).q, kq_ = non_kep(q.map(a => a.map(v => v * 1.5)), 0.07, 1);
+      out.kep = kq_.every(a => a.every((v, h) => v <= Math.pow(1.07, h) + 1e-12 && v >= Math.pow(0.93, h) - 1e-12));
+      out.bd = [NON_BD("HSX"), NON_BD("HNX"), NON_BD("UPCOM"), NON_BD("")];
+      console.log(JSON.stringify(out));""")
+    for ten in ("kh5", "kh20", "tuan", "ls", "sg"):
+        nh, cham = kq[ten]["nh"], kq[ten]["cham"]
+        assert nh["n"] == cham["n"], ten
+        assert all(abs(a - b) < 1e-9 for a, b in zip(nh["p"], cham["p"])), (ten, nh["p"], cham["p"])
+    H = {"kh5": 5, "kh20": 20, "tuan": 4, "ls": 20, "sg": 5}
+    for ten, z in kq.items():
+        if ten in H:
+            nh = z["nh"]
+            assert 0 < nh["doc_lap"] <= nh["n"]
+            assert all(abs(s - 1.96 * np.sqrt(p * (1 - p) / nh["doc_lap"])) < 1e-9 for p, s in zip(nh["p"], nh["sai"]))
+    assert kq["kep"] is True and kq["bd"] == [0.07, 0.10, 0.15, 0.07]
+
+
+def test_chuan_do_trung_du_khung_tam():
+    """NON_CHUAN (đo trên mọi mã HOSE / HNX / UPCoM) có đủ tầm mà trang dùng: ngày 5/20/60 · tuần round(h/5) · tháng round(h/21)."""
+    kq = _js("console.log(JSON.stringify(NON_CHUAN));")
+    for kh, tam in (("D", (5, 20, 60)), ("W", (1, 4, 12)), ("M", (1, 3))):
+        for H in tam:
+            for z in kq[kh][str(H)]:
+                assert len(z) == 4 and 0.4 < z[0] < z[1] < z[2] < 1 and z[3] > 300

@@ -831,6 +831,11 @@ function cb_mfi(h, l, c, v, n) {
 // NÓN DỰ BÁO: giá có thể ở đâu sau 1…H nến, theo phân vị lịch sử của chính mã (đã bỏ xu hướng tăng / giảm của quá khứ –
 // trung vị = giá hiện tại) hoặc theo biến động σ L nến gần nhất (loe theo √thời gian). Thống kê, không dự đoán lên / xuống.
 const NON_P = [0.025, 0.1, 0.25, 0.5, 0.75, 0.9, 0.975], NON_Z = [-1.959964, -1.281552, -0.67449, 0, 0.67449, 1.281552, 1.959964];
+// CHUẨN ĐỘ TRÚNG: nón web (kết hợp + kẹp biên độ) đo trên MỌI mã HOSE / HNX / UPCoM đủ ≥ 1 năm dữ liệu (danh-muc ptcp/bt_non.do_web,
+// KET_LUAN "non lượt 3") → {khung: {tầm: [[p50, p80, p95, số mã] mã giao dịch đều, [… ] mã ít giao dịch]}}
+const NON_CHUAN = {D: {5: [[.55, .81, .94, 393], [.64, .85, .95, 1086]], 20: [[.54, .81, .93, 393], [.63, .85, .94, 1086]], 60: [[.52, .79, .91, 393], [.62, .84, .93, 1086]]},
+  W: {1: [[.55, .81, .94, 393], [.61, .82, .94, 1086]], 4: [[.53, .80, .93, 393], [.60, .83, .94, 1086]], 12: [[.52, .79, .92, 393], [.60, .83, .93, 1086]]},
+  M: {1: [[.53, .80, .92, 385], [.56, .80, .92, 1073]], 3: [[.52, .78, .91, 385], [.56, .81, .92, 1073]]}};
 const phan_vi = (s, p) => { if (!s.length) return null; const t = (s.length - 1) * p, i = Math.floor(t); return s[i] + (s[Math.min(i + 1, s.length - 1)] - s[i]) * (t - i); };
 // NÓN "KẾT HỢP" (10/11/2026 – danh-muc KET_LUAN "non", đo 318 mã HOSE + HNX từ 2012, chọn ≤ 2020 kiểm ≥ 2021): phân vị lịch
 // sử thuần quá rộng lúc mã lặng (dải 80 % trúng 83–89 %), quá hẹp lúc mã biến động mạnh (65–71 %). ① co giãn: lãi quá khứ chia
@@ -870,16 +875,55 @@ function non_du_bao(c, H, kieu = "ls", L = 750, Ls = 60, cg = null) {   // cg = 
   if (sd == null) return null;
   return {kieu: "sigma", so_mau: r1.length, sd, thay: kieu === "ls", q: NON_Z.map(z => Array.from({length: H + 1}, (_, h) => Math.exp(z * sd * Math.sqrt(h))))};
 }
-function non_do_trung(c, H, kieu, L, Ls, cg = null, so_moc = 60) {  // tại ~60 mốc trong L nến trước H nến cuối: dựng nón CHỈ bằng dữ liệu tới mốc → % lần giá sau H nến nằm trong dải 50 / 80 / 95%
-  const N = c.length, cuoi = N - 1 - H, dau = Math.max(Math.min(cuoi, 120), cuoi - L), buoc = Math.max(1, Math.round((cuoi - dau) / so_moc));
-  const trong = [0, 0, 0]; let n = 0;
-  for (let t = cuoi; t >= dau; t -= buoc) {
-    if (!(c[t] > 0) || !(c[t + H] > 0)) continue;
-    const k = non_du_bao(c.slice(0, t + 1), H, kieu, L, Ls, cg); if (!k) continue;
-    const r = c[t + H] / c[t]; n++;
-    [[2, 4], [1, 5], [0, 6]].forEach(([a, b], j) => { if (r >= k.q[a][H] && r <= k.q[b][H]) trong[j]++; });
+const NON_BD = san => /UPCOM/i.test(san) ? 0.15 : /HNX/i.test(san) ? 0.10 : 0.07;   // biên độ trần / sàn mỗi phiên theo sàn
+const NON_PHIEN = {D: 1, W: 5, M: 21};                  // số phiên mỗi nến (kẹp biên độ khung tuần / tháng)
+function non_kep(q, lim, phien) {                       // kẹp nón vào vùng giá CÓ THỂ chạm: sau h nến tối đa (1 ± biên độ)^(số phiên)
+  if (!lim) return q;
+  const a = Math.log(1 - lim) * phien, b = Math.log(1 + lim) * phien;
+  return q.map(dg => dg.map((v, h) => Math.min(Math.exp(b * h), Math.max(Math.exp(a * h), v))));
+}
+function non_do_trung(c, H, kieu, L, Ls, cg = null, kep = null, t_dau = 250) {
+  // ĐỘ TRÚNG TRÊN TOÀN LỊCH SỬ MÃ: mốc t (từ nến t_dau, mỗi ⌈H/4⌉ nến) dựng nón tầm H CHỈ bằng dữ liệu ≤ t – y hệt non_du_bao
+  // (chỉ tính đúng tầm H cho nhanh) + kẹp biên độ như nón đang vẽ → % lần giá H nến sau nằm trong dải 50 / 80 / 95%. Các mốc
+  // chồng nhau nên số quãng ĐỘC LẬP = số đoạn H nến không chồng → sai số ±1,96·√(p(1−p) / số quãng). kep = {lim, phien} | null.
+  const N = c.length, ln = c.map(v => v > 0 ? Math.log(v) : null);
+  if (N < t_dau + H + 1) return null;
+  const r = ln.map((v, i) => i && v != null && ln[i - 1] != null ? v - ln[i - 1] : 0);
+  let sg = null, cs = null;
+  if (cg) {                                             // EWMA như non_ty_so (dãy tới mốc t = đoạn đầu của dãy đủ)
+    sg = new Array(N); let m = 0; for (let i = 1; i <= 20; i++) m += r[i] / 20;
+    let v = 0; for (let i = 1; i <= 20; i++) v += (r[i] - m) ** 2 / 20;
+    for (let i = 0; i < N; i++) { if (i > 20) v = cg.lam * v + (1 - cg.lam) * r[i] * r[i]; sg[i] = v; }
+    cs = [0]; for (let i = 0; i < N; i++) cs.push(cs[i] + sg[i]);
   }
-  return n >= 20 ? {n, p: trong.map(v => v / n)} : null;
+  const b = cg ? non_beta(cg.be, H) : 0, ka = kep ? Math.log(1 - kep.lim) * kep.phien * H : -Infinity, kb = kep ? Math.log(1 + kep.lim) * kep.phien * H : Infinity;
+  const buoc = Math.max(1, Math.ceil(H / 4), Math.ceil((N - H - t_dau) / 600)), trong = [0, 0, 0];   // ≤ ~600 mốc (điện thoại)
+  let n = 0, dau = null, cuoi = null;
+  for (let t = t_dau; t + H < N; t += buoc) {
+    if (ln[t] == null || ln[t + H] == null) continue;
+    const Nt = t + 1, i0 = Math.max(0, t - L), r1 = [];
+    for (let i = Math.max(1, Nt - Ls); i < Nt; i++) if (ln[i] != null && ln[i - 1] != null) r1.push(ln[i] - ln[i - 1]);
+    const m1 = r1.reduce((a, x) => a + x, 0) / r1.length, sd = r1.length < 10 ? null : Math.sqrt(r1.reduce((a, x) => a + (x - m1) ** 2, 0) / (r1.length - 1));
+    let q = null;
+    if (kieu === "ls" && Nt - H - i0 >= 30) {
+      let nen = null;
+      if (cg && sd != null && Nt >= 40 && Nt - 1 - H >= i0) { const s_ = (cs[t - H + 1] - cs[i0]) / (Nt - H - i0); nen = s_ > 0 ? s_ : null; }
+      const lt = i => Math.log(Math.min(3, Math.max(0.3, Math.sqrt(sg[i] / nen))));
+      const z = []; for (let i = i0; i <= t - H; i++) if (ln[i] != null && ln[i + H] != null) z.push((ln[i + H] - ln[i]) * (nen ? Math.exp(-b * lt(i)) : 1));
+      if (z.length >= 30) {
+        z.sort((a, x) => a - x); const giua = phan_vi(z, 0.5), k = nen ? Math.exp(b * lt(t)) : 1;
+        q = NON_P.map((p, j) => nen ? ((phan_vi(z, p) - giua) * k + NON_Z[j] * sd * Math.sqrt(H)) / 2 : phan_vi(z, p) - giua);
+      }
+    }
+    if (!q && sd != null) q = NON_Z.map(z => z * sd * Math.sqrt(H));
+    if (!q) continue;
+    q = q.map(v => Math.min(kb, Math.max(ka, v)));
+    const x = ln[t + H] - ln[t]; n++; if (dau == null) dau = t; cuoi = t;
+    [[2, 4], [1, 5], [0, 6]].forEach(([a, e], j) => { if (x >= q[a] && x <= q[e]) trong[j]++; });
+  }
+  if (n < 20) return null;
+  const dl = Math.max(1, Math.min(n, Math.floor((cuoi - dau + H) / H))), p = trong.map(v => v / n);   // quãng độc lập ≤ số mốc
+  return {n, doc_lap: dl, p, sai: p.map(v => 1.96 * Math.sqrt(v * (1 - v) / dl)), tu: dau};
 }
 // ---- TỰ VẼ: nền tích lũy / VCP · Fibonacci · Volume Profile (hàm thuần trên chuỗi nến x)
 const so_nen_vp = kh => ({D: 120, W: 104, M: 60})[kh] || 225;   // VP: ~6 tháng ngày / 2 năm tuần / 5 năm tháng / 1 phiên phút
@@ -1623,8 +1667,13 @@ async function ve_bd_gia(el, x0, them = {}) {
   let non = null;
   if (CB.non && n > 2) {
     non = non_du_bao(x.c, H, CB.non_kieu, ({D: 750, W: 260})[kh] || 1e6, ({D: 60, W: 26})[kh] || 12, NON_CG[kh]);
-    if (non) { non.H = H; non.i0 = n - 1; non.p = non.q.map(a => a.map(r => r * x.c[n - 1])); nen.attachPrimitive(new NonPrim(ch, nen, non));
-      if (!PHUT(kh)) non.trung = non_do_trung(x.c, H, CB.non_kieu, ({D: 750, W: 260})[kh] || 1e6, ({D: 60, W: 26})[kh] || 12, NON_CG[kh]); }
+    const kep = PHUT(kh) || !them.ma || CHI_SO_TEN[them.ma] ? null : {lim: NON_BD(LIVE[them.ma]?.san || dong_ds(them.ma).san || ""), phien: NON_PHIEN[kh] || 1};
+    if (non) { if (kep) non.q = non_kep(non.q, kep.lim, kep.phien);                // không vẽ vùng giá vượt trần / sàn
+      non.H = H; non.i0 = n - 1; non.p = non.q.map(a => a.map(r => r * x.c[n - 1])); nen.attachPrimitive(new NonPrim(ch, nen, non));
+      if (!PHUT(kh)) {                                  // độ trúng trên toàn lịch sử của mã (ngày / tuần / tháng)
+        non.trung = non_do_trung(x.c, H, CB.non_kieu, ({D: 750, W: 260})[kh] || 1e6, ({D: 60, W: 26})[kh] || 12, NON_CG[kh], kep, ({D: 250, W: 52, M: 24})[kh]);
+        const c0 = x0?.c || [], dung_ = c0.length > 1 ? c0.slice(1).filter((v, i) => v === c0[i]).length / (c0.length - 1) : 0;
+        non.it_gd = dung_ > 0.25; non.chuan = NON_CHUAN[kh]?.[H]?.[non.it_gd ? 1 : 0] || null; } }
   }
   // --- tự vẽ: kế hoạch thoát (tín hiệu bot) · nền tích lũy / VCP · Fibonacci · Volume Profile
   const ty_ = v => so(v, 2), u_ = {D: "phiên", W: "tuần", M: "tháng"}[kh] || "nến";
@@ -1775,7 +1824,8 @@ async function ve_bd_gia(el, x0, them = {}) {
   const sap_chu = sap.length || hb.length ? `<br><span style="color:#8a6100">Sắp tới: ${[...sap.map(e => `${ngay_vn(e.ngay).slice(0, 5)} ${esc(NHOM_SK[e.nhom] || e.nhom)}${e.ten ? ` – ${esc(String(e.ten).slice(0, 50))}` : ""}`), ...hb.map(([d, t]) => `${ngay_vn(d).slice(0, 5)} hạn BCTC ${esc(t)}`)].join(" · ")}</span>` : "";
   const lh_chu = !lh ? "" : `<br><span style="color:#1f6feb">Lệnh của hệ trên ${esc(them.ma)} (backtest từ ${ngay_vn(LH.tu || "2012-01-01")}): ` + (tk ? `${tk.n} lệnh đã đóng · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R · tổng ${tk.tong > 0 ? "+" : ""}${so(tk.tong, 1)}R</span>${LH.chung != null ? ` <span class="phu">(mọi mã TB ${LH.chung > 0 ? "+" : ""}${so(LH.chung, 2)}R)</span>` : ""}` : `chưa có lệnh đã đóng${LH.ma ? "" : " – chưa có dữ liệu"}</span>`) + (lh.some(z => z[4]) ? ` <span class="phu">· 1 lệnh đang mở</span>` : "");
   const non_chu = non ? `<span class="chu-non"><br><span style="color:#1f4fa8">Nón ${H} ${u} (${non.kieu === "ls" ? (non.ti ? `kết hợp phân vị lịch sử + σ – biến động đang ${so(non.ti, 2)} lần mức nền` : "phân vị lịch sử") : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`}): 50% ${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)} · 95% ${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}</span>` +
-    (non.trung ? `<br><span class="phu" title="Dựng lại nón tại ${non.trung.n} mốc trong quá khứ chỉ bằng dữ liệu tới mốc đó, rồi xem giá ${H} ${u} sau có nằm trong dải không. Gần 50 / 80 / 95% là nón đáng tin; thấp hơn nhiều là nón hẹp hơn thực tế.">Độ trúng ${non.trung.n} lần thử: dải 50% ${pt0(non.trung.p[0])} · 80% ${pt0(non.trung.p[1])} · 95% ${pt0(non.trung.p[2])}</span>` : "") + ` <span class="phu">· thống kê, không phải khuyến nghị</span></span>` : "";
+    (non.trung ? `<br><span class="phu" title="Lùi lại toàn bộ lịch sử của mã: ở ${non.trung.n} mốc, dựng nón CHỈ bằng dữ liệu tới mốc đó rồi xem giá ${H} ${u} sau có nằm trong dải không. Các mốc chồng nhau nên chỉ tính ${non.trung.doc_lap} quãng ${H} ${u} không chồng nhau – ± là sai số 95% theo số quãng đó. Gần 50 / 80 / 95% là nón đáng tin; thấp hơn nhiều là nón hẹp hơn thực tế của mã này.">Độ trúng trên lịch sử từ ${String(x.d[non.trung.tu]).slice(0, 4)} (${non.trung.doc_lap} quãng ${H} ${u}): dải 50% ${pt0(non.trung.p[0])} ±${so(non.trung.sai[0] * 100, 0)} · 80% ${pt0(non.trung.p[1])} ±${so(non.trung.sai[1] * 100, 0)} · 95% ${pt0(non.trung.p[2])} ±${so(non.trung.sai[2] * 100, 0)}</span>` +
+      (non.chuan ? ` <span class="phu" title="Cùng cách tính, đo trên ${non.chuan[3]} mã ${non.it_gd ? "ít giao dịch (giá đứng > 25% số phiên)" : "HOSE / HNX / UPCoM có giao dịch đều"} – mức nền để so mã này">· chuẩn ${non.chuan[3]} mã${non.it_gd ? " ít giao dịch" : ""}: ${non.chuan.slice(0, 3).map(v => pt0(v)).join(" / ")}</span>` : "") : "") + ` <span class="phu">· thống kê, không phải khuyến nghị</span></span>` : "";
   // TradingView: dòng O H L C, mỗi chỉ báo 1 dòng – ẩn / ⚙ cài đặt (bảng hop_mo) / ✕ xoá ngay tại dòng
   const nut = (k, tat = true) => (tat ? `<button type="button" class="cg-n" data-cgan="${k}" title="${an_(k) ? "Hiện" : "Ẩn"}" aria-label="${an_(k) ? "Hiện" : "Ẩn"}">${an_(k) ? MAT_AN : MAT}</button>` : "") +
     `<button type="button" class="cg-n" data-cgs="${k}" title="Cài đặt" aria-label="Cài đặt">⚙</button>` + (tat ? `<button type="button" class="cg-n" data-cgx="${k}" title="Xoá" aria-label="Xoá">✕</button>` : "");
