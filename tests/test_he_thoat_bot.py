@@ -202,3 +202,31 @@ def test_nhom_hanh_dong_cho_nguoi_chua_mua():
     hd1 = hanh_dong({"A0": a0, "B": b}, {"A0": 0.5, "B": 0.5, "VNI": 0})        # CL1: B mua mới thắng ½ của A0
     r1 = hd1.set_index("Mã")
     assert r1.loc["VUA", "Nhóm"] == "MUA_MOI" and r1.loc["VUA", "Thành phần"] == "A0+B"
+
+
+def test_vi_the_he_thong_dung_cat_lo_he_thong():
+    """Hệ thống (giả lập) giữ cùng mã (cột he_* do bot danh-muc ghi) → hệ thoát tính từ giá mua / ngày mua / cắt lỗ gốc
+    CỦA HỆ THỐNG, không từ giá vốn thật; lãi / lỗ vẫn theo giá vốn thật."""
+    from ptcp.chi_bao import tinh_chi_bao
+    from ptcp.he_thoat import theo_doi_vi_the
+    dn = _nen(sau=[0.0] * 3 + [0.012] * 20 + [-0.012] * 4)
+    i = -27
+    gv_he = float(dn.close.iloc[i])
+    he = {"gia_mua": gv_he, "ngay_mua": f"{dn.index[i]:%d/%m/%Y}", "cat_lo_goc": gv_he * 0.95}
+    that = {**_vt(dn, i + 1, cat_lo_goc=float(dn.close.iloc[i + 1]) * 0.98), "cat_lo": None}
+    gia = float(dn.close.iloc[-1])
+    k_that = vi_the.danh_gia_ban(that, {"gia": gia}, dn, BAY_GIO)
+    k_he = vi_the.danh_gia_ban({**that, "he": he}, {"gia": gia}, dn, BAY_GIO)
+    mong = theo_doi_vi_the(tinh_chi_bao(dn), gv_he, dn.index[i], he["cat_lo_goc"], C.NGUONG_KHUNG_TUAN_R)
+    assert k_he["cat_lo_he_thong"] == pytest.approx(mong["cat_lo"]) and k_he["R"] == pytest.approx(gv_he * 0.05)
+    assert k_that["cat_lo_he_thong"] != pytest.approx(k_he["cat_lo_he_thong"])
+    assert k_he["lai_lo_pct"] == pytest.approx((gia / that["gia_von"] - 1) * 100)
+
+
+def test_doc_cot_vi_the_he_thong():
+    csv = ("ma,so_cp,gia_von,ngay_mua,cat_lo_dat,he_gia_mua,he_ngay_mua,he_cat_lo_goc\n"
+           "AAA,100,20,01/10/2026,19,19.8000,30/09/2026,18.5000\nBBB,100,10,01/10/2026,9.5,,,\n"
+           "CCC,100,10,01/10/2026,9.5,10,30/09/2026,11\n")
+    out = vi_the.phan_tich_csv(csv)
+    assert out["AAA"]["he"] == {"gia_mua": 19.8, "ngay_mua": "30/09/2026", "cat_lo_goc": 18.5}
+    assert "he" not in out["BBB"] and "he" not in out["CCC"]          # trống / cắt lỗ gốc ≥ giá mua → bỏ
