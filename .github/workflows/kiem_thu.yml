@@ -88,6 +88,11 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
+          sparse-checkout: |              # bỏ kho BCTC + chiến lược DN (~585 MB / ~615 MB repo) – workflow này không đọc
+            /*
+            !/du_lieu/bctc/
+            !/du_lieu/chien_luoc_dn/
+          sparse-checkout-cone-mode: false
 
       - name: Test danh-muc (repo kín – xoá file danh mục thật, log chỉ in dòng tổng kết)
         if: steps.co.outputs.co == '1'
