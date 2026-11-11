@@ -43,27 +43,6 @@ jobs:
       - uses: actions/checkout@v5
         if: steps.co.outputs.co == '1'
 
-      - uses: actions/setup-python@v6
-        if: steps.co.outputs.co == '1'
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Cài thư viện
-        if: steps.co.outputs.co == '1'
-        run: pip install -q -r requirements.txt > /dev/null
-
-      - name: Lấy ptcp mới nhất (repo danh-muc)
-        if: steps.co.outputs.co == '1'
-        env:
-          REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
-          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
-        run: python lay_ptcp.py
-
-      - name: Test canh-bao-mua
-        if: steps.co.outputs.co == '1'
-        run: python -m pytest -q
-
       - uses: actions/checkout@v5
         if: steps.co.outputs.co == '1'
         with:
@@ -71,15 +50,6 @@ jobs:
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: gia_lap
-
-      - name: Test gia_lap (repo kín – log chỉ in dòng tổng kết)
-        if: steps.co.outputs.co == '1'
-        run: |
-          rm -f gia_lap/giao_dich_ao*.json gia_lap/giao_dich_ao*.csv     # không cần trạng thái tài khoản ảo để test
-          ln -s "$GITHUB_WORKSPACE" gia_lap/canh-bao-mua
-          cd gia_lap && pip install -q -r requirements.txt > /dev/null
-          ma=0; python -m pytest -q -p no:cacheprovider > /tmp/gl.txt 2>&1 || ma=$?
-          tail -n 1 /tmp/gl.txt; exit $ma
 
       - uses: actions/checkout@v5
         if: steps.co.outputs.co == '1'
@@ -95,13 +65,70 @@ jobs:
             !/du_lieu/chien_luoc_dn/
           sparse-checkout-cone-mode: false
 
+      - name: Xoá file riêng tư (danh mục thật, tài khoản ảo – log công khai, test không cần)
+        if: steps.co.outputs.co == '1'
+        run: |
+          rm -f gia_lap/giao_dich_ao*.json gia_lap/giao_dich_ao*.csv
+          cd danh-muc && rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json \
+                lich_su_danh_muc.csv nhap*.txt trung_vang*.json
+
+      - uses: actions/setup-python@v6
+        if: steps.co.outputs.co == '1'
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # THƯ VIỆN: lượt đẩy code dùng bản lưu sẵn (nhanh ~40 giây); lượt hằng ngày (07:41 – lịch / đồng hồ gọi) và bấm tay CÀI
+      # MỚI từ requirements – bắt sớm gói bị gỡ / bản mới hỏng (10/11/2026 vnstock) – xong mới lưu bản lưu sẵn mới
+      - name: Bản thư viện lưu sẵn (lượt đẩy code)
+        id: tv
+        if: steps.co.outputs.co == '1' && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: kt-py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt', 'gia_lap/requirements.txt', 'danh-muc/requirements.txt') }}
+          restore-keys: kt-py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt', 'gia_lap/requirements.txt', 'danh-muc/requirements.txt') }}
+
+      - name: Cài thư viện (cài mới – lượt hằng ngày / bấm tay / chưa có bản lưu)
+        id: cai
+        if: steps.co.outputs.co == '1' && steps.tv.outputs.cache-matched-key == ''
+        run: |
+          pip install -q -r requirements.txt > /dev/null
+          pip install -q -r gia_lap/requirements.txt > /dev/null
+          pip install -q -r danh-muc/requirements.txt > /dev/null
+          echo "ngay=$(date +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
+
+      - name: Lưu bản thư viện vừa cài
+        if: steps.cai.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: kt-py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt', 'gia_lap/requirements.txt', 'danh-muc/requirements.txt') }}-${{ steps.cai.outputs.ngay }}
+
+      - name: Lấy ptcp mới nhất (repo danh-muc)
+        if: steps.co.outputs.co == '1'
+        env:
+          REPO: ${{ vars.PTCP_REPO || vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
+        run: python lay_ptcp.py
+
+      - name: Test canh-bao-mua
+        if: steps.co.outputs.co == '1'
+        run: python -m pytest -q
+
+      - name: Test gia_lap (repo kín – log chỉ in dòng tổng kết)
+        if: steps.co.outputs.co == '1'
+        run: |
+          ln -s "$GITHUB_WORKSPACE" gia_lap/canh-bao-mua
+          cd gia_lap
+          ma=0; python -m pytest -q -p no:cacheprovider > /tmp/gl.txt 2>&1 || ma=$?
+          tail -n 1 /tmp/gl.txt; exit $ma
+
       - name: Test danh-muc (repo kín – xoá file danh mục thật, log chỉ in dòng tổng kết)
         if: steps.co.outputs.co == '1'
         run: |
           cd danh-muc
-          rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv \
-                nhap*.txt trung_vang*.json
-          pip install -q -r requirements.txt > /dev/null
           ma=0; python -m pytest -q -p no:cacheprovider tests/ > /tmp/dm.txt 2>&1 || ma=$?
           tail -n 1 /tmp/dm.txt
           [ $ma -eq 0 ] || grep -E "^(FAILED|ERROR) " /tmp/dm.txt | cut -d' ' -f2 | cut -d'[' -f1 | sort -u   # chỉ tên test hỏng
