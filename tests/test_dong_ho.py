@@ -443,7 +443,8 @@ def test_kenh_telegram_he_thong_va_chinh(monkeypatch):
 def _bt(expr, sec):
     """Tính biểu thức ${{ … }} của GitHub (|| && ngoặc, secrets.X) bằng Python – secret thiếu = ''."""
     import re
-    py = expr.replace("&&", " and ").replace("||", " or ")
+    py = re.sub(r"!contains\((secrets\.\w+), ':'\)", r"(':' not in \1)", expr)
+    py = py.replace("&&", " and ").replace("||", " or ")
     py = re.sub(r"secrets\.(\w+)", lambda m: repr(sec.get(m.group(1), "")), py)
     return eval(py)  # noqa: S307 – chỉ chuỗi hằng + and / or
 
@@ -470,5 +471,7 @@ def test_workflow_kenh_nghien_cuu_co_du_phong():
                 == ("NC", "toi"), (f, "bot nghiên cứu → chat riêng chủ quỹ")
             assert (_bt(tk, {**goc, "TELEGRAM_CHAT_ID_NGHIEN_CUU": "-4"}), _bt(ch, {**goc, "TELEGRAM_CHAT_ID_NGHIEN_CUU": "-4"})) \
                 == ("DM", "-4"), (f, "nhóm nghiên cứu → bot danh mục")
+            sai = {**goc, "TELEGRAM_TOKEN_NGHIEN_CUU": "NC", "TELEGRAM_CHAT_ID_NGHIEN_CUU": "911:AA"}   # token để nhầm chỗ chat id
+            assert (_bt(tk, sai), _bt(ch, sai)) == ("NC", "toi"), (f, "secret nhóm chứa token → bỏ qua")
             so += 1
     assert so >= 15

@@ -41,7 +41,7 @@ jobs:
       - name: Lọc & gửi Telegram
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}   # kênh nghiên cứu
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ !contains(secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU, ':') && secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           MA: ${{ inputs.ma }}
         run: |
           pip install -q -r requirements.txt > /dev/null

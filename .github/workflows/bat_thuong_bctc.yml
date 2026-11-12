@@ -206,7 +206,7 @@ jobs:
       - name: Gộp Excel & gửi Telegram
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}   # kênh nghiên cứu
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ !contains(secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU, ':') && secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           HANG_NGAY: ${{ github.event_name == 'workflow_run' && '--chi_lan_nay' || '' }}
         run: |
           ls ../ra/*.json > /dev/null 2>&1 || { echo "Không có kết quả nhóm"; exit 0; }
