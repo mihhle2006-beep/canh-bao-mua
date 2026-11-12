@@ -269,7 +269,7 @@ def test_macd_tuan_tren_khung_ngay_khop_bot():
     import pandas as pd
     x = _nen(700, 5)
     idx = pd.bdate_range("2023-01-02", periods=700)
-    nghi = {idx[k] for k in (54, 159, 304, 509) if idx[k].dayofweek == 4} | {idx[k] for k in (99, 400)}
+    nghi = {idx[k] for k in (54, 159, 304, 509) if idx[k].day_of_week == 4} | {idx[k] for k in (99, 400)}
     giu = [i for i, t in enumerate(idx) if t not in nghi]
     idx, c = idx[giu], [x["c"][i] for i in giu]
     d = [t.strftime("%Y-%m-%d") for t in idx]
