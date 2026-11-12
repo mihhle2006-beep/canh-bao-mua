@@ -71,16 +71,16 @@ jobs:
         continue-on-error: true            # lỗi giữa chừng vẫn lưu phần đã tải
         timeout-minutes: 240
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}   # kênh nghiên cứu
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}   # kênh nghiên cứu
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: python -m ptcp.kho_bctc --moi_het
 
       - name: File KQKD khi đủ BCTC quý / năm mới (mã ngoài rổ chính – chỉ tải mã có kỳ mới)
         continue-on-error: true
         timeout-minutes: 60
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU && (secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN) || secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_CHAT_ID }}   # kênh nghiên cứu
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU && (secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN) || secrets.TELEGRAM_TOKEN }}   # kênh nghiên cứu
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_CHAT_ID }}
         run: python -m ptcp.kqkd_excel --tu_dong --gui --ra "KQKD_$(date +%d-%m-%Y).xlsx"
 
       - name: Lưu kho BCTC

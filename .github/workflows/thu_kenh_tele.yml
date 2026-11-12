@@ -2,7 +2,8 @@
 # loại tin nào. Log công khai chỉ in mã HTTP / mô tả lỗi của Telegram (không in token / chat id).
 #   🔔 Giao dịch (bot chính)            TELEGRAM_TOKEN / TELEGRAM_CHAT_ID
 #   💼 Danh mục (bot danh mục)          TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC
-#   📊 Nghiên cứu (bot danh mục, nhóm)  TELEGRAM_CHAT_ID_NGHIEN_CUU
+#   📊 Nghiên cứu (bot nghiên cứu)      TELEGRAM_TOKEN_NGHIEN_CUU (+ TELEGRAM_CHAT_ID_NGHIEN_CUU nếu gửi vào nhóm;
+#                                       không có → chat riêng của chủ quỹ = TELEGRAM_CHAT_ID)
 #   ⚙ Hệ thống & giả lập (bot giả lập)  TELEGRAM_TOKEN_GIA_LAP / TELEGRAM_CHAT_ID_GIA_LAP
 name: Thu kenh Telegram
 
@@ -23,7 +24,8 @@ jobs:
           C_CHINH: ${{ secrets.TELEGRAM_CHAT_ID }}
           T_DM: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           C_DM: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
-          C_NC: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU }}
+          T_NC: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          C_NC: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || '' }}
           T_HT: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
           C_HT: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
         run: |
@@ -40,12 +42,12 @@ jobs:
           }
           gui "🔔 Giao dịch" "$T_CHINH" "$C_CHINH" "🔔 Kênh GIAO DỊCH (thử) – tín hiệu MUA / BÁN, cắt lỗ, nhắc ATO, tổng kết 15:20, máy Mac chưa nhận việc. Bật thông báo kênh này."
           gui "💼 Danh mục" "$T_DM" "$C_DM" "💼 Kênh DANH MỤC (thử) – danh mục, lệnh, nút 🛒 / 🛑, kết quả khớp."
-          gui "📊 Nghiên cứu" "$T_DM" "$C_NC" "📊 Kênh NGHIÊN CỨU (thử) – bộ lọc định kỳ, KQKD, BCTC mới / bất thường, báo cáo CTCK, BCTN, tổ chức phát hành, tra cứu mã. Có thể tắt thông báo."
+          gui "📊 Nghiên cứu" "$T_NC" "$C_NC" "📊 Kênh NGHIÊN CỨU (thử) – bộ lọc định kỳ, KQKD, BCTC mới / bất thường, báo cáo CTCK, BCTN, tổ chức phát hành, tra cứu mã. Có thể tắt thông báo."
           gui "⚙ Hệ thống & giả lập" "$T_HT" "$C_HT" "⚙ Kênh HỆ THỐNG & GIẢ LẬP (thử) – workflow lỗi, token sắp hết hạn, kiểm thử hỏng, 🩺 sức khoẻ, giả lập, lệch backtest. Có thể tắt thông báo."
           if [ -n "$C_NC" ]; then                     # chẩn đoán nhóm nghiên cứu (không in chat id)
             n=$(printf %s "$C_NC" | tr -d '[:space:]')
             echo "Chẩn đoán nhóm nghiên cứu: $( [ "$n" != "$C_NC" ] && echo 'CÓ khoảng trắng / xuống dòng thừa · ' )$( case "$n" in -100*) echo 'dạng siêu nhóm -100…';; -*) echo 'dạng nhóm thường -…';; *) echo 'THIẾU dấu trừ ở đầu';; esac ) · $(printf %s "$n" | tr -cd '0-9' | wc -c) chữ số$( printf %s "$n" | grep -q '[^-0-9]' && echo ' · CÓ ký tự lạ (chỉ được số và dấu -)' )"
-            for b in "bot chính:$T_CHINH" "bot danh mục:$T_DM" "bot giả lập:$T_HT"; do
+            for b in "bot nghiên cứu:$T_NC" "bot chính:$T_CHINH" "bot danh mục:$T_DM" "bot giả lập:$T_HT"; do
               ma=$(curl -s -o /tmp/r.json -w "%{http_code}" "https://api.telegram.org/bot${b#*:}/getChat" --data-urlencode "chat_id=$n")
               echo "   ${b%%:*} thấy nhóm: $( [ "$ma" = 200 ] && echo CÓ || python3 -c "import json; print('không –', json.load(open('/tmp/r.json')).get('description', ''))" )"
             done

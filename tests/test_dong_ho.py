@@ -440,11 +440,35 @@ def test_kenh_telegram_he_thong_va_chinh(monkeypatch):
     assert "botCHINH" in gui[-1][0] and gui[-1][1]["chat_id"] == ["1"]
 
 
+def _bt(expr, sec):
+    """Tính biểu thức ${{ … }} của GitHub (|| && ngoặc, secrets.X) bằng Python – secret thiếu = ''."""
+    import re
+    py = expr.replace("&&", " and ").replace("||", " or ")
+    py = re.sub(r"secrets\.(\w+)", lambda m: repr(sec.get(m.group(1), "")), py)
+    return eval(py)  # noqa: S307 – chỉ chuỗi hằng + and / or
+
+
 def test_workflow_kenh_nghien_cuu_co_du_phong():
-    """Báo cáo nghiên cứu → TELEGRAM_CHAT_ID_NGHIEN_CUU (bot danh mục); chưa đặt → chat cũ (không mất tin)."""
+    """Báo cáo nghiên cứu: bot nghiên cứu riêng (TELEGRAM_TOKEN_NGHIEN_CUU → chat riêng của chủ quỹ) hoặc nhóm
+    (TELEGRAM_CHAT_ID_NGHIEN_CUU, bot danh mục); chưa đặt gì → bot / chat cũ y như trước (không mất tin)."""
+    import re
+    goc = {"TELEGRAM_TOKEN": "CHINH", "TELEGRAM_CHAT_ID": "toi", "TELEGRAM_TOKEN_DANH_MUC": "DM",
+           "TELEGRAM_CHAT_ID_DANH_MUC": "toi_dm"}
+    so = 0
     for f in glob.glob(os.path.join(WF, "*.yml")):
-        for dong in open(f, encoding="utf-8"):
-            if "TELEGRAM_CHAT_ID_NGHIEN_CUU" in dong and "TELEGRAM_CHAT_ID:" in dong:
-                assert "|| secrets.TELEGRAM_CHAT_ID" in dong, (f, dong)
-            if "TELEGRAM_CHAT_ID_NGHIEN_CUU &&" in dong:                 # token đổi sang bot danh mục chỉ khi có nhóm
-                assert "|| secrets.TELEGRAM_TOKEN }}" in dong, (f, dong)
+        dong = open(f, encoding="utf-8").read().splitlines()
+        for i, d in enumerate(dong):
+            if "TELEGRAM_TOKEN:" not in d or "NGHIEN_CUU" not in d:
+                continue
+            tk = re.search(r"\$\{\{(.*?)\}\}", d).group(1)
+            ch = re.search(r"\$\{\{(.*?)\}\}", dong[i + 1]).group(1)
+            assert "TELEGRAM_CHAT_ID:" in dong[i + 1], (f, i)
+            cu_tk = "DM" if tk.strip().startswith("secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC") else "CHINH"
+            cu_ch = "toi_dm" if "CHAT_ID_DANH_MUC" in ch else "toi"
+            assert (_bt(tk, goc), _bt(ch, goc)) == (cu_tk, cu_ch), (f, "chưa đặt gì phải như cũ")
+            assert (_bt(tk, {**goc, "TELEGRAM_TOKEN_NGHIEN_CUU": "NC"}), _bt(ch, {**goc, "TELEGRAM_TOKEN_NGHIEN_CUU": "NC"})) \
+                == ("NC", "toi"), (f, "bot nghiên cứu → chat riêng chủ quỹ")
+            assert (_bt(tk, {**goc, "TELEGRAM_CHAT_ID_NGHIEN_CUU": "-4"}), _bt(ch, {**goc, "TELEGRAM_CHAT_ID_NGHIEN_CUU": "-4"})) \
+                == ("DM", "-4"), (f, "nhóm nghiên cứu → bot danh mục")
+            so += 1
+    assert so >= 15
