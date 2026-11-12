@@ -1,6 +1,6 @@
 requests
-pandas
-numpy
+pandas>=3,<4            # ghim (12/11/2026): pandas 4 bỏ API đang bị cảnh báo → bot gãy âm thầm
+numpy>=2,<3
 scipy
 matplotlib
 openpyxl
