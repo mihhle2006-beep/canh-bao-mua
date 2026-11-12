@@ -78,7 +78,7 @@ def test_bam_nut_hoi_xac_nhan_roi_moi_dat(monkeypatch, capsys):
     assert T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"}) == 1
     ten = [g[0] for g in goi]
     xn = [g[1] for g in goi if g[0] == "sendMessage"]
-    assert len(xn) == 1 and xn[0]["text"] == "Xác nhận MUA 200 + 37 lẻ REE (LO ≤ 46.600đ)?" and xn[0]["reply_to_message_id"] == 7
+    assert len(xn) == 1 and xn[0]["text"] == "Xác nhận MUA 200 + 37 lẻ REE (LO ≤ 46.600đ – khớp ở giá người bán đang chào)?" and xn[0]["reply_to_message_id"] == 7
     assert [b["callback_data"] for b in xn[0]["reply_markup"]["inline_keyboard"][0]] == ["dx|M|REE|237|46600", "dt"]
     gd = [g[1] for g in goi if g[0] == "dispatches"]
     assert len(gd) == 1 and gd[0]["client_payload"] == {"id": "111:9", "ben": "M", "ma": "REE", "kl": 237, "gia": 46600,

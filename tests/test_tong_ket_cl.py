@@ -143,7 +143,7 @@ def test_trong_phien_chi_quet_ds_mua_va_bao_mot_lan(moi_truong):
             mock.patch.object(chay, "gui", side_effect=lambda nd, rieng_tu=False, **k: gui.append(nd)):
         assert chay.main(["--che_do", "trong_phien", "--gio", "2026-10-08 10:50"]) == 0
         assert len(gui) == 1 and gui[0].startswith("🟢 MUA NGAY – AAA")
-        assert "👉 Đặt lệnh 19.90. Không đặt cao hơn 20.50" in gui[0]        # tin gọn: không in tiêu chí 15' / KL
+        assert "👉 Mua LO ≤ 20.50 – khớp ngay ở giá người bán đang chào (vừa khớp 19.90)" in gui[0]   # tin gọn
         assert {m for m, _ in goi} == {"AAA"}                                  # chỉ quét mã trong danh sách mua
         chay.main(["--che_do", "trong_phien", "--gio", "2026-10-08 11:05"])
         assert len(gui) == 1                                                   # không báo trùng
@@ -392,7 +392,7 @@ def test_tin_15p_ghi_ro_gia_va_cach_vao():
           "thoi_diem": pd.Timestamp("2026-10-15 10:15"), "ly_do": "đủ tiêu chí 15'", "ly_do_ngay": "MACD",
           "tieu_chi": [("Kích hoạt 15' (MACD cắt lên / phá đỉnh + KL)", True, "MACD 15' cắt lên")], "atr": np.nan}
     tin = diem_vao.tin_mua(kq, "2026-10-15 10:16", "15P+GIO+ATC")
-    assert tin.split("\n")[1:] == ["👉 Đặt lệnh 45.10. Không đặt cao hơn 46.75",                 # tin gọn 29/10/2026
+    assert tin.split("\n")[1:] == ["👉 Mua LO ≤ 46.75 – khớp ngay ở giá người bán đang chào (vừa khớp 45.10)",
                                    "MUA MỚI · Vùng mua 44.50 – 46.75 · Cắt lỗ 43.49 (-3.6%)",
                                    "Mục tiêu 1R 46.71 → 3R 49.93 · 💰 ≤20.0% NAV"]
     tin = diem_vao.tin_mua({**kq, "atc": True}, "2026-10-15 14:26", "15P+GIO+ATC")
@@ -772,3 +772,21 @@ def test_tin_co_so_cp_nav_la_rieng_tu():
     from canh_bao.diem_vao import co_so_cp_nav
     assert co_so_cp_nav("💰 ≤5% NAV → 120 CP ≈ 2.4 tr")
     assert not co_so_cp_nav("💰 ≤5% NAV (rủi ro 0,75%)")
+
+
+def test_gia_lo_theo_buoc_gia_san(monkeypatch):
+    """12/11/2026: giới hạn LO làm tròn XUỐNG theo bước giá của sàn (HOSE 10 / 50 / 100đ theo mức giá; HNX / UPCoM 100đ;
+    không rõ sàn → 100đ) – không còn mất 1 bước ở HOSE 10–50 nghìn (VSC 21,35 → 21.350, trước 21.300)."""
+    import ptcp.san as S
+    san = {"AAA": "HOSE", "BBB": "HNX", "CCC": ""}
+    monkeypatch.setattr(S, "san_cua", lambda ma, d=None: san.get(ma, ""))
+    g = diem_vao.gia_lo_dong
+    assert (g(21.35, "AAA"), g(21.37, "AAA"), g(9.876, "AAA"), g(49.98, "AAA"), g(50.07, "AAA")) == \
+        (21350, 21350, 9870, 49950, 50000)
+    assert (g(21.35, "BBB"), g(9.876, "BBB"), g(21.35, "CCC")) == (21300, 9800, 21300)
+    assert diem_vao.buoc_gia_dong(9990) == 10 and diem_vao.buoc_gia_dong(10000) == 50 and diem_vao.buoc_gia_dong(50000) == 100
+    kq = {"ma": "AAA", "nhom": "MUA_MOI", "tu": 20.0, "den": 21.37, "cl": 19.5, "gia_mua": 20.9, "gia_nay": 20.9,
+          "thoi_diem": pd.Timestamp("2026-10-15 10:15"), "ly_do": "đủ", "ly_do_ngay": "MACD", "tieu_chi": [], "atr": np.nan}
+    assert diem_vao.dong_dat_lenh(kq, "15P+GIO", 20.9) == \
+        "👉 Mua LO ≤ 21.35 – khớp ngay ở giá người bán đang chào (vừa khớp 20.90)"
+    assert diem_vao.dong_dat_lenh(kq, "LO", 20.5) == "👉 Đặt lệnh 20.50. Không đặt cao hơn 21.37"   # cách LO giữ nguyên
