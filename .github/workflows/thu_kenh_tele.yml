@@ -25,7 +25,7 @@ jobs:
           T_DM: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           C_DM: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           T_NC: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
-          C_NC: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || '' }}
+          C_NC: ${{ !contains(secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU, ':') && secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || '' }}
           CHAT_NC_SECRET: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU }}
           CO_T_NC: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU != '' && '1' || '' }}
           T_HT: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
@@ -53,7 +53,7 @@ jobs:
           else
             echo "Bot nghiên cứu: CHƯA có secret TELEGRAM_TOKEN_NGHIEN_CUU"
           fi
-          case "$CHAT_NC_SECRET" in *:*) echo "⚠ Secret TELEGRAM_CHAT_ID_NGHIEN_CUU đang chứa TOKEN bot (có dấu ':') → XOÁ secret này; token đặt ở TELEGRAM_TOKEN_NGHIEN_CUU";; esac
+          case "$CHAT_NC_SECRET" in *:*) echo "ℹ Secret TELEGRAM_CHAT_ID_NGHIEN_CUU đang chứa TOKEN bot (có dấu ':') → hệ thống BỎ QUA secret này (xoá được thì xoá cho gọn)"; CHAT_NC_SECRET="";; esac
           if [ -n "$CHAT_NC_SECRET" ]; then           # chẩn đoán nhóm nghiên cứu (không in chat id)
             n=$(printf %s "$C_NC" | tr -d '[:space:]')
             echo "Chẩn đoán nhóm nghiên cứu: $( [ "$n" != "$C_NC" ] && echo 'CÓ khoảng trắng / xuống dòng thừa · ' )$( case "$n" in -100*) echo 'dạng siêu nhóm -100…';; -*) echo 'dạng nhóm thường -…';; *) echo 'THIẾU dấu trừ ở đầu';; esac ) · $(printf %s "$n" | tr -cd '0-9' | wc -c) chữ số$( printf %s "$n" | grep -q '[^-0-9]' && echo ' · CÓ ký tự lạ (chỉ được số và dấu -)' )"
