@@ -296,6 +296,22 @@ def test_dong_mua_ghi_gia_lo():
     assert tong_ket_cl.gia_lo(10.0, 10.5) == 10.15                   # 10,1667 → làm tròn xuống bước 0,05
 
 
+def test_gia_lo_cach_vao_lo_theo_buoc_gia_san(monkeypatch):
+    """Cách vào LO (⅓ dưới vùng): HNX / UPCoM bước 0,1 – trước luôn theo bước HOSE (0,05 / 0,01) → giá sàn không nhận."""
+    import ptcp.san as S
+    monkeypatch.setattr(S, "san_cua", lambda ma, d=None: {"AAA": "HOSE", "BBB": "HNX", "CCC": "UPCOM"}.get(ma, ""))
+    assert tong_ket_cl.gia_lo(44.5, 46.75, "AAA") == 45.25            # HOSE 10–50 nghìn: bước 0,05
+    assert tong_ket_cl.gia_lo(44.5, 46.75, "BBB") == 45.2             # HNX: bước 0,1
+    assert tong_ket_cl.gia_lo(8.0, 8.5, "AAA") == 8.16 and tong_ket_cl.gia_lo(8.0, 8.5, "CCC") == 8.1
+    assert tong_ket_cl.gia_lo(10.0, 10.5) == 10.15                    # không rõ mã → như cũ (bước HOSE)
+    k = {"ma": "BBB", "tu": 44.5, "den": 46.75, "mt1": 47.0, "mt3": 49.9, "cl": 43.49, "nhom": "MUA_MOI"}
+    assert "Đặt LO 45.20 ·" in tong_ket_cl.dong_mua(k, bien_the="LO")
+    assert diem_vao.dong_dat_lenh({"ma": "BBB", "den": 46.75}, "LO", 45.25) == "👉 Đặt lệnh 45.20. Không đặt cao hơn 46.75"
+    assert diem_vao.dong_dat_lenh({"ma": "AAA", "den": 46.75}, "LO", 45.25) == "👉 Đặt lệnh 45.25. Không đặt cao hơn 46.75"
+    from bo_loc.danh_gia_sau_loc import _gia_lo
+    assert _gia_lo(44.5, 46.75, "BBB") == 45.2 and _gia_lo(44.5, 46.75) == 45.25
+
+
 def test_cach_vao_uu_tien_bang_top_gtgd(monkeypatch):
     monkeypatch.setattr(C, "CACH_VAO_15P", "tu_dong")
     kq = {"15p": {"tot_nhat": "15P+GIO+ATC", "bang": [],
