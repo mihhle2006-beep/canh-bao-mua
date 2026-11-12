@@ -4,7 +4,7 @@
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
 # ở danh-muc ptcp/cau_hinh.py), von55–von84 (28–29/10/2026), von85 + von87–von99 (01/11/2026 – "không cải thiện được gì
-# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026), nganh_nn / gian_luoc (05/11/2026), tv2 (07/11/2026), cl_dong (12/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
+# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026), nganh_nn / gian_luoc (05/11/2026), tv2 (07/11/2026), cl_dong / mua_lai (12/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
@@ -12,8 +12,6 @@
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
 #   mc_von – (chạy tay, 11/2026) Monte Carlo đường vốn: lấy mẫu lại đường vốn luật đang áp dụng theo khối ~1 quý → phân vị
 #           lãi năm, sụt vốn, thời gian chìm dưới đỉnh, chuỗi lệnh thua (+ 2 mức rủi ro/lệnh so sánh). Chỉ đo.
-#   mua_lai – (chạy tay, 12/11/2026) mua lại khi đóng cửa vượt đỉnh cũ sau lệnh đã lãi ≥ 1R bị bán (20 / 40 / 60 phiên, chỉ
-#           lệnh bị cắt trước khung tuần) – so nền v2 trên 20 thứ tự ★, luật đặt trước C1 20/20 + C2 4/4. Xong thì xoá.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -62,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, bctn, khang_cu, cai_thien, non, thanh_khoan, mc_von, mua_lai]
+        phan: [chuan, cham1r, bctn, khang_cu, cai_thien, non, thanh_khoan, mc_von]
     runs-on: ubuntu-24.04
     defaults:
       run:
