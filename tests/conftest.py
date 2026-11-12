@@ -34,3 +34,11 @@ def _khong_hoi_bang_gia_so(monkeypatch):
     from canh_bao import diem_vao
     monkeypatch.setattr(diem_vao, "_HE_SO_SO_GOC", diem_vao._he_so_so, raising=False)
     monkeypatch.setattr(diem_vao, "_he_so_so", lambda ma, bay_gio: None)
+
+
+@pytest.fixture(autouse=True)
+def _khong_doc_so_lenh(monkeypatch):
+    """Tin MUA NGAY không gọi bảng giá Vietcap lấy sổ lệnh (diem_vao.so_lenh) – test nào cần thì tự giả lập."""
+    from canh_bao import diem_vao
+    monkeypatch.setattr(diem_vao, "_SO_LENH_GOC", diem_vao.so_lenh, raising=False)
+    monkeypatch.setattr(diem_vao, "so_lenh", lambda ma: None)

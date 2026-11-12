@@ -433,7 +433,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
         gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
-        nd = diem_vao.tin_mua(kq, bay_gio, bien_the)
+        nd = diem_vao.tin_mua(kq, bay_gio, bien_the, so=None if kq.get("atc") else diem_vao.so_lenh(kq["ma"]))
         nut = diem_vao.nut_mua(kq)                          # chọn số CP → hỏi xác nhận ✅ (lenh_tele.xu_ly_nut)
         gui(nd, rieng_tu=True, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
@@ -466,7 +466,7 @@ def lo_le_1425(bay_gio, vt, khong_gui=False):
         n = diem_vao.so_cp_nav(kq, gia, cl)
         if not 0 < n < 100:
             continue
-        nd, nut = diem_vao.tin_lo_le(kq, bay_gio, n), diem_vao.nut_chon(kq["ma"], n, int(round(kq["den"] * 1000)) // 100 * 100)
+        nd, nut = diem_vao.tin_lo_le(kq, bay_gio, n), diem_vao.nut_chon(kq["ma"], n, diem_vao.gia_lo_dong(kq["den"], kq["ma"]))
         gui(nd, rieng_tu=True, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
     print("Lô lẻ 14:25: xong")                                      # log công khai: không in mã / số tin
     return 0
