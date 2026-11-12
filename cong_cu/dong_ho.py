@@ -14,6 +14,8 @@ chạy 10:24, Danh mục 08:30 chạy 15:18, Kiểm thử 07:41 chạy 14:22, Qu
   • 20:05 hằng ngày: kiểm hạn token repo kín (DANH_MUC_TOKEN_GHI) – còn < 14 ngày → nhắn Telegram.
   • Giám sát 5 phút / lần: workflow trên main vừa LỖI → workflow dữ liệu / trang (CHAY_LAI – chạy lại không gửi tin
     trùng) tự chạy lại job lỗi 1 lần; còn lại, hoặc chạy lại vẫn lỗi → nhắn Telegram NGAY (không đợi tin 🩺 19:55).
+  • Máy Mac (cùng nhịp 5 phút, T2–T6 08:30–15:10): job của repo kín chờ máy self-hosted > 10 phút (Mac ngủ / tắt / mất
+    mạng → vòng đồng bộ DNSE, lệnh đứng) → nhắn Telegram NGAY 1 tin / đợt; máy nhận việc lại → 1 tin báo đã ổn.
 Chỉ dùng thư viện chuẩn (không cần pip). Log chỉ in tên workflow / giờ.
   python cong_cu/dong_ho.py --phut 340            # trên Actions (GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID)
   python cong_cu/dong_ho.py --thu "2026-11-06 06:43"   # in workflow sẽ gọi ở thời điểm đó (không gọi thật)
@@ -78,6 +80,8 @@ KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu t�
              "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml"}     # công cụ bấm tay – người bấm tự xem
 LOI = ("failure", "timed_out", "startup_failure")
 GIAM_SAT_GIAY = 300
+MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
+MAC_GIO = ("08:30", "15:10")                                        # T2–T6 giờ VN: vòng DNSE 08:35, lệnh, đo trong phiên
 KIEM_TOKEN = "5 20 * * *"                                           # giờ VN kiểm hạn token
 TOKEN_CON_NGAY = 14
 
@@ -316,6 +320,70 @@ class GiamSat:
         return tin
 
 
+class MayMac:
+    """Trong phiên (T2–T6 MAC_GIO): job ở repo kín chạy trên máy Mac (nhãn self-hosted) đang CHỜ MÁY ≥ MAC_CHO_PHUT phút
+    → Mac ngủ / tắt / mất mạng / runner dừng: vòng đồng bộ DNSE, xin mã OTP, lệnh đứng → 1 tin Telegram / đợt (không đợi tin
+    🩺 tối). Hết job chờ: có job của đợt đã được máy nhận → 1 tin "đã nhận lại"; job bị huỷ hết → chỉ ghi log. Chờ hàng
+    concurrency (lần chạy "pending") không tính – đó không phải lỗi máy. Log công khai: chỉ số job / phút, không tên việc."""
+
+    def __init__(self, gh, gui=None, in_ra=print, cho=MAC_CHO_PHUT):
+        self.gh, self.gui, self.in_ra, self.cho = gh, gui or nhan_tele, in_ra, cho
+        self.dot = None                                             # đợt đang báo: {"tu": datetime, "job": {id: tên}}
+
+    @staticmethod
+    def trong_gio(bay_gio):
+        t = bay_gio.astimezone(VN)
+        return t.isoweekday() <= 5 and MAC_GIO[0] <= f"{t:%H:%M}" < MAC_GIO[1]
+
+    def _dang_cho(self, bay_gio):
+        """[(job, tên việc, phút chờ)] – mọi job self-hosted đang chờ máy (mọi độ dài)."""
+        out = []
+        for r in self.gh._goi("actions/runs?status=queued&per_page=30").get("workflow_runs") or []:
+            for j in self.gh._goi(f"actions/runs/{r['id']}/jobs?per_page=30").get("jobs") or []:
+                if j.get("status") != "queued" or "self-hosted" not in (j.get("labels") or []):
+                    continue
+                tu = _thoi_diem(j.get("created_at") or r.get("created_at"))
+                out.append((j, r.get("name") or j.get("name") or "?", (bay_gio - tu).total_seconds() / 60))
+        return out
+
+    def buoc(self, bay_gio):
+        """→ tin đã gửi (chuỗi) | None."""
+        if not self.trong_gio(bay_gio):
+            return None
+        cho = self._dang_cho(bay_gio)
+        lau = [x for x in cho if x[2] >= self.cho]
+        if self.dot is not None:
+            self.dot["job"].update({j["id"]: ten for j, ten, _ in lau})
+            if cho:                                                 # còn job chờ máy → đợt chưa xong, không nhắn lặp
+                return None
+            dot, self.dot = self.dot, None
+            nhan = []
+            for jid in dot["job"]:
+                j = self.gh._goi(f"actions/jobs/{jid}")
+                if j.get("started_at") and j.get("status") != "queued" and j.get("conclusion") != "cancelled":
+                    nhan.append(_thoi_diem(j["started_at"]))
+            if not nhan:
+                self.in_ra(f"máy Mac: việc chờ đã bị huỷ ({len(dot['job'])} job) – chưa thấy máy nhận lại")
+                return None
+            luc = min(nhan).astimezone(VN)
+            tin = (f"✅ Máy Mac đã nhận việc lại lúc {luc:%H:%M} (chờ máy từ {dot['tu']:%H:%M}, "
+                   f"{int((luc - dot['tu']).total_seconds() // 60)} phút)")
+            self.in_ra(f"máy Mac: đã nhận việc lại {luc:%H:%M} → nhắn Telegram")
+            self.gui(tin)
+            return tin
+        if not lau:
+            return None
+        tu = min(bay_gio - timedelta(minutes=p) for _, _, p in lau).astimezone(VN)
+        self.dot = {"tu": tu, "job": {j["id"]: ten for j, ten, _ in lau}}
+        dong = sorted({f"• {ten} – chờ {int(p)}'" for _, ten, p in lau})
+        tin = (f"🖥 Máy Mac CHƯA NHẬN VIỆC – {len(lau)} việc chờ máy từ {tu:%H:%M}:\n" + "\n".join(dong)
+               + "\n→ Vòng đồng bộ DNSE / lệnh đang đứng: Mac ngủ / tắt / mất mạng? Đánh thức Mac, cắm điện, kiểm Wi-Fi – "
+                 "máy thức là runner tự nhận việc (bot báo lại khi đã nhận).")
+        self.in_ra(f"máy Mac: {len(lau)} job chờ máy ≥ {self.cho}' → nhắn Telegram")
+        self.gui(tin)
+        return tin
+
+
 def han_token(token):
     """Ngày hết hạn token (header github-authentication-token-expiration) → datetime | None (không hạn / lỗi)."""
     if not token:
@@ -486,6 +554,7 @@ def main(argv=None):
     gh_khac = {"danh-muc": GitHub(os.environ.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc", tk_dm)} if tk_dm else {}
     dh = DongHo(gh, gh_khac=gh_khac)
     gs = GiamSat(gh, datetime.now(timezone.utc) - timedelta(minutes=10))   # phủ khoảng nối giữa 2 lượt đồng hồ
+    mac = MayMac(gh_khac["danh-muc"]) if gh_khac else None
     bat_dau, da_kiem, lan_gs = time.time(), None, 0.0
     print(f"Đồng hồ chạy {a.phut:.0f} phút, {len(LICH)} dòng lịch", flush=True)
     while time.time() - bat_dau < a.phut * 60:
@@ -499,6 +568,11 @@ def main(argv=None):
             if time.time() - lan_gs >= GIAM_SAT_GIAY:
                 lan_gs = time.time()
                 gs.buoc()
+                if mac:
+                    try:
+                        mac.buoc(bay_gio)
+                    except urllib.error.HTTPError as e:            # token thiếu quyền Actions: Read → kiem_token báo 20:05
+                        print(f"máy Mac: GitHub {e.code} – bỏ lượt")
         except Exception as e:                                      # lỗi lạ: in rồi chạy tiếp phút sau
             print(f"⚠ {type(e).__name__}: {str(e)[:100]}")
         sys.stdout.flush()

@@ -366,3 +366,52 @@ def test_kiem_token_canh_bao(monkeypatch):
     assert all("a" != x for x in log)
     gui.clear()
     assert dong_ho.kiem_token(datetime(2026, 10, 1, tzinfo=VN), in_ra=log.append) == [] and gui == []
+
+
+def test_may_mac_khong_nhan_viec_bao_ngay_1_lan_va_bao_khi_nhan_lai():
+    """Job self-hosted chờ máy ≥ 10' trong phiên → 1 tin / đợt; máy nhận → 1 tin "đã nhận lại"; ngoài phiên / chờ hàng
+    concurrency / job GitHub-hosted → im."""
+    T = datetime(2026, 11, 13, 9, 30, tzinfo=VN)                       # thứ Sáu
+
+    def iso(t):
+        return t.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    class GH:
+        def __init__(self):
+            self.runs, self.jobs, self.job1 = [], {}, {}
+
+        def _goi(self, duong, du_lieu=None, phuong=None):
+            if duong.startswith("actions/runs?"):
+                assert "status=queued" in duong
+                return {"workflow_runs": self.runs}
+            if duong.startswith("actions/runs/"):
+                return {"jobs": self.jobs.get(int(duong.split("/")[2]), [])}
+            return self.job1[int(duong.split("/")[2])]
+
+    gh, gui, log = GH(), [], []
+    mac = dong_ho.MayMac(gh, gui=gui.append, in_ra=log.append)
+    gh.runs = [{"id": 1, "name": "DNSE dong bo", "created_at": iso(T - timedelta(minutes=12))},
+               {"id": 2, "name": "Kiem thu", "created_at": iso(T - timedelta(minutes=30))}]
+    gh.jobs = {1: [{"id": 11, "status": "queued", "labels": ["self-hosted", "vn"], "created_at": iso(T - timedelta(minutes=12))}],
+               2: [{"id": 21, "status": "queued", "labels": ["ubuntu-24.04"], "created_at": iso(T - timedelta(minutes=30))}]}
+    assert mac.buoc(T - timedelta(minutes=5)) is None                  # mới chờ 7' → chưa báo
+    tin = mac.buoc(T)
+    assert tin and "Máy Mac CHƯA NHẬN VIỆC" in tin and "DNSE dong bo – chờ 12'" in tin and "09:18" in tin
+    assert "Kiem thu" not in tin and len(gui) == 1                     # job GitHub-hosted chờ lâu: không phải lỗi Mac
+    assert mac.buoc(T + timedelta(minutes=5)) is None and len(gui) == 1   # cùng đợt → không nhắn lặp
+    gh.runs, gh.job1 = [], {11: {"id": 11, "status": "in_progress", "started_at": iso(T + timedelta(minutes=7))}}
+    tin = mac.buoc(T + timedelta(minutes=10))
+    assert tin and "đã nhận việc lại lúc 09:37" in tin and "19 phút" in tin and len(gui) == 2
+    assert mac.buoc(T + timedelta(minutes=15)) is None and len(gui) == 2
+    # đợt mới: job bị huỷ (không phải máy nhận) → chỉ ghi log
+    gh.runs = [{"id": 3, "name": "Dat lenh", "created_at": iso(T)}]
+    gh.jobs = {3: [{"id": 31, "status": "queued", "labels": ["self-hosted", "vn"], "created_at": iso(T)}]}
+    assert mac.buoc(T + timedelta(minutes=20)) and len(gui) == 3
+    gh.runs, gh.job1 = [], {31: {"id": 31, "status": "completed", "conclusion": "cancelled", "started_at": None}}
+    assert mac.buoc(T + timedelta(minutes=25)) is None and len(gui) == 3 and "bị huỷ" in log[-1]
+    # ngoài phiên / cuối tuần → không đọc API, không nhắn
+    gh.runs = [{"id": 4, "name": "DNSE dong bo", "created_at": iso(T - timedelta(hours=3))}]
+    gh.jobs = {4: [{"id": 41, "status": "queued", "labels": ["self-hosted", "vn"], "created_at": iso(T - timedelta(hours=3))}]}
+    assert mac.buoc(T.replace(hour=16)) is None and mac.buoc(T + timedelta(days=1)) is None and len(gui) == 3
+    assert mac.buoc(T.replace(hour=8, minute=29)) is None and mac.buoc(T.replace(hour=8, minute=30)) and len(gui) == 4
+    assert not any("http" in x or "DNSE" in x or "Dat lenh" in x for x in log)   # log công khai: không tên việc / link
