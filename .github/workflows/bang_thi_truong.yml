@@ -216,7 +216,8 @@ jobs:
   # nhật 2'): đẩy index.html + du_lieu.json lên nhánh du-lieu (1 commit ghi đè, không có file workflow → token không cần quyền
   # Workflows) rồi gọi trien_khai.yml của repo đó (workflow_dispatch). Token DANH_MUC_TOKEN_GHI phải được cấp repo này
   # (Contents + Actions + Workflows R/W); chưa cấp / chưa có repo → bỏ qua, không làm hỏng lượt. Repo còn trống (chưa có
-  # nhánh main) → lần đầu tự đẩy main = workflow trien_khai.yml (bản gốc canh-bao-mua/bang_rieng/).
+  # nhánh main) → lần đầu tự đẩy main = workflow trien_khai.yml (bản gốc canh-bao-mua/bang_rieng/); bản gốc đổi → tự cập nhật
+  # workflow ở main (12/11/2026).
   bang_rieng:
     needs: dung
     if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
@@ -252,6 +253,14 @@ jobs:
               && git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
                    commit -qm "Workflow triển khai Pages (từ canh-bao-mua/bang_rieng)" \
               && git push -q "$U" main && echo "Đã tạo nhánh main + workflow triển khai")
+          elif git clone -q --depth 1 -b main "$U" ../main && ! cmp -s trien_khai.yml ../main/.github/workflows/trien_khai.yml; then
+            # bản gốc bang_rieng/trien_khai.yml đổi → cập nhật workflow ở main (token cần quyền Workflows; lỗi → chỉ cảnh báo,
+            # lượt này vẫn triển khai bằng workflow cũ)
+            (cp trien_khai.yml ../main/.github/workflows/ && cd ../main && git add .github/workflows/trien_khai.yml \
+              && git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+                   commit -qm "Cập nhật workflow triển khai (từ canh-bao-mua/bang_rieng)" \
+              && git push -q "$U" main && echo "Đã cập nhật workflow triển khai $REPO") \
+              || echo "::warning::Không cập nhật được workflow triển khai ở $REPO (token thiếu quyền Workflows?)"
           fi
           git push -qf "$U" du-lieu
           curl -sf -X POST "${H[@]}" "https://api.github.com/repos/$REPO/actions/workflows/trien_khai.yml/dispatches" \
