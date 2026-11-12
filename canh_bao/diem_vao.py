@@ -253,25 +253,29 @@ def so_lenh(ma):
     return s if s["ban"] or s["mua"] else None
 
 
-def dong_so_lenh(s, den=None):
-    """'📗 Người bán đang chào: 136.50 × 2.800 · 136.60 × 2.000 · 136.70 × 1.800 · người mua chờ 136.30 × 1.200' – mức
-    bán cao hơn giới hạn của tin đánh dấu ⛔ (không mua ở đó). '' khi không có sổ lệnh."""
-    if not s or not s.get("ban"):
-        return ""
+def gia_hop_ly(so, ben, kl, gioi_han):
+    """Giá LO hợp lý theo sổ lệnh (nghìn đồng) – hệ thống tự đọc, người dùng chỉ cần đặt đúng số này (12/11/2026):
+    MUA = mức BÁN (thấp → cao) mà cộng dồn KL người bán đang chào ≥ kl, không cao hơn gioi_han;
+    BÁN = mức MUA (cao → thấp) mà cộng dồn KL người mua đang chờ ≥ kl, không thấp hơn gioi_han.
+    → giá | None khi không có sổ lệnh / mức đầu tiên đã vượt giới hạn (→ dùng giới hạn, không đuổi). 3 mức chưa đủ KL →
+    mức cuối còn trong giới hạn (khớp phần có, còn lại chờ)."""
+    if not so:
+        return None
+    mua = ben == "M"
+    ds, cd, cuoi = so.get("ban" if mua else "mua") or [], 0, None
+    for g, v in ds:
+        if (g > gioi_han + 1e-9) if mua else (g < gioi_han - 1e-9):
+            break
+        cd, cuoi = cd + v, g
+        if cd >= kl:
+            return g
+    return cuoi
 
-    def kl(v):
-        return f"{v:,}".replace(",", ".")
-    d = "📗 Người bán đang chào: " + " · ".join(
-        f"{_f(g)} × {kl(v)}" + (" ⛔" if den is not None and den == den and g > den + 1e-9 else "") for g, v in s["ban"][:3])
-    if s.get("mua"):
-        d += f" · người mua chờ {_f(s['mua'][0][0])} × {kl(s['mua'][0][1])}"
-    return d
 
-
-def dong_dat_lenh(kq, bien_the, gia):
-    """Dòng đặt lệnh ngắn gọn (theo cách vào đang dùng). Mua trong phiên = LO ở giới hạn vùng (đúng bước giá sàn): sàn
-    khớp ngay ở giá người bán đang chào (thấp nhất trước), không bao giờ cao hơn giới hạn – như lệnh thị trường có trần
-    (MTL / MP không có trần, dư chuyển LO; UPCoM không có) – 12/11/2026."""
+def dong_dat_lenh(kq, bien_the, gia, so=None, kl=0):
+    """Dòng đặt lệnh ngắn gọn (theo cách vào đang dùng). Mua trong phiên (12/11/2026): có sổ lệnh lúc báo → 1 giá LO hợp
+    lý (gia_hop_ly: mức người bán đang chào đủ kl CP, ≤ giới hạn vùng theo bước giá sàn) + mức tối đa; không có sổ lệnh →
+    LO ≤ giới hạn (sàn khớp ngay ở giá người bán đang chào – như lệnh thị trường có trần; MTL / MP không có trần)."""
     den = kq.get("den")
     if kq.get("atc"):
         return f"👉 Đặt lệnh ATC (giá ước tính {_f(gia)}). Không mua nếu giá cao hơn {_f(den)}"
@@ -280,11 +284,17 @@ def dong_dat_lenh(kq, bien_the, gia):
         return f"👉 Đặt lệnh ATO {_f(gia)}. Không mua nếu mở cửa cao hơn {_f(den)}"
     if goc == "LO" or den is None or den != den:          # cách LO: lệnh chờ ở giá LO dưới thị trường (cố ý)
         return f"👉 Đặt lệnh {_f(gia)}. Không đặt cao hơn {_f(den)}"
-    return f"👉 Mua LO ≤ {_f(gia_lo_dong(den, kq['ma']) / 1000)} – khớp ngay ở giá người bán đang chào (vừa khớp {_f(gia)})"
+    tran = gia_lo_dong(den, kq["ma"]) / 1000
+    p = gia_hop_ly(so, "M", max(int(kl or 0), 100), tran)
+    if p is not None:
+        return f"👉 Mua LO {_f(p)}" + ("" if abs(p - tran) < 1e-9 else f" (tối đa {_f(tran)})")
+    if so and so.get("ban"):                               # người bán thấp nhất đã cao hơn giới hạn → không đuổi
+        return f"👉 Chưa mua: giá bán thấp nhất {_f(so['ban'][0][0])} > tối đa {_f(tran)} – muốn chờ thì đặt LO {_f(tran)}"
+    return f"👉 Mua LO ≤ {_f(tran)} – khớp ngay ở giá người bán đang chào (vừa khớp {_f(gia)})"
 
 
 def tin_mua(kq, bay_gio, bien_the, dang_giu=None, so=None):
-    """so: sổ lệnh lúc báo (so_lenh) → thêm dòng 📗 người bán đang chào ngay dưới dòng đặt lệnh (12/11/2026)."""
+    """so: sổ lệnh lúc báo (so_lenh) → dòng đặt lệnh ghi 1 giá LO hợp lý (gia_hop_ly) thay "LO ≤ giới hạn" (12/11/2026)."""
     if dang_giu:                                       # True hoặc dict vị thế thật (chay.py)
         return tin_giu_theo_he_thong(kq, bay_gio, dang_giu)
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
@@ -295,7 +305,7 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None, so=None):
     ut = nhan_uu_tien(kq.get("uu_tien"))                 # nhiều tin cùng lúc → thấy mã nào ưu tiên (★1 cao nhất)
     von = _von_nav(kq, gia, cl)
     d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})" + (f" · ưu tiên {ut}" if ut else ""),
-         dong_dat_lenh(kq, bien_the, gia)] + ([dong_so_lenh(so, kq.get("den"))] if dong_so_lenh(so) else []) + [
+         dong_dat_lenh(kq, bien_the, gia, so, _lo_atc(kq, so_cp_nav(kq, gia, cl)) // 100 * 100),
          f"{TEN_NHOM.get(kq['nhom'], kq['nhom'])} · Vùng mua {_f(kq['tu'])} – {_f(kq['den'])} · Cắt lỗ {_f(cl)}"
          + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
          f"Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}" + (f" · {von}" if von else "")]
