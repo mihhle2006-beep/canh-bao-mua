@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: github-pages
-      url: ${{ steps.dp.outputs.page_url }}
+      url: ${{ steps.dp.outputs.page_url || steps.dp2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -32,5 +32,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      # 12/11/2026: deploy-pages thỉnh thoảng báo "No artifacts named github-pages were found" / "Fetching artifact
+      # metadata failed" dù artifact đã tải lên (lỗi chập chờn phía GitHub, 2/25 lượt) → chờ 20 giây, thử lại 1 lần.
       - id: dp
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - if: steps.dp.outcome == 'failure'
+        run: sleep 20
+      - id: dp2
+        if: steps.dp.outcome == 'failure'
         uses: actions/deploy-pages@v4
