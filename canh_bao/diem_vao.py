@@ -283,6 +283,8 @@ def dong_dat_lenh(kq, bien_the, gia, so=None, kl=0):
     if goc == "ATO":
         return f"👉 Đặt lệnh ATO {_f(gia)}. Không mua nếu mở cửa cao hơn {_f(den)}"
     if goc == "LO" or den is None or den != den:          # cách LO: lệnh chờ ở giá LO dưới thị trường (cố ý)
+        if gia == gia and kq.get("ma"):                    # ⅓ dưới vùng chưa tròn bước giá → làm tròn xuống theo sàn
+            gia = gia_lo_dong(gia, kq["ma"]) / 1000
         return f"👉 Đặt lệnh {_f(gia)}. Không đặt cao hơn {_f(den)}"
     tran = gia_lo_dong(den, kq["ma"]) / 1000
     p = gia_hop_ly(so, "M", max(int(kl or 0), 100), tran)

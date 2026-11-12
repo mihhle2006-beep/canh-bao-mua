@@ -186,10 +186,16 @@ def dong_nhiet(nh, rr=None):
     return f"🌡 Rủi ro/lệnh mới {rr:g}% × {hd:g} × {hs:g} = {rr * hd * hs:.2f}% vốn\n   " + " · ".join(phan)
 
 
-def gia_lo(tu, den):
-    """Giá đặt lệnh LO cho phiên tới = ⅓ dưới vùng (như ptcp.diem_vao_15p), làm tròn XUỐNG theo bước giá."""
+def gia_lo(tu, den, ma=None):
+    """Giá đặt lệnh LO cho phiên tới = ⅓ dưới vùng (như ptcp.diem_vao_15p), làm tròn XUỐNG theo bước giá. ma → bước giá
+    THEO SÀN của mã (HNX / UPCoM 0,1 – diem_vao.gia_lo_dong); 12/11/2026: trước luôn theo bước HOSE → mã HNX / UPCoM có
+    thể ra giá lẻ 0,05 / 0,01 sàn không nhận."""
+    x = tu + (den - tu) / 3
+    if ma and x == x:
+        from .diem_vao import gia_lo_dong
+        return gia_lo_dong(x, ma) / 1000
     from ptcp.chien_luoc import lam_tron_buoc
-    return lam_tron_buoc(tu + (den - tu) / 3, False)
+    return lam_tron_buoc(x, False)
 
 
 def _tran_ma_pct():
@@ -300,7 +306,7 @@ def dong_mua(k, dang_giu=(), bien_the=None):
     g, cl = _so(k.get("gia")), _so(k.get("cl"))
     nhom = TIEU_DE.get(k.get("nhom"), str(k.get("nhom") or "")).split(" ", 1)[-1]     # "🟢 MUA MỚI" → "MUA MỚI"
     goc = (bien_the or "").partition("+ATC")[0]
-    lo = (f" · Đặt LO {_f(gia_lo(k['tu'], k['den']))}" if goc == "LO" and k.get("tu") == k.get("tu")
+    lo = (f" · Đặt LO {_f(gia_lo(k['tu'], k['den'], k.get('ma')))}" if goc == "LO" and k.get("tu") == k.get("tu")
           and k.get("den") == k.get("den") and k.get("tu") is not None and k.get("den") is not None else "")
     von, nganh = chu_von_lenh(k), canh_bao_nganh(k["ma"], dang_giu)
     d = [f"{sao}{k['ma']}{manh}" + (f" {_f(g)}" if g == g else "") + (f" | {nhom}" if nhom else "")

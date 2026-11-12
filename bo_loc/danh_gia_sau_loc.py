@@ -126,14 +126,15 @@ def _ke_hoach_chien_luoc(m, k, von_trieu, rui_ro_pct):
         "so_phien_mua": so_cp / cp_mot_phien if cp_mot_phien > 0 else np.nan,
         "nhom_cl": nhom, "ten_nhom_cl": (k or {}).get("ten_nhom", ""), "dat_diem_mua": (k or {}).get("ly_do", ""),
         "vo_hieu": (k or {}).get("vo_hieu", ""),
-        "gia_lo": _gia_lo(tu, den) if co_vung and nhom in ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA") else np.nan,
+        "gia_lo": _gia_lo(tu, den, m.get("ma")) if co_vung and nhom in ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA") else np.nan,
     }
 
 
-def _gia_lo(tu, den):
-    """Giá đặt LO phiên tới = ⅓ dưới vùng, làm tròn xuống bước giá (như tin tổng kết canh-bao-mua – cách vào LO+ATC★)."""
-    from ptcp.chien_luoc import lam_tron_buoc
-    return lam_tron_buoc(tu + (den - tu) / 3, False)
+def _gia_lo(tu, den, ma=None):
+    """Giá đặt LO phiên tới = ⅓ dưới vùng, làm tròn xuống bước giá – theo sàn của mã khi biết mã (như tin tổng kết
+    canh-bao-mua – cách vào LO+ATC★)."""
+    from canh_bao.tong_ket_cl import gia_lo
+    return gia_lo(tu, den, ma)
 
 
 def xep_loai_theo_chien_luoc(nhom, dat_loc, gan_dat, nang):
@@ -241,6 +242,7 @@ def danh_gia_sau_loc(ds_m, b, von_trieu, rui_ro_pct):
     rows = []
     for _, r in b.iterrows():
         m = dict(ds_m[r["Mã"]])
+        m.setdefault("ma", r["Mã"])                                  # giá LO theo bước giá sàn của mã
         kh = ke_hoach_giao_dich(m, von_trieu, rui_ro_pct)
         m["kc_cat_lo"] = kh["kc_cat_lo"]
         tc = cham_tru_cot(m)
