@@ -26,6 +26,8 @@ jobs:
           C_DM: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
           T_NC: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
           C_NC: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || '' }}
+          CHAT_NC_SECRET: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU }}
+          CO_T_NC: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU != '' && '1' || '' }}
           T_HT: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
           C_HT: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
         run: |
@@ -44,7 +46,15 @@ jobs:
           gui "💼 Danh mục" "$T_DM" "$C_DM" "💼 Kênh DANH MỤC (thử) – danh mục, lệnh, nút 🛒 / 🛑, kết quả khớp."
           gui "📊 Nghiên cứu" "$T_NC" "$C_NC" "📊 Kênh NGHIÊN CỨU (thử) – bộ lọc định kỳ, KQKD, BCTC mới / bất thường, báo cáo CTCK, BCTN, tổ chức phát hành, tra cứu mã. Có thể tắt thông báo."
           gui "⚙ Hệ thống & giả lập" "$T_HT" "$C_HT" "⚙ Kênh HỆ THỐNG & GIẢ LẬP (thử) – workflow lỗi, token sắp hết hạn, kiểm thử hỏng, 🩺 sức khoẻ, giả lập, lệch backtest. Có thể tắt thông báo."
-          if [ -n "$C_NC" ]; then                     # chẩn đoán nhóm nghiên cứu (không in chat id)
+          # bot nghiên cứu: đã đặt TELEGRAM_TOKEN_NGHIEN_CUU chưa · token hợp lệ không (getMe → tên bot, công khai)
+          if [ -n "$CO_T_NC" ]; then
+            ma=$(curl -s -o /tmp/r.json -w "%{http_code}" "https://api.telegram.org/bot$T_NC/getMe")
+            echo "Bot nghiên cứu (TELEGRAM_TOKEN_NGHIEN_CUU): $( [ "$ma" = 200 ] && python3 -c "import json; print('@' + json.load(open('/tmp/r.json'))['result']['username'])" || echo "token SAI / đã thu hồi (HTTP $ma)" )"
+          else
+            echo "Bot nghiên cứu: CHƯA có secret TELEGRAM_TOKEN_NGHIEN_CUU"
+          fi
+          case "$CHAT_NC_SECRET" in *:*) echo "⚠ Secret TELEGRAM_CHAT_ID_NGHIEN_CUU đang chứa TOKEN bot (có dấu ':') → XOÁ secret này; token đặt ở TELEGRAM_TOKEN_NGHIEN_CUU";; esac
+          if [ -n "$CHAT_NC_SECRET" ]; then           # chẩn đoán nhóm nghiên cứu (không in chat id)
             n=$(printf %s "$C_NC" | tr -d '[:space:]')
             echo "Chẩn đoán nhóm nghiên cứu: $( [ "$n" != "$C_NC" ] && echo 'CÓ khoảng trắng / xuống dòng thừa · ' )$( case "$n" in -100*) echo 'dạng siêu nhóm -100…';; -*) echo 'dạng nhóm thường -…';; *) echo 'THIẾU dấu trừ ở đầu';; esac ) · $(printf %s "$n" | tr -cd '0-9' | wc -c) chữ số$( printf %s "$n" | grep -q '[^-0-9]' && echo ' · CÓ ký tự lạ (chỉ được số và dấu -)' )"
             for b in "bot nghiên cứu:$T_NC" "bot chính:$T_CHINH" "bot danh mục:$T_DM" "bot giả lập:$T_HT"; do
