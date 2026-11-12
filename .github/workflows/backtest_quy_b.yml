@@ -12,6 +12,8 @@
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
 #   mc_von – (chạy tay, 11/2026) Monte Carlo đường vốn: lấy mẫu lại đường vốn luật đang áp dụng theo khối ~1 quý → phân vị
 #           lãi năm, sụt vốn, thời gian chìm dưới đỉnh, chuỗi lệnh thua (+ 2 mức rủi ro/lệnh so sánh). Chỉ đo.
+#   mua_lai – (chạy tay, 12/11/2026) mua lại khi đóng cửa vượt đỉnh cũ sau lệnh đã lãi ≥ 1R bị bán (20 / 40 / 60 phiên, chỉ
+#           lệnh bị cắt trước khung tuần) – so nền v2 trên 20 thứ tự ★, luật đặt trước C1 20/20 + C2 4/4. Xong thì xoá.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -60,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, bctn, khang_cu, cai_thien, non, thanh_khoan, mc_von]
+        phan: [chuan, cham1r, bctn, khang_cu, cai_thien, non, thanh_khoan, mc_von, mua_lai]
     runs-on: ubuntu-24.04
     defaults:
       run:
