@@ -38,10 +38,13 @@ def test_tai_nen_5p_gop_tu_1p_va_dung_cache(monkeypatch, tmp_path):
     from canh_bao import du_lieu
     monkeypatch.setattr(du_lieu, "THU_MUC_CACHE", str(tmp_path))
     goi = []
+    # dữ liệu giả tới 6 ngày trước hôm nay (không cố định 05/11/2026: tai_nen_5p dừng sau 3 cửa sổ rỗng liền tính lùi từ
+    # hôm nay → mốc cố định làm test tự gãy ~2 tuần sau – rà test phụ thuộc giờ chạy 12/11/2026)
+    het = pd.Timestamp.now().normalize() - pd.Timedelta(days=6)
 
     def gia_1p(ma, tu, den, khung, chi_so=False):
         goi.append((tu, den))
-        ngay = [d for d in pd.bdate_range(pd.Timestamp(tu, unit="s"), pd.Timestamp(den, unit="s")) if d < pd.Timestamp("2026-11-06")]
+        ngay = [d for d in pd.bdate_range(pd.Timestamp(tu, unit="s"), pd.Timestamp(den, unit="s")) if d < het]
         t = [x for d in ngay for x in pd.date_range(f"{d:%Y-%m-%d} 09:15", f"{d:%Y-%m-%d} 09:44", freq="1min")]
         t = [x for x in t if tu <= (x - pd.Timedelta(hours=7)).timestamp() < den]
         if not t:
@@ -49,10 +52,11 @@ def test_tai_nen_5p_gop_tu_1p_va_dung_cache(monkeypatch, tmp_path):
         g = 20000.0 + np.arange(len(t))
         return pd.DataFrame({"time": t, "open": g, "high": g + 5, "low": g - 5, "close": g, "volume": 100.0})
     monkeypatch.setattr(du_lieu, "tu_vci", gia_1p)
-    d = B.tai_nen_5p("AAA", tu="2026-10-20", cua_so=5, nghi=0)
+    tu = f"{het - pd.Timedelta(days=17):%Y-%m-%d}"
+    d = B.tai_nen_5p("AAA", tu=tu, cua_so=5, nghi=0)
     assert d is not None and len(d) and (d.index.minute % 5 == 0).all()
     mot = d[d.index.normalize() == d.index[0].normalize()]
     assert len(mot) == 6 and mot.volume.iloc[0] == 500 and mot.open.iloc[0] == 20.0          # 9:15–9:44 → 6 nến 5'
     so_goi = len(goi)
-    d2 = B.tai_nen_5p("AAA", tu="2026-10-20", cua_so=5, nghi=0)                          # lần 2: chỉ tải phần mới
+    d2 = B.tai_nen_5p("AAA", tu=tu, cua_so=5, nghi=0)                          # lần 2: chỉ tải phần mới
     assert len(goi) - so_goi < so_goi and d2.index.equals(d.index)
