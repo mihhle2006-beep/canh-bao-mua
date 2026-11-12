@@ -31,7 +31,7 @@ def test_chi_ghi_dat_chua_dat_khong_ghi_nguong_va_so_lieu(tmp_path):
     assert r["AAA"] == {"ro": 1, "rs": 1, "bien_dong": 1, "dat": 0, "m_dinh": 1, "m_rs": 1, "m_tk": 0, "m_nganh": 1, "manh": 1}
     assert r["BBB"]["rs"] == 0 and r["BBB"]["bien_dong"] == 0 and r["BBB"]["dat"] == 1 and r["BBB"]["m_tk"] is None
     assert r["CCC"]["ro"] == 0 and r["CCC"]["rs"] is None
-    txt = json.dumps(d)
+    txt = json.dumps({k: v for k, v in d.items() if k != "cap_nhat"})        # giờ cập nhật (VD 14:45) không phải số liệu
     assert "nguong" not in txt and "QUY_" not in txt                            # không lộ ngưỡng
     for so in ("45", "77.7", "0.55", "-12.3", "300.5", "150", "-1.1", "4.4"):   # không lộ số liệu đem so
         assert so not in txt.replace("2026-", ""), so
