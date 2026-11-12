@@ -559,22 +559,23 @@ def main(argv=None):
     print(f"Đồng hồ chạy {a.phut:.0f} phút, {len(LICH)} dòng lịch", flush=True)
     while time.time() - bat_dau < a.phut * 60:
         bay_gio = datetime.now(VN)
-        try:
-            dh.buoc(bay_gio)
-            m = moc_gan_nhat(KIEM_TOKEN, bay_gio, 30)
-            if m and m != da_kiem:
-                da_kiem = m
-                kiem_token(bay_gio)
-            if time.time() - lan_gs >= GIAM_SAT_GIAY:
-                lan_gs = time.time()
-                gs.buoc()
-                if mac:
-                    try:
-                        mac.buoc(bay_gio)
-                    except urllib.error.HTTPError as e:            # token thiếu quyền Actions: Read → kiem_token báo 20:05
-                        print(f"máy Mac: GitHub {e.code} – bỏ lượt")
-        except Exception as e:                                      # lỗi lạ: in rồi chạy tiếp phút sau
-            print(f"⚠ {type(e).__name__}: {str(e)[:100]}")
+        viec = [("lịch", lambda: dh.buoc(bay_gio))]
+        m = moc_gan_nhat(KIEM_TOKEN, bay_gio, 30)
+        if m and m != da_kiem:
+            da_kiem = m
+            viec.append(("token", lambda: kiem_token(bay_gio)))
+        if time.time() - lan_gs >= GIAM_SAT_GIAY:
+            lan_gs = time.time()
+            viec.append(("giám sát", gs.buoc))
+            if mac:
+                viec.append(("máy Mac", lambda: mac.buoc(bay_gio)))
+        for ten, f in viec:                                         # mỗi phần 1 try: lịch lỗi không chặn giám sát…
+            try:
+                f()
+            except urllib.error.HTTPError as e:
+                print(f"⚠ {ten}: GitHub {e.code} – bỏ lượt" + (" (token thiếu quyền Actions: Read?)" if ten == "máy Mac" else ""))
+            except Exception as e:                                  # lỗi lạ: in rồi chạy tiếp phút sau
+                print(f"⚠ {ten}: {type(e).__name__}: {str(e)[:100]}")
         sys.stdout.flush()
         time.sleep(max(5, 60 - datetime.now(VN).second + 3))
     for lan in range(4):                                            # gọi lượt sau: thử 4 lần (chuỗi đứt → lịch dự phòng)

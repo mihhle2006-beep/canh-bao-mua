@@ -148,7 +148,9 @@ def _loc_quy(ma, vni):
     try:
         from ptcp.loc_quy_b import he_so
         return he_so(ma, vni)
-    except Exception:                               # noqa: BLE001
+    except Exception as e:                          # noqa: BLE001 – không lọc mã này, nhưng phải cho biết (loi_phu)
+        from . import loi_phu
+        loi_phu.ghi("lọc Quỹ B", e)
         return None
 
 
@@ -453,7 +455,9 @@ def dong_su_kien(gia_ma, bay_gio):
     for ma in sorted(gia_ma):
         try:
             sk = sap_toi(ma, getattr(C, "SO_NGAY_BAO_QUYEN", 10), bay_gio)
-        except Exception:                                        # noqa: BLE001 – lịch lỗi không chặn tin
+        except Exception as e:                                   # noqa: BLE001 – lịch lỗi không chặn tin
+            from . import loi_phu
+            loi_phu.ghi("lịch quyền sắp tới", e)
             continue
         for d, x in sk.items():
             qm = "quyền mua" in str(x.get("mo_ta", ""))
@@ -488,7 +492,9 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
         sk = dong_su_kien({vt["ma"]: (kb or {}).get("gia", np.nan) for vt, kb, _ in giu}, bay_gio)
         day_du += [x.replace("vùng / cắt lỗ tự quy đổi theo tỷ lệ khi tới ngày", "mã đang giữ: cắt lỗ / giá vốn đổi theo "
                              "tỷ lệ – danh_muc tự quy đổi") for x in sk]
-    return "\n".join(day_du).rstrip(), "\n".join(_tin(ra, bay_gio, kq_bt, set())).rstrip()
+    from . import loi_phu
+    loi = loi_phu.dong_tin()                     # luật tạm không áp dụng vì phần phụ lỗi → chủ quỹ phải biết (bản riêng)
+    return "\n".join(day_du).rstrip() + (f"\n\n{loi}" if loi else ""), "\n".join(_tin(ra, bay_gio, kq_bt, set())).rstrip()
 
 
 def dong_suat(ra, giu):

@@ -68,8 +68,8 @@ def thi_truong(vni, gia=None, file_cache=None):
         try:
             from ptcp.do_rong import cap_nhat
             cap_nhat(vni, gia=g)
-        except Exception:                                  # noqa: BLE001 – ptcp cũ / thiếu giá rổ → cờ của lọc sáng
-            pass
+        except Exception as e:                             # noqa: BLE001 – ptcp cũ / thiếu giá rổ → cờ của lọc sáng
+            print(f"  ⚠ Độ rộng rổ (ptcp.do_rong): {type(e).__name__}: {str(e)[:100]} → dùng cờ độ rộng của lọc sáng")
     F, diem, muc = bang_chi_bao(vni, g if that else None)
     if not that:
         cot = list(F.columns)
@@ -184,8 +184,14 @@ def _loc_quy(ma, vni):
     try:
         from ptcp.loc_quy_b import he_so
         return he_so(ma, vni)
-    except Exception:                                  # noqa: BLE001
+    except Exception as e:                             # noqa: BLE001 – không lọc mã này, nhưng in 1 lần / loại lỗi
+        if type(e).__name__ not in _LOI_QUY:
+            _LOI_QUY.add(type(e).__name__)
+            print(f"  ⚠ Lọc Quỹ B (ptcp.loc_quy_b): {type(e).__name__}: {str(e)[:100]} → mã không qua lọc Quỹ B")
         return None
+
+
+_LOI_QUY = set()
 
 
 def ap_vao_chi_so(m, k):

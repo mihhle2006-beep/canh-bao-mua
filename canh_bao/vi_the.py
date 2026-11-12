@@ -106,7 +106,10 @@ def nav_that(vt=None):
     import json
     v = None
     try:
-        tm, _ = _tai_tu_github(os.environ.get("TIEN_MAT_PATH", "").strip() or "tien_mat_chinh.json")
+        tm, ly_do = _tai_tu_github(os.environ.get("TIEN_MAT_PATH", "").strip() or "tien_mat_chinh.json")
+        if tm is None and os.environ.get("DANH_MUC_TOKEN"):        # bản riêng mà không đọc được tiền mặt → không có số CP
+            from . import loi_phu
+            loi_phu.ghi("NAV thật (số CP lệnh mua)", ly_do)
         if tm:
             tien = float(json.loads(tm).get("tien_mat") or 0)
             dm, _ = _tai_tu_github()
@@ -120,7 +123,9 @@ def nav_that(vt=None):
             tr, _ = _tai_tu_github("trung_vang_chinh.json")
             trung = sum(float(t.get("goc") or 0) for t in (json.loads(tr).get("trung") or [])) if tr else 0.0
             v = tien + cp + trung if tien + cp + trung > 0 else None
-    except Exception:                                 # noqa: BLE001 – không có file / sai định dạng → không ghi số CP
+    except Exception as e:                            # noqa: BLE001 – không có file / sai định dạng → không ghi số CP
+        from . import loi_phu
+        loi_phu.ghi("NAV thật (số CP lệnh mua)", e, an=True)       # dữ liệu danh mục: chỉ in loại lỗi
         v = None
     _NAV["v"] = v
     return v
@@ -321,7 +326,9 @@ def quy_doi_gdkhq(vt, bay_gio, dn=None):
     try:
         from .diem_vao import _he_so_lich
         f = _he_so_lich(ma, g, bay_gio) if g else None
-    except Exception:                                            # noqa: BLE001 – không có lịch / bảng giá
+    except Exception as e:                                       # noqa: BLE001 – không có lịch / bảng giá
+        from . import loi_phu
+        loi_phu.ghi("điều chỉnh quyền vị thế đang giữ", e)
         f = None
     if not f or not 0.2 < f < 5:
         return vt, None
@@ -393,7 +400,9 @@ def _danh_gia_ban(vt, kq, dn=None, bay_gio=None, f_gdkhq=None):
         try:
             from ptcp.theo_chien_luoc import nguong_ma10_tuan
             nguong = nguong_ma10_tuan(_phien_da_dong(dn, bay_gio))[0]
-        except Exception:
+        except Exception as e:                                   # noqa: BLE001 – chỉ là dòng ngưỡng MA10 tuần
+            from . import loi_phu
+            loi_phu.ghi("ngưỡng MA10 tuần", e)
             nguong = None
     return {"muc": muc, "ly_do": ly_do, "ghi_chu": ghi_chu, "gia": gia, "lai_lo_pct": lai, "cat_lo": lo,
             "ma10_tuan": ht.get("ma10_tuan"), "nguong_ma10": nguong, "so_phien": ht.get("so_phien"),

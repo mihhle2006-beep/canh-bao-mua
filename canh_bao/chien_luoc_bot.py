@@ -172,8 +172,9 @@ def chay_chien_luoc(tai, bay_gio, du_lieu_san=None, vni=None, ds_ma=None, ds_do_
     try:                                                   # QUỸ BỨT PHÁ: nhiệt thị trường → hệ số khối lượng lệnh mới
         from ptcp.chien_luoc import doc_nhiet
         nhiet = doc_nhiet(vni, pd.DataFrame(gia))
-    except Exception:                                      # noqa: BLE001 – ptcp cũ / thiếu dữ liệu → hệ số 1
-        pass
+    except Exception as e:                                 # noqa: BLE001 – ptcp cũ / thiếu dữ liệu → hệ số 1
+        from . import loi_phu
+        loi_phu.ghi("nhiệt thị trường (hệ số khối lượng)", e)
     bat_day = he_bat_day(ohlc, vni)                       # sau nhiệt (độ rộng rổ đã tính tới phiên cuối)
     lich, _, cl_hien = lich_chien_luoc(diem)
     doc = doc_thi_truong(F, diem, muc, cl_hien)

@@ -11,6 +11,15 @@ def _khong_goi_lich_quyen(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _xoa_loi_phu():
+    """Lỗi phần phụ (canh_bao.loi_phu – dòng ⚙ cuối tin tổng kết) không dính từ test này sang test khác."""
+    from canh_bao import loi_phu
+    loi_phu.xoa()
+    yield
+    loi_phu.xoa()
+
+
+@pytest.fixture(autouse=True)
 def _khong_doc_nav_that(monkeypatch):
     """Test không đọc NAV tài khoản thật (vi_the.nav_that) – tin MUA không kèm số CP trừ test tự đặt."""
     from canh_bao import vi_the
