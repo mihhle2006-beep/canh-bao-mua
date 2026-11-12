@@ -50,8 +50,10 @@
   },
   "DBC": {
    "ngay": "2026-11-12",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "TDP": {
    "ngay": "2026-10-09",
@@ -156,8 +158,10 @@
   },
   "SSI": {
    "ngay": "2026-11-12",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "VPL": {
    "ngay": "2026-10-21",
@@ -237,18 +241,24 @@
   },
   "HSG": {
    "ngay": "2026-11-12",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "HHV": {
    "ngay": "2026-11-12",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "KBC": {
    "ngay": "2026-11-12",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "CTG": {
    "ngay": "2026-11-10",
@@ -272,8 +282,10 @@
   },
   "GAS": {
    "ngay": "2026-11-12",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "HUT": {
    "ngay": "2026-11-10",
@@ -284,8 +296,10 @@
   },
   "TPB": {
    "ngay": "2026-11-12",
-   "trang_thai": "CHỜ",
-   "da_bao": []
+   "trang_thai": "MUA",
+   "da_bao": [
+    "MUA"
+   ]
   },
   "VCG": {
    "ngay": "2026-11-12",
@@ -301,17 +315,17 @@
     "Mã": "TPB",
     "Nhóm": "MUA MỚI",
     "Vùng": "12.85–13.45",
-    "Giá": 13.0,
-    "Trạng thái": "CHỜ",
-    "Lý do": "chưa có điểm vào",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 13.15,
+    "Trạng thái": "MUA",
+    "Lý do": "đủ tiêu chí 15': phá đỉnh 20 nến KL 2.5×",
+    "Giờ": "14:15",
+    "Giá mua": 13.15
    },
    {
     "Mã": "FRT",
     "Nhóm": "MUA MỚI",
     "Vùng": "145.10–152.40",
-    "Giá": 146.0,
+    "Giá": 147.8,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -331,7 +345,7 @@
     "Mã": "VCG",
     "Nhóm": "MUA MỚI",
     "Vùng": "15.25–16.00",
-    "Giá": 15.5,
+    "Giá": 15.55,
     "Trạng thái": "CHỜ",
     "Lý do": "chưa có điểm vào",
     "Giờ": "",
@@ -341,61 +355,61 @@
     "Mã": "GAS",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "73.40–76.60",
-    "Giá": 74.3,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 74.0,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 74.0
    },
    {
     "Mã": "HSG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.80–11.25",
-    "Giá": 10.95,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 11.05,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 11.05
    },
    {
     "Mã": "SSI",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "19.95–20.75",
-    "Giá": 20.5,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 20.3,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 20.3
    },
    {
     "Mã": "KBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "26.60–27.65",
-    "Giá": 26.9,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 27.1,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 27.1
    },
    {
     "Mã": "DBC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "15.90–16.65",
-    "Giá": 16.05,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 16.0,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 16.0
    },
    {
     "Mã": "HHV",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "9.56–9.92",
-    "Giá": 9.88,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
-    "Giờ": "",
-    "Giá mua": null
+    "Giá": 9.85,
+    "Trạng thái": "MUA",
+    "Lý do": "vào trễ – lệnh ATC trong vùng",
+    "Giờ": "14:15",
+    "Giá mua": 9.85
    }
   ]
  }
