@@ -229,6 +229,45 @@ def gia_lo_dong(gia_nghin, ma):
     return g // b * b
 
 
+def so_lenh(ma):
+    """Sổ lệnh 3 mức LÚC BÁO (bảng giá Vietcap – trường bidAsk, như màn hình "Đặt mua / Đặt bán" của app) → {"ban": [(giá
+    nghìn, KL) thấp → cao], "mua": [(giá, KL) cao → thấp]} | None khi lỗi / trống. 1 lần gọi, không thử lại (tin không chờ)."""
+    try:
+        from thi_truong import nguon
+        x = nguon._ds(nguon.goi(f"{nguon.TV}/price/symbols/getList", {"symbols": [ma]}, so_lan=1, timeout=8))
+    except Exception:                                  # noqa: BLE001 – không có sổ lệnh thì tin không có dòng này
+        return None
+    ba = ((x[0] if x and isinstance(x[0], dict) else {}).get("bidAsk") or {})
+
+    def muc(k):
+        ra = []
+        for m in ba.get(k) or []:
+            try:
+                g, v = float(m.get("price") or 0), int(float(m.get("volume") or 0))
+            except (TypeError, ValueError, AttributeError):
+                continue
+            if g > 0 and v > 0:
+                ra.append((g / 1000, v))
+        return ra
+    s = {"ban": sorted(muc("askPrices")), "mua": sorted(muc("bidPrices"), reverse=True)}
+    return s if s["ban"] or s["mua"] else None
+
+
+def dong_so_lenh(s, den=None):
+    """'📗 Người bán đang chào: 136.50 × 2.800 · 136.60 × 2.000 · 136.70 × 1.800 · người mua chờ 136.30 × 1.200' – mức
+    bán cao hơn giới hạn của tin đánh dấu ⛔ (không mua ở đó). '' khi không có sổ lệnh."""
+    if not s or not s.get("ban"):
+        return ""
+
+    def kl(v):
+        return f"{v:,}".replace(",", ".")
+    d = "📗 Người bán đang chào: " + " · ".join(
+        f"{_f(g)} × {kl(v)}" + (" ⛔" if den is not None and den == den and g > den + 1e-9 else "") for g, v in s["ban"][:3])
+    if s.get("mua"):
+        d += f" · người mua chờ {_f(s['mua'][0][0])} × {kl(s['mua'][0][1])}"
+    return d
+
+
 def dong_dat_lenh(kq, bien_the, gia):
     """Dòng đặt lệnh ngắn gọn (theo cách vào đang dùng). Mua trong phiên = LO ở giới hạn vùng (đúng bước giá sàn): sàn
     khớp ngay ở giá người bán đang chào (thấp nhất trước), không bao giờ cao hơn giới hạn – như lệnh thị trường có trần
@@ -244,7 +283,8 @@ def dong_dat_lenh(kq, bien_the, gia):
     return f"👉 Mua LO ≤ {_f(gia_lo_dong(den, kq['ma']) / 1000)} – khớp ngay ở giá người bán đang chào (vừa khớp {_f(gia)})"
 
 
-def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
+def tin_mua(kq, bay_gio, bien_the, dang_giu=None, so=None):
+    """so: sổ lệnh lúc báo (so_lenh) → thêm dòng 📗 người bán đang chào ngay dưới dòng đặt lệnh (12/11/2026)."""
     if dang_giu:                                       # True hoặc dict vị thế thật (chay.py)
         return tin_giu_theo_he_thong(kq, bay_gio, dang_giu)
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
@@ -255,7 +295,7 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
     ut = nhan_uu_tien(kq.get("uu_tien"))                 # nhiều tin cùng lúc → thấy mã nào ưu tiên (★1 cao nhất)
     von = _von_nav(kq, gia, cl)
     d = [f"{dau} – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})" + (f" · ưu tiên {ut}" if ut else ""),
-         dong_dat_lenh(kq, bien_the, gia),
+         dong_dat_lenh(kq, bien_the, gia)] + ([dong_so_lenh(so, kq.get("den"))] if dong_so_lenh(so) else []) + [
          f"{TEN_NHOM.get(kq['nhom'], kq['nhom'])} · Vùng mua {_f(kq['tu'])} – {_f(kq['den'])} · Cắt lỗ {_f(cl)}"
          + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
          f"Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}" + (f" · {von}" if von else "")]

@@ -790,3 +790,23 @@ def test_gia_lo_theo_buoc_gia_san(monkeypatch):
     assert diem_vao.dong_dat_lenh(kq, "15P+GIO", 20.9) == \
         "👉 Mua LO ≤ 21.35 – khớp ngay ở giá người bán đang chào (vừa khớp 20.90)"
     assert diem_vao.dong_dat_lenh(kq, "LO", 20.5) == "👉 Đặt lệnh 20.50. Không đặt cao hơn 21.37"   # cách LO giữ nguyên
+
+
+def test_tin_mua_kem_so_lenh_nguoi_ban_dang_chao(monkeypatch):
+    """12/11/2026: tin MUA NGAY in 3 mức người bán đang chào (bảng giá Vietcap bidAsk) dưới dòng đặt lệnh; mức > giới hạn ⛔."""
+    from thi_truong import nguon
+    so = {"ban": [(136.5, 2800), (136.6, 2000), (136.7, 1800)], "mua": [(136.3, 1200), (136.2, 1200)]}
+    kq = {"ma": "AAA", "nhom": "MUA_MOI", "tu": 133.0, "den": 136.6, "cl": 130.0, "gia_mua": 136.5, "gia_nay": 136.5,
+          "thoi_diem": pd.Timestamp("2026-11-12 10:15"), "ly_do": "đủ", "ly_do_ngay": "MACD", "tieu_chi": [], "atr": np.nan}
+    d = diem_vao.tin_mua(kq, "2026-11-12 10:16", "15P+GIO", so=so).split("\n")
+    assert d[2] == "📗 Người bán đang chào: 136.50 × 2.800 · 136.60 × 2.000 · 136.70 × 1.800 ⛔ · người mua chờ 136.30 × 1.200"
+    assert "📗" not in diem_vao.tin_mua(kq, "2026-11-12 10:16", "15P+GIO")       # không có sổ lệnh → như cũ
+    tra = [{"bidAsk": {"askPrices": [{"price": 136600, "volume": 2000}, {"price": 136500, "volume": 2800},
+                                     {"price": 0, "volume": 0}], "bidPrices": [{"price": 136300, "volume": 1200}]}}]
+    monkeypatch.setattr(nguon, "goi", lambda url, body=None, so_lan=3, timeout=30, headers=None: tra)
+    assert diem_vao._SO_LENH_GOC("AAA") == {"ban": [(136.5, 2800), (136.6, 2000)], "mua": [(136.3, 1200)]}
+
+    def loi(*a, **k):
+        raise ValueError("HTTP 403")
+    monkeypatch.setattr(nguon, "goi", loi)
+    assert diem_vao._SO_LENH_GOC("AAA") is None
