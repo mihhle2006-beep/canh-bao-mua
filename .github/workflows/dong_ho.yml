@@ -30,6 +30,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN_HE_THONG: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP }}       # workflow lỗi / token → kênh hệ thống & giả lập
+          TELEGRAM_CHAT_ID_HE_THONG: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP }}
           DANH_MUC_TOKEN_GHI: ${{ secrets.DANH_MUC_TOKEN_GHI }}     # chỉ đọc ngày hết hạn (header), không in
           PYTHONUNBUFFERED: "1"
         run: python3 cong_cu/dong_ho.py --phut 340

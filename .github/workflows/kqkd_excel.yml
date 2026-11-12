@@ -45,8 +45,8 @@ jobs:
       - name: Dựng file KQKD + gửi Telegram
         env:
           CONG_KHAI: "1"
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU && (secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN) || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_CHAT_ID }}   # kênh nghiên cứu
         run: python -m ptcp.kqkd_excel ${{ inputs.tai_them && '--tai' || '' }} --gui --ra "KQKD_$(TZ=Asia/Ho_Chi_Minh date +%d-%m-%Y).xlsx"
       - name: Lưu kho mã ngoài rổ chính + kỳ đã gửi (danh-muc du_lieu/bctc_kqkd, kqkd_da_gui.json)
         if: always()

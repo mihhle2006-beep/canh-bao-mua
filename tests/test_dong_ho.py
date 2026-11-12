@@ -415,3 +415,36 @@ def test_may_mac_khong_nhan_viec_bao_ngay_1_lan_va_bao_khi_nhan_lai():
     assert mac.buoc(T.replace(hour=16)) is None and mac.buoc(T + timedelta(days=1)) is None and len(gui) == 3
     assert mac.buoc(T.replace(hour=8, minute=29)) is None and mac.buoc(T.replace(hour=8, minute=30)) and len(gui) == 4
     assert not any("http" in x or "DNSE" in x or "Dat lenh" in x for x in log)   # log công khai: không tên việc / link
+
+
+def test_kenh_telegram_he_thong_va_chinh(monkeypatch):
+    """Workflow lỗi / token → kênh hệ thống (bot giả lập); máy Mac chưa nhận việc → bot chính (ảnh hưởng lệnh trong phiên).
+    Chưa đặt kênh hệ thống → bot chính như cũ."""
+    import urllib.parse
+    gui = []
+
+    class R:
+        def read(self):
+            return b"{}"
+    monkeypatch.setattr(dong_ho.urllib.request, "urlopen",
+                        lambda url, data=None, timeout=None: gui.append((url, urllib.parse.parse_qs(data.decode()))) or R())
+    for k, v in {"TELEGRAM_TOKEN": "CHINH", "TELEGRAM_CHAT_ID": "1", "TELEGRAM_TOKEN_HE_THONG": "HT",
+                 "TELEGRAM_CHAT_ID_HE_THONG": "2"}.items():
+        monkeypatch.setenv(k, v)
+    dong_ho.nhan_tele("lỗi")
+    dong_ho.nhan_tele("mac", "chinh")
+    dong_ho.MayMac(None).gui("mac 2")
+    assert [("botHT" in u, c["chat_id"][0]) for u, c in gui] == [(True, "2"), (False, "1"), (False, "1")]
+    monkeypatch.delenv("TELEGRAM_TOKEN_HE_THONG")
+    dong_ho.nhan_tele("lỗi")
+    assert "botCHINH" in gui[-1][0] and gui[-1][1]["chat_id"] == ["1"]
+
+
+def test_workflow_kenh_nghien_cuu_co_du_phong():
+    """Báo cáo nghiên cứu → TELEGRAM_CHAT_ID_NGHIEN_CUU (bot danh mục); chưa đặt → chat cũ (không mất tin)."""
+    for f in glob.glob(os.path.join(WF, "*.yml")):
+        for dong in open(f, encoding="utf-8"):
+            if "TELEGRAM_CHAT_ID_NGHIEN_CUU" in dong and "TELEGRAM_CHAT_ID:" in dong:
+                assert "|| secrets.TELEGRAM_CHAT_ID" in dong, (f, dong)
+            if "TELEGRAM_CHAT_ID_NGHIEN_CUU &&" in dong:                 # token đổi sang bot danh mục chỉ khi có nhóm
+                assert "|| secrets.TELEGRAM_TOKEN }}" in dong, (f, dong)

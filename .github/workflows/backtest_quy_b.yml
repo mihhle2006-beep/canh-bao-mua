@@ -138,8 +138,8 @@ jobs:
           PHAN: ${{ matrix.phan }}
           SO_NN: ${{ inputs.so_nn }}
           # chỉ phần chuan gửi 1 tin đối chiếu giả lập (cùng bot giả lập); các phần khác không gửi Telegram
-          TELEGRAM_TOKEN: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN) || matrix.phan == 'cham1r' && secrets.TELEGRAM_TOKEN || '' }}
-          TELEGRAM_CHAT_ID: ${{ matrix.phan == 'chuan' && (secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID) || matrix.phan == 'cham1r' && secrets.TELEGRAM_CHAT_ID || '' }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}   # chuan (đối chiếu giả lập) + cham1r (lệch bot) → kênh hệ thống & giả lập
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
           LICH_SU_LIVE: ${{ github.workspace }}/cbm/lich_su_danh_gia.csv   # cham1r: so bot thật – backtest, lệch → Telegram
         run: |
           case "$PHAN" in
