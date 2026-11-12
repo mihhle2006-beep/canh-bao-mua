@@ -277,9 +277,19 @@ def chay(env=os.environ):
     return n
 
 
-if __name__ == "__main__":
+def main(f=None):
+    """→ mã thoát. Lỗi mạng / Telegram chập chờn → 0 (lượt sau thử lại). Lỗi khác (code / dữ liệu – nút 🛒 / 🛑 không chạy)
+    → 1: lần chạy riêng (lenh_tele.yml) ĐỎ để đồng hồ nhắn ngay (13/11/2026: trước luôn 0 → hỏng mà không ai biết); vòng
+    quét gọi kèm "|| true" nên không bị dừng."""
     try:
-        chay()
-    except Exception as e:                                              # noqa: BLE001 – không làm hỏng vòng quét
+        (f or chay)()
+    except (urllib.error.URLError, OSError) as e:
+        print(f"⚠ Lệnh Telegram lỗi mạng: {type(e).__name__}")
+    except Exception as e:                                              # noqa: BLE001
         print(f"⚠ Lệnh Telegram lỗi: {type(e).__name__}")
-        sys.exit(0)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

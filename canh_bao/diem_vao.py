@@ -68,7 +68,9 @@ def _he_so_lich(ma, gia, bay_gio):
     try:
         from ptcp.su_kien_quyen import gop_theo_ngay, he_so_gia, lay_su_kien
         x = gop_theo_ngay(lay_su_kien(ma, ca_quyen_mua=True)).get(pd.Timestamp(bay_gio).normalize())
-    except Exception:                                            # noqa: BLE001 – không có lịch → giữ nguyên vùng
+    except Exception as e:                                       # noqa: BLE001 – không có lịch → giữ nguyên vùng
+        from . import loi_phu
+        loi_phu.ghi("lịch quyền (điều chỉnh vùng mua)", e)
         return None
     if not x:
         return None
@@ -357,8 +359,9 @@ def so_cp_nav(kq, gia, cl):
         nav, tt = nav_that(), von_lenh(_k_rui_ro(kq, gia, cl))["ty_trong"]
         if nav and tt == tt and gia == gia and gia > 0:
             return int(nav * tt / 100 // (gia * 1000))
-    except Exception:                                  # noqa: BLE001
-        pass
+    except Exception as e:                             # noqa: BLE001 – tin MUA không có số CP
+        from . import loi_phu
+        loi_phu.ghi("số CP theo NAV (tin MUA)", e, an=True)
     return 0
 
 

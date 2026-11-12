@@ -838,3 +838,40 @@ def test_tin_mua_ban_gia_hop_ly_theo_so_lenh(monkeypatch):
         raise ValueError("HTTP 403")
     monkeypatch.setattr(nguon, "goi", loi)
     assert diem_vao._SO_LENH_GOC("AAA") is None
+
+
+def test_loi_phu_bao_luat_tam_khong_ap_dung(monkeypatch, capsys):
+    """Rà except Exception (13/11/2026): lỗi phần phụ làm TẮT luật (lọc Quỹ B, nhiệt, NAV, lịch quyền…) không còn bị nuốt
+    im lặng – in log 1 lần / loại lỗi + 1 dòng ⚙ cuối tin tổng kết bản riêng; bản công khai không có."""
+    from canh_bao import loi_phu
+    import ptcp.loc_quy_b as LQ
+
+    def hong(ma, vni):
+        raise KeyError("x")
+    monkeypatch.setattr(LQ, "he_so", hong)
+    assert tong_ket_cl._loc_quy("AAA", None) is None and tong_ket_cl._loc_quy("BBB", None) is None
+    out = capsys.readouterr().out
+    assert out.count("⚠ lọc Quỹ B: KeyError") == 1                    # in 1 lần dù 2 mã lỗi
+    assert loi_phu.dong_tin() == ("⚙ Phần bị lỗi, đã bỏ qua (luật tạm không áp dụng – xem log workflow): "
+                                  "lọc Quỹ B (KeyError ×2)")
+    loi_phu.ghi("NAV thật (số CP lệnh mua)", ValueError("dữ liệu riêng 123"), an=True)
+    assert "dữ liệu riêng" not in capsys.readouterr().out             # an=True: log công khai chỉ in loại lỗi
+    loi_phu.xoa()
+    assert loi_phu.dong_tin() == ""
+
+
+def test_lenh_tele_loi_code_thi_do_loi_mang_thi_bo_qua():
+    """Lệnh Telegram: lỗi mạng → thoát 0 (lượt sau thử lại); lỗi code / dữ liệu → thoát 1 để đồng hồ giám sát nhắn ngay
+    (trước luôn thoát 0 → nút 🛒 / 🛑 hỏng mà không ai biết). Vòng quét gọi kèm "|| true" nên không bị dừng."""
+    import urllib.error
+    from canh_bao import lenh_tele
+
+    def nem(loi):
+        def f():
+            raise loi
+        return f
+    assert lenh_tele.main(lambda: 3) == 0
+    assert lenh_tele.main(nem(urllib.error.URLError("x"))) == 0 and lenh_tele.main(nem(TimeoutError())) == 0
+    assert lenh_tele.main(nem(KeyError("x"))) == 1
+    goc = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    assert "lenh_tele.py || true" in open(os.path.join(goc, ".github", "workflows", "canh_bao.yml"), encoding="utf-8").read()
