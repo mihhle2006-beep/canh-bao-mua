@@ -119,8 +119,8 @@ jobs:
       - name: Gửi kết quả lọc qua Telegram
         if: (inputs.gui_telegram && inputs.gui_telegram != 'Không gửi') || ((github.event_name == 'schedule' || inputs.lich) && (vars.BO_LOC_GUI_HTML == 'html' || vars.BO_LOC_GUI_HTML == 'ma'))
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU && (secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN) || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_CHAT_ID }}   # kênh nghiên cứu
           CHE_DO: ${{ (inputs.gui_telegram == 'Chỉ file HTML' || ((github.event_name == 'schedule' || inputs.lich) && vars.BO_LOC_GUI_HTML == 'html')) && '--chi_html' || '' }}
           BAN_HTML: ${{ (inputs.ban_html == 'Nội bộ' || ((github.event_name == 'schedule' || inputs.lich) && vars.BO_LOC_HTML == 'noi_bo')) && 'noi_bo' || 'ngoai' }}
         run: python -m bo_loc.gui_html --chien_luoc "${{ inputs.chien_luoc || 'quy_b,xu_huong' }}" $CHE_DO --che_do "$BAN_HTML" || true
@@ -128,8 +128,8 @@ jobs:
       - name: Báo cáo hiệu quả bộ lọc (1 lần / tháng – mã MUA sau 20 & 60 phiên so VN-Index)
         if: github.event_name == 'schedule' || inputs.lich
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU && (secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN) || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_CHAT_ID }}   # kênh nghiên cứu
         run: python -m bo_loc.hieu_qua --gui || true
 
       - name: Commit danh sách mã MUA

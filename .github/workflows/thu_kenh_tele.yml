@@ -1,0 +1,45 @@
+# THỬ KÊNH TELEGRAM (bấm tay, 12/11/2026): gửi 1 tin giới thiệu vào từng kênh để kiểm đã nối đúng + biết kênh nào nhận
+# loại tin nào. Log công khai chỉ in mã HTTP / mô tả lỗi của Telegram (không in token / chat id).
+#   🔔 Giao dịch (bot chính)            TELEGRAM_TOKEN / TELEGRAM_CHAT_ID
+#   💼 Danh mục (bot danh mục)          TELEGRAM_TOKEN_DANH_MUC / TELEGRAM_CHAT_ID_DANH_MUC
+#   📊 Nghiên cứu (bot danh mục, nhóm)  TELEGRAM_CHAT_ID_NGHIEN_CUU
+#   ⚙ Hệ thống & giả lập (bot giả lập)  TELEGRAM_TOKEN_GIA_LAP / TELEGRAM_CHAT_ID_GIA_LAP
+name: Thu kenh Telegram
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  thu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Gửi 1 tin thử vào từng kênh
+        env:
+          T_CHINH: ${{ secrets.TELEGRAM_TOKEN }}
+          C_CHINH: ${{ secrets.TELEGRAM_CHAT_ID }}
+          T_DM: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}
+          C_DM: ${{ secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
+          C_NC: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU }}
+          T_HT: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
+          C_HT: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          loi=0
+          gui() {
+            if [ -z "$2" ] || [ -z "$3" ]; then echo "$1: chưa đặt secret → bỏ qua"; return; fi
+            ma=$(curl -s -o /tmp/r.json -w "%{http_code}" -X POST "https://api.telegram.org/bot$2/sendMessage" \
+                 --data-urlencode "chat_id=$3" --data-urlencode "text=$4")
+            echo "$1: HTTP $ma"
+            if [ "$ma" != 200 ]; then
+              loi=1
+              python3 -c "import json; print('   Telegram:', json.load(open('/tmp/r.json')).get('description', ''))" || true
+            fi
+          }
+          gui "🔔 Giao dịch" "$T_CHINH" "$C_CHINH" "🔔 Kênh GIAO DỊCH (thử) – tín hiệu MUA / BÁN, cắt lỗ, nhắc ATO, tổng kết 15:20, máy Mac chưa nhận việc. Bật thông báo kênh này."
+          gui "💼 Danh mục" "$T_DM" "$C_DM" "💼 Kênh DANH MỤC (thử) – danh mục, lệnh, nút 🛒 / 🛑, kết quả khớp."
+          gui "📊 Nghiên cứu" "$T_DM" "$C_NC" "📊 Kênh NGHIÊN CỨU (thử) – bộ lọc định kỳ, KQKD, BCTC mới / bất thường, báo cáo CTCK, BCTN, tổ chức phát hành, tra cứu mã. Có thể tắt thông báo."
+          gui "⚙ Hệ thống & giả lập" "$T_HT" "$C_HT" "⚙ Kênh HỆ THỐNG & GIẢ LẬP (thử) – workflow lỗi, token sắp hết hạn, kiểm thử hỏng, 🩺 sức khoẻ, giả lập, lệch backtest. Có thể tắt thông báo."
+          exit $loi

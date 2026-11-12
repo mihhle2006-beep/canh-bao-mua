@@ -77,7 +77,8 @@ BO_NEU_DANG_CHAY = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml"}   # đ
 CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_bctn.yml", "loc_quy_b.yml",
             "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml"}
 KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu tự nhắn khi lỗi
-             "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml"}     # công cụ bấm tay – người bấm tự xem
+             "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml",     # công cụ bấm tay – người bấm tự xem
+             "thu_kenh_tele.yml"}
 LOI = ("failure", "timed_out", "startup_failure")
 GIAM_SAT_GIAY = 300
 MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
@@ -327,7 +328,7 @@ class MayMac:
     concurrency (lần chạy "pending") không tính – đó không phải lỗi máy. Log công khai: chỉ số job / phút, không tên việc."""
 
     def __init__(self, gh, gui=None, in_ra=print, cho=MAC_CHO_PHUT):
-        self.gh, self.gui, self.in_ra, self.cho = gh, gui or nhan_tele, in_ra, cho
+        self.gh, self.gui, self.in_ra, self.cho = gh, gui or (lambda t: nhan_tele(t, "chinh")), in_ra, cho
         self.dot = None                                             # đợt đang báo: {"tu": datetime, "job": {id: tên}}
 
     @staticmethod
@@ -415,8 +416,12 @@ def doc_han(h):
     return None
 
 
-def nhan_tele(noi_dung):
+def nhan_tele(noi_dung, kenh="he_thong"):
+    """kenh "he_thong" (workflow lỗi, token – kênh hệ thống & giả lập TELEGRAM_*_HE_THONG; chưa đặt → bot chính) · "chinh"
+    (bot chính – máy Mac chưa nhận việc: ảnh hưởng lệnh / cắt lỗ trong phiên)."""
     tk, chat = os.environ.get("TELEGRAM_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
+    if kenh == "he_thong" and os.environ.get("TELEGRAM_TOKEN_HE_THONG") and os.environ.get("TELEGRAM_CHAT_ID_HE_THONG"):
+        tk, chat = os.environ["TELEGRAM_TOKEN_HE_THONG"], os.environ["TELEGRAM_CHAT_ID_HE_THONG"]
     if not tk or not chat:
         return False
     du_lieu = urllib.parse.urlencode({"chat_id": chat, "text": noi_dung}).encode()
