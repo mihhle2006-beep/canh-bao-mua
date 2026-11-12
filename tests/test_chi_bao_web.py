@@ -167,7 +167,7 @@ def test_non_du_bao_va_ngay_toi():
 
 
 def test_non_ket_hop_3_khung():
-    """Nón "kết hợp" (danh-muc KET_LUAN "non" / ptcp/bt_non.py gopβ|λ): TB của [phân vị lãi quá khứ / (σ lúc đó / σ nền)^β ×
+    """Nón "kết hợp" (danh-muc KET_LUAN "non" / bt_non.py gopβ|λ – đã xoá, lịch sử git): TB của [phân vị lãi quá khứ / (σ lúc đó / σ nền)^β ×
     (σ hiện tại / σ nền)^β] và nón σ; λ, β theo khung như NON_CG – so hàm JS với đúng công thức phép đo."""
     c = np.array(_nen(900, 8)["c"])
     c[-15:] *= np.exp(np.cumsum(np.random.default_rng(1).normal(0, 0.05, 15)))       # 15 nến cuối biến động mạnh
