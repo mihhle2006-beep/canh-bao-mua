@@ -831,7 +831,7 @@ function cb_mfi(h, l, c, v, n) {
 // NÓN DỰ BÁO: giá có thể ở đâu sau 1…H nến, theo phân vị lịch sử của chính mã (đã bỏ xu hướng tăng / giảm của quá khứ –
 // trung vị = giá hiện tại) hoặc theo biến động σ L nến gần nhất (loe theo √thời gian). Thống kê, không dự đoán lên / xuống.
 const NON_P = [0.025, 0.1, 0.25, 0.5, 0.75, 0.9, 0.975], NON_Z = [-1.959964, -1.281552, -0.67449, 0, 0.67449, 1.281552, 1.959964];
-// CHUẨN ĐỘ TRÚNG: nón web (kết hợp + kẹp biên độ) đo trên MỌI mã HOSE / HNX / UPCoM đủ ≥ 1 năm dữ liệu (danh-muc ptcp/bt_non.do_web,
+// CHUẨN ĐỘ TRÚNG: nón web (kết hợp + kẹp biên độ) đo trên MỌI mã HOSE / HNX / UPCoM đủ ≥ 1 năm dữ liệu (danh-muc bt_non.do_web – đã xoá, lịch sử git,
 // KET_LUAN "non lượt 3") → {khung: {tầm: [[p50, p80, p95, số mã] mã giao dịch đều, [… ] mã ít giao dịch]}}
 const NON_CHUAN = {D: {5: [[.55, .81, .94, 393], [.64, .85, .95, 1086]], 20: [[.54, .81, .93, 393], [.63, .85, .94, 1086]], 60: [[.52, .79, .91, 393], [.62, .84, .93, 1086]]},
   W: {1: [[.55, .81, .94, 393], [.61, .82, .94, 1086]], 4: [[.53, .80, .93, 393], [.60, .83, .94, 1086]], 12: [[.52, .79, .92, 393], [.60, .83, .93, 1086]]},
