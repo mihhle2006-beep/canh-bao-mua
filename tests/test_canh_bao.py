@@ -404,7 +404,8 @@ def test_nut_mua_chon_so_luong_co_lo_le(monkeypatch):
     vsc = {"ma": "VSC", "den": 21.35, "tu": 20.0, "gia_nay": 21.0}
     assert diem_vao.nut_du_phong([kq, vsc]) == [
         [("🛒 REE 200 + 37 lẻ", "dl|M|REE|237|46600"), ("200", "dl|M|REE|200|46600"), ("100", "dl|M|REE|100|46600")],
-        [("🛒 VSC 200 + 37 lẻ", "dl|M|VSC|237|21300"), ("200", "dl|M|VSC|200|21300"), ("100", "dl|M|VSC|100|21300")]]
+        [("🛒 VSC 200 + 37 lẻ", "dl|M|VSC|237|21350"), ("200", "dl|M|VSC|200|21350"), ("100", "dl|M|VSC|100|21350")]]
+    # 12/11/2026: VSC (HOSE, 10–50 nghìn – bước 50đ) giới hạn 21,35 → LO 21.350 (trước làm tròn 100đ → 21.300, nằm chờ)
     monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 37)
     assert diem_vao.nut_mua(kq) == [[("🛒 Mua 37 lẻ", "dl|M|REE|37|46600")], [("❌ Bỏ", "dh")]]
     monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 0)

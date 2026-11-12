@@ -99,7 +99,7 @@ def chu_kl(n):
 def mo_ta_nut(data):
     p = data.split("|")
     if p[1] == "M":
-        return f"MUA {chu_kl(int(p[3]))} {p[2]} (LO ≤ {int(p[4]):,}đ)".replace(",", ".")
+        return f"MUA {chu_kl(int(p[3]))} {p[2]} (LO ≤ {int(p[4]):,}đ – khớp ở giá người bán đang chào)".replace(",", ".")
     return f"BÁN HẾT {p[2]} (lô chẵn + lẻ, giá khớp −2 %)"
 
 

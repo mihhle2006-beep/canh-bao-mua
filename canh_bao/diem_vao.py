@@ -208,15 +208,40 @@ def tin_giu_theo_he_thong(kq, bay_gio, vt=None):
            + f" · Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}"])
 
 
+def buoc_gia_dong(gia, san="HOSE"):
+    """Bước giá (đồng) theo sàn: HOSE < 10.000đ → 10 · 10.000–49.950đ → 50 · ≥ 50.000đ → 100; HNX / UPCoM → 100."""
+    if san != "HOSE":
+        return 100
+    return 10 if gia < 10_000 else 50 if gia < 50_000 else 100
+
+
+def gia_lo_dong(gia_nghin, ma):
+    """Giá LO (đồng) = gia_nghin làm tròn XUỐNG theo bước giá của sàn mã (ptcp/san_niem_yet.json); không rõ sàn → bước
+    100đ (hợp lệ ở mọi sàn). 12/11/2026: trước làm tròn xuống 100đ ở mọi mức → HOSE 10–50 nghìn mất 1 bước (VSC giới hạn
+    21,35 → LO 21.300 nằm chờ khi người bán chào 21.350), mã < 10 nghìn mất tới 9 bước."""
+    try:
+        from ptcp.san import san_cua
+        san = san_cua(ma)
+    except ImportError:
+        san = ""
+    g = int(round(gia_nghin * 1000))
+    b = buoc_gia_dong(g, san)
+    return g // b * b
+
+
 def dong_dat_lenh(kq, bien_the, gia):
-    """Dòng đặt lệnh ngắn gọn: giá đặt + giới hạn (theo cách vào đang dùng)."""
+    """Dòng đặt lệnh ngắn gọn (theo cách vào đang dùng). Mua trong phiên = LO ở giới hạn vùng (đúng bước giá sàn): sàn
+    khớp ngay ở giá người bán đang chào (thấp nhất trước), không bao giờ cao hơn giới hạn – như lệnh thị trường có trần
+    (MTL / MP không có trần, dư chuyển LO; UPCoM không có) – 12/11/2026."""
     den = kq.get("den")
     if kq.get("atc"):
         return f"👉 Đặt lệnh ATC (giá ước tính {_f(gia)}). Không mua nếu giá cao hơn {_f(den)}"
     goc = (bien_the or "").partition("+ATC")[0]
     if goc == "ATO":
         return f"👉 Đặt lệnh ATO {_f(gia)}. Không mua nếu mở cửa cao hơn {_f(den)}"
-    return f"👉 Đặt lệnh {_f(gia)}. Không đặt cao hơn {_f(den)}"
+    if goc == "LO" or den is None or den != den:          # cách LO: lệnh chờ ở giá LO dưới thị trường (cố ý)
+        return f"👉 Đặt lệnh {_f(gia)}. Không đặt cao hơn {_f(den)}"
+    return f"👉 Mua LO ≤ {_f(gia_lo_dong(den, kq['ma']) / 1000)} – khớp ngay ở giá người bán đang chào (vừa khớp {_f(gia)})"
 
 
 def tin_mua(kq, bay_gio, bien_the, dang_giu=None):
@@ -286,13 +311,14 @@ def so_cp_nav(kq, gia, cl):
 
 
 def lenh_mua(kq):
-    """Lệnh mua cho tin MUA → (số CP theo NAV – lô chẵn + lô lẻ, giá LO đồng = giới hạn vùng mua den làm tròn xuống 100đ →
-    khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin; phần lô lẻ máy Mac tự hạ ≤ giá khớp + 1 bước) | None khi 0 CP / không có giới hạn."""
+    """Lệnh mua cho tin MUA → (số CP theo NAV – lô chẵn + lô lẻ, giá LO đồng = giới hạn vùng mua den làm tròn xuống THEO
+    BƯỚC GIÁ SÀN (gia_lo_dong) → khớp ngay ở giá bán tốt nhất, không cao hơn giới hạn của tin; phần lô lẻ máy Mac tự hạ ≤
+    giá khớp + 1 bước) | None khi 0 CP / không có giới hạn."""
     gia, cl, _, _ = muc_sau_mua(kq)
     n, den = _lo_atc(kq, so_cp_nav(kq, gia, cl)), kq.get("den")
     if n < 1 or not den or den != den:
         return None
-    return n, int(round(den * 1000)) // 100 * 100
+    return n, gia_lo_dong(den, kq["ma"])
 
 
 def _lua_chon(n):
