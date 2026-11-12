@@ -483,11 +483,26 @@ def _dong_he_thoat(kb):
     return d
 
 
-def tin_ban(vt, kb, kq, bay_gio):
+def gia_ban_hop_ly(so, kl, gia):
+    """CẮT LỖ trong phiên (12/11/2026): giá LO bán hợp lý (nghìn) = mức người mua đang chờ đủ kl CP (sổ lệnh lúc báo), không
+    thấp hơn giá khớp −2 % làm tròn xuống 100đ (như máy đặt lệnh dnse_lenh) → (giá, có theo sổ lệnh?) | (None, False)."""
+    if not (gia and gia == gia):
+        return None, False
+    san = int(gia * 1000 * 0.98) // 100 * 100 / 1000
+    from .diem_vao import gia_hop_ly
+    p = gia_hop_ly(so, "B", max(int(kl // 100 * 100), 100), san)
+    return (p, True) if p is not None else ((san, False) if so and so.get("mua") else (None, False))
+
+
+def tin_ban(vt, kb, kq, bay_gio, so=None):
     """Tin cảnh báo bán trong phiên (riêng tư) – 4 dòng: nhãn · việc cần làm · đã vào lệnh + hệ thoát · lý do.
-    Tin gọn 29/10/2026: bỏ dòng ptcp tham khảo & dòng nhắc chung (T+2 nằm trong ghi chú khi có)."""
+    Tin gọn 29/10/2026: bỏ dòng ptcp tham khảo & dòng nhắc chung (T+2 nằm trong ghi chú khi có). so: sổ lệnh lúc báo →
+    CẮT LỖ ghi 1 giá LO bán hợp lý (gia_ban_hop_ly) – 12/11/2026."""
     g = kb["gia"]
-    hanh_dong = {"CAT_LO": f"Bán toàn bộ {vt['so_cp']:,.0f} CP theo kỷ luật cắt lỗ",
+    gb, theo_so = gia_ban_hop_ly(so, vt["so_cp"], g) if kb["muc"] == "CAT_LO" else (None, False)
+    hanh_dong = {"CAT_LO": f"Bán toàn bộ {vt['so_cp']:,.0f} CP theo kỷ luật cắt lỗ"
+                           + (f" – đặt LO {_f(gb)}" + ("" if theo_so else " (người mua đang chờ thấp hơn – lệnh chờ)")
+                              if gb else ""),
                  "BAN_TUAN": f"Bán {vt['so_cp']:,.0f} CP đầu phiên tới – hệ thoát khung tuần (không chờ mục tiêu)",
                  "HET_HAN": f"Bán {vt['so_cp']:,.0f} CP – lệnh không chạy, giải phóng vốn cho tín hiệu mới",
                  "CHOT_LOI": f"Chốt lời (toàn bộ hoặc ½ = {vt['so_cp'] / 2:,.0f} CP), phần còn lại dời cắt lỗ lên",
