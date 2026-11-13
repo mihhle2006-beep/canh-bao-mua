@@ -885,12 +885,17 @@ def test_gia_lo_cong_khai_cho_gia_lap(monkeypatch, tmp_path):
     monkeypatch.setattr(S, "san_cua", lambda ma, d=None: "HOSE")
     kq = {"ma": "AAA", "den": 21.37, "atc": False}
     so = {"ban": [(21.30, 50), (21.35, 400), (21.40, 9000)], "mua": [(21.25, 800)]}
-    assert diem_vao.gia_lo_cong_khai(kq, so) == 21.35                  # 50 CP chưa đủ 1 lô → mức 2
-    assert np.isnan(diem_vao.gia_lo_cong_khai(kq, {"ban": [(21.40, 900)], "mua": []}))   # > tối đa 21,35
-    assert np.isnan(diem_vao.gia_lo_cong_khai({**kq, "atc": True}, so)) and np.isnan(diem_vao.gia_lo_cong_khai(kq, None))
+    assert diem_vao.gia_lo_cong_khai(kq, so) == (21.35, False)         # 50 CP chưa đủ 1 lô → mức 2, khớp ngay
+    assert diem_vao.gia_lo_cong_khai(kq, {"ban": [(21.40, 900)], "mua": []}) == (21.35, True)   # > tối đa → LO chờ 21,35
+    for k, s_ in (({**kq, "atc": True}, so), (kq, None), (kq, {"ban": [], "mua": [(21.3, 100)]})):
+        g, cho = diem_vao.gia_lo_cong_khai(k, s_)
+        assert np.isnan(g) and not cho
     f = tmp_path / "lich_su_danh_gia.csv"
     monkeypatch.setattr(nhat_ky, "_path", lambda rieng_tu=False: str(f))
     nhat_ky.ghi_mua_ngay({"ma": "AAA", "gia": 21.3, "cat_lo": 20.0, "muc_tieu": 22.6, "gia_lo": 21.35},
                          pd.Timestamp("2026-11-13 09:47"))
-    d = pd.read_csv(f, dtype=str)
-    assert d.loc[0, "gia_kn_mua"] == "21.35" and d.loc[0, "gia"] == "21.3"
+    nhat_ky.ghi_mua_ngay({"ma": "BBB", "gia": 21.4, "cat_lo": 20.0, "muc_tieu": 22.6, "gia_lo": 21.35, "cho_lo": True},
+                         pd.Timestamp("2026-11-13 10:02"))
+    d = pd.read_csv(f, dtype=str, keep_default_na=False)
+    assert d.loc[0, "gia_kn_mua"] == "21.35" and d.loc[0, "gia"] == "21.3" and d.loc[0, "nhom_hd"] == ""
+    assert d.loc[1, "gia_kn_mua"] == "21.35" and d.loc[1, "nhom_hd"] == "CHO_LO"

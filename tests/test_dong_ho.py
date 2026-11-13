@@ -203,6 +203,8 @@ def test_dong_ho_viec_repo_kin_danh_muc():
     dh.buoc(luc + timedelta(minutes=1))
     assert len(log) == 1 and "DANH_MUC_TOKEN_GHI" in log[0]
     assert all(x[0].split("/")[-1] in ("dnse_dong_bo.yml", "dat_lenh.yml") for x in dong_ho.LICH if "/" in x[0])
+    otp = [x[1] for x in dong_ho.LICH if x[0] == "danh-muc/dat_lenh.yml"]
+    assert otp == ["40 8 * * 1-5", "5 9 * * 1-5"]                      # 09:05 xin lại OTP (lịch GitHub hay trễ / bỏ)
 
 
 def test_dong_ho_thu_in_ra():
