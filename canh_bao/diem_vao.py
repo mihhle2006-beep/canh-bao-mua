@@ -255,6 +255,17 @@ def so_lenh(ma):
     return s if s["ban"] or s["mua"] else None
 
 
+def gia_lo_cong_khai(kq, so):
+    """Giá LO hợp lý ghi NHẬT KÝ CÔNG KHAI (lich_su_danh_gia.csv cột gia_kn_mua – giả lập gia_lap dùng làm giá vào, 13/11/2026):
+    mức người bán đang chào thấp nhất đủ 1 LÔ 100 CP, ≤ mức tối đa (bước giá sàn) – KHÔNG theo số CP của NAV thật (nhật ký
+    công khai). Lệnh ATC / không có sổ lệnh / người bán thấp nhất đã > tối đa → NaN (giả lập dùng giá lúc báo như cũ)."""
+    den = kq.get("den")
+    if not so or kq.get("atc") or den is None or den != den:
+        return np.nan
+    p = gia_hop_ly(so, "M", 100, gia_lo_dong(den, kq["ma"]) / 1000)
+    return np.nan if p is None else p
+
+
 def gia_hop_ly(so, ben, kl, gioi_han):
     """Giá LO hợp lý theo sổ lệnh (nghìn đồng) – hệ thống tự đọc, người dùng chỉ cần đặt đúng số này (12/11/2026):
     MUA = mức BÁN (thấp → cao) mà cộng dồn KL người bán đang chào ≥ kl, không cao hơn gioi_han;

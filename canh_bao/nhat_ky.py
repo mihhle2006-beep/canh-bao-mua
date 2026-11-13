@@ -65,6 +65,7 @@ def ghi_mua_ngay(kq, bay_gio, rieng_tu=False):
                           "ngay": f"{t:%Y-%m-%d}", "ma": kq["ma"], "loai": "MUA_NGAY", "khuyen_nghi": "MUA NGAY",
                           "nhom": "MUA", "san": san_cua(kq["ma"]), "gia": _so(kq["gia"]), "cat_lo": _so(kq.get("cat_lo")),
                           "muc_tieu": _so(kq.get("muc_tieu")), "rr": _so(kq.get("rr")),
+                          "gia_kn_mua": _so(kq.get("gia_lo")),           # giá LO hợp lý 1 lô (sổ lệnh) – giả lập dùng
                           "ev": _so((kq.get("ptcp") or {}).get("ev")),
                           "ky_han": int((kq.get("ptcp") or {}).get("n_phien") or C.KY_HAN_MUA)}, _path(rieng_tu))
 
