@@ -54,3 +54,26 @@ def test_chi_mot_token_github_va_khoa_cache_khong_theo_token():
         assert "DANH_MUC_TOKEN_GHI" not in s["env"]["KHOA"] and "CACHE_KEY" in s["env"]["KHOA"]
     assert "KHOA_CU" in giai["run"]                      # đọc được cache cũ (mã bằng token)
     assert 'rm -f $ds' in ma["run"].splitlines()[-1]     # luôn xoá bản rõ
+
+
+def test_workflow_ghi_danh_muc_dua_file_that_ra_ngoai_vung_lam_viec():
+    """14/11/2026: job lấy danh-muc rồi ĐẨY lên (git push) – tệp thật đã xoá phải ra ngoài vùng làm việc (sparse-checkout):
+    không thì pull --rebase --autostash cất cả việc xoá → xung đột (xoá ↔ sửa) với commit đồng bộ danh mục → đẩy hỏng
+    (Kế hoạch ĐHCĐ mất kết quả 2,5 giờ đọc 12 & 13/11), và git add -A có thể commit việc xoá tệp thật."""
+    thieu = []
+    for f in sorted(glob.glob(os.path.join(THU_MUC, "*.yml"))):
+        if os.path.basename(f) == "danh_muc.yml":
+            continue
+        d = yaml.safe_load(open(f, encoding="utf-8"))
+        for ten, job in (d.get("jobs") or {}).items():
+            steps = job.get("steps") or []
+            lenh = " ".join(str(s.get("run", "")) for s in steps)
+            if not _lay_danh_muc(steps) or "git push" not in lenh:
+                continue
+            xoa = [str(s.get("run", "")) for s in steps if "rm -f danh_muc" in str(s.get("run", ""))]
+            if not xoa:                     # kiểu khác (VD backtest.yml: danh-muc ở _kho_dm chỉ đọc, đẩy repo này)
+                continue
+            if not all("sparse-checkout set --no-cone" in x and all(f"'!/{t}'" in x for t in FILE_THAT)
+                                  for x in xoa):
+                thieu.append(f"{os.path.basename(f)}:{ten}")
+    assert not thieu, f"job đẩy lên danh-muc chưa đưa tệp thật ra ngoài vùng làm việc: {thieu}"

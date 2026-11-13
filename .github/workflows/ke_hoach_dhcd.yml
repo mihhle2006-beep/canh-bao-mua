@@ -70,7 +70,7 @@ jobs:
           path: danh-muc
       - name: Xoá file danh mục thật (job log công khai – code không cần, CONG_KHAI)
         working-directory: .
-        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv nhap*.txt trung_vang*.json
+        run: cd danh-muc 2>/dev/null || exit 0; rm -f danh_muc*.csv da_ban*.csv lenh_that*.csv tien_mat_*.json trang_thai_vi_the.json lich_su_danh_muc.csv nhap*.txt trung_vang*.json; [ "$(git config --get core.sparseCheckout)" = true ] || git sparse-checkout set --no-cone '/*' '!/danh_muc*.csv' '!/da_ban*.csv' '!/lenh_that*.csv' '!/tien_mat_*.json' '!/trang_thai_vi_the.json' '!/lich_su_danh_muc.csv' '!/nhap*.txt' '!/trung_vang*.json' 2>/dev/null || true
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -113,5 +113,14 @@ jobs:
           git add du_lieu/ke_hoach
           [ -d du_lieu/van_ban ] && git add du_lieu/van_ban
           git commit -q -m "Kế hoạch ĐHCĐ nhóm ${{ matrix.nhom }}/8" > /dev/null 2>&1 || { echo "Không có thay đổi"; exit 0; }
-          for i in 1 2 3 4 5; do git pull -q --rebase --autostash && git push -q && exit 0; git rebase --abort 2>/dev/null || true; sleep $((i * 7)); done
+          # 12–14/11/2026: --autostash cất cả tệp danh mục thật đã xoá (+ tệp phụ job làm đổi: đệm giá, kho) → áp lại xung đột
+          # (xoá ↔ sửa) với commit đồng bộ danh mục / nhóm khác → mọi lần thử sau hỏng ("unmerged files"), mất kết quả 2,5 giờ
+          # đọc. Tệp danh mục thật đã ra ngoài vùng làm việc từ bước xoá (sparse); kết quả đã commit → bỏ thay đổi phụ còn lại
+          # (tệp chưa theo dõi – đệm chữ tài liệu – giữ nguyên) rồi pull --rebase sạch.
+          git checkout -q -- .
+          for i in 1 2 3 4 5 6 7 8; do
+            git pull -q --rebase && git push -q && exit 0
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 5 + ${{ matrix.nhom }} * 3))
+          done
           exit 1
