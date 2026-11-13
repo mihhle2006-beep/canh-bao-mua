@@ -689,8 +689,8 @@ def test_nhac_lenh_ato_truoc_gio_mo_cua(monkeypatch, tmp_path):
 
 
 def test_trong_phien_mua_cung_luc_gom_tin(monkeypatch, tmp_path):
-    """Lượt 15' có 3 mã mới MUA (2 ★ + 1 #) và 1 mã đang giữ: tin riêng cho 2 mã ★ + mã đang giữ, mã # chỉ nằm trong
-    1 tin tổng hợp → 4 tin (trước 30/10/2026: 5 tin, lượt 14:30 29/10 là 10 tin)."""
+    """Lượt 15' có 3 mã mới MUA (2 ★ + 1 #) và 1 mã đang giữ: tin riêng cho 2 mã ★, mã # chỉ nằm trong 1 tin tổng hợp,
+    mã đang giữ không nhắn (13/11/2026) → 3 tin (trước 30/10/2026: 5 tin, lượt 14:30 29/10 là 10 tin)."""
     monkeypatch.chdir(tmp_path)
     k = {"nhom": "VAO_NHU_MOI", "tu": 14.0, "den": 15.0, "cl": 13.5, "mt1": 15.5, "mt3": 17.0, "atc": True,
          "trang_thai": "MUA", "ly_do": "vào trễ – lệnh ATC trong vùng", "gia_nay": 14.5, "gia_mua": 14.5,
@@ -711,10 +711,9 @@ def test_trong_phien_mua_cung_luc_gom_tin(monkeypatch, tmp_path):
     monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, anh=None, nut=None: gui.append((nd.split("\n")[0], rieng_tu, anh)))
     vt = {"HHH": {"ma": "HHH", "so_cp": 100, "gia_von": 14.0}}
     chay.trong_phien_15p(pd.Timestamp("2026-10-29 14:30"), vt)
-    assert len(gui) == 4
-    assert gui[0][0].startswith("GIỮ THEO HỆ THỐNG – HHH") and gui[0][1:] == (True, "HHH.png")
-    assert [g[0].split(" – ")[1].split()[0] for g in gui[1:3]] == ["AAA", "BBB"] and gui[1][2] == "AAA.png"
-    assert gui[3][0].startswith("3 MÃ BÁO MUA CÙNG LÚC") and gui[3][2] is None
+    assert len(gui) == 3 and not any("HHH" in g[0] for g in gui)       # mã đang giữ: không nhắn (13/11/2026)
+    assert [g[0].split(" – ")[1].split()[0] for g in gui[0:2]] == ["AAA", "BBB"] and gui[0][2] == "AAA.png"
+    assert gui[2][0].startswith("3 MÃ BÁO MUA CÙNG LÚC") and gui[2][2] is None
 
 
 def test_lo_le_1425_chi_khi_ty_trong_duoi_100_cp(monkeypatch, capsys):
@@ -1027,3 +1026,17 @@ def test_tinh_suat_dem_ca_ma_da_ban_trong_tuan(monkeypatch):
     monkeypatch.setattr(vi_the, "_LENH_THAT", {"v": mua + [("FFF", "2026-11-13"), ("GGG", "2026-11-13")]})
     duoc, bo = tong_ket_cl.loc_suat_mua([{"ma": "ZZZ", "uu_tien": 1.0}], vt, "2026-11-13 10:00")
     assert duoc == [] and bo == [("ZZZ", "đã mua 5/5 mã mới tuần này")]
+
+
+def test_tong_ket_ma_dang_giu_khong_o_muc_mua_moi(monkeypatch):
+    """13/11/2026: mã đang giữ mà không đủ điều kiện mua thêm không nằm ở mục mua mới (bản riêng); đủ điều kiện mua thêm
+    → vẫn ở mục mua, ghi "➕ đang giữ – đủ điều kiện MUA THÊM". Bản công khai giữ nguyên."""
+    ks = [{"ma": m, "nhom": "VAO_NHU_MOI", "uu_tien": float(i), "gia": 10.0, "tu": 9.9, "den": 10.2, "mt1": 10.5,
+           "mt3": 11.5, "cl": 9.5, "rui_ro": 5.0, "ly_do": "MACD", "hieu_luc": pd.Timestamp("2026-10-30")}
+          for i, m in enumerate(("GGG", "NNN", "AAA"), 1)]
+    monkeypatch.setattr(tong_ket_cl, "ds_khuyen_nghi", lambda ra: ks)
+    ra = {"doc": {"diem": 3, "so_chi_bao": 8}, "ty_trong": {"B": 1.0}, "vni": 1700.0, "cl": 2}
+    t = "\n".join(tong_ket_cl._tin(ra, "2026-10-29 15:20", None, {"GGG", "NNN"}, nhoi={"NNN"}))
+    assert "GGG" not in t and "★2 NNN 10.00" in t and "➕ đang giữ – đủ điều kiện MUA THÊM" in t and "★3 AAA" in t
+    t = "\n".join(tong_ket_cl._tin(ra, "2026-10-29 15:20", None, set()))
+    assert "★1 GGG 10.00" in t and "➕" not in t

@@ -417,13 +417,12 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                      else "", "Giá mua": kq["gia_mua"]})
         ket[kq["ma"]] = kq
         if diem_vao.can_bao(kq["ma"], kq["trang_thai"], bay_gio, luu, kq["ly_do"]):
-            if kq["trang_thai"] == "MUA" and kq["ma"] not in vt:
+            if kq["ma"] in vt:                              # mã ĐANG GIỮ (13/11/2026): không nhắn – không mua trùng, mua
+                pass                                        # thêm theo tin tổng kết (luật nhồi), bán theo tin cảnh báo bán
+            elif kq["trang_thai"] == "MUA":
                 moi_mua.append(kq)                          # mã mới: gửi sau vòng (★ tin riêng, còn lại dự phòng)
             else:
-                nd = diem_vao.tin_mua(kq, bay_gio, bien_the, vt.get(kq["ma"])) if kq["trang_thai"] == "MUA" else \
-                    diem_vao.tin_bo(kq, bay_gio)
-                anh = _anh_mua_ngay(kq, bay_gio) if kq["trang_thai"] == "MUA" else None
-                cho_gui.append((nd, anh))
+                cho_gui.append((diem_vao.tin_bo(kq, bay_gio), None))
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 if not kq.get("atc"):                       # sổ lệnh lúc báo – 1 lần gọi, tin riêng bên dưới dùng lại
