@@ -137,6 +137,8 @@ def test_workflow_bang_rieng():
     co = job["steps"][0]
     assert "checkout" in co["uses"] and co["with"]["persist-credentials"] is False and "token" not in co["with"]
     assert "thi_truong.vong_bang" in t and job["timeout-minutes"] <= 360
+    tren = d.get("on") or d.get(True)
+    assert tren["push"]["paths"] == [".github/workflows/bang.yml"] and "push' && '3'" in t    # đồng bộ xong → chạy thử 3 lượt
     import sys
     sys.path.insert(0, "cong_cu")
     import dong_ho
