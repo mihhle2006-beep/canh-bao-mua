@@ -12,6 +12,8 @@
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
 #   bo_lon – (13/11/2026, chạy tay) lệnh lớn bị bỏ: lệnh ≥ 3R luật / quỹ bỏ, đặc trưng chung lúc mua, dò điều kiện chọn
 #           trên 2013–19 xem 2020+ – chỉ phân tích (backtest_quy_b_bo_lon.xlsx)
+#   nong_dk – (13/11/2026, chạy tay, từ bo_lon) mã RS 3T nóng vẫn mua khi đi lên êm / VN-Index Giảm / gộp – so nền v2
+#           trên 20 thứ tự ★, luật đặt trước C1 20/20 + C2 4/4
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -27,7 +29,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / cham1r / bo_lon (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / cham1r / bo_lon / nong_dk (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -60,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, bo_lon]
+        phan: [chuan, cham1r, bo_lon, nong_dk]
     runs-on: ubuntu-24.04
     defaults:
       run:
