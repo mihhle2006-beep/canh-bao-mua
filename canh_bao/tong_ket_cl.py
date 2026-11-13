@@ -519,6 +519,48 @@ def dong_suat(ra, giu):
             + (f" (+{dp} cho 💪)" if dp else "") + f" → {goi_y}")
 
 
+def loc_suat_mua(ds, vt, bay_gio):
+    """Mã MỚI báo MUA trong phiên (ds) → (được báo, bị bỏ [(mã, lý do)]) theo suất Quỹ Bứt Phá của danh mục thật vt
+    {mã: vị thế}: ≤ QUY_SO_MA mã hệ B (mã hệ bắt đáy không tính) + QUY_SUAT_DU_PHONG chỉ cho tín hiệu 💪 (manh_b),
+    ≤ QUY_MOI_TUAN_TOI_DA mã mới / tuần (như dong_suat) – xét theo thứ tự ưu tiên, mã được báo chiếm suất. 13/11/2026:
+    danh mục đã đủ suất mà tin 15' vẫn báo MUA mã mới không 💪 kèm nút đặt lệnh – trước chỉ tin tổng kết ghi "đủ N mã".
+    Danh mục rỗng / không đọc được → báo hết như cũ."""
+    if not vt:
+        return list(ds), []
+    from .diem_vao import _theo_uu_tien
+    from .vi_the import _ngay, bat_day_cua
+    giu = [v for v in vt.values() if not bat_day_cua(v)]                # mã hệ bắt đáy không chiếm suất B
+    tuan = pd.Timestamp(bay_gio).isocalendar()[:2]
+    moi = sum(1 for v in giu if _ngay(v.get("ngay_mua")) is not None
+              and pd.Timestamp(_ngay(v.get("ngay_mua"))).isocalendar()[:2] == tuan)
+    td, so_ma = int(_quy("QUY_MOI_TUAN_TOI_DA", 5)), int(_quy("QUY_SO_MA", 8))
+    dp = int(_quy("QUY_SUAT_DU_PHONG", 1) or 0)
+    n, duoc, bo = len(giu), [], []
+    du = f"đủ {so_ma} mã (đang giữ {len(giu)})"
+    for k in _theo_uu_tien(ds):
+        if moi >= td:
+            bo.append((k["ma"], f"đã mua {moi}/{td} mã mới tuần này"))
+        elif n >= so_ma and not k.get("manh_b"):
+            bo.append((k["ma"], du + (" – suất dự phòng chỉ cho tín hiệu 💪, mã này không 💪" if dp else "")))
+        elif n >= so_ma + dp:
+            bo.append((k["ma"], du + f" + {dp} suất dự phòng 💪 đã dùng"))
+        else:
+            duoc.append(k)
+            n, moi = n + 1, moi + 1
+    return duoc, bo
+
+
+def tin_bo_suat(bo, bay_gio):
+    """1 tin RIÊNG gom các mã báo MUA bị bỏ vì hết suất (không nút đặt lệnh) – vừa bán mã nào trong phiên thì danh mục
+    chưa cập nhật, tự cân nhắc."""
+    if not bo:
+        return None
+    return "\n".join([f"⛔ KHÔNG MUA – hết suất Quỹ Bứt Phá ({pd.Timestamp(bay_gio):%H:%M %d/%m}):"]
+                     + [f"   {ma}: {ly}" for ma, ly in bo]
+                     + ["   (tín hiệu vẫn đúng – chỉ là quỹ không còn suất; nếu vừa bán mã nào trong phiên thì danh mục chưa "
+                        "cập nhật)"])
+
+
 def dong_thu_tu(ks):
     """'👉 THỨ TỰ MUA: ★1 FPT → ★2 HPG → ★3 VNM (+2 mã sau)' khi có ≥ 2 mã nhóm mua (mọi nhóm, theo hạng ưu tiên);
     1 mã hoặc không có hạng → None."""

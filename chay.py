@@ -435,6 +435,10 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     # → log công khai giống hệt nhau dù giữ mã nào (tests/test_tong_ket_cl.py::test_log_15p_khong_phu_thuoc_danh_muc)
     for nd, anh in cho_gui:
         gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
+    moi_mua, bo = tong_ket_cl.loc_suat_mua(moi_mua, vt, bay_gio)   # đủ 8 mã → chỉ mã 💪 (suất dự phòng); hết suất tuần
+    tb = tong_ket_cl.tin_bo_suat(bo, bay_gio)
+    if tb:
+        gui(tb, rieng_tu=True) if not khong_gui else _in(tb, rieng_tu=True)
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
         so = None if kq.get("atc") else kq["_so"] if "_so" in kq else diem_vao.so_lenh(kq["ma"])
@@ -461,12 +465,14 @@ def lo_le_1425(bay_gio, vt, khong_gui=False):
     chỉ đủ < 100 CP – ATC không nhận lô lẻ → tin riêng "MUA LÔ LẺ NGAY" + nút, kịp đặt trước 14:30. Đủ lô chẵn → vẫn ATC.
     Backtest (danh-muc KET_LUAN atc_som): mua cuối phiên liên tục kém ATC 0,66 điểm %/lệnh nhưng vẫn +3,3 %/lệnh – hơn bỏ lệnh."""
     bien_the, _ = tong_ket_cl.cach_vao(tong_ket_cl.doc_ket_qua_backtest())
+    ung = []
     for z in diem_vao.doc_ds_mua(bay_gio):
         if z["ma"] in vt or not diem_vao.vao_tre_atc(z):
             continue
         kq = diem_vao.danh_gia(z, bo_nen_chua_dong(nen_15p(z["ma"], bay_gio), C.KHUNG_PHUT, bay_gio), bay_gio, bien_the)
-        if kq["trang_thai"] != "MUA" or not kq.get("atc"):
-            continue
+        if kq["trang_thai"] == "MUA" and kq.get("atc"):
+            ung.append(kq)
+    for kq in tong_ket_cl.loc_suat_mua(ung, vt, bay_gio)[0]:          # hết suất → không nhắc lô lẻ (tin 14:30 ghi ⛔)
         gia, cl, _, _ = diem_vao.muc_sau_mua(kq)
         n = diem_vao.so_cp_nav(kq, gia, cl)
         if not 0 < n < 100:

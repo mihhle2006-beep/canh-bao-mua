@@ -899,3 +899,63 @@ def test_gia_lo_cong_khai_cho_gia_lap(monkeypatch, tmp_path):
     d = pd.read_csv(f, dtype=str, keep_default_na=False)
     assert d.loc[0, "gia_kn_mua"] == "21.35" and d.loc[0, "gia"] == "21.3" and d.loc[0, "nhom_hd"] == ""
     assert d.loc[1, "gia_kn_mua"] == "21.35" and d.loc[1, "nhom_hd"] == "CHO_LO"
+
+
+def _vt_quy(n, tuan_nay=0, ngay_tuan="12/11/2026"):
+    """n vị thế hệ B giả (AAA0…), tuan_nay mã mua trong tuần của 13/11/2026."""
+    return {f"AAA{i}": {"ma": f"AAA{i}", "so_cp": 100, "gia_von": 10.0,
+                        "ngay_mua": ngay_tuan if i < tuan_nay else "01/10/2026"} for i in range(n)}
+
+
+def test_loc_suat_mua_du_8_ma_chi_ma_manh(monkeypatch):
+    """13/11/2026: danh mục đủ suất mà tin 15' vẫn báo MUA mã mới không 💪 kèm nút đặt lệnh. Nay: đủ 8 mã → chỉ mã 💪
+    (1 suất dự phòng), hết 5 mã mới/tuần → không mã nào; mã hệ bắt đáy không chiếm suất B."""
+    monkeypatch.setattr(tong_ket_cl, "_quy", lambda ten, md: {"QUY_SO_MA": 8, "QUY_SUAT_DU_PHONG": 1,
+                                                             "QUY_MOI_TUAN_TOI_DA": 5}.get(ten, md))
+    monkeypatch.setattr(vi_the, "bat_day_cua", lambda v: {"giu": True} if v["ma"].startswith("BD") else None)
+    t = pd.Timestamp("2026-11-13 10:00")
+    ds = [{"ma": "CCC", "uu_tien": 5.0}, {"ma": "EEE", "uu_tien": 10.0, "manh_b": True},
+          {"ma": "DDD", "uu_tien": 3.0, "manh_b": True}]
+    duoc, bo = tong_ket_cl.loc_suat_mua(ds, _vt_quy(8), t)
+    assert [k["ma"] for k in duoc] == ["DDD"] and [m for m, _ in bo] == ["CCC", "EEE"]   # 1 suất 💪 → DDD (ưu tiên hơn)
+    assert "không 💪" in dict(bo)["CCC"] and "suất dự phòng 💪 đã dùng" in dict(bo)["EEE"]
+    assert "đủ 8 mã (đang giữ 8)" in dict(bo)["CCC"]
+    duoc, bo = tong_ket_cl.loc_suat_mua(ds, _vt_quy(7), t)                     # còn 1 suất thường: DDD lấy, CCC hết
+    assert [k["ma"] for k in duoc] == ["DDD", "EEE"] and [m for m, _ in bo] == ["CCC"]
+    vt = {**_vt_quy(6), **{f"BD{i}": {"ma": f"BD{i}", "so_cp": 100, "gia_von": 5.0} for i in range(4)}}
+    assert [k["ma"] for k in tong_ket_cl.loc_suat_mua(ds, vt, t)[0]] == ["DDD", "CCC", "EEE"]   # 6 B + 4 bắt đáy
+    duoc, bo = tong_ket_cl.loc_suat_mua(ds, _vt_quy(5, tuan_nay=5), t)          # đã mua 5 mã mới tuần này
+    assert duoc == [] and all("5/5 mã mới tuần này" in ly for _, ly in bo)
+    assert tong_ket_cl.loc_suat_mua(ds, {}, t) == (ds, [])                      # không đọc được danh mục → như cũ
+    assert tong_ket_cl.tin_bo_suat([], t) is None and "CCC: đang giữ 8/8" in tong_ket_cl.tin_bo_suat([("CCC", "đang giữ 8/8 mã")], t)
+
+
+def test_15p_du_suat_khong_bao_mua_ma_moi(monkeypatch, tmp_path):
+    """Vòng 15' với danh mục đủ 8 mã: CCC (không 💪) → tin ⛔ không nút; DDD (💪) → tin MUA + nút như cũ."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(tong_ket_cl, "_quy", lambda ten, md: {"QUY_SO_MA": 8, "QUY_SUAT_DU_PHONG": 1,
+                                                             "QUY_MOI_TUAN_TOI_DA": 5}.get(ten, md))
+    monkeypatch.setattr(vi_the, "bat_day_cua", lambda v: None)
+    k = {"nhom": "VAO_NHU_MOI", "tu": 14.0, "den": 15.0, "cl": 13.5, "mt1": 15.5, "mt3": 17.0, "atc": True,
+         "trang_thai": "MUA", "ly_do": "vào trễ – lệnh ATC trong vùng", "gia_nay": 14.5, "gia_mua": 14.5,
+         "thoi_diem": None, "tieu_chi": []}
+    ds = [{"ma": "CCC", "uu_tien": 1.0}, {"ma": "DDD", "uu_tien": 2.0, "manh_b": True}]
+    monkeypatch.setattr(diem_vao, "doc_ds_mua", lambda bay_gio: ds)
+    monkeypatch.setattr(diem_vao, "danh_gia", lambda z, dp, bay_gio, bt: {**k, **z})
+    monkeypatch.setattr(tong_ket_cl, "cach_vao", lambda kq: ("15P+GIO", "cấu hình"))
+    for ten, gt in (("nen_15p", lambda ma, bay_gio: pd.DataFrame()), ("bo_nen_chua_dong", lambda df, *a: df),
+                    ("doc_trang_thai", lambda: {}), ("ghi_trang_thai", lambda tt: None), ("_anh_mua_ngay", lambda *a: None),
+                    ("_canh_bao_ban", lambda *a: None), ("_trang", lambda *a: None), ("_in_nguon", lambda: None)):
+        monkeypatch.setattr(chay, ten, gt)
+    monkeypatch.setattr(chay.C, "GHI_NHAT_KY", False)
+    monkeypatch.setattr(diem_vao, "nut_mua", lambda kq: [[("🛒", f"dl|M|{kq['ma']}")]])
+    gui = []
+    monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, anh=None, nut=None: gui.append((nd, nut)))
+    chay.trong_phien_15p(pd.Timestamp("2026-11-13 14:30"), _vt_quy(8))
+    co_nut = [str(nut) for nd, nut in gui if nut]
+    assert len(co_nut) == 1 and "DDD" in co_nut[0] and not any("CCC" in nd for nd, _ in gui if not nd.startswith("⛔"))
+    chan = [nd for nd, _ in gui if nd.startswith("⛔")]
+    assert len(chan) == 1 and "CCC" in chan[0] and "DDD" not in chan[0]
+    gui.clear()
+    chay.trong_phien_15p(pd.Timestamp("2026-11-13 14:30"), {})                 # chưa giữ mã nào → báo cả 2 như cũ
+    assert not [nd for nd, _ in gui if nd.startswith("⛔")] and any("CCC" in str(nut) for nd, nut in gui if nut)
