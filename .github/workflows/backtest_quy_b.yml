@@ -10,6 +10,8 @@
 #           (lịch hằng tháng)
 #   cham1r – (đầu tháng + chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
+#   dg_cai – (14/11/2026, chạy tay) sửa phương pháp định giá J8: ROE tự tính năm cũ / bỏ DCF / bình quân nhân + tổ hợp –
+#           IC 6T / 12T 2012–18 & 2019+, IC trong ngành, quỹ ĐẮT ½ KL theo từng biến thể
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -25,7 +27,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / cham1r (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / cham1r / dg_cai (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -58,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r]
+        phan: [chuan, cham1r, dg_cai]
     runs-on: ubuntu-24.04
     defaults:
       run:
