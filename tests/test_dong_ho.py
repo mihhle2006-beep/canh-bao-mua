@@ -478,3 +478,42 @@ def test_workflow_kenh_nghien_cuu_co_du_phong():
             assert (_bt(tk, sai), _bt(ch, sai)) == ("NC", "toi"), (f, "secret nhóm chứa token → bỏ qua")
             so += 1
     assert so >= 15
+
+
+def test_bang_tre_bao_dung_va_chay_lai():
+    """Vòng bảng thị trường (repo bang-thi-truong) không có lượt mới > 4 phút trong giờ giao dịch → 1 tin / đợt, lượt mới lại →
+    1 tin "chạy lại"; ngoài giờ / ngày nghỉ (commit "Nghỉ <ngày>") im."""
+    class Gh:
+        repo = "chu/bang-thi-truong"
+
+        def __init__(self):
+            self.c = {"commit": {"committer": {"date": "2026-11-16T03:00:00Z"}, "message": "Bảng p/20261116/1200.json"}}
+
+        def _goi(self, duong):
+            assert duong == "commits/nhanh"
+            return self.c
+    gh, tin = Gh(), []
+    bt = dong_ho.BangTre(gh, gui=tin.append, in_ra=lambda *_: None)
+    t = lambda s: datetime.fromisoformat(s).replace(tzinfo=VN)                         # noqa: E731
+    assert bt.buoc(t("2026-11-16 10:02")) is None                                     # 2 phút – chưa
+    assert "ĐỨNG" in bt.buoc(t("2026-11-16 10:05")) and "10:00" in tin[0]
+    assert bt.buoc(t("2026-11-16 10:10")) is None and len(tin) == 1                   # 1 tin / đợt
+    gh.c["commit"]["committer"]["date"] = "2026-11-16T03:11:00Z"
+    assert bt.buoc(t("2026-11-16 10:12")).startswith("Bảng thị trường chạy lại") and len(tin) == 2
+    assert bt.buoc(t("2026-11-16 12:00")) is None and bt.buoc(t("2026-11-14 10:30")) is None   # trưa / thứ Bảy
+    gh.c["commit"] = {"committer": {"date": "2026-11-16T02:20:00Z"}, "message": "Nghỉ 2026-11-16"}
+    assert bt.buoc(t("2026-11-16 10:30")) is None and len(tin) == 2
+
+
+def test_giam_sat_ghi_ten_repo():
+    class Gh:
+        def _goi(self, duong, *a):
+            return {"workflow_runs": [{"id": 5, "path": ".github/workflows/kho.yml", "name": "Bang thi truong",
+                                       "status": "completed", "conclusion": "failure", "head_branch": "main",
+                                       "event": "workflow_dispatch", "updated_at": "2026-11-16T03:00:00Z",
+                                       "created_at": "2026-11-16T02:00:00Z", "html_url": "u"}]}
+    tin = []
+    gs = dong_ho.GiamSat(Gh(), datetime(2026, 11, 16, tzinfo=UTC), gui=tin.append, in_ra=lambda *_: None, nhan="[bảng] ")
+    gs.buoc()
+    assert "❌ [bảng] Bang thi truong lỗi" in tin[0]
+    assert "bang.yml" in dong_ho.CHAY_LAI and "trien_khai.yml" in dong_ho.KHONG_BAO

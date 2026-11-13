@@ -93,6 +93,25 @@ def doc_danh_muc(path_cuc_bo="danh_muc.csv"):
     return phan_tich_csv(noi_dung), nguon
 
 
+_LENH_THAT = {}
+
+
+def doc_lenh_that():
+    """Lệnh MUA thật [(mã, ngày)] – lenh_that.csv repo danh-muc (đồng bộ DNSE ~10' / lần trong phiên) – đếm mã MỚI mua trong
+    tuần kể cả mã đã bán (canh_bao/suat.py). Không đọc được → []. 1 lần / tiến trình. KHÔNG in ra log (repo công khai)."""
+    if "v" in _LENH_THAT:
+        return _LENH_THAT["v"]
+    import csv
+    import io
+    noi_dung, _ = _tai_tu_github("lenh_that.csv")
+    out = []
+    for r in csv.DictReader(io.StringIO((noi_dung or "").lstrip("\ufeff"))):
+        if str(r.get("lenh") or "").strip().upper() == "MUA" and str(r.get("ma") or "").strip():
+            out.append((str(r["ma"]).strip().upper(), r.get("ngay")))
+    _LENH_THAT["v"] = out
+    return out
+
+
 _NAV = {}
 
 

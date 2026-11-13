@@ -29,6 +29,11 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
+try:
+    from . import suat
+except ImportError:                    # chạy thẳng file (lenh_tele.yml: sparse checkout canh_bao/lenh_tele.py + suat.py)
+    import suat
+
 VN = timezone(timedelta(hours=7))
 FILE = "nhap.txt"
 FILE_KQ = "lenh_dat/ket_qua.jsonl"                                       # kết quả lệnh nút do máy Mac ghi
@@ -96,6 +101,63 @@ def chu_kl(n):
     return " + ".join([f"{c:,}".replace(",", ".")] * bool(c) + [f"{le} lẻ"] * bool(le))
 
 
+def _doc_tep(url, headers=None):
+    """GET → chữ (UTF-8, bỏ BOM) | None khi lỗi."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=headers or {}), timeout=20) as r:
+            return r.read().decode("utf-8-sig")
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+
+
+def _csv(noi_dung):
+    import csv
+    import io
+    return list(csv.DictReader(io.StringIO((noi_dung or "").lstrip("\ufeff"))))
+
+
+def kiem_suat(ma, gh, repo, hom_nay=None, doc=None, env=os.environ):
+    """Nút MUA mã MỚI (người dùng 13/11/2026: tin MUA cũ vẫn bấm mua được khi danh mục đã đủ 8/8) → còn suất Quỹ Bứt Phá?
+    → None (được mua / mua thêm mã đang giữ / không đọc được dữ liệu – không chặn nhầm) | lý do hết suất.
+    Dữ liệu: danh_muc.csv + lenh_that.csv (repo danh-muc), trang_thai_chien_luoc.json canh-bao-mua (cấu hình suất, mã
+    mạnh, mã hệ bắt đáy) – đếm bằng canh_bao/suat.py như vòng 15' / tin tổng kết."""
+    h = {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github.raw"}
+    doc = doc or (lambda f: _doc_tep(f"https://api.github.com/repos/{repo}/contents/{f}", h))
+    try:
+        dm = doc("danh_muc.csv")
+        if dm is None:
+            return None
+        giu = {}
+        for r in _csv(dm):
+            m = str(r.get("ma") or "").strip().upper()
+            try:
+                sl = float(str(r.get("so_cp") or "0").replace(",", ""))
+            except ValueError:
+                sl = 0.0
+            if m and sl > 0:
+                giu[m] = r.get("ngay_mua")
+        if ma in giu:                                                   # mua thêm mã đang giữ → không phải mã mới
+            return None
+        mua = [(str(r.get("ma") or "").strip().upper(), r.get("ngay")) for r in _csv(doc("lenh_that.csv"))
+               if str(r.get("lenh") or "").strip().upper() == "MUA"]
+        f = "trang_thai_chien_luoc.json"
+        cl = open(f, encoding="utf-8").read() if os.path.exists(f) else _doc_tep(
+            f"https://raw.githubusercontent.com/{env.get('GITHUB_REPOSITORY') or 'mihhle2006-beep/canh-bao-mua'}/main/{f}")
+        cl = json.loads(cl or "{}")
+        cau = {**suat.MAC_DINH, **(cl.get("suat") or {})}
+        manh = any(x.get("ma") == ma and x.get("manh_b") for x in (cl.get("ds_mua") or {}).get("ma") or [])
+        bd = (cl.get("bat_day") or {}).get("giu") or {}
+
+        def la_bd(m, n):                                                # ngày mua lệch ngày hệ bắt đáy mua ≤ 7 ngày
+            nm = suat.doc_ngay((bd.get(m) or {}).get("ngay_mua")) if m in bd else None
+            return m in bd and (nm is None or n is None or abs((nm - n).days) <= 7)
+        giu_b, moi = suat.dem(giu, mua, hom_nay or datetime.now(VN).date(), la_bd)
+        _, bo = suat.quyet([{"ma": ma, "manh_b": manh}], giu_b, moi, cau["so_ma"], cau["dp"], cau["td"])
+        return bo[0][1] if bo else None
+    except Exception:                                                   # noqa: BLE001 – lỗi đọc → không chặn
+        return None
+
+
 def mo_ta_nut(data):
     p = data.split("|")
     if p[1] == "M":
@@ -126,11 +188,13 @@ def tu_dat(ben, ma, kl=0, gia=0, env=os.environ):
         return False
 
 
-def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
+def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None, kiem=None):
     """Bấm nút (callback_query) trên tin của chat chủ quỹ: dl → tin xác nhận (trả lời tin gốc) · dx (✅, ≤ 5 phút) → gửi
     lệnh tới máy Mac, tin xác nhận thành dòng ⏳ · dt (❌ Thôi) → xoá tin xác nhận · dh (❌ Bỏ trên tin gốc) → bỏ hết nút.
+    Nút MUA mã mới: kiểm suất Quỹ Bứt Phá (kiem_suat) cả lúc bấm số CP lẫn lúc ✅ – hết suất → không đặt, báo lý do.
     → số lệnh đã gửi máy Mac."""
     bay, gui, xong = bay_gio or time.time(), 0, set()
+    kiem = kiem or (lambda ma: kiem_suat(ma, gh, repo))
     for cq in cqs:
         m, data = cq.get("message") or {}, str(cq.get("data") or "")
         tin, tra = m.get("message_id"), {"callback_query_id": cq.get("id")}
@@ -140,6 +204,10 @@ def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
         tuoi = bay - int(m.get("date") or 0)
         if data.startswith("dl") and tuoi > 3 * 3600:
             _goi(f"{api}/answerCallbackQuery", {**tra, "text": "Tin quá 3 giờ – không đặt lệnh từ tin này"})
+            continue
+        het = kiem(data.split("|")[2]) if "|M|" in data and data[:2] in ("dl", "dx") else None
+        if het and data.startswith("dl"):
+            _goi(f"{api}/answerCallbackQuery", {**tra, "text": f"Không mua – hết suất: {het}", "show_alert": True})
             continue
         _goi(f"{api}/answerCallbackQuery", tra)
         if data == "dh":
@@ -163,6 +231,9 @@ def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None):
             _goi(f"{api}/editMessageText", {"chat_id": chat, "message_id": tin, "text": t})
         if tuoi > 300:
             sua("⌛ Quá 5 phút chưa xác nhận – không đặt; bấm lại nút trên tin")
+            continue
+        if het:
+            sua(f"⛔ Không đặt – hết suất Quỹ Bứt Phá: {het}")
             continue
         p = data.split("|")
         yc = {"id": f"{chat}:{tin}", "ben": p[1], "ma": p[2], "kl": int(p[3]) if p[1] == "M" else 0,

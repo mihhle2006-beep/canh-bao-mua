@@ -60,6 +60,9 @@ class Xuat:
     def nen(self, f):
         self.nen_ds.append(f)
 
+    def nghi(self, ngay):
+        self.ngay_nghi = ngay
+
 
 class DongHo:
     def __init__(self, bat_dau):
@@ -181,3 +184,18 @@ def test_nen_phut_hom_nay(tmp_path, monkeypatch):
     assert sorted(os.listdir(d / "n" / "20261116")) == ["1202", "1203", "1204"]
     assert sorted(os.listdir(d / "n" / "20261116" / "1204")) == ["AAA.json", "BBB.json"]
     assert json.loads((d / "n" / "20261116" / "1204" / "AAA.json").read_text()) == nen["AAA"]
+
+
+def test_vong_ngay_le_dung_va_ghi_nghi(tmp_path):
+    """Ngày lễ (T2–T6 nhưng sở nghỉ): sau 09:20 bảng giá vẫn là phiên trước → dừng vòng, ghi "Nghỉ <ngày>" (đồng hồ không
+    báo bảng đứng), không đẩy ô của ngày đó."""
+    dh, x = DongHo("2026-11-16 09:19:00"), Xuat()
+    ra = str(tmp_path / "du_lieu.json")
+
+    def chup(cb, f, luc=None, in_tien_do=None):
+        with open(f, "w") as fh:
+            fh.write("{}")
+        return {"cap_nhat": f"{luc:%Y-%m-%d %H:%M:%S}", "phien": "2026-11-13"}
+    luot, loi = V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=chup, nen_fn=lambda ds, luc: {})
+    assert x.ngay_nghi == "2026-11-16" and dh.t < T("2026-11-16 09:21")
+    assert [t for t, _ in x.o] == ["p/20261116/1118.json", "p/20261116/1119.json"]        # 09:19:00 / 09:19:31 – trước 09:20

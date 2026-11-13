@@ -81,14 +81,18 @@ BO_NEU_DANG_CHAY = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml",   # đ
                     "bang-thi-truong/bang.yml"}
 # lỗi lần đầu → tự chạy lại job lỗi 1 lần (dựng dữ liệu / trang: lỗi hay do nguồn chập chờn, chạy lại không gửi tin trùng)
 CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_bctn.yml", "loc_quy_b.yml",
-            "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml"}
+            "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml",
+            "bang.yml"}                                         # repo bang-thi-truong: vòng bảng chết giữa buổi → chạy lại
 KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu tự nhắn khi lỗi
              "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml",     # công cụ bấm tay – người bấm tự xem
-             "thu_kenh_tele.yml"}
+             "thu_kenh_tele.yml",
+             "trien_khai.yml"}                                      # bang-thi-truong Pages (chập chờn – BangTre theo dõi bảng đứng)
 LOI = ("failure", "timed_out", "startup_failure")
 GIAM_SAT_GIAY = 300
 MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
 MAC_GIO = ("08:30", "15:10")                                        # T2–T6 giờ VN: vòng DNSE 08:35, lệnh, đo trong phiên
+BANG_TRE_PHUT = 4                                                   # bảng thị trường không có lượt mới quá ngần này → nhắn
+BANG_GIO = (("09:20", "11:30"), ("13:05", "15:03"))                 # T2–T6 giờ VN: vòng bảng phải đang đẩy lượt 30 giây
 KIEM_TOKEN = "5 20 * * *"                                           # giờ VN kiểm hạn token
 TOKEN_CON_NGAY = 14
 
@@ -287,8 +291,8 @@ class GiamSat:
     """Lần chạy trên main vừa lỗi (cập nhật từ `tu`) → CHAY_LAI lần đầu: chạy lại job lỗi; còn lại → 1 tin Telegram gộp.
     Mỗi (lần chạy, lượt) xét 1 lần. Log chỉ in tên workflow (repo công khai)."""
 
-    def __init__(self, gh, tu, gui=None, in_ra=print):
-        self.gh, self.tu, self.gui, self.in_ra = gh, tu, gui or nhan_tele, in_ra
+    def __init__(self, gh, tu, gui=None, in_ra=print, nhan=""):
+        self.gh, self.tu, self.gui, self.in_ra, self.nhan = gh, tu, gui or nhan_tele, in_ra, nhan   # nhan: "[repo] "
         self.da = set()
 
     def buoc(self):
@@ -320,7 +324,7 @@ class GiamSat:
                 except Exception as e:
                     them = f" – không tự chạy lại được ({type(e).__name__})"
             self.in_ra(f"giám sát: {wf} lỗi {luc:%H:%M}{them} → nhắn Telegram")
-            tin.append(f"❌ {r.get('name') or wf} lỗi lúc {luc:%H:%M}{them}\n{r.get('html_url', '')}")
+            tin.append(f"❌ {self.nhan}{r.get('name') or wf} lỗi lúc {luc:%H:%M}{them}\n{r.get('html_url', '')}")
         if tin:
             self.gui("🚨 Workflow lỗi (đồng hồ báo ngay):\n" + "\n".join(tin)
                      + "\n→ bấm link xem log · chạy lại: nút Re-run jobs trên trang đó")
@@ -387,6 +391,46 @@ class MayMac:
                + "\n→ Vòng đồng bộ DNSE / lệnh đang đứng: Mac ngủ / tắt / mất mạng? Đánh thức Mac, cắm điện, kiểm Wi-Fi – "
                  "máy thức là runner tự nhận việc (bot báo lại khi đã nhận).")
         self.in_ra(f"máy Mac: {len(lau)} job chờ máy ≥ {self.cho}' → nhắn Telegram")
+        self.gui(tin)
+        return tin
+
+
+class BangTre:
+    """Trong giờ giao dịch (T2–T6 BANG_GIO): vòng bảng thị trường repo bang-thi-truong (bang.yml – mỗi lượt 30 giây 1 commit
+    nhánh "nhanh") không có lượt mới > BANG_TRE_PHUT phút → 1 tin / đợt (kênh hệ thống), có lượt mới lại → 1 tin "chạy lại".
+    Ngày nghỉ (vòng ghi commit "Nghỉ <ngày>") → im. Log công khai: chỉ phút."""
+
+    def __init__(self, gh, gui=None, in_ra=print, tre=BANG_TRE_PHUT):
+        self.gh, self.gui, self.in_ra, self.tre = gh, gui or nhan_tele, in_ra, tre
+        self.dot = None                                             # lượt cuối lúc bắt đầu đợt đứng
+
+    @staticmethod
+    def trong_gio(bay_gio):
+        t = bay_gio.astimezone(VN)
+        return t.isoweekday() <= 5 and any(a <= f"{t:%H:%M}" < b for a, b in BANG_GIO)
+
+    def buoc(self, bay_gio):
+        """→ tin đã gửi | None."""
+        if not self.trong_gio(bay_gio):
+            return None
+        c = (self.gh._goi("commits/nhanh") or {}).get("commit") or {}
+        luc = _thoi_diem((c.get("committer") or {}).get("date"))
+        if str(c.get("message") or "").startswith("Nghỉ") and f"{bay_gio.astimezone(VN):%Y-%m-%d}" in c["message"]:
+            return None
+        tuoi = (bay_gio - luc).total_seconds() / 60
+        if self.dot is not None:
+            if tuoi > 2:
+                return None
+            self.dot = None
+            tin = f"Bảng thị trường chạy lại – lượt mới lúc {luc.astimezone(VN):%H:%M}"
+        elif tuoi >= self.tre:
+            self.dot = luc
+            tin = (f"Bảng thị trường ĐỨNG – lượt 30 giây cuối lúc {luc.astimezone(VN):%H:%M} ({int(tuoi)} phút trước). Vòng "
+                   f"ở repo {self.gh.repo} không chạy? Trang tạm dùng bản Pages (cũ ≤ 15'). Xem: "
+                   f"https://github.com/{self.gh.repo}/actions")
+        else:
+            return None
+        self.in_ra(f"bảng thị trường: {'chạy lại' if self.dot is None else f'đứng {int(tuoi)} phút'} → nhắn Telegram")
         self.gui(tin)
         return tin
 
@@ -568,7 +612,10 @@ def main(argv=None):
     dh = DongHo(gh, gh_khac=gh_khac)
     gs = GiamSat(gh, datetime.now(timezone.utc) - timedelta(minutes=10))   # phủ khoảng nối giữa 2 lượt đồng hồ
     mac = MayMac(gh_khac["danh-muc"]) if gh_khac else None
-    bat_dau, da_kiem, lan_gs = time.time(), None, 0.0
+    gs_bang = (GiamSat(gh_khac["bang-thi-truong"], datetime.now(timezone.utc) - timedelta(minutes=10), nhan="[bảng] ")
+               if gh_khac else None)                                # repo bang-thi-truong: vòng bảng / kho nến lỗi
+    tre = BangTre(gh_khac["bang-thi-truong"]) if gh_khac else None
+    bat_dau, da_kiem, lan_gs, lan_tre = time.time(), None, 0.0, 0.0
     print(f"Đồng hồ chạy {a.phut:.0f} phút, {len(LICH)} dòng lịch", flush=True)
     while time.time() - bat_dau < a.phut * 60:
         bay_gio = datetime.now(VN)
@@ -582,6 +629,11 @@ def main(argv=None):
             viec.append(("giám sát", gs.buoc))
             if mac:
                 viec.append(("máy Mac", lambda: mac.buoc(bay_gio)))
+            if gs_bang:
+                viec.append(("giám sát bảng", gs_bang.buoc))
+        if tre and time.time() - lan_tre >= 60:                     # bảng đứng: xét mỗi phút
+            lan_tre = time.time()
+            viec.append(("bảng đứng", lambda: tre.buoc(bay_gio)))
         for ten, f in viec:                                         # mỗi phần 1 try: lịch lỗi không chặn giám sát…
             try:
                 f()

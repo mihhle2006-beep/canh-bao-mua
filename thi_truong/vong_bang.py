@@ -224,6 +224,11 @@ class XuatGit:
         don_o_nen(d)
         self.git.day("nhanh", f"Bảng {ten}")
 
+    def nghi(self, ngay):
+        """Ngày nghỉ: 1 commit "Nghỉ <ngày>" nhánh nhanh (đồng hồ thấy → không báo bảng đứng)."""
+        self.git.thu_muc("nhanh")
+        self.git.day("nhanh", f"Nghỉ {ngay}")
+
     def nen(self, file_du_lieu):
         d = self.git.thu_muc("du-lieu")
         for t in TRANG:
@@ -280,6 +285,12 @@ def vong(cb, xuat, file_ra, luc_fn=tinh.gio_vn, ngu=time.sleep, chup=None, so_lu
                         nen = dang.result(timeout=10)
                     except Exception as e:                              # noqa: BLE001 – lượt này không có nến phút
                         in_ra(f"⚠ nến phút {luc:%H:%M:%S}: {type(e).__name__}")
+            if not so_luot and out.get("phien") and out["phien"] != f"{luc:%Y-%m-%d}" and _phut(luc) >= 9 * 60 + 20:
+                # ngày lễ (đồng hồ chỉ xét T2–T6): bảng giá vẫn là phiên trước sau 09:20 → dừng, ghi commit "Nghỉ <ngày>"
+                # (đồng hồ BangTre thấy thì không báo bảng đứng); 09:00–09:20 chưa kết luận (ATO chưa có chỉ số)
+                in_ra(f"{luc:%d/%m} không giao dịch (phiên mới nhất {out['phien']}) → dừng vòng")
+                xuat.nghi(f"{luc:%Y-%m-%d}")
+                break
             xuat.nhanh(ten_o(luc), json.dumps({**out, "nen_ma": sorted(nen or {})}, ensure_ascii=False,
                                               separators=(",", ":"), default=dung._mac_dinh), nen)
             out_truoc = out

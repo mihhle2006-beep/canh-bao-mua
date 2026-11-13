@@ -31,6 +31,7 @@ def _khong_doc_nav_that(monkeypatch):
     """Test không đọc NAV tài khoản thật (vi_the.nav_that) – tin MUA không kèm số CP trừ test tự đặt."""
     from canh_bao import vi_the
     monkeypatch.setattr(vi_the, "_NAV", {"v": None})
+    monkeypatch.setattr(vi_the, "_LENH_THAT", {"v": []})             # không đọc lenh_that.csv thật
 
 
 @pytest.fixture(autouse=True)
@@ -58,3 +59,10 @@ def _khong_doc_so_lenh(monkeypatch):
     from canh_bao import diem_vao
     monkeypatch.setattr(diem_vao, "_SO_LENH_GOC", diem_vao.so_lenh, raising=False)
     monkeypatch.setattr(diem_vao, "so_lenh", lambda ma: None)
+
+
+@pytest.fixture(autouse=True)
+def _nut_khong_doc_mang(monkeypatch):
+    """Nút đặt lệnh (lenh_tele.kiem_suat) không đọc danh mục / lệnh thật qua mạng – test tự đặt."""
+    from canh_bao import lenh_tele
+    monkeypatch.setattr(lenh_tele, "_doc_tep", lambda url, headers=None: None)

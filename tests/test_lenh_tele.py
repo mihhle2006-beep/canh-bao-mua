@@ -139,3 +139,48 @@ def test_tu_dat_id_theo_ngay(monkeypatch, capsys):
     assert goi[0][0].endswith("/repos/mihhle2006-beep/danh-muc/dispatches")
     assert T.tu_dat("M", "REE", 300, 46600, {}) is False and len(goi) == 2
     assert "REE" not in capsys.readouterr().out
+
+
+def test_kiem_suat_nut_mua(tmp_path, monkeypatch):
+    """13/11/2026: tin MUA cũ vẫn bấm mua được khi danh mục đủ 8/8 → nút kiểm suất như vòng 15' (canh_bao/suat.py):
+    đủ 8 mã chỉ mã mạnh (1 suất dự phòng), ≤ 5 mã mới / tuần KỂ CẢ mã mua rồi bán (lenh_that.csv), mã hệ bắt đáy không
+    tính, mua thêm mã đang giữ luôn được; không đọc được danh mục → không chặn."""
+    from datetime import date
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "trang_thai_chien_luoc.json").write_text(json.dumps({
+        "suat": {"so_ma": 8, "dp": 1, "td": 5}, "ds_mua": {"ma": [{"ma": "MMM", "manh_b": True}, {"ma": "YYY"}]},
+        "bat_day": {"giu": {"BD0": {"ngay_mua": "2026-11-10"}}}}))
+
+    def dm(n, bd=0, ngay="01/10/2026"):
+        dong = [f"AA{i},100,10,{ngay}" for i in range(n)] + [f"BD{i},100,5,11/11/2026" for i in range(bd)]
+        return "﻿ma,so_cp,gia_von,ngay_mua\n" + "\n".join(dong) + "\nCU0,0,10,01/01/2026\n"
+
+    def lt(*ma, ngay="2026-11-11"):
+        return "ngay,lenh,ma,so_cp,gia,ma_lenh\n" + "\n".join(f"{ngay},MUA,{m},100,10,1" for m in ma) + "\n2026-11-12,BAN,ZZ1,100,10,2\n"
+    hn = date(2026, 11, 13)
+    k = lambda ma, d, l="": T.kiem_suat(ma, "g", "r", hom_nay=hn, doc=lambda f: d if f == "danh_muc.csv" else l)   # noqa: E731
+    assert k("YYY", dm(8)) == "đủ 8 mã, không phải tín hiệu mạnh"
+    assert k("MMM", dm(8)) is None and k("MMM", dm(9)) == "đủ 8 mã + 1 suất dự phòng"
+    assert k("AA3", dm(9)) is None                                                  # mua thêm mã đang giữ
+    assert k("YYY", dm(7, bd=1)) is None                                            # 1 mã hệ bắt đáy không chiếm suất B
+    assert k("YYY", dm(3), lt("X1", "X2", "X3", "X4", "X5")) == "đã mua 5/5 mã mới tuần này"   # mua rồi bán vẫn tính
+    assert k("YYY", dm(3), lt("X1", "X2", "X3", "X4", "X5", ngay="2026-11-04")) is None          # tuần trước
+    assert k("YYY", dm(3, ngay="11/11/2026"), lt("AA0", "AA1", "X3", "X4")) == "đã mua 5/5 mã mới tuần này"  # AA0–2 + X3–4
+    assert T.kiem_suat("YYY", "g", "r", doc=lambda f: None) is None                 # không đọc được danh mục → không chặn
+
+
+def test_nut_mua_het_suat_khong_dat(monkeypatch):
+    goi, ups = [], [_nut(1, "dl|M|YYY|100|46600", mid=7), _nut(2, "dx|M|YYY|100|46600", mid=9),
+                    _nut(3, "dl|B|VIX", mid=8)]
+
+    def gia(url, data=None, headers=None, method=None, cho=0):
+        goi.append((url.split("?")[0].rsplit("/", 1)[-1], data))
+        return None
+    monkeypatch.setattr(T, "_goi", gia)
+    n = T.xu_ly_nut("api", ups and [u["callback_query"] for u in ups], "111", "g", "r", bay_gio=NGAY + 60,
+                    kiem=lambda ma: "đủ 8 mã, không phải tín hiệu mạnh")
+    assert n == 0 and not [g for g in goi if g[0] == "dispatches"]
+    canh = [g[1] for g in goi if g[0] == "answerCallbackQuery" and g[1].get("show_alert")]
+    assert len(canh) == 1 and "hết suất: đủ 8 mã" in canh[0]["text"]
+    assert [g[1]["text"][:11] for g in goi if g[0] == "editMessageText"] == ["⛔ Không đặt"]
+    assert [g[1]["reply_to_message_id"] for g in goi if g[0] == "sendMessage"] == [8]      # nút BÁN không kiểm suất
