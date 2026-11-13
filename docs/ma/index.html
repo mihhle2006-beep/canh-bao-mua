@@ -158,6 +158,8 @@ body.co-ds main{margin-right:300px}
 .cb-ghi{font-size:11.5px;color:var(--mo);max-width:240px}.cb-cuoi{grid-column:1/-1;text-align:right}.cb-cuoi button{border:1px solid var(--vien);background:var(--the);border-radius:6px;padding:3px 10px;cursor:pointer;font:inherit}
 .chu-pane{position:absolute;left:8px;z-index:3;font-size:11.5px;line-height:1.3;background:#ffffffd9;border-radius:5px;padding:1px 6px;pointer-events:none}
 .fs-cb-ds{z-index:40}
+.fs-cb-ds.lp-ds{grid-template-columns:minmax(270px,auto);gap:6px}.fs-lp>button{font-weight:700;letter-spacing:1px;padding:5px 9px}
+.lp-ds .nut{flex-wrap:wrap}.lp-ds .cb-ghi{max-width:290px}.lp-ds .cb-nhom+.cb-nhom{border-top:1px solid var(--vien);padding-top:6px}
 @media (max-width:760px){.fs-cb-ds{grid-template-columns:1fr;position:fixed;left:8px;right:8px;top:calc(var(--dau, 56px) + 8px);max-height:calc(100vh - var(--dau, 56px) - 16px);min-width:0;z-index:150}.fs .fs-cb-ds{top:52px;max-height:calc(100vh - 60px)}}
 @media (max-width:600px){.chu-non{display:none}}
 .fs-than{flex:1;display:flex;min-height:0}
@@ -1104,6 +1106,12 @@ function cb_rs(c, v, nhin = 250) {                    // RS = (giá / VN-Index) 
 // ---------------------------------------------------------------- hết chỉ báo kỹ thuật
 // ---------------------------------------------------------------- CHỈ BÁO: trạng thái (lưu trong trình duyệt) + menu ƒx (trang thường + toàn màn hình)
 const KHOA_CB = "ma_chi_bao";
+// lớp phân tích tự động (menu ⋯ kiểu FireAnt – vẽ bằng doc_bd.js, bật riêng từng lớp): [khoá, tên trong menu, tên gọn ở chú giải, giải thích]
+const LP_DS = [["vung", "Vùng hỗ trợ / kháng cự", "Hỗ trợ / kháng cự", "Đỉnh / đáy cục bộ (5 nến hai bên) gộp trong 0,6 ATR – vùng ≥ 2 lần chạm, 250 nến gần nhất"],
+  ["xh", "Đường xu hướng tự động", "Xu hướng", "Nối 2 đỉnh thấp dần (xu hướng giảm) / 2 đáy cao dần (tăng) gần nhất theo giá đóng cửa; ghi rõ khi đã bị phá"],
+  ["nen", "Mẫu nến tự nhận diện", "Mẫu nến", "10 mẫu nến (búa, nhấn chìm, sao mai / hôm, 3 chàng lính, 3 con quạ…) trên toàn biểu đồ: ▲ tăng · ▼ giảm, kèm thống kê đúng hướng trên chính mã"],
+  ["mh", "Mẫu hình giá", "Mẫu hình", "Hai đỉnh / hai đáy, tam giác, vai-đầu-vai, cờ, nêm – mức xác nhận và mức vô hiệu"],
+  ["smc", "Cấu trúc thị trường (SMC)", "SMC", "BOS / CHoCH, khoảng trống giá FVG chưa lấp, Order Block còn hiệu lực"]];
 const CB_DUOI = [["rs", "RS so VN-Index (đỉnh mới 52 tuần)", ""], ["rsi", "RSI", "rsi"], ["macd", "MACD", "macd"], ["stoch", "Stochastic", "stoch"], ["adx", "ADX / DMI", "adx"], ["atr", "ATR (% giá)", "atr"],
   ["obv", "OBV", ""], ["mfi", "MFI", "mfi"], ["sqz", "Squeeze Momentum (nén giá)", "sqz"], ["wvf", "Williams Vix Fix (hoảng loạn)", "wvf"],
   ["macdt", "MACD tuần trên khung ngày (lọc tuần của hệ)", ""]];
@@ -1154,7 +1162,7 @@ function kd(k, id, o = {}) {                            // tuỳ chọn 1 đư�
 }
 const mk = (k, id) => kd(k, id).color;
 const so_k = (k, l = 2) => { const v = CB.kieu[k]?.so; return Number.isInteger(v) && v >= 0 && v <= 4 ? v : l; };
-const cb_mac = () => ({kieu: {}, an: [], nguon: {}, khung_tinh: {}, bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls"});
+const cb_mac = () => ({kieu: {}, an: [], nguon: {}, khung_tinh: {}, bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls", lp: [], cw: false});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
   const cky = a => [...new Set(a.filter(m => Number.isInteger(m) && m >= 2 && m <= 400))].slice(0, 8);
@@ -1166,10 +1174,11 @@ const CB = cb_mac();
   if (v.khung_tinh && typeof v.khung_tinh === "object") for (const k of ["ma", "ema"]) if (["W", "M"].includes(v.khung_tinh[k])) CB.khung_tinh[k] = v.khung_tinh[k];
   if ([0, 20, 52].includes(v.dc)) ST.dc = v.dc;
   if (typeof v.mk === "boolean") ST.mk = v.mk;
-  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "vp", "bg", "non"]) if (typeof v[k] === "boolean") CB[k] = v[k];
+  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "vp", "bg", "non", "cw"]) if (typeof v[k] === "boolean") CB[k] = v[k];
   if (typeof v.fib === "boolean" && v.fib3) CB.fib = v.fib;           // 09/11/2026 bật sẵn vài giờ rồi tắt lại: lựa chọn lưu trong lúc đó bỏ qua
   if (typeof v.ss === "string" && (v.ss === "" || v.ss === "VNINDEX" || MA_OK(v.ss))) CB.ss = v.ss;
   if (Array.isArray(v.duoi)) CB.duoi = [...new Set(v.duoi.filter(k => CB_DUOI.some(d => d[0] === k)))];
+  if (Array.isArray(v.lp)) CB.lp = [...new Set(v.lp.filter(k => LP_DS.some(d => d[0] === k)))];
   if ([5, 20, 60].includes(v.non_h)) CB.non_h = v.non_h;
   if (Number.isInteger(v.fib_n) && v.fib_n >= 10 && v.fib_n <= 2000) CB.fib_n = v.fib_n;
   if (["ls", "sigma"].includes(v.non_kieu)) CB.non_kieu = v.non_kieu;
@@ -1265,11 +1274,11 @@ function hop_bam(t) {
   if (t.closest("[data-hmd]")) { const u = CB.kieu[k]; delete CB.kieu[k]; el.querySelector('[data-htk="kieu"]').innerHTML = hop_kieu(k); if (u) CB.kieu[k] = u; }
 }
 document.addEventListener("keydown", e => { if (!HOP) return; if (e.key === "Escape") hop_dong(); else if (e.key === "Enter" && HOP.contains(e.target) && e.target.matches("input:not([type=checkbox]):not([type=color])")) hop_ap(); });
-const menu_lai = () => document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = menu_cb(); });
+const menu_lai = () => document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = d.classList.contains("lp-ds") ? menu_lp() : menu_cb(); });
 function cb_an(k) { CB.an = an_(k) ? CB.an.filter(z => z !== k) : [...CB.an, k]; return cb_doi(); }   // nút ẩn / hiện – giữ cài đặt
 function cg_tat(k) {                                    // ✕ trên dòng chú giải: tắt cả chỉ báo đó
   if (k === "ma") ST.ma_tb = []; else if (k === "ema") ST.ema = []; else if (k === "dc") ST.dc = 0; else if (k === "ss") CB.ss = "";
-  else if (k.startsWith("p:")) CB.duoi = CB.duoi.filter(z => z !== k.slice(2)); else CB[k] = false;
+  else if (k.startsWith("p:")) CB.duoi = CB.duoi.filter(z => z !== k.slice(2)); else if (k === "lp") CB.lp = []; else CB[k] = false;
   CB.an = CB.an.filter(z => z !== k);
   menu_lai(); return cb_doi();
 }
@@ -1295,7 +1304,22 @@ function menu_cb() {
     <div class="cb-nhom"><b>Hiển thị</b><div class="cb-dong"><label title="Khung góc trái biểu đồ chỉ còn dòng giá O H L C – bấm ▸ để hiện lại các chỉ báo"><input type="checkbox" data-cggon${CG_GON ? " checked" : ""}>Ẩn chỉ báo ở khung góc trái (giữ O H L C)</label></div></div>
     <div class="cb-cuoi"><button type="button" data-cbmd>Về mặc định</button></div>`;
 }
-const menu_khoi = () => `<div class="fs-cb"><button type="button" data-cbmo>ƒx Chỉ báo ▾</button><div class="fs-cb-ds" hidden>${menu_cb()}</div></div>`;
+const cp_kieu = () => { try { return (JSON.parse(localStorage.getItem("cp_cai_dat") || "{}") || {}).kieu === "du" ? "du" : "gon"; } catch (e) { return "gon"; } };
+function menu_lp() {                                    // menu ⋯ của biểu đồ (kiểu FireAnt): lớp phân tích tự động · thang giá · vùng nhìn
+  const th = thang_hl(), o = (k, ten, ts) => `<button type="button" data-lpt="${k}" aria-pressed="${th === k}" title="${ts}">${ten}</button>`;
+  return `<div class="cb-nhom"><b>Lớp phân tích</b>
+      ${LP_DS.map(([k, ten, , ts]) => `<div class="cb-dong"><label title="${ts}"><input type="checkbox" data-lp="${k}"${CB.lp.includes(k) ? " checked" : ""}>${ten}</label></div>`).join("")}
+      <div class="cb-dong"><label title="Nón xác suất: dải giá 50% / 80% / 95% trong ${CB.non_h} phiên tới (thống kê, không phải khuyến nghị) – chỉnh tầm ở ƒx Chỉ báo"><input type="checkbox" data-cbx="non"${CB.non ? " checked" : ""}>Dự báo (nón xác suất)</label></div>
+      <div class="cb-dong"><label title="CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán"><input type="checkbox" data-cbx="mk"${ST.mk ? " checked" : ""}>Sự kiện doanh nghiệp</label></div>
+      <div class="cb-dong"><label title="Chứng quyền mua đang lưu hành trên mã cơ sở: đường nét đứt tại giá hoà vốn (giá thực hiện + giá CW × tỷ lệ) kéo tới ngày đáo hạn – khung ngày / tuần / tháng"><input type="checkbox" data-cbx="cw"${CB.cw ? " checked" : ""}>Chứng quyền (hoà vốn, đáo hạn)</label></div>
+      <div class="cb-dong"><label title="Bỏ chọn: hiện mọi mẫu nến / mẫu hình / SMC tìm được và tới 8 vùng giá"><input type="checkbox" data-lpk${cp_kieu() === "gon" ? " checked" : ""}>Chỉ mẫu có bằng chứng (gọn)</label></div>
+      <div class="phu cb-ghi">Tự động từ giá – không phải khuyến nghị. Gọn: mẫu nến / mẫu hình / SMC chỉ hiện khi trên rổ mã thanh khoản đi đúng hướng hơn lúc bình thường, hoặc đáng tin trên chính mã. Giải thích từng mục: nút Đọc biểu đồ (toàn màn hình). Mẫu nến: B búa · BN búa ngược · TC người treo cổ · SB sao băng · NC nhấn chìm · SM sao mai · SH sao hôm · 3L ba chàng lính trắng · 3Q ba con quạ đen.</div></div>
+    <div class="cb-nhom"><b>Thang giá</b><div class="cb-dong"><span class="nut">${o("thuong", "Thường", "Thang giá thường")}${o("log", "Logarit", "Thang logarit – cùng % tăng / giảm cao bằng nhau")}${o("pt", "%", "Thang % so với nến đầu vùng xem")}${o("chiso", "Chỉ số hoá 100", "Nến đầu vùng xem = 100")}</span></div>
+      <div class="cb-dong"><label title="Lật ngược trục giá (giá cao ở dưới)"><input type="checkbox" data-lpd${ST.dao ? " checked" : ""}>Đảo trục giá</label></div></div>
+    <div class="cb-nhom"><b>Vùng nhìn</b><div class="cb-dong"><span class="nut"><button type="button" data-lpv="tu" title="Trục thời gian về khoảng đã chọn + cột giá tự co giãn">Đặt lại vùng nhìn</button><button type="button" data-lpv="vua" title="Xem toàn bộ lịch sử trong khung">Vừa khung</button></span></div></div>`;
+}
+const menu_khoi = () => `<div class="fs-cb"><button type="button" data-cbmo>ƒx Chỉ báo ▾</button><div class="fs-cb-ds" hidden>${menu_cb()}</div></div>` +
+  `<div class="fs-cb fs-lp"><button type="button" data-cbmo title="Lớp phân tích · thang giá · vùng nhìn" aria-label="Lớp phân tích, thang giá, vùng nhìn">⋯</button><div class="fs-cb-ds lp-ds" hidden>${menu_lp()}</div></div>`;
 function fib_n_dat(v) {                                 // số nến tìm nhịp của Fibonacci tự động (nút 30 / 60 / 120 / 250 hoặc tự nhập) → bật Fibonacci
   CB.fib_n = v; CB.fib = true;
   document.querySelectorAll("[data-cbf]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.cbf === v)));
@@ -1317,6 +1341,12 @@ document.addEventListener("change", e => {
     document.querySelectorAll(`[data-cbx="${t.dataset.cbx}"]`).forEach(z => { z.checked = on; });
     return cb_doi();
   }
+  if (t.matches?.("[data-lp]")) { const k = t.dataset.lp; CB.lp = t.checked ? [...CB.lp.filter(z => z !== k), k] : CB.lp.filter(z => z !== k);
+    if (!CB.lp.length) CB.an = CB.an.filter(z => z !== "lp");
+    document.querySelectorAll(`[data-lp="${k}"]`).forEach(z => { z.checked = t.checked; }); return cb_doi(); }
+  if (t.matches?.("[data-lpk]")) { const k = t.checked ? "gon" : "du"; document.querySelectorAll("[data-lpk]").forEach(z => { z.checked = t.checked; });
+    return tai_cp().then(CP => CP.dat_kieu(k)).catch(() => {}); }
+  if (t.matches?.("[data-lpd]")) return dk_bd("dao");
   if (t.matches?.("[data-cggon]")) return dat_cg(t.checked);
   if (t.matches?.("[data-cbfn]")) { const v = Math.round(+t.value); if (v >= 10 && v <= 2000) fib_n_dat(v); else t.value = CB.fib_n; return; }
   if (t.matches?.("[data-cbss]")) { const v = t.value.trim().toUpperCase(); CB.ss = v === "VNINDEX" || MA_OK(v) ? v : ""; document.querySelectorAll("[data-cbss]").forEach(z => { z.value = CB.ss; }); return cb_doi(); }
@@ -1329,7 +1359,15 @@ document.addEventListener("change", e => {
 document.addEventListener("click", e => {
   const t = e.target;
   const mo = t.closest("[data-cbmo]");
-  if (mo) { e.stopPropagation(); const d = mo.parentElement.querySelector(".fs-cb-ds"); d.hidden = !d.hidden; return; }
+  if (mo) { e.stopPropagation(); const d = mo.parentElement.querySelector(".fs-cb-ds"); d.hidden = !d.hidden;
+    if (!d.hidden && d.classList.contains("lp-ds")) d.innerHTML = menu_lp();          // thang / gọn có thể đã đổi ở nút khác
+    if (!d.hidden && matchMedia("(max-width:760px)").matches) {                     // điện thoại: menu bám ngay dưới nút (đầu trang cao, không che)
+      const r = mo.getBoundingClientRect(), top = Math.max(8, Math.min(r.bottom + 4, innerHeight - 240)); d.style.top = top + "px"; d.style.maxHeight = (innerHeight - top - 8) + "px"; }
+    else d.style.top = d.style.maxHeight = "";
+    document.querySelectorAll(".fs-cb-ds").forEach(z => { if (z !== d) z.hidden = true; }); return; }
+  const lt = t.closest("[data-lpt]"), lv = t.closest("[data-lpv]");
+  if (lt) return dk_bd("thang:" + lt.dataset.lpt);
+  if (lv) return dk_bd(lv.dataset.lpv);
   const g = t.closest("[data-cbg]");
   if (g) { const r = g.closest(".fs-cb-ds")?.querySelector(`[data-cbtk="${g.dataset.cbg}"]`); if (r) r.hidden = !r.hidden; return; }
   const f = t.closest("[data-cbf]");
@@ -1346,9 +1384,35 @@ document.addEventListener("click", e => {
   if (ca) return cb_an(ca.dataset.cgan);
   if (HOP?.contains(t)) return hop_bam(t);
   if (t.closest("[data-cbmd]")) { Object.assign(CB, cb_mac()); Object.assign(ST, {ma_tb: [20, 50], ema: [], dc: 0, mk: true});
-    document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = menu_cb(); }); return cb_doi(); }
+    menu_lai(); return cb_doi(); }
   document.querySelectorAll(".fs-cb-ds").forEach(d => { if (!d.hidden && !t.closest(".fs-cb")) d.hidden = true; });
 });
+// chứng quyền trên mã cơ sở (menu ⋯): đường nét đứt tại giá hoà vốn từ nến cuối tới ngày đáo hạn (cw.json – thi_truong/chung_quyen_web.py)
+let CW_P = null;
+const tai_cw = () => (CW_P = CW_P || lay(DL + "cw.json", false).catch(() => null));
+function ngay_gd_toi(a, b) {                            // số ngày T2–T6 sau ngày a tới hết ngày b (không trừ ngày lễ)
+  let k = 0; for (let t = Date.parse(String(a).slice(0, 10) + "T00:00:00Z") + 864e5, e = Date.parse(b + "T00:00:00Z"); t <= e; t += 864e5) { const w = new Date(t).getUTCDay(); if (w && w < 6) k++; }
+  return k;
+}
+class CwPrim {
+  constructor(ch, s, ds) { this.ch = ch; this.s = s; this.ds = ds; this.v = [{zOrder: () => "top", renderer: () => ({draw: t => this.ve(t)})}]; }
+  paneViews() { return this.v; }
+  ve(t) {
+    t.useMediaCoordinateSpace(({context: ctx, mediaSize: M}) => {
+      const ts = this.ch.timeScale(), nhan = [];
+      ctx.save(); ctx.font = "500 10px Inter,system-ui,sans-serif"; ctx.textBaseline = "middle";
+      for (const z of this.ds) { const x1 = ts.logicalToCoordinate(z.tu), x2 = ts.logicalToCoordinate(z.den), y = this.s.priceToCoordinate(z.hv);
+        if (x1 == null || x2 == null || y == null || y < 0 || y > M.height) continue;
+        const b = Math.min(x2, M.width);
+        ctx.strokeStyle = "#b8650a"; ctx.lineWidth = 1.2; ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(b, y); ctx.stroke(); ctx.setLineDash([]);
+        if (x2 <= M.width) { ctx.beginPath(); ctx.moveTo(x2, y - 5); ctx.lineTo(x2, y + 5); ctx.stroke(); }
+        if (nhan.some(v => Math.abs(v - y) < 12)) continue;
+        nhan.push(y); const txt = `${z.cw} ${so(z.hv, 2)} · ĐH ${ngay_vn(z.dh).slice(0, 5)}`, w = ctx.measureText(txt).width, xt = Math.max(2, Math.min(x1 + 6, M.width - w - 70));
+        ctx.fillStyle = "#ffffffd9"; ctx.fillRect(xt - 3, y - 15, w + 6, 13); ctx.fillStyle = "#8a4b06"; ctx.fillText(txt, xt, y - 8.5); }
+      ctx.restore();
+    });
+  }
+}
 // tô vùng giữa 2 đường (Bollinger, mây Ichimoku) – plugin vẽ dưới nến
 class DaiPrim {
   constructor(ch, s, a, b, mau) { this.ch = ch; this.s = s; this.a = a; this.b = b; this.mau = mau;
@@ -1541,17 +1605,17 @@ const cp_luu = () => { try { localStorage.setItem("cp_mo", CPS.mo ? "1" : "0"); 
 let CP_P = null;
 function tai_cp() {
   CP_P = CP_P || new Promise((ok, loi) => { const sc = document.createElement("script");
-    sc.src = "doc_bd.js?v=6&b=" + BAN; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
+    sc.src = "doc_bd.js?v=7&b=" + BAN; sc.onload = () => ok(window.BD_DOC); sc.onerror = loi; document.head.appendChild(sc); });
   return CP_P;
 }
 const TEN_KHUNG = {1: "1 phút", 5: "5 phút", 15: "15 phút", 60: "1 giờ", D: "ngày", W: "tuần", M: "tháng"};
-function cp_ve() {
+function cp_ve() {                                     // Đọc biểu đồ (panel – toàn màn hình) + lớp phân tích bật ở menu ⋯ (mọi biểu đồ giá)
   $("#rail-cp")?.setAttribute("aria-pressed", String(!!(FS && CPS.mo)));
-  const B = BD_DK, el = $("#fs-bd"), p = $("#cp");
-  if (!FS || !B || !el) return;
-  if (!CPS.mo && !CP_P) { if (p) p.hidden = true; return; }
+  const B = BD_DK, el = FS ? $("#fs-bd") : $("#bd-gia"), p = FS ? $("#cp") : null, mo = !!(FS && CPS.mo), lop = an_("lp") ? [] : CB.lp;
+  if (!B || !el) return;
+  if (!mo && !lop.length && !CP_P) { if (p) p.hidden = true; return; }
   tai_cp().then(CP => { CP.dong = () => { CPS.mo = false; cp_luu(); cp_ve(); };
-    if (BD_DK === B) CP.ve(B, {el, panel: p, mo: CPS.mo, ten_khung: "khung " + TEN_KHUNG[B.khung], phut: PHUT(B.khung), tua: TUA.t != null ? tua_chu() : null}); }).catch(() => {});
+    if (BD_DK === B) CP.ve(B, {el, panel: p, mo, lop, ten_khung: "khung " + TEN_KHUNG[B.khung], phut: PHUT(B.khung), tua: FS && TUA.t != null ? tua_chu() : null}); }).catch(() => {});
 }
 let VE_P = null;
 function tai_ve() {                                    // công cụ vẽ (bieu_do.js – file riêng, tải khi vẽ biểu đồ giá)
@@ -1610,19 +1674,23 @@ async function chuoi_phut(ma, kh) {                    // lịch sử phut/ (t�
   return kh === "1" || kh === "5" ? g : gop_phut(g, +kh);
 }
 const thang_hl = () => ST.thang || (ST.nen >= 99999 ? "log" : "thuong");      // chưa chọn: "Tất cả" dùng log
-const che_do_thang = LW => ({log: LW.PriceScaleMode.Logarithmic, pt: LW.PriceScaleMode.Percentage})[thang_hl()] ?? LW.PriceScaleMode.Normal;
+const che_do_thang = LW => ({log: LW.PriceScaleMode.Logarithmic, pt: LW.PriceScaleMode.Percentage, chiso: LW.PriceScaleMode.IndexedTo100})[thang_hl()] ?? LW.PriceScaleMode.Normal;
 function nut_bd() {                                  // trạng thái nút %, log, tự động theo biểu đồ (kéo trục giá → tắt tự động)
   if (!BD_DK) return;
   let tu = true; try { tu = BD_DK.nen.priceScale().options().autoScale; } catch (e) {}
   document.querySelectorAll("[data-bdc]").forEach(b => { const c = b.dataset.bdc;
     if (c === "pt" || c === "log") b.setAttribute("aria-pressed", String(thang_hl() === c));
     if (c === "tu") b.setAttribute("aria-pressed", String(tu)); });
+  document.querySelectorAll("[data-lpt]").forEach(b => b.setAttribute("aria-pressed", String(thang_hl() === b.dataset.lpt)));
+  document.querySelectorAll("[data-lpd]").forEach(b => { b.checked = !!ST.dao; });
 }
 function dk_bd(c, khung) {                           // điều khiển biểu đồ giá tại chỗ (giữ nguyên vùng đang xem)
   if (c === "full") { fs_mo(khung || ma_dang_xem()); return; }
   if (!BD_DK) return;
   const {ch, nen, LW, n, so_nen} = BD_DK;
   if (c === "pt" || c === "log") { ST.thang = thang_hl() === c ? "thuong" : c; nen.priceScale().applyOptions({mode: che_do_thang(LW), autoScale: true}); }
+  if (c.startsWith("thang:")) { ST.thang = c.slice(6); nen.priceScale().applyOptions({mode: che_do_thang(LW), autoScale: true}); }
+  if (c === "dao") { ST.dao = !ST.dao; nen.priceScale().applyOptions({invertScale: ST.dao}); }
   if (c === "tu") { nen.priceScale().applyOptions({autoScale: true}); ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - so_nen), to: BD_DK.phai ?? n + 3}); }
   if (c === "vua") { nen.priceScale().applyOptions({autoScale: true}); ch.timeScale().fitContent(); }
   nut_bd();
@@ -1632,6 +1700,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   const VNM = CB.duoi.includes("rs") || CB.ss === "VNINDEX" ? await tai_vni() : null;            // tải trước khi dựng biểu đồ (không chen giữa lúc vẽ)
   if (them.ma && !CHI_SO_TEN[them.ma]) await tai_sk().catch(() => null);
   const BG = CB.bg && them.ma && (ST.khung === "D" || PHUT(ST.khung)) ? await lay(DL + "buoc_gia/" + them.ma + ".json", false) : null;
+  const CW = CB.cw && them.ma && !CHI_SO_TEN[them.ma] && !PHUT(ST.khung) ? await tai_cw() : null;
   const LH = CB.lh && them.ma ? ((await tai_lenh_he()) || {}) : null, k_ss = MA_OK(CB.ss) && CB.ss !== them.ma ? await tai_ma(CB.ss) : null;
   if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
   el.querySelectorAll(".chu-bd,.chu-pane").forEach(z => z.remove());
@@ -1658,7 +1727,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   const duong = (v, o, p = 0) => { const s = S("LineSeries", {lineWidth: 1.5, priceLineVisible: false, lastValueVisible: nhan, crosshairMarkerVisible: false, ...o}, p); s.setData(dl(v)); return s; };
   const nen = S("CandlestickSeries", {upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false, wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineColor: "#7a8494"});
   nen.setData(x.d.map((d, i) => ({time: d, open: x.o[i], high: x.h[i], low: x.l[i], close: x.c[i]})).concat(fut.map(d => ({time: d}))));
-  nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}, autoScale: true, mode: che_do_thang(LW)});   // mặc định: "Tất cả" thang log
+  nen.priceScale().applyOptions({scaleMargins: {top: .06, bottom: .26}, autoScale: true, mode: che_do_thang(LW), invertScale: !!ST.dao});   // mặc định: "Tất cả" thang log
   // --- vẽ trên nến giá
   const kt_ = k => { const t = CB.khung_tinh[k]; return t && (kh === "D" || (kh === "W" && t === "M")) ? t : ""; }, khoa_kt = t => t === "W" ? cb_tuan_cua : d => String(d).slice(0, 7);
   const ng_ = k => (NGUON[CB.nguon[k]] || NGUON.c)[1](x), ma = {}, em = {};
@@ -1697,6 +1766,12 @@ async function ve_bd_gia(el, x0, them = {}) {
   const lh = LH && !PHUT(kh) ? (LH.ma?.[them.ma] || []).filter(z => z[0] <= x.d[n - 1]).map(z => z[1] > x.d[n - 1] ? [z[0], "", z[2], z[3], 1] : z) : null;   // tua lại: không lộ lệnh tương lai
   const mk_ = [...(ST.mk && them.n && !PHUT(kh) ? moc_su_kien(x, them.n) : []), ...(lh ? moc_lenh_he(x, lh) : [])].sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
   if (mk_.length) LW.createSeriesMarkers(nen, mk_);
+  let cw = null;                                          // chứng quyền: từ nến cuối tới ngày đáo hạn (tua lại: bỏ – dữ liệu hôm nay)
+  if (CW?.ma?.[them.ma] && !PHUT(kh) && !tua && n && !an_("cw")) {
+    const d0 = String(x.d[n - 1]).slice(0, 10), buoc = kh === "W" ? 5 : kh === "M" ? 21 : 1;
+    cw = CW.ma[them.ma].filter(z => z[4] >= d0).map(z => ({cw: z[0], tc: z[1], th: z[2], tl: z[3], dh: z[4], gd: z[5], gia: z[6], hv: z[7], kl: z[8], tu: n - 1, den: n - 1 + ngay_gd_toi(d0, z[4]) / buoc}));
+    if (cw.length) nen.attachPrimitive(new CwPrim(ch, nen, cw)); else cw = null;
+  }
   // --- so sánh: mã khác / VN-Index cùng trục, thang % (mỗi đường tính từ nến đầu vùng xem)
   let ss = null;
   if (CB.ss && !an_("ss") && !PHUT(kh) && (CB.ss === "VNINDEX" ? VNM?.size : k_ss)) {
@@ -1864,8 +1939,8 @@ async function ve_bd_gia(el, x0, them = {}) {
     ch.subscribeClick(e => { if (!TUA.chon || e?.logical == null) return;
       const i = Math.max(0, Math.min(n - 1, Math.round(e.logical))); TUA.chon = false; TUA.t = TUA.keys[i]; fs_ve(true); });
     tua_thanh(el);
-    cp_ve();
   }
+  cp_ve();
   // --- chú giải: góc trái khung giá + mỗi khung phụ
   const cg = document.createElement("div"); cg.className = "chu-bd"; el.appendChild(cg);
   const cp = PH.map(() => { const d = document.createElement("div"); d.className = "chu-pane"; el.appendChild(d); return d; });
@@ -1876,6 +1951,12 @@ async function ve_bd_gia(el, x0, them = {}) {
   const sap_chu = sap.length || hb.length ? gon(`Sắp tới: ${[...sap.map(e => `${ngay_vn(e.ngay).slice(0, 5)} ${esc(NHOM_SK[e.nhom] || e.nhom)}${e.ten ? ` – ${esc(String(e.ten).slice(0, 50))}` : ""}`), ...hb.map(([d, t]) => `${ngay_vn(d).slice(0, 5)} hạn BCTC ${esc(t)}`)].join(" · ")}`, "#8a6100") : "";
   const lh_dai = !lh ? "" : `Lệnh của hệ trên ${them.ma} (backtest từ ${ngay_vn(LH.tu || "2012-01-01")}): ` + (tk ? `${tk.n} lệnh đã đóng · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R · tổng ${tk.tong > 0 ? "+" : ""}${so(tk.tong, 1)}R${LH.chung != null ? ` (mọi mã TB ${LH.chung > 0 ? "+" : ""}${so(LH.chung, 2)}R)` : ""}` : `chưa có lệnh đã đóng${LH.ma ? "" : " – chưa có dữ liệu"}`) + (lh.some(z => z[4]) ? " · 1 lệnh đang mở" : "");
   const lh_chu = !lh ? "" : gon(`Lệnh hệ: ` + (tk ? `${tk.n} lệnh · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R` : "chưa có lệnh đã đóng") + (lh.some(z => z[4]) ? " · 1 đang mở" : ""), "#1f6feb", "lh", lh_dai);
+  const cw_chu = !CB.cw || PHUT(kh) || !them.ma || CHI_SO_TEN[them.ma] ? "" : !cw ? (an_("cw") ? "" : gon(`<span class="phu">Chứng quyền: ${tua ? "không hiện khi tua lại" : CW ? `chưa có chứng quyền nào trên ${esc(them.ma)}` : "chưa có dữ liệu"}</span>`, null, "cw"))
+    : gon(`Chứng quyền: ${cw.length} mã · hoà vốn ${so(Math.min(...cw.map(z => z.hv)), 2)}–${so(Math.max(...cw.map(z => z.hv)), 2)} · đáo hạn gần nhất ${ngay_vn(cw[0].dh)}`, "#b8650a", "cw",
+      `Chứng quyền trên ${them.ma} (cập nhật ${CW.cap_nhat || ""} ${ngay_vn(CW.phien || "")}): ` + cw.map(z => `${z.cw} (${z.tc}) giá thực hiện ${so(z.th, 2)} · tỷ lệ ${so(z.tl, 4)}:1 · giá CW ${so(z.gia, 0)} đ · hoà vốn ${so(z.hv, 2)} · đáo hạn ${ngay_vn(z.dh)}`).join(" | ") +
+      ". Hoà vốn = giá thực hiện + giá CW × tỷ lệ chuyển đổi; mã cơ sở phải trên mức này lúc đáo hạn thì người mua CW mới có lãi.");
+  const lp_chu = !CB.lp.length || an_("lp") ? "" : gon(`Lớp phân tích: ${LP_DS.filter(z => CB.lp.includes(z[0])).map(z => z[2]).join(" · ")}`, "#5b3fa8", "lp",
+    `Lớp phân tích tự động (menu ⋯): ${LP_DS.filter(z => CB.lp.includes(z[0])).map(z => `${z[1]} – ${z[3]}`).join(". ")}. Tự động từ giá, không phải khuyến nghị.`);
   const non_chu = !non ? "" : (() => {                  // 1 dòng: 2 dải + độ trúng; giải thích đủ ở title (13/11/2026: chú giải dài quá)
     const t = non.trung, kieu = non.kieu === "ls" ? (non.ti ? `kết hợp phân vị lịch sử + σ – biến động đang ${so(non.ti, 2)} lần mức nền` : "phân vị lịch sử") : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`;
     const d50 = `${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)}`, d95 = `${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}`;
@@ -1909,7 +1990,7 @@ async function ve_bd_gia(el, x0, them = {}) {
       (sar || (CB.sar && an_("sar")) ? dg("sar", () => `SAR ${ts_chu("sar")} ${gt("sar", sar.len[i] ? "len" : "xuong", sar.v[i])}`) : "") +
       (dc || (ST.dc && an_("dc")) ? dg("dc", () => `DC ${dc.p} Trên ${gt("dc", "tr", dc.tr[i])} Giữa ${gt("dc", "gi", dc.gi[i])} Dưới ${gt("dc", "du", dc.du[i])}`) : "") +
       (ss || (CB.ss && an_("ss")) ? dg("ss", () => `${esc(ss.ten)} ${gt("ss", "v", ss.v[i])} <span class="phu">(thang % từ nến đầu vùng xem)</span>`) : "") +
-      CB.duoi.filter(k => an_("p:" + k)).map(k => dg("p:" + k, () => "")).join("") + sap_chu + lh_chu + tv_chu + non_chu);
+      CB.duoi.filter(k => an_("p:" + k)).map(k => dg("p:" + k, () => "")).join("") + sap_chu + lh_chu + tv_chu + lp_chu + cw_chu + non_chu);
   };
   viet(n - 1); BD_DK.viet = viet;
   const vi = new Map(x.d.map((d, i) => [d, i]));

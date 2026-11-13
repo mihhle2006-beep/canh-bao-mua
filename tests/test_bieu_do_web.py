@@ -180,7 +180,7 @@ def test_tu_cap_nhat_ban_moi():
                 'location.replace(location.pathname + "?v=" + m[1] + (NHUNG ? "&nhung=1" : "") + location.hash);' in h)
         assert 'sessionStorage.getItem("ban_da_tai")' in h
     h = open("docs/ma/index.html", encoding="utf-8").read()
-    assert 'sc.src = "doc_bd.js?v=6&b=" + BAN;' in h and 'sc.src = "bieu_do.js?v=3&b=" + BAN;' in h
+    assert 'sc.src = "doc_bd.js?v=7&b=" + BAN;' in h and 'sc.src = "bieu_do.js?v=3&b=" + BAN;' in h
     assert h.index('const BAN = "__BAN__";') < h.index("function tai_ve(") if "function tai_ve(" in h else True
 
 
