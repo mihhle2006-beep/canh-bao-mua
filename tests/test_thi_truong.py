@@ -813,3 +813,34 @@ def test_web_tai_lieu_tai_file_rieng():
     import pathlib
     h = (pathlib.Path(__file__).parents[1] / "docs" / "ma" / "index.html").read_text(encoding="utf-8")
     assert 'lay(DL + "tl/" + ma + ".json", false)' in h and "k.tl || k.n?.tl" in h and 'const GOC_TL = "https://cafefnew.mediacdn.vn/"' in h
+
+
+def test_chuan_bi_phan_phu_loi_nguon_giu_so_cu(tmp_path, monkeypatch):
+    """14/11/2026: nến 1' VN-Index quá hạn lúc đêm làm hỏng cả lượt chuẩn bị → phần phụ lỗi giữ số lần trước + cảnh báo;
+    phần chính (danh sách mã) lỗi vẫn dừng."""
+    import json
+    import pandas as pd
+    from thi_truong import dung, nguon, quy_web, tinh
+    ra = tmp_path / "chuan_bi.json"
+    ra.write_text(json.dumps({"ho_so": {"tb": 1.0}, "vni_ngay": [["2026-11-12", 1600.0]], "nn_san": [["2026-11-12", 1.0]],
+                              "nhom": {"VN30": ["AAA"]}, "quy": {"x": 1}}), encoding="utf-8")
+    monkeypatch.setattr(quy_web, "lay", lambda q, _in: q)
+    monkeypatch.setattr(nguon, "tat_ca_ma", lambda: [{"symbol": "AAA", "type": "STOCK", "board": "HSX", "icbCode2": "1"}])
+    monkeypatch.setattr(nguon, "ten_nganh", lambda: {"1": "Ngân hàng"})
+    monkeypatch.setattr(nguon, "bang_gia", lambda ds: [])
+    monkeypatch.setattr(tinh, "chuan_bang", lambda x: pd.DataFrame())
+    monkeypatch.setattr(nguon, "song_song", lambda f, ds, n: {})
+
+    def het_han(*a, **k):
+        raise ValueError("gap-chart: Read timed out")
+    monkeypatch.setattr(nguon, "nen", het_han)
+    monkeypatch.setattr(nguon, "cafef", lambda *a, **k: [{"Ngay": "13/11/2026", "GtMua": 3e9, "GtBan": 1e9}])
+    monkeypatch.setattr(nguon, "nhom", het_han)
+    log = []
+    cb = dung.chuan_bi(str(ra), in_tien_do=log.append)
+    assert cb["ho_so"] == {"tb": 1.0} and cb["vni_ngay"] == [["2026-11-12", 1600.0]] and cb["nhom"] == {"VN30": ["AAA"]}
+    assert cb["nn_san"] != [["2026-11-12", 1.0]] and cb["vu"] == ["AAA"]                 # nguồn chạy được → số mới
+    assert sum("::warning::" in x for x in log) == 3
+    monkeypatch.setattr(nguon, "tat_ca_ma", het_han)
+    with pytest.raises(ValueError):
+        dung.chuan_bi(str(ra), in_tien_do=log.append)

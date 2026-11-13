@@ -59,10 +59,24 @@ def _r(x, n=2):
     return round(v, n) if np.isfinite(v) else None
 
 
+def _hoac_cu(ten, ham, cu, in_tien_do=print):
+    """Phần PHỤ của dữ liệu chuẩn bị (hồ sơ thanh khoản, VN-Index ngày, khối ngoại / tự doanh cả sàn, nhóm VN30): nguồn lỗi
+    (14/11/2026: nến 1' VN-Index 6.000 cây quá hạn 3 lần lúc 02:30 → cả lượt chuẩn bị hỏng, trang không triển khai) → giữ
+    số lần chuẩn bị trước + cảnh báo (vàng trên Actions) thay vì làm hỏng cả lượt. Phần chính (mã, bảng giá, lịch sử) lỗi
+    vẫn dừng như cũ."""
+    try:
+        return ham()
+    except ValueError as e:
+        in_tien_do(f"::warning::chuẩn bị – {ten}: {str(e)[:120]} → "
+                   + ("giữ số lần chuẩn bị trước" if cu else "bỏ trống"))
+        return cu
+
+
 def chuan_bi(ra=FILE_CB, luong=8, in_tien_do=print):
     """Dữ liệu ít đổi trong ngày (gọi sau phiên / khi cache thiếu)."""
     from . import quy_web
-    quy = quy_web.lay((doc_chuan_bi(ra) or {}).get("quy") or quy_web.tu_trang_trien_khai(), in_tien_do)
+    cu = doc_chuan_bi(ra) or {}
+    quy = quy_web.lay(cu.get("quy") or quy_web.tu_trang_trien_khai(), in_tien_do)
     tat = nguon.tat_ca_ma()
     cp = [d for d in tat if d.get("type") == "STOCK" and d.get("board") in SAN]
     ten_icb = nguon.ten_nganh()
@@ -89,18 +103,23 @@ def chuan_bi(ra=FILE_CB, luong=8, in_tien_do=print):
                    reverse=True)
         if x:
             td[m] = [x[0][0], round(x[0][1], 3)]
-    n1 = nguon.nen("VNINDEX", "ONE_MINUTE", 6000)
-    ngay = nguon.nen("VNINDEX", "ONE_DAY", 260)
-    d1 = []
-    if ngay and ngay.get("t"):
+    def vni_ngay():
+        ngay = nguon.nen("VNINDEX", "ONE_DAY", 260)
+        if not ngay or not ngay.get("t"):
+            return []
         t = pd.to_datetime([int(float(x)) for x in ngay["t"]], unit="s") + tinh.LECH_GIO
-        d1 = [[f"{a:%Y-%m-%d}", _r(c)] for a, c in zip(t, ngay["c"])]
+        return [[f"{a:%Y-%m-%d}", _r(c)] for a, c in zip(t, ngay["c"])]
     cb = {"tao_luc": f"{tinh.gio_vn():%Y-%m-%d %H:%M}", "nganh": nganh,
           "ten": {d["symbol"]: d.get("organShortName") or "" for d in cp}, "vu": vu, "ls": ls, "td": td,
-          "nn_san": tinh.theo_ngay_cafef(nguon.cafef("GDKhoiNgoai", "VNINDEX", 30), "GtMua", "GtBan", "Ngay"),
-          "td_san": tinh.theo_ngay_cafef(nguon.cafef("GDTuDoanh", "VNINDEX", 30), "GtMua", "GtBan", "Date"),
-          "ho_so": tinh.ho_so_thanh_khoan(n1, so_phien=30), "vni_ngay": d1,
-          "nhom": {g: nguon.nhom(g) for g in ("VN30", "HNX30")}, "quy": quy}
+          "nn_san": _hoac_cu("khối ngoại cả sàn", lambda: tinh.theo_ngay_cafef(
+              nguon.cafef("GDKhoiNgoai", "VNINDEX", 30), "GtMua", "GtBan", "Ngay"), cu.get("nn_san"), in_tien_do),
+          "td_san": _hoac_cu("tự doanh cả sàn", lambda: tinh.theo_ngay_cafef(
+              nguon.cafef("GDTuDoanh", "VNINDEX", 30), "GtMua", "GtBan", "Date"), cu.get("td_san"), in_tien_do),
+          "ho_so": _hoac_cu("hồ sơ thanh khoản (nến 1' VN-Index)", lambda: tinh.ho_so_thanh_khoan(
+              nguon.nen("VNINDEX", "ONE_MINUTE", 6000, timeout=90), so_phien=30), cu.get("ho_so"), in_tien_do),
+          "vni_ngay": _hoac_cu("VN-Index ngày", vni_ngay, cu.get("vni_ngay") or [], in_tien_do),
+          "nhom": _hoac_cu("nhóm VN30 / HNX30", lambda: {g: nguon.nhom(g) for g in ("VN30", "HNX30")},
+                           cu.get("nhom") or {}, in_tien_do), "quy": quy}
     _ghi(cb, ra)
     in_tien_do(f"  xong: {ra} ({os.path.getsize(ra) / 1e6:.1f} MB)")
     return cb

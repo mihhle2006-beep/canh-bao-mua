@@ -19,7 +19,6 @@ WF = os.path.join(GOC, ".github", "workflows")
 KHONG_GAC = {"canh_bao.yml",        # vòng lặp: lượt trùng xếp hàng rồi tự thoát (hết giờ), tổng kết có cờ đã gửi
              "danh_muc.yml",        # job kiem tự chặn chạy trùng (lịch 14:50 chờ 15:03 xem đã chạy chưa)
              "nhip_thi_truong.yml",  # tự chặn khi có máy nhịp khác đang chạy
-             "bang_thi_truong.yml",  # dựng lại trang – chạy thêm vô hại
              "lenh_tele.yml"}       # đọc tin bot – chạy thêm vô hại
 # workflow phân biệt lịch / bấm tay bằng input riêng (đồng hồ truyền input đó) thay vì input "lich"
 INPUT_RIENG = {"canh_bao.yml": {"vong", "che_do"}, "bang_thi_truong.yml": {"chuan_bi"}, "ke_hoach_dhcd.yml": {"con_lai"}}
