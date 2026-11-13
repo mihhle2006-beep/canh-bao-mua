@@ -125,6 +125,28 @@ def chuan_bi(ra=FILE_CB, luong=8, in_tien_do=print):
     return cb
 
 
+def dung_lai_trang(goc, ra=FILE_RA, in_tien_do=print):
+    """Lượt ĐỔI CODE ngoài giờ giao dịch (14/11/2026): thị trường đã đóng – không gọi nguồn (Vietcap gap-chart hay quá hạn
+    lúc đêm, mỗi lượt chờ vài phút rồi hỏng); lấy du_lieu.json (+ quy_ls.json) ĐANG CHẠY trên trang (goc = địa chỉ thư
+    mục thi_truong/ trên Pages), chỉ làm mới phần cục bộ: tín hiệu bot, mã đang giữ. Lỗi tải → OSError / ValueError."""
+    import urllib.request
+    goc = goc.rstrip("/") + "/"
+    with urllib.request.urlopen(goc + "du_lieu.json", timeout=60) as r:
+        out = json.load(r)
+    if not isinstance(out, dict) or not out.get("phien"):
+        raise ValueError("du_lieu.json trên trang không hợp lệ")
+    out["tin_hieu"], out["danh_muc"] = tin_hieu_bot(), ma_dang_giu()
+    _ghi(out, ra)
+    try:
+        with urllib.request.urlopen(goc + "quy_ls.json", timeout=60) as r:
+            _ghi(json.load(r), os.path.join(os.path.dirname(ra), "quy_ls.json"))
+    except (OSError, ValueError):
+        pass
+    in_tien_do(f"Ngoài giờ giao dịch – dữ liệu thị trường phiên {out['phien']} lấy từ trang (không gọi nguồn), làm mới "
+               "tín hiệu bot + mã đang giữ")
+    return out
+
+
 def doc_chuan_bi(duong=FILE_CB):
     try:
         with open(duong, encoding="utf-8") as f:
