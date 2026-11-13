@@ -374,7 +374,7 @@ def test_tra_cuu_dn_nguon(monkeypatch):
     assert bc[0]["ctck"] == "SSI" and bc[0]["mt"] == 37.5 and bc[0]["link"] == "https://x/a.pdf"     # gộp trùng SSI cùng ngày
     assert len(bc) == 2 and bc[1]["ctck"] == "VCBS"
     dn, loi = T.lay_dn("TCB", {"ct": {"cu": 1}})
-    assert set(loi) == {"ct", "cc", "cd", "sk", "nb", "cs", "tin", "nn_nam", "tl"} and dn["ct"] == {"cu": 1} and "kbs" in dn
+    assert set(loi) == {"ct", "cc", "cd", "sk", "nb", "cs", "tin", "nn_nam"} and dn["ct"] == {"cu": 1} and "kbs" in dn
 
 
 def test_tra_cuu_dn_xoay_vong(tmp_path, monkeypatch):
@@ -420,7 +420,8 @@ def test_tra_cuu_dn_cau_dao_va_han(monkeypatch):
     except ValueError:
         pass
     goi = []
-    phan = ("ct", "cc", "cd", "sk", "nb", "cs", "tin", "bc", "kbs", "sz", "nn_nam", "tl")
+    phan = ("ct", "cc", "cd", "sk", "nb", "cs", "tin", "bc", "kbs", "sz", "nn_nam")
+    assert len(phan) == T.SO_PHAN_DN
 
     def gia_lap(*a, **k):
         goi.append(1)
@@ -430,7 +431,7 @@ def test_tra_cuu_dn_cau_dao_va_han(monkeypatch):
     monkeypatch.setattr(T, "bao_cao_ctck", gia_lap)
     monkeypatch.setattr(T, "ho_so_kbs", gia_lap)
     monkeypatch.setattr(T, "tom_tat_simplize", gia_lap)
-    monkeypatch.setattr(T, "tai_lieu", gia_lap)
+    monkeypatch.setattr(T, "tai_lieu", gia_lap)                      # tài liệu: vòng riêng (tl/<MÃ>.json), không trong dn
     cu = {k: {"cu": k} for k in phan}
     cu["ngay_phan"], cu["phien_ban"] = {k: "2026-11-04" for k in phan}, T.PHIEN_BAN_DN
     dn, loi = T.lay_dn("AAA", cu, "2026-11-05")
@@ -740,22 +741,75 @@ def test_quy_web_lay_va_mua_ban(monkeypatch):
     assert Q.lay(b, in_tien_do=lambda *_: None) is b
 
 
-def test_tai_lieu_moi_nhat_truoc_roi_moi_cat(monkeypatch):
-    """13/11/2026: CafeF trả BCTN cũ → mới; lấy 12 bản đầu → web chỉ tới 2022 (GMD). Nay sắp năm mới → cũ rồi mới cắt."""
+def test_tai_lieu_du_moi_ban_moi_nhat_truoc(monkeypatch):
+    """13/11/2026: CafeF trả BCTN cũ → mới; bản cũ lấy 12 bản đầu → web chỉ tới 2022 (GMD). Nay lấy ĐỦ, mới → cũ; Type 3
+    lẫn cáo bạch / điều lệ → loại riêng; nghị quyết (Year 0) sắp theo ngày Time dd-mm-yyyy."""
     from thi_truong import tra_cuu_dn as T
 
     def goi(url, **k):
         if "Type=3" in url:
-            return {"Data": [{"Name": f"BCTN {y}", "Year": y, "Time": "CN", "Link": f"https://x/{y}.pdf"}
-                             for y in range(2009, 2026)] + [{"Name": "lạ", "Year": "", "Link": "https://x/la.pdf"}]}
+            return {"Data": [{"Name": f"Báo cáo thường niên năm {y}", "Year": str(y), "Quarter": "5", "Time": f"CN/{y}",
+                              "Link": f"https://x/{y}.pdf"} for y in range(2009, 2026)]
+                    + [{"Name": "Bản cáo bạch năm 2024", "Year": "2024", "Quarter": "5", "Link": "https://x/bcb.pdf"},
+                       {"Name": "lạ", "Year": "", "Link": "https://x/la.pdf"}]}
+        if "Type=4" in url:
+            return {"Data": [{"Name": "Nghị quyết Hội đồng Quản trị", "Year": "0", "Quarter": "0", "Time": t,
+                              "Link": f"{T.GOC_TL}download/{t}/aaa-nghi-quyet-h-qt-ve-viec-{t}-0.pdf"}
+                             for t in ("16-09-2026", "01-07-2025", "22-10-2026")]}
+        if "Type=1" in url:
+            return {"Data": [{"Name": f"BCTC {t}", "Year": "2026", "Quarter": q, "Time": t, "Link": f"https://x/{t}.pdf"}
+                             for q, t in (("2", "Q2/2026"), ("5", "CN/2026"), ("3", "Q3/2026"))]}
         return {"Data": []}
     monkeypatch.setattr(T.nguon, "goi", goi)
-    bctn = [x["nam"] for x in T.tai_lieu("AAA") if x["loai"] == "Báo cáo thường niên"]
-    assert bctn == [str(y) for y in range(2025, 2013, -1)]                # 12 bản: 2025 → 2014
+    tl = T.tai_lieu("AAA")
+    bctn = [x["nam"] for x in tl if x["loai"] == "Báo cáo thường niên"]
+    assert bctn == [str(y) for y in range(2025, 2008, -1)]                 # đủ 17 bản, 2025 → 2009
+    assert [(x["ten"], x["nam"]) for x in tl if x["loai"] == T.LOAI_TL_KHAC] == [("Bản cáo bạch năm 2024", "2024"),
+                                                                              ("lạ", "")]
+    nq = [x for x in tl if x["loai"] == "Nghị quyết HĐQT"]
+    assert [x["ky"] for x in nq] == ["22/10/2026", "16/09/2026", "01/07/2025"] and [x["nam"] for x in nq] == ["2026", "2026", "2025"]
+    assert [x["ky"] for x in tl if x["loai"] == "BCTC"] == ["CN/2026", "Q3/2026", "Q2/2026"]
+    g = T.gon_tai_lieu(tl)                                                  # file gọn: chỉ số loại + link "~…"
+    assert g["loai"][g["ds"][0][0]] == "BCTC" and len(g["ds"]) == len(tl)
+    assert g["ds"][-1][4].startswith("~download/") and g["ds"][0][4] == "https://x/CN/2026.pdf"
+
+    def goi_loi(url, **k):                                                  # 1 loại lỗi → không ghi danh sách thiếu loại
+        if "Type=4" in url:
+            raise ValueError("HTTP 503")
+        return goi(url)
+    monkeypatch.setattr(T.nguon, "goi", goi_loi)
+    try:
+        T.tai_lieu("AAA")
+        assert False, "phải báo lỗi"
+    except ValueError:
+        pass
 
 
-def test_tai_lieu_cu_sai_thu_tu_lay_lai_ngay():
+def test_tra_cuu_dn_bo_sung_tai_lieu(tmp_path, monkeypatch):
     from thi_truong import tra_cuu_dn as T
-    cu = [{"loai": "Báo cáo thường niên", "nam": str(y)} for y in range(2011, 2023)]          # bản cũ: cũ → mới, tới 2022
-    assert T._tl_sai_thu_tu(cu) and not T._tl_sai_thu_tu(cu[::-1]) and not T._tl_sai_thu_tu([])
-    assert not T._tl_sai_thu_tu([{"loai": "BCTC", "nam": "2026"}, {"loai": "BCTC", "nam": "2026"}, {"loai": "BCTC", "nam": "2025"}])
+    ra = str(tmp_path)
+    T._ghi({"cap_nhat": "2026-11-12", "loai": ["BCTC"], "ds": []}, f"{ra}/tl/AAA.json")      # còn hạn (3 ngày) → bỏ qua
+    T._ghi({"cap_nhat": "2026-11-01", "loai": ["BCTC"], "ds": []}, f"{ra}/tl/BBB.json")      # quá hạn → tải lại
+    monkeypatch.setattr(T, "tai_lieu", lambda m: [{"loai": "BCTC", "ten": m, "nam": "2026", "ky": "Q3/2026",
+                                                   "link": "https://x/a.pdf"}] if m != "DDD" else 1 / 0)
+    xong, loi, con = T.bo_sung_tai_lieu(["AAA", "BBB", "CCC", "DDD"], ra, phut=5, luong=2, in_ra=lambda *_: None,
+                                        hom_nay="2026-11-13")
+    assert (xong, loi, con) == (2, 1, 0)
+    assert T._doc(f"{ra}/tl/AAA.json")["ds"] == [] and T._doc(f"{ra}/tl/DDD.json") is None
+    assert T._doc(f"{ra}/tl/CCC.json") == {"loai": ["BCTC"], "ds": [[0, "2026", "Q3/2026", "CCC", "https://x/a.pdf"]],
+                                           "cap_nhat": "2026-11-13"}
+    assert T.bo_sung_tai_lieu(["AAA"], ra, in_ra=lambda *_: None, hom_nay="2026-11-13", ep=True)[0] == 1   # bấm tay --ma
+    # dn cũ còn "tl" (bản cắt trước 13/11/2026): giữ tới khi có tl/<MÃ>.json, có rồi thì bỏ khỏi dn
+    T._ghi({"tl": [{"loai": "BCTC"}], "ct": {}}, f"{ra}/dn/EEE.json")
+    T._ghi({"tl": [{"loai": "BCTC"}], "ct": {}}, f"{ra}/dn/AAA.json")
+    monkeypatch.setattr(T, "lay_gia", lambda m, san="", cu=None: {"d": ["2026-11-13"], "c": [1.0]})
+    monkeypatch.setattr(T, "lay_gia_dai", lambda m: {"c": [1.0]})
+    monkeypatch.setattr(T, "lay_dn", lambda m, cu=None, *a: ({"ct": {"m": m}}, []))
+    T.chay(["EEE", "AAA"], ra, phut=5, luong=1, in_ra=lambda *_: None)
+    assert T._doc(f"{ra}/dn/EEE.json")["tl"] == [{"loai": "BCTC"}] and "tl" not in T._doc(f"{ra}/dn/AAA.json")
+
+
+def test_web_tai_lieu_tai_file_rieng():
+    import pathlib
+    h = (pathlib.Path(__file__).parents[1] / "docs" / "ma" / "index.html").read_text(encoding="utf-8")
+    assert 'lay(DL + "tl/" + ma + ".json", false)' in h and "k.tl || k.n?.tl" in h and 'const GOC_TL = "https://cafefnew.mediacdn.vn/"' in h
