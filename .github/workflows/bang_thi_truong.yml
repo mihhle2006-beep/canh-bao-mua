@@ -103,11 +103,17 @@ jobs:
         run: |
           mkdir -p cache_thi_truong
           T0=$(stat -c %Y cache_thi_truong/chuan_bi.json 2>/dev/null || echo 0)
-          if ! python -m thi_truong $CHUAN_BI; then
+          G="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/thi_truong"
+          # Lượt ĐỔI CODE ngoài giờ giao dịch (T2–T6 08:30–15:30 giờ VN): thị trường đã đóng → lấy dữ liệu đang chạy trên
+          # trang, chỉ làm mới tín hiệu bot + mã đang giữ, KHÔNG gọi Vietcap (đêm hay quá hạn – 14/11/2026). Lỗi → dựng như cũ.
+          GIO=$(TZ=Asia/Ho_Chi_Minh date +%H%M); THU=$(TZ=Asia/Ho_Chi_Minh date +%u); TU_TRANG=""
+          if [ "$GITHUB_EVENT_NAME" = push ] && { [ "$THU" -gt 5 ] || [ "$GIO" -lt 830 ] || [ "$GIO" -gt 1530 ]; }; then
+            TU_TRANG="--tu_trang $G"
+          fi
+          if ! python -m thi_truong $CHUAN_BI $TU_TRANG; then
             # Lượt ĐỔI CODE (push): nguồn lỗi (14/11/2026 02:50 – Vietcap gap-chart quá hạn cả request 5 nến) → vẫn triển
             # khai code mới với dữ liệu ĐANG CHẠY trên trang. Lượt dữ liệu (lịch / đồng hồ / bấm tay) vẫn báo lỗi → đồng hồ
             # chạy lại 1 lần / nhắn Telegram, không đẩy bảng hỏng (phiên sai, thiếu chỉ số).
-            G="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/thi_truong"
             if [ "$GITHUB_EVENT_NAME" = push ] && curl -sf --max-time 60 "$G/du_lieu.json" -o docs/thi_truong/du_lieu.json; then
               curl -sf --max-time 60 "$G/quy_ls.json" -o docs/thi_truong/quy_ls.json || rm -f docs/thi_truong/quy_ls.json
               echo "::warning::Nguồn dữ liệu lỗi – lượt đổi code: triển khai với dữ liệu đang chạy trên trang"

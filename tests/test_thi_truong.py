@@ -844,3 +844,35 @@ def test_chuan_bi_phan_phu_loi_nguon_giu_so_cu(tmp_path, monkeypatch):
     monkeypatch.setattr(nguon, "tat_ca_ma", het_han)
     with pytest.raises(ValueError):
         dung.chuan_bi(str(ra), in_tien_do=log.append)
+
+
+def test_dung_lai_trang_ngoai_gio(tmp_path, monkeypatch):
+    """Lượt đổi code ngoài giờ: dữ liệu thị trường lấy từ trang, chỉ làm mới tín hiệu bot + mã đang giữ; trang lỗi /
+    hỏng → OSError / ValueError (main dựng từ nguồn như cũ)."""
+    import io
+    import urllib.request
+    from thi_truong import __main__ as M
+    trang = {"du_lieu.json": json.dumps({"phien": "2026-11-13", "chi_so": [1], "danh_muc": ["CU"], "tin_hieu": None}),
+             "quy_ls.json": json.dumps({"a": 1})}
+
+    def mo(url, timeout=None):
+        ten = url.rsplit("/", 1)[-1]
+        if ten not in trang:
+            raise OSError("404")
+        return io.BytesIO(trang[ten].encode())
+    monkeypatch.setattr(urllib.request, "urlopen", mo)
+    g = tmp_path / "giu.txt"
+    g.write_text("AAA,BBB", encoding="utf-8")
+    monkeypatch.setenv("MA_GIU_FILE", str(g))
+    ra = tmp_path / "du_lieu.json"
+    out = dung.dung_lai_trang("https://x.github.io/r/thi_truong/", str(ra), in_tien_do=lambda s: None)
+    assert out["chi_so"] == [1] and out["danh_muc"] == ["AAA", "BBB"]
+    assert json.loads(ra.read_text(encoding="utf-8"))["danh_muc"] == ["AAA", "BBB"]
+    assert json.loads((tmp_path / "quy_ls.json").read_text(encoding="utf-8")) == {"a": 1}
+    trang["du_lieu.json"] = "{}"
+    with pytest.raises(ValueError):
+        dung.dung_lai_trang("https://x/thi_truong", str(ra), in_tien_do=lambda s: None)
+    goi = []
+    monkeypatch.setattr(dung, "doc_chuan_bi", lambda *a: {"x": 1})
+    monkeypatch.setattr(dung, "chup", lambda cb, ra: goi.append(cb))
+    assert M.main(["--tu_trang", "https://x/thi_truong", "--ra", str(ra)]) == 0 and goi == [{"x": 1}]   # trang hỏng → nguồn
