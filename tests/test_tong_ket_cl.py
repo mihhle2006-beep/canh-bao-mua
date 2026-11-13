@@ -875,3 +875,22 @@ def test_lenh_tele_loi_code_thi_do_loi_mang_thi_bo_qua():
     assert lenh_tele.main(nem(KeyError("x"))) == 1
     goc = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     assert "lenh_tele.py || true" in open(os.path.join(goc, ".github", "workflows", "canh_bao.yml"), encoding="utf-8").read()
+
+
+def test_gia_lo_cong_khai_cho_gia_lap(monkeypatch, tmp_path):
+    """Mục 4 (13/11/2026): nhật ký công khai ghi giá LO hợp lý cho 1 LÔ 100 CP (không theo NAV thật) ở cột gia_kn_mua –
+    giả lập lấy làm giá vào. ATC / không sổ lệnh / người bán > tối đa → trống."""
+    import ptcp.san as S
+    from canh_bao import nhat_ky
+    monkeypatch.setattr(S, "san_cua", lambda ma, d=None: "HOSE")
+    kq = {"ma": "AAA", "den": 21.37, "atc": False}
+    so = {"ban": [(21.30, 50), (21.35, 400), (21.40, 9000)], "mua": [(21.25, 800)]}
+    assert diem_vao.gia_lo_cong_khai(kq, so) == 21.35                  # 50 CP chưa đủ 1 lô → mức 2
+    assert np.isnan(diem_vao.gia_lo_cong_khai(kq, {"ban": [(21.40, 900)], "mua": []}))   # > tối đa 21,35
+    assert np.isnan(diem_vao.gia_lo_cong_khai({**kq, "atc": True}, so)) and np.isnan(diem_vao.gia_lo_cong_khai(kq, None))
+    f = tmp_path / "lich_su_danh_gia.csv"
+    monkeypatch.setattr(nhat_ky, "_path", lambda rieng_tu=False: str(f))
+    nhat_ky.ghi_mua_ngay({"ma": "AAA", "gia": 21.3, "cat_lo": 20.0, "muc_tieu": 22.6, "gia_lo": 21.35},
+                         pd.Timestamp("2026-11-13 09:47"))
+    d = pd.read_csv(f, dtype=str)
+    assert d.loc[0, "gia_kn_mua"] == "21.35" and d.loc[0, "gia"] == "21.3"

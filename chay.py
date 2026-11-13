@@ -425,7 +425,10 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                 cho_gui.append((nd, anh))
             if kq["trang_thai"] == "MUA" and C.GHI_NHAT_KY:
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
-                nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1}, bay_gio)
+                if not kq.get("atc"):                       # sổ lệnh lúc báo – 1 lần gọi, tin riêng bên dưới dùng lại
+                    kq["_so"] = diem_vao.so_lenh(kq["ma"])
+                nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1,
+                                      "gia_lo": diem_vao.gia_lo_cong_khai(kq, kq.get("_so"))}, bay_gio)
             so_bao += 1
     # MỌI tin của vòng 15' là riêng tư (09/11/2026): mã trạng thái MUA trong bảng mà thiếu tin MUA công khai = mã đang giữ
     # → log công khai giống hệt nhau dù giữ mã nào (tests/test_tong_ket_cl.py::test_log_15p_khong_phu_thuoc_danh_muc)
@@ -433,7 +436,8 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
         gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
-        nd = diem_vao.tin_mua(kq, bay_gio, bien_the, so=None if kq.get("atc") else diem_vao.so_lenh(kq["ma"]))
+        so = None if kq.get("atc") else kq["_so"] if "_so" in kq else diem_vao.so_lenh(kq["ma"])
+        nd = diem_vao.tin_mua(kq, bay_gio, bien_the, so=so)
         nut = diem_vao.nut_mua(kq)                          # chọn số CP → hỏi xác nhận ✅ (lenh_tele.xu_ly_nut)
         gui(nd, rieng_tu=True, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
