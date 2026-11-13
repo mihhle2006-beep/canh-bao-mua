@@ -36,7 +36,17 @@ permissions:
 # Khoá TỪNG JOB (10/11/2026, trước là khoá cả workflow): Pages kẹt chỉ làm chờ bước triển khai – dựng dữ liệu & đẩy nhánh
 # du-lieu-nhanh của lượt sau vẫn chạy. Mỗi khoá: 1 job chạy + 1 chờ (lượt chờ cũ hơn bị thay bởi lượt mới).
 jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml). 14/11/2026:
+    if: github.event_name == 'schedule'   # lịch 19:07 tới 02:30 → dựng lại chuẩn bị lúc nguồn đêm quá hạn → lượt lỗi
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: bang_thi_truong.yml
+    permissions:
+      actions: read
+      contents: read
   dung:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     concurrency:
@@ -201,7 +211,7 @@ jobs:
   # Actions + Workflows R/W); chưa cấp / chưa có repo → bỏ qua, không làm hỏng lượt.
   bang_rieng:
     needs: dung
-    if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
+    if: ${{ !cancelled() && needs.dung.result == 'success' && needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     continue-on-error: true
@@ -256,7 +266,7 @@ jobs:
 
   trien_khai:
     needs: dung
-    if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
+    if: ${{ !cancelled() && needs.dung.result == 'success' && needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25                # 05/11/2026: Pages chậm / kẹt > 10' (3 lần liền) – chờ tới 20' trước khi huỷ
     concurrency:

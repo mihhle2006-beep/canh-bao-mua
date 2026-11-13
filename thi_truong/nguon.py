@@ -93,10 +93,10 @@ def chi_so(ds=CHI_SO):
     return _ds(goi(f"{TV}/price/marketIndex/getList", {"symbols": list(ds)}))
 
 
-def nen(ma, khung="ONE_MINUTE", so_nen=400):
+def nen(ma, khung="ONE_MINUTE", so_nen=400, timeout=30):
     """Nến gap-chart 1 mã / chỉ số: {t (unix, chuỗi), o, h, l, c, v, accumulatedValue (triệu), accumulatedVolume}."""
     j = goi(f"{TV}/chart/OHLCChart/gap-chart", {"timeFrame": khung, "symbols": [ma], "to": int(time.time()),
-                                                 "countBack": int(so_nen)})
+                                                 "countBack": int(so_nen)}, timeout=timeout)
     return j[0] if isinstance(j, list) and j else None
 
 
