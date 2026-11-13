@@ -1,7 +1,8 @@
 # BẢNG THỊ TRƯỜNG (trang web docs/thi_truong/ – GitHub Pages): chỉ số, VN-Index trong phiên, bản đồ nhiệt HOSE, thống kê
 # phiên, tác động lên VN-Index, lọc mã. Dữ liệu thị trường công khai + RIÊNG cột mã đang giữ (mục 💼, xem bước bên dưới).
-#   • Trong giờ giao dịch: nhip_thi_truong.yml gọi 5' một lần (lịch "*/5" của GitHub hay trễ / bỏ hẳn – 05/11/2026 không
-#     chạy lần nào) + 15:10 chốt phiên dự phòng: chụp bảng giá → du_lieu.json → triển khai Pages.
+#   • Trong giờ giao dịch: nhip_thi_truong.yml gọi 15' một lần (Tra cứu mã: nến phút, bước giá, giá trong phiên) + 15:10
+#     chốt phiên: chụp bảng giá → du_lieu.json → triển khai Pages. BẢNG THỊ TRƯỜNG cập nhật ~30 giây ở repo riêng
+#     bang-thi-truong (13/11/2026 – bang_rieng/bang.yml, thi_truong/vong_bang.py), không còn chạy 2' / lần ở đây.
 #   • Trang Tra cứu mã docs/ma/: dữ liệu từ workflow "Du lieu tra cuu" (cache tra-cuu-*), gói cùng mỗi lần triển khai.
 #   • 19:07: chuẩn bị cho phiên sau (lịch sử 260 phiên, khối ngoại / tự doanh, ngành, hồ sơ thanh khoản) → cache.
 # Cần bật 1 lần: Settings → Pages → Build and deployment → Source: "GitHub Actions". Chưa bật → chỉ dựng, bỏ qua triển khai.
@@ -167,57 +168,30 @@ jobs:
         with:
           path: _site
 
-      - name: Gói bảng riêng (trang + dữ liệu)
+      - name: Gói bảng riêng (trang + dữ liệu + workflow + dữ liệu chuẩn bị)
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
         run: |
-          mkdir -p _bang && cp docs/thi_truong/du_lieu.json trang_bang/index.html trang_bang/icon-*.png \
-            trang_bang/manifest.webmanifest bang_rieng/trien_khai.yml _bang/
+          mkdir -p _bang/wf && cp docs/thi_truong/du_lieu.json trang_bang/index.html trang_bang/icon-*.png \
+            trang_bang/manifest.webmanifest _bang/ && cp bang_rieng/*.yml _bang/wf/
           sed -i "s/__BAN__/$(sha1sum < trang_bang/index.html | cut -c1-10)/" _bang/index.html
+          # dữ liệu chuẩn bị (thị trường công khai, ~1,3 MB) cho vòng bảng ở repo riêng – đẩy khi vừa dựng lại
+          if [ -f cache_thi_truong/chuan_bi.json ]; then cp cache_thi_truong/chuan_bi.json _bang/; fi
+          if [ "${LUU_CACHE:-}" = 1 ]; then touch _bang/cb_moi; fi
 
-      - name: Dữ liệu nhanh (dự phòng khi Pages kẹt) + trang riêng
+      - name: Gói cho trang riêng
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v6
         with:
-          name: du-lieu-nhanh
+          name: bang-rieng
           path: _bang
           retention-days: 1
 
-  # 10/11/2026: Pages kẹt "syncing_files" 10–20' (lượt 5' xếp hàng, bị huỷ nối tiếp → bảng đứng 50') → mỗi lượt đẩy RIÊNG
-  # du_lieu.json (vài trăm KB, cùng nội dung công khai trên Pages) lên nhánh du-lieu-nhanh (1 commit, ghi đè); trang đọc
-  # dự phòng qua raw.githubusercontent.com khi bản Pages cũ > 8' trong giờ giao dịch. Không phụ thuộc bước triển khai.
-  nhanh:
-    needs: dung
-    if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    concurrency:
-      group: bang-thi-truong-nhanh
-      cancel-in-progress: true
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v7
-        with:
-          name: du-lieu-nhanh
-          path: nhanh
-      - name: Đẩy du_lieu.json lên nhánh du-lieu-nhanh
-        env:
-          TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-        run: |
-          cd nhanh
-          git init -q -b du-lieu-nhanh
-          git add du_lieu.json
-          git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
-            commit -qm "Dữ liệu bảng thị trường $(date -u +%FT%TZ)"
-          git push -qf "https://x-access-token:${TOKEN}@github.com/${REPO}.git" du-lieu-nhanh
-
-  # 10/11/2026 chủ quỹ "tách repo": TRANG RIÊNG bang-thi-truong (Pages chỉ ~vài trăm KB – không kẹt theo 95 MB Tra cứu, cập
-  # nhật 2'): đẩy index.html + du_lieu.json lên nhánh du-lieu (1 commit ghi đè, không có file workflow → token không cần quyền
-  # Workflows) rồi gọi trien_khai.yml của repo đó (workflow_dispatch). Token DANH_MUC_TOKEN_GHI phải được cấp repo này
-  # (Contents + Actions + Workflows R/W); chưa cấp / chưa có repo → bỏ qua, không làm hỏng lượt. Repo còn trống (chưa có
-  # nhánh main) → lần đầu tự đẩy main = workflow trien_khai.yml (bản gốc canh-bao-mua/bang_rieng/); bản gốc đổi → tự cập nhật
-  # workflow ở main (12/11/2026).
+  # 10/11/2026 chủ quỹ "tách repo": TRANG RIÊNG bang-thi-truong (Pages chỉ ~vài trăm KB – không kẹt theo 95 MB Tra cứu).
+  # 13/11/2026: trong phiên repo đó TỰ cập nhật ~30 giây / lượt (bang_rieng/bang.yml + thi_truong/vong_bang.py – đồng hồ gọi
+  # 08:50 / 12:50); lượt của canh-bao-mua (15' / lần, chốt phiên, 19:07, đổi code) vẫn đẩy trang + du_lieu.json (mã đang giữ
+  # cho vòng) lên nhánh du-lieu rồi gọi trien_khai.yml, đẩy dữ liệu chuẩn bị (nhánh chuan-bi) khi vừa dựng lại, và đồng bộ
+  # MỌI workflow bản gốc bang_rieng/*.yml sang nhánh main repo đó. Token DANH_MUC_TOKEN_GHI phải được cấp repo này (Contents +
+  # Actions + Workflows R/W); chưa cấp / chưa có repo → bỏ qua, không làm hỏng lượt.
   bang_rieng:
     needs: dung
     if: needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main'
@@ -230,7 +204,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v7
         with:
-          name: du-lieu-nhanh
+          name: bang-rieng
           path: bang
       - name: Đẩy trang bảng lên repo riêng + triển khai
         env:
@@ -247,22 +221,29 @@ jobs:
             commit -qm "Bảng thị trường $(date -u +%FT%TZ)"
           U="https://x-access-token:${TOKEN}@github.com/${REPO}.git"
           if [ -z "$(git ls-remote "$U" refs/heads/main)" ]; then            # repo mới: main (workflow) TRƯỚC – nhánh đầu = mặc định
-            mkdir -p ../main/.github/workflows && cp trien_khai.yml ../main/.github/workflows/
-            printf '# Bảng thị trường\nTrang riêng (GitHub Pages) – dữ liệu dựng ở canh-bao-mua, nhánh du-lieu ghi đè mỗi lượt.\n' > ../main/README.md
+            mkdir -p ../main/.github/workflows && cp wf/*.yml ../main/.github/workflows/
+            printf '# Bảng thị trường\nTrang riêng (GitHub Pages) – workflow bản gốc ở canh-bao-mua/bang_rieng.\n' > ../main/README.md
             (cd ../main && git init -q -b main && git add -A \
               && git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
-                   commit -qm "Workflow triển khai Pages (từ canh-bao-mua/bang_rieng)" \
-              && git push -q "$U" main && echo "Đã tạo nhánh main + workflow triển khai")
-          elif git clone -q --depth 1 -b main "$U" ../main && ! cmp -s trien_khai.yml ../main/.github/workflows/trien_khai.yml; then
-            # bản gốc bang_rieng/trien_khai.yml đổi → cập nhật workflow ở main (token cần quyền Workflows; lỗi → chỉ cảnh báo,
-            # lượt này vẫn triển khai bằng workflow cũ)
-            (cp trien_khai.yml ../main/.github/workflows/ && cd ../main && git add .github/workflows/trien_khai.yml \
+                   commit -qm "Workflow bảng thị trường (từ canh-bao-mua/bang_rieng)" \
+              && git push -q "$U" main && echo "Đã tạo nhánh main + workflow")
+          elif git clone -q --depth 1 -b main "$U" ../main && ! diff -rq wf ../main/.github/workflows > /dev/null 2>&1; then
+            # bản gốc bang_rieng/*.yml đổi → cập nhật workflow ở main (token cần quyền Workflows; lỗi → chỉ cảnh báo,
+            # lượt này vẫn chạy bằng workflow cũ)
+            (cp wf/*.yml ../main/.github/workflows/ && cd ../main && git add .github/workflows \
               && git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
-                   commit -qm "Cập nhật workflow triển khai (từ canh-bao-mua/bang_rieng)" \
-              && git push -q "$U" main && echo "Đã cập nhật workflow triển khai $REPO") \
-              || echo "::warning::Không cập nhật được workflow triển khai ở $REPO (token thiếu quyền Workflows?)"
+                   commit -qm "Cập nhật workflow (từ canh-bao-mua/bang_rieng)" \
+              && git push -q "$U" main && echo "Đã cập nhật workflow $REPO") \
+              || echo "::warning::Không cập nhật được workflow ở $REPO (token thiếu quyền Workflows?)"
           fi
           git push -qf "$U" du-lieu
+          # dữ liệu chuẩn bị cho vòng bảng (nhánh chuan-bi, 1 commit ghi đè): vừa dựng lại hoặc nhánh chưa có
+          if [ -f chuan_bi.json ] && { [ -f cb_moi ] || [ -z "$(git ls-remote "$U" refs/heads/chuan-bi)" ]; }; then
+            mkdir -p ../cb && cp chuan_bi.json ../cb/ && (cd ../cb && git init -q -b chuan-bi && git add chuan_bi.json \
+              && git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+                   commit -qm "Dữ liệu chuẩn bị $(date -u +%FT%TZ)" && git push -qf "$U" chuan-bi && echo "Đã đẩy dữ liệu chuẩn bị") \
+              || echo "::warning::Không đẩy được dữ liệu chuẩn bị lên $REPO"
+          fi
           curl -sf -X POST "${H[@]}" "https://api.github.com/repos/$REPO/actions/workflows/trien_khai.yml/dispatches" \
             -d '{"ref":"main"}' && echo "Đã gọi triển khai $REPO"
 

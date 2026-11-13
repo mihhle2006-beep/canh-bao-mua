@@ -983,22 +983,43 @@ function ve_tat() {
   else if (ST.tab === "quy") ve_quy();
   else ve_loc();
 }
-// DỰ PHÒNG (10/11/2026 – Pages kẹt 10–20'/lượt, bảng đứng 50'): workflow đẩy riêng du_lieu.json lên nhánh du-lieu-nhanh mỗi
-// lượt → bản Pages cũ > 8' trong giờ giao dịch (hoặc lỗi) thì đọc bản đó qua raw.githubusercontent.com, lấy bản mới hơn.
-const URL_NHANH = /\.github\.io$/.test(location.hostname)
-  ? `https://raw.githubusercontent.com/${location.hostname.split(".")[0]}/canh-bao-mua/du-lieu-nhanh/du_lieu.json` : null;
+// CẬP NHẬT NHANH (13/11/2026): repo bang-thi-truong chạy vòng ~30 giây / lượt (canh-bao-mua thi_truong/vong_bang.py), mỗi lượt
+// đẩy 1 file TÊN MỚI p/<yyyymmdd>/<ô>.json lên nhánh "nhanh" (ô = giây trong ngày giờ VN / 30). raw.githubusercontent.com cache
+// 5' THEO ĐƯỜNG DẪN (bỏ qua ?t=) và cache cả 404 ~1' → đọc ô của (giờ máy − 25") – lượt đó đã đẩy xong; thiếu → 2 ô trước.
+// Bản Pages (du_lieu.json, 10' / lần) là bản nền khi mở trang / ngoài giờ.
+const CHU = /\.github\.io$/.test(location.hostname) ? location.hostname.split(".")[0] : null;
+const O_GIAY = 30;
+function gio_vn_ms(t) { return new Date(t + 7 * 3600e3); }
+function trong_gio_gd(t = Date.now()) {                  // T2–T6 09:00–11:31 · 13:00–15:06 (giờ VN)
+  const v = gio_vn_ms(t), p = v.getUTCHours() * 60 + v.getUTCMinutes(), th = v.getUTCDay();
+  return th >= 1 && th <= 5 && ((p >= 540 && p < 691) || (p >= 780 && p < 906));
+}
+function url_o(t) {
+  const v = gio_vn_ms(t), o = Math.floor((v.getUTCHours() * 3600 + v.getUTCMinutes() * 60 + v.getUTCSeconds()) / O_GIAY);
+  const ng = `${v.getUTCFullYear()}${String(v.getUTCMonth() + 1).padStart(2, "0")}${String(v.getUTCDate()).padStart(2, "0")}`;
+  return `https://raw.githubusercontent.com/${CHU}/bang-thi-truong/nhanh/p/${ng}/${String(o).padStart(4, "0")}.json`;
+}
+async function lay_o() {
+  if (!CHU || !trong_gio_gd()) return null;
+  for (const lui of [25, 55, 85]) {
+    try { const r = await fetch(url_o(Date.now() - lui * 1000)); if (r.ok) return await r.json(); } catch (e) {}
+  }
+  return null;
+}
 const lay_dl = async u => { const r = await fetch(u + "?t=" + Date.now(), {cache: "no-store"}); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
-const cu_dl = x => !x || (x.dang_gd && Date.now() - new Date(x.cap_nhat.replace(" ", "T") + "+07:00") > 8 * 60000);
+let LAN_NEN = 0;
 async function tai() {
   try {
-    let d = null, loi = null;
-    try { d = await lay_dl(URL_DL); } catch (e) { loi = e; }
-    if (URL_NHANH && cu_dl(d)) {
-      const n = await lay_dl(URL_NHANH).catch(() => null);
-      if (n && n.cap_nhat && (!d || n.cap_nhat > d.cap_nhat)) d = n;
+    const ds = [];
+    let loi = null;
+    if (!D || Date.now() - LAN_NEN > (trong_gio_gd() ? 5 : 1) * 60000) {      // bản nền Pages: lúc mở; 5' / lần (ngoài giờ 1')
+      try { ds.push(await lay_dl(URL_DL)); LAN_NEN = Date.now(); } catch (e) { loi = e; }
     }
-    if (!d) throw loi || new Error("không có dữ liệu");
-    D = d; dung_loc(); ve_tat();
+    const n = await lay_o();
+    if (n) ds.push(n);
+    const moi = ds.filter(x => x && x.cap_nhat).sort((a, b) => (a.cap_nhat < b.cap_nhat ? 1 : -1))[0];
+    if (!moi && !D) throw loi || new Error("không có dữ liệu");
+    if (moi && (!D || moi.cap_nhat > D.cap_nhat)) { D = moi; dung_loc(); ve_tat(); }
   } catch (e) {
     if (!D) $("main").innerHTML = `<div class="the loi">Chưa tải được dữ liệu (${esc(e.message)}). Thử tải lại trang sau ít phút.</div>`;
   }
@@ -1007,7 +1028,8 @@ document.querySelectorAll("#nd-kich button").forEach(x => x.setAttribute("aria-p
 $("#loc-tim").value = ST.tim;
 doi_tab(["loc", "quy"].includes(ST.tab) ? ST.tab : "tq");
 tai();
-setInterval(() => { if (!document.hidden) tai(); }, 60000);
+setInterval(() => { if (!document.hidden) tai(); }, 10000);                 // trong giờ: lượt ~30 giây; ngoài giờ: chỉ bản nền
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") tai(); });
 let hen; addEventListener("resize", () => { clearTimeout(hen); hen = setTimeout(ve_tat, 150); });
 // ---------------------------------------------------------------- TỰ CẬP NHẬT BẢN MỚI (ứng dụng ở màn hình chính iPhone giữ trang chạy nền;
 // GitHub Pages cho trình duyệt giữ trang 10 phút): quay lại trang / 3 giây sau khi mở → hỏi bản đang triển khai (mã BAN do bước

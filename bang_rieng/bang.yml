@@ -1,0 +1,55 @@
+# REPO bang-thi-truong – VÒNG CẬP NHẬT BẢNG THỊ TRƯỜNG trong phiên, ~30 giây / lượt (người dùng 13/11/2026: ≤ 1 phút, chạy
+# ở repo này thay vì ~170 lượt / ngày ở canh-bao-mua). Bản gốc: canh-bao-mua/bang_rieng/bang.yml – canh-bao-mua tự đồng bộ
+# sang nhánh main repo này. Code: canh-bao-mua thi_truong/vong_bang.py (repo công khai – checkout không cần token).
+#   • 1 job / buổi: sáng 08:50–11:36, chiều 12:50–15:12 (đồng hồ canh-bao-mua gọi; lịch dưới dự phòng – job ngoài khung tự
+#     thoát, lượt trùng xếp hàng rồi thoát)
+#   • mỗi lượt → nhánh "nhanh" p/<ngày>/<ô>.json (trang đọc qua raw.githubusercontent.com); 10' / lần + cuối buổi → nhánh
+#     du-lieu + trien_khai.yml (Pages)
+#   • dữ liệu chuẩn bị: nhánh chuan-bi (canh-bao-mua đẩy sau lượt 19:07); mã đang giữ: du_lieu.json nhánh du-lieu
+name: Bang thi truong
+
+on:
+  schedule:
+    - cron: "53 1 * * 1-5"         # 08:53 giờ VN – dự phòng khi đồng hồ chưa gọi
+    - cron: "53 5 * * 1-5"         # 12:53 giờ VN
+  workflow_dispatch:
+    inputs:
+      so_luot:
+        description: "Chạy thử N lượt bất kể giờ (0 = theo giờ phiên)"
+        default: "0"
+
+permissions:
+  contents: write                  # đẩy nhánh nhanh / du-lieu
+  actions: write                   # gọi trien_khai.yml
+
+concurrency:
+  group: vong-bang
+  cancel-in-progress: false
+
+jobs:
+  vong:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 200           # sáng 166', chiều 142'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.CANH_BAO_REPO || format('{0}/canh-bao-mua', github.repository_owner) }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Cache thư viện Python
+        id: cache_py
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.pythonLocation }}
+          key: py-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+      - name: Cài thư viện
+        if: steps.cache_py.outputs.cache-hit != 'true'
+        run: pip install -r requirements.txt
+      - name: Vòng cập nhật bảng
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SO_LUOT: ${{ inputs.so_luot || '0' }}
+        run: python -m thi_truong.vong_bang --repo "$GITHUB_REPOSITORY" --so_luot "$SO_LUOT"

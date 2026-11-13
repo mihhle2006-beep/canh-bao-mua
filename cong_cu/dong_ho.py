@@ -73,8 +73,12 @@ LICH = [
     ("danh-muc/dat_lenh.yml", "5 9 * * 1-5", {}, 20),     # xin lại nếu 08:40 chưa duyệt (có mã thì im) – lịch GitHub 09:05
                                                           # hay trễ / bỏ (12 & 13/11/2026: OTP 08:40 hết hạn, 09:05 không chạy)
     ("danh-muc/dnse_dong_bo.yml", "47 12 * * 1-5", {"vong": "true"}, 120),    # vòng chết buổi trưa → bật lại
+    # repo bang-thi-truong (13/11/2026): vòng bảng thị trường ~30 giây / lượt (bang_rieng/bang.yml) – sáng / chiều
+    ("bang-thi-truong/bang.yml", "50 8 * * 1-5", {}, 150),
+    ("bang-thi-truong/bang.yml", "50 12 * * 1-5", {}, 120),
 ]
-BO_NEU_DANG_CHAY = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml"}   # đang chạy / chờ máy Mac → không gọi thêm
+BO_NEU_DANG_CHAY = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml",   # đang chạy / chờ máy Mac → không gọi thêm
+                    "bang-thi-truong/bang.yml"}
 # lỗi lần đầu → tự chạy lại job lỗi 1 lần (dựng dữ liệu / trang: lỗi hay do nguồn chập chờn, chạy lại không gửi tin trùng)
 CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_bctn.yml", "loc_quy_b.yml",
             "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml"}
@@ -558,7 +562,9 @@ def main(argv=None):
     if luot_khac_dang_chay(gh, run_id):
         return 0
     tk_dm = os.environ.get("DANH_MUC_TOKEN_GHI", "").strip()
-    gh_khac = {"danh-muc": GitHub(os.environ.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc", tk_dm)} if tk_dm else {}
+    chu = repo.split("/")[0]
+    gh_khac = {"danh-muc": GitHub(os.environ.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc", tk_dm),
+               "bang-thi-truong": GitHub(os.environ.get("BANG_REPO") or f"{chu}/bang-thi-truong", tk_dm)} if tk_dm else {}
     dh = DongHo(gh, gh_khac=gh_khac)
     gs = GiamSat(gh, datetime.now(timezone.utc) - timedelta(minutes=10))   # phủ khoảng nối giữa 2 lượt đồng hồ
     mac = MayMac(gh_khac["danh-muc"]) if gh_khac else None

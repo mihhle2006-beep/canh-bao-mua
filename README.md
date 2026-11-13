@@ -76,9 +76,11 @@ Trang `docs/thi_truong/` (GitHub Pages, cùng site với Bảng tổng hợp) �
 chỉ số + VN-Index trong phiên (1D…1Y), bản đồ nhiệt HOSE theo ngành (vốn hoá / GTGD / nước ngoài / tự doanh), thống kê
 phiên (độ rộng, GTGD & dự kiến cả phiên so TB20, khối ngoại, tự doanh), 10 mã kéo / đè VN-Index, và **Lọc mã** (biến động,
 dòng tiền, khối ngoại gom / xả ≥ 5 phiên, vượt đỉnh / thủng đáy 52 tuần, cắt MA20 / MA50, RSI).
-Workflow `Bang thi truong`: 5' một lần trong giờ giao dịch + 15:10, chuẩn bị dữ liệu lúc 19:07 (`python -m thi_truong`).
-**Bật 1 lần:** Settings → Pages → Build and deployment → Source: **GitHub Actions** → trang ở
-`https://<tài khoản>.github.io/canh-bao-mua/thi_truong/`.
+Trang ở repo riêng **bang-thi-truong**: `https://<tài khoản>.github.io/bang-thi-truong/` (địa chỉ cũ `…/canh-bao-mua/thi_truong/`
+chuyển hướng sang). Trong phiên repo đó tự cập nhật **~30 giây / lượt** (workflow `bang.yml` – bản gốc `bang_rieng/bang.yml`,
+code `thi_truong/vong_bang.py`; đồng hồ gọi 08:50 / 12:50): mỗi lượt 1 file tên mới trên nhánh `nhanh` (trang đọc qua
+raw.githubusercontent.com), 10' / lần cập nhật Pages. Ở repo này workflow `Bang thi truong` chỉ còn 15' / lần (Tra cứu mã),
+15:10 chốt phiên, 19:07 chuẩn bị dữ liệu (đẩy sang nhánh `chuan-bi` của bang-thi-truong).
 
 ## 🔎 Tra cứu mã (web)
 
