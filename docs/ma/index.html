@@ -509,8 +509,28 @@ async function lay(u, bat_buoc = true) {
     return await r.json();
   } catch (e) { if (bat_buoc) throw e; return null; }
 }
+// giá trong phiên mới nhất: vòng bảng thị trường repo bang-thi-truong ~30 giây / lượt → file TÊN MỚI mỗi lượt p/<yyyymmdd>/<ô>.json
+// nhánh "nhanh" (raw.githubusercontent.com cache 5' theo đường dẫn, cache 404 ~1' → đọc ô của giờ máy − 25", thiếu thì ô trước)
+const CHU_GH = /\.github\.io$/.test(location.hostname) ? location.hostname.split(".")[0] : null;
+function trong_gio_gd(t = Date.now()) {                  // T2–T6 09:00–11:31 · 13:00–15:06 (giờ VN)
+  const v = new Date(t + 7 * 3600e3), p = v.getUTCHours() * 60 + v.getUTCMinutes(), th = v.getUTCDay();
+  return th >= 1 && th <= 5 && ((p >= 540 && p < 691) || (p >= 780 && p < 906));
+}
+function url_o(t) {
+  const v = new Date(t + 7 * 3600e3), o = Math.floor((v.getUTCHours() * 3600 + v.getUTCMinutes() * 60 + v.getUTCSeconds()) / 30);
+  const ng = `${v.getUTCFullYear()}${String(v.getUTCMonth() + 1).padStart(2, "0")}${String(v.getUTCDate()).padStart(2, "0")}`;
+  return `https://raw.githubusercontent.com/${CHU_GH}/bang-thi-truong/nhanh/p/${ng}/${String(o).padStart(4, "0")}.json`;
+}
+async function lay_o() {
+  if (!CHU_GH || !trong_gio_gd()) return null;
+  for (const lui of [25, 55, 85]) {
+    try { const r = await fetch(url_o(Date.now() - lui * 1000)); if (r.ok) return await r.json(); } catch (e) {}
+  }
+  return null;
+}
 async function tai_thi_truong() {
-  const m = await lay(TT, false);
+  const [m0, o] = await Promise.all([lay(TT, false), lay_o()]);
+  const m = o && o.cap_nhat && (!m0 || !m0.cap_nhat || o.cap_nhat > m0.cap_nhat) ? o : m0;
   if (!m) return;
   MKT = m; LIVE = {}; BOT = {};
   const c = m.loc?.cot || [];
@@ -3475,7 +3495,7 @@ addEventListener("hashchange", () => {
   dinh_tuyen();
   dat_dau(); ds_td_ve();
   setInterval(async () => {                                  // giá trong phiên: tải lại 1 phút / lần khi đang xem
-    if (document.hidden || !MKT?.dang_gd) return;
+    if (document.hidden || (!MKT?.dang_gd && !trong_gio_gd())) return;
     await tai_thi_truong();
     ds_td_ve();
     if (FS) return fs_ve(true);                          // toàn màn hình: vẽ lại nến hôm nay, giữ vùng đang xem
