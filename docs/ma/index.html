@@ -1571,11 +1571,36 @@ function gop_phut(g, m) {                              // nến 5' → 15' / 1 g
     const j = o.d.length - 1; o.h[j] = Math.max(o.h[j], g.h[i]); o.l[j] = Math.min(o.l[j], g.l[i]); o.c[j] = g.c[i]; o.v[j] += g.v[i] || 0; });
   return o;
 }
-async function chuoi_phut(ma, kh) {                    // trong phiên: tải lại sau 4 phút (nến hôm nay cập nhật mỗi lần chạy Bảng thị trường)
+// NẾN 1' HÔM NAY ~30 giây / lần (13/11/2026): vòng bảng thị trường repo bang-thi-truong ghi n/<ngày>/<ô>/<MÃ>.json (nhánh "nhanh")
+// cho mã GTGD lớn nhất + mã đang giữ / bot / bộ lọc (danh sách: MKT.nen_ma) → nối vào lịch sử phut/ (canh-bao-mua, 15' / lần).
+const NEN_NAY = {};
+function url_nen(ma, t) { return url_o(t).replace("/nhanh/p/", "/nhanh/n/").replace(/\.json$/, `/${ma}.json`); }
+function nen_nay(ma) {
+  if (!CHU_GH || !trong_gio_gd() || (MKT?.nen_ma && !MKT.nen_ma.includes(ma))) return Promise.resolve(null);
+  const k = NEN_NAY[ma];
+  if (k && Date.now() - k.luc < 25000) return k.p;
+  const p = (async () => {
+    for (const lui of [25, 55, 85]) {
+      try { const r = await fetch(url_nen(ma, Date.now() - lui * 1000)); if (r.ok) return giai_phut(await r.json()); } catch (e) {}
+    }
+    return null;
+  })();
+  NEN_NAY[ma] = {luc: Date.now(), p};
+  return p;
+}
+function noi_nen(g, n) {                              // lịch sử g + nến hôm nay n (thay phần trùng từ nến đầu của n)
+  if (!g) return n;
+  const cat = n.ts[0], i = g.ts.findIndex(t => t >= cat), giu = i < 0 ? g.ts.length : i, o = {nn: []};
+  for (const k of ["d", "ts", "o", "h", "l", "c", "v"]) o[k] = g[k].slice(0, giu).concat(n[k]);
+  return o;
+}
+async function chuoi_phut(ma, kh) {                    // lịch sử phut/ (tải lại sau 4 phút trong phiên) + nến 1' hôm nay ~30 giây
   const goc = kh === "1" ? "1" : "5", k = goc + ma;
   if (k in PHUT_KHO && MKT?.dang_gd && Date.now() - (PHUT_KHO[k].luc || 0) > 240000) delete PHUT_KHO[k];
   if (!(k in PHUT_KHO)) { PHUT_KHO[k] = lay(DL + `phut/${goc}/${ma}.json?p=${Math.floor(Date.now() / 240000)}`, false).then(giai_phut).catch(() => null); PHUT_KHO[k].luc = Date.now(); }
-  const g = await PHUT_KHO[k]; if (!g) return null;
+  const [g0, n] = await Promise.all([PHUT_KHO[k], nen_nay(ma)]);
+  const g = n?.ts?.length ? noi_nen(g0, goc === "1" ? n : gop_phut(n, 5)) : g0;
+  if (!g) return null;
   return kh === "1" || kh === "5" ? g : gop_phut(g, +kh);
 }
 const thang_hl = () => ST.thang || (ST.nen >= 99999 ? "log" : "thuong");      // chưa chọn: "Tất cả" dùng log
@@ -3494,14 +3519,14 @@ addEventListener("hashchange", () => {
   MA_TRUOC = location.hash.split("/")[0];
   dinh_tuyen();
   dat_dau(); ds_td_ve();
-  setInterval(async () => {                                  // giá trong phiên: tải lại 1 phút / lần khi đang xem
+  setInterval(async () => {                                  // giá trong phiên: tải lại 30 giây / lần khi đang xem
     if (document.hidden || (!MKT?.dang_gd && !trong_gio_gd())) return;
     await tai_thi_truong();
     ds_td_ve();
     if (FS) return fs_ve(true);                          // toàn màn hình: vẽ lại nến hôm nay, giữ vùng đang xem
     const [a, b] = decodeURIComponent(location.hash.slice(1)).split("/");
     if (MA_OK((a || "").toUpperCase()) && (!b || ["tong-quan", "dinh-gia"].includes(b))) dinh_tuyen();
-  }, 60000);
+  }, 30000);                                                 // dữ liệu trong phiên ~30 giây / lượt (vòng bảng thị trường)
 })();
 // ---------------------------------------------------------------- TỰ CẬP NHẬT BẢN MỚI (ứng dụng ở màn hình chính iPhone giữ trang chạy nền;
 // GitHub Pages cho trình duyệt giữ trang 10 phút): quay lại trang / 3 giây sau khi mở → hỏi bản đang triển khai (mã BAN do bước
