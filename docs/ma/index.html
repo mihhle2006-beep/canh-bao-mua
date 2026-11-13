@@ -2798,13 +2798,30 @@ function bao_cao(ma, k) {
   const bc = k.n?.bc || [], gn = gia_nay(ma, k);
   return the("Báo cáo phân tích", "công ty chứng khoán · Simplize / CafeF", bc.length ? `<div class="ds-tin">${bc.map(x => `<a href="${url(x.link) || "#"}" target="_blank" rel="noopener"><div><b>${esc(x.ctck)}</b>${x.kn ? ` · ${esc(x.kn)}` : ""}${x.mt ? ` · giá mục tiêu <b>${so(x.mt, 2)}</b>${gn.gia ? ` <span class="${mau(x.mt / gn.gia - 1)}">(${pt(x.mt / gn.gia - 1)})</span>` : ""}` : ""}</div><div>${esc(x.tieu_de)}</div><div class="ngay">${ngay_vn(x.ngay)}${url(x.link) ? " · mở báo cáo" : ""}</div></a>`).join("")}</div>` : `<div class="trong">Chưa có báo cáo.</div>`);
 }
-function tai_lieu(ma, k) {
-  const tl = k.n?.tl || [], loai = [...new Set(tl.map(x => x.loai))];
+const GOC_TL = "https://cafefnew.mediacdn.vn/";
+function giai_tl(j) {                          // tl/<MÃ>.json gọn {loai: [tên], ds: [[loại, năm, kỳ, tên, link "~…"]]} → [{loai, nam, ky, ten, link}]
+  if (!j || !Array.isArray(j.ds)) return null;
+  return j.ds.map(([i, nam, ky, ten, l]) => ({loai: j.loai?.[i] || "Khác", nam, ky, ten, link: String(l || "").startsWith("~") ? GOC_TL + l.slice(1) : String(l || "")}));
+}
+function mo_ta_tl(l) {                         // tên chung ("Nghị quyết Hội đồng Quản trị") → nội dung từ tên file gmd-nghi-quyet-h-qt-ve-…-0.pdf
+  let f = String(l).split("?")[0].split("/").pop() || "";
+  try { f = decodeURIComponent(f); } catch (e) { /* tên file lạ – dùng nguyên */ }
+  const p = f.replace(/\.pdf$/i, "").replace(/-\d+$/, "").split("-");
+  return p.length >= 4 ? p.slice(1).join(" ").replace(/\bh qt\b/g, "HĐQT")
+    .replace(/^(thong bao )?(nghi quyet|bao cao tinh hinh quan tri( cong ty)?)( HĐQT)?\s*/, "") : "";   // bỏ phần trùng tên
+}
+async function tai_lieu(ma, k) {               // đủ mọi bản CafeF (tl/<MÃ>.json – chỉ tải khi mở mục này); chưa có → danh sách cũ trong dn
+  if (k.tl === undefined) k.tl = giai_tl(await lay(DL + "tl/" + ma + ".json", false));
+  const tl = k.tl || k.n?.tl || [], loai = [...new Set(tl.map(x => x.loai))];
   if (!tl.length) return the("Tài liệu gốc", "", `<div class="trong">Chưa có danh sách tài liệu (cập nhật xoay vòng mỗi sáng).</div>`);
   const chon = loai.includes(ST.tl) ? ST.tl : loai[0], ds = tl.filter(x => x.loai === chon);
-  const nam = [...new Set(ds.map(x => x.nam || "Khác"))];
-  return `<div class="sub">${loai.map(t => `<button data-tl="${esc(t)}" aria-pressed="${t === chon}">${esc(t)}</button>`).join("")}</div>` +
-    the(esc(chon), "file gốc doanh nghiệp công bố · CafeF", nam.map(y => `<div class="khoi-dau" style="background:#fafbfd"><h2 style="font-size:13.5px">${esc(y)}</h2></div><div class="ds-tin">${ds.filter(x => (x.nam || "Khác") === y).map(x => `<a href="${url(x.link)}" target="_blank" rel="noopener"><div>${esc(x.ten)}</div><div class="ngay">${esc(x.ky)}${/\.pdf/i.test(x.link) ? " · PDF" : ""}</div></a>`).join("")}</div>`).join(""));
+  const nam = [...new Set(ds.map(x => x.nam || "Khác"))], hien = ST.tl_het ? nam : nam.slice(0, 5);
+  const an = ds.filter(x => !hien.includes(x.nam || "Khác")).length;
+  const dong = x => { const mt = /\d/.test(x.ten) ? "" : mo_ta_tl(x.link);
+    return `<a href="${url(x.link)}" target="_blank" rel="noopener"><div>${esc(x.ten || x.loai)}${mt ? ` <span class="m">– ${esc(mt)}</span>` : ""}</div><div class="ngay">${esc(x.ky)}${/\.pdf/i.test(x.link) ? " · PDF" : ""}</div></a>`; };
+  return `<div class="sub">${loai.map(t => `<button data-tl="${esc(t)}" aria-pressed="${t === chon}">${esc(t)} <span style="opacity:.65">${tl.filter(x => x.loai === t).length}</span></button>`).join("")}</div>` +
+    the(esc(chon), `${ds.length} file gốc doanh nghiệp công bố · CafeF`, hien.map(y => `<div class="khoi-dau" style="background:#fafbfd"><h2 style="font-size:13.5px">${esc(y)}</h2></div><div class="ds-tin">${ds.filter(x => (x.nam || "Khác") === y).map(dong).join("")}</div>`).join("") +
+      (an ? `<button class="them" id="tl-het">Xem cả ${nam.length - hien.length} năm cũ hơn (${an} file)</button>` : ""));
 }
 function lanh_dao(ma, k) {
   const ld = k.n?.kbs?.lanh_dao || [], cd = k.n?.cd || [];
@@ -3112,7 +3129,8 @@ function gan_su_kien(ma, k, tab) {
   document.querySelectorAll("[data-dp6]").forEach(b => b.onclick = () => { ST.dp6 = b.dataset.dp6 === "6"; ve_lai(); });
   document.querySelectorAll("[data-pp]").forEach(b => b.onclick = () => mo_pp(b.dataset.pp));
   document.querySelectorAll("[data-cd]").forEach(b => b.onclick = () => { ST.cd = b.dataset.cd; ve_lai(); });
-  document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { ST.tl = b.dataset.tl; ve_lai(); });
+  document.querySelectorAll("[data-tl]").forEach(b => b.onclick = () => { ST.tl = b.dataset.tl; ST.tl_het = false; ve_lai(); });
+  if ($("#tl-het")) $("#tl-het").onclick = () => { ST.tl_het = true; ve_lai(); };
   document.querySelectorAll("[data-csn]").forEach(b => b.onclick = () => { ST.cs = +b.dataset.csn; ST.cs_chon = null; ve_lai(); });
   document.querySelectorAll("[data-cs]").forEach(b => b.onclick = () => { ST.cs_chon = b.dataset.cs; ve_lai(); });
   document.querySelectorAll("[data-bdc]").forEach(b => b.onclick = () => dk_bd(b.dataset.bdc, ma));

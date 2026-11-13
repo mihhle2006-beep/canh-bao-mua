@@ -38,7 +38,7 @@ SO_PHIEN = 500
 SO_PHIEN_DAI = 7000                                               # ~28 năm phiên – gap-chart trả từ ngày niêm yết
 HAN_GIA_DAI = 30                                                  # ngày – tải lại lịch sử dài
 SO_TIN = 60
-SO_PHAN_DN = 12                                                    # ct cc cd sk nb cs tin bc kbs sz nn_nam tl
+SO_PHAN_DN = 11                                                    # ct cc cd sk nb cs tin bc kbs sz nn_nam
 # chỉ số Vietcap statistics-financial giữ lại (đủ bộ – trang tự đặt tên / nhóm); giá trị tiền → tỷ đồng
 CHI_SO_KHOA = ("pe", "pb", "ps", "priceToCashFlow", "evToEbitda", "dividendYield", "marketCap", "roe", "roa", "roic",
                "grossMargin", "ebitMargin", "preTaxProfitMargin", "afterTaxProfitMargin", "assetTurnover",
@@ -369,29 +369,57 @@ def nn_cuoi_nam(ma):
 
 
 CAFEF_TL = "https://cafef.vn/du-lieu/Ajax/PageNew/FileBCTC.ashx?Symbol={ma}&Type={loai}&Year=0"
-LOAI_TL = ((1, "BCTC", 48), (3, "Báo cáo thường niên", 12), (4, "Nghị quyết HĐQT", 12), (5, "Báo cáo quản trị", 6))
+# 13/11/2026 dò Type 0–12: CafeF chỉ có 1 BCTC · 3 BCTN (lẫn bản cáo bạch, điều lệ) · 4 nghị quyết HĐQT · 5 báo cáo quản trị
+# (0 = gộp cả 4 nhưng không ghi loại; 2, 6+ lỗi). LẤY ĐỦ (trước cắt 48 / 12 / 12 / 6 bản) – mã lớn ~300 bản ~100 KB → file
+# riêng tl/<MÃ>.json, trang chỉ tải khi mở mục Tài liệu gốc (dn/<MÃ>.json tải ở mọi mục không nặng thêm).
+LOAI_TL = ((1, "BCTC"), (3, "Báo cáo thường niên"), (4, "Nghị quyết HĐQT"), (5, "Báo cáo quản trị"))
+LOAI_TL_KHAC = "Cáo bạch, điều lệ & khác"                          # Type 3 mà tên không có "thường niên"
+HAN_TL = 3                                                         # ngày – tải lại danh sách tài liệu
+GOC_TL = "https://cafefnew.mediacdn.vn/"                           # tiền tố link hay gặp → "~" trong file (bớt dung lượng)
+_QUY_TL = {1: 331, 2: 630, 3: 930, 4: 1231, 5: 1300}               # Quarter CafeF → mốc trong năm (5 = cả năm, sau Q4)
 
 
-def _nam_tl(x):
+def _moc_tl(x):
+    """Khoá sắp mới → cũ: (năm, mốc trong năm). Nghị quyết / báo cáo quản trị: Year 0, Time "dd-mm-yyyy"; BCTC / BCTN:
+    Year + Quarter (Time "Q3/2026", "CN/2025")."""
+    m = re.fullmatch(r"(\d{1,2})-(\d{1,2})-(\d{4})", str(x.get("Time") or "").strip())
+    if m:
+        return int(m[3]), int(m[2]) * 100 + int(m[1])
     try:
-        return int(str(x.get("Year") or "").strip()[:4])
+        nam = int(str(x.get("Year") or "").strip()[:4])
     except ValueError:
-        return 0
+        nam = 0
+    try:
+        q = int(str(x.get("Quarter") or "").strip())
+    except ValueError:
+        q = 0
+    return nam, _QUY_TL.get(q, 0)
 
 
 def tai_lieu(ma):
-    """File gốc trên CafeF: BCTC (quý / năm, hợp nhất / mẹ, kiểm toán), BCTN, nghị quyết HĐQT, báo cáo quản trị →
-    [{loai, ten, nam, ky, link}] (link PDF / trang gốc – không tải về). MỚI NHẤT TRƯỚC rồi mới cắt `so` bản / loại –
-    13/11/2026: CafeF không trả theo năm giảm dần → lấy 12 bản đầu, BCTN GMD trên web chỉ tới 2022 (thiếu 2023–2025)."""
+    """File gốc trên CafeF – ĐỦ mọi bản: BCTC (quý / năm, hợp nhất / mẹ, kiểm toán), BCTN (+ cáo bạch, điều lệ), nghị quyết
+    HĐQT, báo cáo quản trị → [{loai, ten, nam, ky, link}] mới → cũ trong từng loại (CafeF không trả theo thứ tự – 13/11/2026
+    BCTN GMD trên web chỉ tới 2022). 1 loại lỗi → ValueError (giữ file cũ, không ghi danh sách thiếu loại)."""
     out = []
-    for loai, ten, so in LOAI_TL:
+    for loai, ten in LOAI_TL:
         j = nguon.goi(CAFEF_TL.format(ma=ma, loai=loai), so_lan=2, timeout=20,
                       headers={"Referer": "https://cafef.vn/", "Origin": "https://cafef.vn"})
         ds = [x for x in (j or {}).get("Data") or [] if str(x.get("Link") or "").startswith("http")]
-        for x in sorted(ds, key=_nam_tl, reverse=True)[:so]:           # năm mới → cũ (cùng năm giữ thứ tự CafeF)
-            out.append({"loai": ten, "ten": re.sub(r"\s+", " ", str(x.get("Name") or "")).strip()[:200],
-                        "nam": str(x.get("Year") or ""), "ky": str(x.get("Time") or ""), "link": x["Link"]})
+        for x in sorted(ds, key=_moc_tl, reverse=True):              # cùng mốc giữ thứ tự CafeF
+            ten_x = re.sub(r"\s+", " ", str(x.get("Name") or "")).strip()[:200]
+            nam, ky = _moc_tl(x)[0], str(x.get("Time") or "").strip()
+            out.append({"loai": LOAI_TL_KHAC if loai == 3 and "thường niên" not in ten_x.lower() else ten,
+                        "ten": ten_x, "nam": str(nam) if nam else "", "ky": ky.replace("-", "/") if
+                        re.fullmatch(r"\d{1,2}-\d{1,2}-\d{4}", ky) else ky, "link": x["Link"]})
     return out
+
+
+def gon_tai_lieu(ds):
+    """→ tl/<MÃ>.json gọn (cap_nhat do vòng ghi thêm): {loai: [tên], ds: [[chỉ số loại, năm, kỳ, tên, link]]} – link GOC_TL… ghi "~…"."""
+    loai = list(dict.fromkeys(x["loai"] for x in ds))
+    return {"loai": loai,
+            "ds": [[loai.index(x["loai"]), x["nam"], x["ky"], x["ten"],
+                    "~" + x["link"][len(GOC_TL):] if x["link"].startswith(GOC_TL) else x["link"]] for x in ds]}
 
 
 def tin_cafef(ma, so=SO_TIN):
@@ -501,21 +529,7 @@ def bao_cao_ctck(ma, so=25):
 
 # hạn làm mới (ngày) từng phần dn – ít đổi thì làm thưa để bớt lượt gọi (IQ chặn khi gọi dồn)
 PHIEN_BAN_DN = 2                                                   # đổi định dạng phần nào → tăng để làm mới hết
-HAN_PHAN = {"ct": 7, "cc": 7, "cd": 7, "cs": 7, "kbs": 14, "sz": 30, "sk": 2, "nb": 2, "tin": 1, "bc": 3, "nn_nam": 30,
-            "tl": 3}
-
-
-def _tl_sai_thu_tu(tl):
-    """Danh sách tài liệu cũ (trước 13/11/2026) chưa sắp năm mới → cũ trong từng loại → lấy lại ngay (bản cũ có thể thiếu
-    các năm mới nhất vì bị cắt N bản đầu)."""
-    if not isinstance(tl, list):
-        return False
-    tl = [x for x in tl if isinstance(x, dict)]
-    for loai in {x.get("loai") for x in tl}:
-        nam = [_nam_tl({"Year": x.get("nam")}) for x in tl if x.get("loai") == loai]
-        if nam != sorted(nam, reverse=True):
-            return True
-    return False
+HAN_PHAN = {"ct": 7, "cc": 7, "cd": 7, "cs": 7, "kbs": 14, "sz": 30, "sk": 2, "nb": 2, "tin": 1, "bc": 3, "nn_nam": 30}
 
 
 def lay_dn(ma, cu=None, hom_nay=None):
@@ -537,13 +551,11 @@ def lay_dn(ma, cu=None, hom_nay=None):
         "kbs": lambda: ho_so_kbs(ma),
         "sz": lambda: tom_tat_simplize(ma),
         "nn_nam": lambda: nn_cuoi_nam(ma),
-        "tl": lambda: tai_lieu(ma),
     }
     out, loi = {}, []
     for k, f in phan.items():
         n = ngay_phan.get(k)
-        if k in cu and n and (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days < HAN_PHAN.get(k, 1) \
-                and not (k == "tl" and _tl_sai_thu_tu(cu[k])):
+        if k in cu and n and (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days < HAN_PHAN.get(k, 1):
             out[k] = cu[k]
             continue
         t0 = time.time()
@@ -635,6 +647,8 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print, lam_moi=False):
                 _do("gia_dai", False, time.time() - t1)
         dn_cu = _doc(os.path.join(ra, "dn", f"{m}.json")) or {}
         dn, hong = lay_dn(m, dn_cu, hom_nay)
+        if "tl" in dn_cu and not os.path.exists(os.path.join(ra, "tl", f"{m}.json")):
+            dn["tl"] = dn_cu["tl"]          # danh sách tài liệu cũ trong dn (≤ 13/11/2026) giữ tới khi có tl/<MÃ>.json
         if len(hong) < SO_PHAN_DN:
             _ghi({**dn, "cap_nhat": hom_nay if len(hong) <= 1 else dn_cu.get("cap_nhat", ""), "loi": hong},
                  os.path.join(ra, "dn", f"{m}.json"))
@@ -666,24 +680,24 @@ def chay(ds_ma, ra, san=None, phut=25, luong=6, in_ra=print, lam_moi=False):
     return xong, loi, con
 
 
-def bo_sung_gia_dai(ds_ma, ra, phut=8, luong=8, in_ra=print, hom_nay=None):
-    """Vòng riêng: mã chưa có / quá HAN_GIA_DAI ngày lịch sử dài (gia_dai) → tải song song (gap-chart, máy chủ khác IQ –
-    không đụng giới hạn IQ), dừng nhận mã khi hết phut. Mã đã làm trong vòng chính thì bỏ qua. → (xong, lỗi, còn)."""
+def _vong_phu(ten, thu_muc, han, lay, ds_ma, ra, phut, luong, in_ra, hom_nay, ep=False):
+    """Vòng riêng cho 1 loại file theo mã (<ra>/<thu_muc>/<MÃ>.json): mã chưa có / quá `han` ngày (ep: mọi mã) → lay(m)
+    (dict) song song, dừng nhận mã khi hết phut; lỗi → giữ file cũ. → (xong, lỗi, còn)."""
     hom_nay = hom_nay or date.today().isoformat()
 
     def can(m):
-        n = (_doc(os.path.join(ra, "gia_dai", f"{m}.json")) or {}).get("cap_nhat") or ""
-        return not n or (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days >= HAN_GIA_DAI
+        n = (_doc(os.path.join(ra, thu_muc, f"{m}.json")) or {}).get("cap_nhat") or ""
+        return ep or not n or (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days >= han
     viec, bat_dau, xong, loi, con = [m for m in ds_ma if can(m)], time.time(), 0, 0, 0
 
     def mot(m):
         t0 = time.time()
         try:
-            _ghi({**lay_gia_dai(m), "cap_nhat": hom_nay}, os.path.join(ra, "gia_dai", f"{m}.json"))
-            _do("gia_dai", True, time.time() - t0)
+            _ghi({**lay(m), "cap_nhat": hom_nay}, os.path.join(ra, thu_muc, f"{m}.json"))
+            _do(thu_muc, True, time.time() - t0)
             return True
         except Exception:                                           # noqa: BLE001
-            _do("gia_dai", False, time.time() - t0)
+            _do(thu_muc, False, time.time() - t0)
             return False
     with ThreadPoolExecutor(luong) as ex:
         tl = []
@@ -700,9 +714,21 @@ def bo_sung_gia_dai(ds_ma, ra, phut=8, luong=8, in_ra=print, hom_nay=None):
         for f in tl:
             ok = f.result()
             xong, loi = xong + ok, loi + (not ok)
-    in_ra(f"Lịch sử giá dài: {xong}/{len(viec)} mã tải · lỗi {loi} · hết giờ chưa làm {con} · "
+    in_ra(f"{ten}: {xong}/{len(viec)} mã tải · lỗi {loi} · hết giờ chưa làm {con} · "
           f"{(time.time() - bat_dau) / 60:.1f} phút")
     return xong, loi, con
+
+
+def bo_sung_gia_dai(ds_ma, ra, phut=8, luong=8, in_ra=print, hom_nay=None):
+    """Lịch sử giá dài (gia_dai) mã chưa có / quá HAN_GIA_DAI ngày – gap-chart, máy chủ khác IQ (không đụng giới hạn IQ).
+    Mã đã làm trong vòng chính thì bỏ qua."""
+    return _vong_phu("Lịch sử giá dài", "gia_dai", HAN_GIA_DAI, lay_gia_dai, ds_ma, ra, phut, luong, in_ra, hom_nay)
+
+
+def bo_sung_tai_lieu(ds_ma, ra, phut=6, luong=6, in_ra=print, hom_nay=None, ep=False):
+    """Danh sách tài liệu CafeF đủ mọi bản (tl/<MÃ>.json) mã chưa có / quá HAN_TL ngày (ep: mọi mã – bấm tay --ma)."""
+    return _vong_phu("Tài liệu gốc CafeF", "tl", HAN_TL, lambda m: gon_tai_lieu(tai_lieu(m)), ds_ma, ra, phut,
+                     luong, in_ra, hom_nay, ep)
 
 
 def chi_so_nganh(ra, ds):
@@ -732,6 +758,7 @@ def main(argv=None):
     p.add_argument("--luong", type=int, default=6)
     p.add_argument("--lam_moi", action="store_true", help="làm cả mã đã cập nhật hôm nay (cũ nhất trước)")
     p.add_argument("--phut_dai", type=float, default=8, help="phút cho vòng tải lịch sử giá dài (gia_dai) mã còn thiếu")
+    p.add_argument("--phut_tl", type=float, default=6, help="phút cho vòng danh sách tài liệu CafeF (tl) mã còn thiếu")
     a = p.parse_args(argv)
     ds = (_doc(os.path.join(a.ra, "ds.json")) or {}).get("ds") or []
     san = {r["ma"]: r.get("san", "") for r in ds}
@@ -744,6 +771,7 @@ def main(argv=None):
     print(f"Cấu trúc BCTC: {', '.join(sorted(ct)) or 'lỗi – dùng thứ tự kho'}")
     chay(ma, a.ra, san, a.phut, a.luong, lam_moi=a.lam_moi)
     bo_sung_gia_dai(ma, a.ra, a.phut_dai, max(a.luong, 8))
+    bo_sung_tai_lieu(ma, a.ra, a.phut_tl, 6, ep=bool(a.ma.strip()))
     ng = chi_so_nganh(a.ra, ds)
     print(f"Chỉ số ngành: {len(ng)} ngành")
     return 0
