@@ -4,14 +4,12 @@
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
 # ở danh-muc ptcp/cau_hinh.py), von55–von84 (28–29/10/2026), von85 + von87–von99 (01/11/2026 – "không cải thiện được gì
-# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026), nganh_nn / gian_luoc (05/11/2026), tv2 (07/11/2026), bctn / non / mc_von / khang_cu / cai_thien / thanh_khoan / cl_dong / mua_lai / lay_lai (12/11/2026), rs_nong / bo_lon / nong_dk (13/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
+# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026), nganh_nn / gian_luoc (05/11/2026), tv2 (07/11/2026), bctn / non / mc_von / khang_cu / cai_thien / thanh_khoan / cl_dong / mua_lai / lay_lai (12/11/2026), rs_nong / bo_lon / nong_dk (13/11/2026), uu_nong (14/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
 #   cham1r – (đầu tháng + chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
-#   uu_nong – (14/11/2026, chạy tay) mã RS nóng "đi lên êm": ưu tiên suất / thêm 1 suất riêng / đổi mã yếu – so nền v2
-#           trên 20 thứ tự ★, luật đặt trước C1 20/20 + C2 4/4
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -27,7 +25,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / cham1r / uu_nong (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / cham1r (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -60,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, uu_nong]
+        phan: [chuan, cham1r]
     runs-on: ubuntu-24.04
     defaults:
       run:
