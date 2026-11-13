@@ -550,17 +550,6 @@ def loc_suat_mua(ds, vt, bay_gio):
     return duoc, bo
 
 
-def tin_bo_suat(bo, bay_gio):
-    """1 tin RIÊNG gom các mã báo MUA bị bỏ vì hết suất (không nút đặt lệnh) – vừa bán mã nào trong phiên thì danh mục
-    chưa cập nhật, tự cân nhắc."""
-    if not bo:
-        return None
-    return "\n".join([f"⛔ KHÔNG MUA – hết suất Quỹ Bứt Phá ({pd.Timestamp(bay_gio):%H:%M %d/%m}):"]
-                     + [f"   {ma}: {ly}" for ma, ly in bo]
-                     + ["   (tín hiệu vẫn đúng – chỉ là quỹ không còn suất; nếu vừa bán mã nào trong phiên thì danh mục chưa "
-                        "cập nhật)"])
-
-
 def dong_thu_tu(ks):
     """'👉 THỨ TỰ MUA: ★1 FPT → ★2 HPG → ★3 VNM (+2 mã sau)' khi có ≥ 2 mã nhóm mua (mọi nhóm, theo hạng ưu tiên);
     1 mã hoặc không có hạng → None."""

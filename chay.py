@@ -406,7 +406,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     print(f"Điểm vào 15': {len(ds)} mã trong danh sách mua phiên {bay_gio:%d/%m} · cách vào {bien_the} ({nguon})")
     tt = doc_trang_thai()
     luu = tt.setdefault("_15p", {})
-    bang, so_bao, moi_mua, cho_gui = [], 0, [], []
+    bang, so_bao, moi_mua, cho_gui, ket = [], 0, [], [], {}
     for z in ds:
         dp = bo_nen_chua_dong(nen_15p(z["ma"], bay_gio), C.KHUNG_PHUT, bay_gio)
         kq = diem_vao.danh_gia(z, dp, bay_gio, bien_the)
@@ -415,6 +415,7 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                      "Vùng": f"{kq['tu']:,.2f}–{kq['den']:,.2f}", "Giá": kq["gia_nay"], "Trạng thái": kq["trang_thai"],
                      "Lý do": kq["ly_do"], "Giờ": f"{pd.Timestamp(kq['thoi_diem']):%H:%M}" if kq["thoi_diem"] is not None
                      else "", "Giá mua": kq["gia_mua"]})
+        ket[kq["ma"]] = kq
         if diem_vao.can_bao(kq["ma"], kq["trang_thai"], bay_gio, luu, kq["ly_do"]):
             if kq["trang_thai"] == "MUA" and kq["ma"] not in vt:
                 moi_mua.append(kq)                          # mã mới: gửi sau vòng (★ tin riêng, còn lại dự phòng)
@@ -435,14 +436,13 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     # → log công khai giống hệt nhau dù giữ mã nào (tests/test_tong_ket_cl.py::test_log_15p_khong_phu_thuoc_danh_muc)
     for nd, anh in cho_gui:
         gui(nd, rieng_tu=True, anh=anh) if not khong_gui else _in(nd, rieng_tu=True)
-    moi_mua, bo = tong_ket_cl.loc_suat_mua(moi_mua, vt, bay_gio)   # đủ 8 mã → chỉ mã 💪 (suất dự phòng); hết suất tuần
-    tb = tong_ket_cl.tin_bo_suat(bo, bay_gio)
-    if tb:
-        gui(tb, rieng_tu=True) if not khong_gui else _in(tb, rieng_tu=True)
+    moi_mua = _qua_suat(moi_mua, ket, vt, bay_gio)         # hết suất → chờ (không báo); có suất lại → báo mã chờ
     rieng, _ = diem_vao.chia_tin_mua(moi_mua)               # mã ★ (không có ★ → mã ưu tiên nhất): tin riêng + ảnh
     for kq in rieng:
         so = None if kq.get("atc") else kq["_so"] if "_so" in kq else diem_vao.so_lenh(kq["ma"])
         nd = diem_vao.tin_mua(kq, bay_gio, bien_the, so=so)
+        if kq.get("mo_suat"):
+            nd = "🔓 VỪA CÓ SUẤT TRỐNG – mã này đã báo MUA trước đó trong phiên nhưng lúc ấy quỹ hết suất\n" + nd
         nut = diem_vao.nut_mua(kq)                          # chọn số CP → hỏi xác nhận ✅ (lenh_tele.xu_ly_nut)
         gui(nd, rieng_tu=True, anh=_anh_mua_ngay(kq, bay_gio), nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
     th = diem_vao.tin_tong_hop_mua(moi_mua, bay_gio, rieng)  # ≥ 2 mã MUA cùng lúc → 1 tin thứ tự + mã dự phòng
@@ -458,6 +458,27 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     _trang(bay_gio)
     _in_nguon()
     return 0
+
+
+def _qua_suat(moi_mua, ket, vt, bay_gio):
+    """Suất Quỹ Bứt Phá (tong_ket_cl.loc_suat_mua) cho mã MUA mới của lượt 15'. Hết suất → KHÔNG báo gì (người dùng
+    13/11/2026: không cần tin "không mua") mà ghi CHỜ SUẤT vào trạng thái RIÊNG (cache mã hoá – log / repo công khai không
+    thấy). Lượt sau trong ngày danh mục có suất (vừa bán mã – đồng bộ DNSE ~10') mà mã chờ còn trạng thái MUA, chưa giữ →
+    báo kèm nút như mã mới (mo_suat). ket: {mã: kết quả lượt này}. → mã được báo."""
+    tt = vi_the.doc_trang_thai_ban()
+    hn = f"{pd.Timestamp(bay_gio):%Y-%m-%d}"
+    s = tt.get("_cho_suat") if (tt.get("_cho_suat") or {}).get("ngay") == hn else {"ngay": hn, "ma": []}
+    moi = {k["ma"] for k in moi_mua}
+    cho = [ket[m] for m in s.get("ma") or [] if m in ket and ket[m].get("trang_thai") == "MUA" and m not in vt
+           and m not in moi]
+    duoc, bo = tong_ket_cl.loc_suat_mua(list(moi_mua) + cho, vt, bay_gio)
+    for k in duoc:
+        if k["ma"] not in moi:
+            k["mo_suat"] = True
+    s["ma"] = [m for m, _ in bo]
+    tt["_cho_suat"] = s
+    vi_the.ghi_trang_thai_ban(tt)
+    return duoc
 
 
 def lo_le_1425(bay_gio, vt, khong_gui=False):

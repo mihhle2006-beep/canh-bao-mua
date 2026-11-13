@@ -927,35 +927,53 @@ def test_loc_suat_mua_du_8_ma_chi_ma_manh(monkeypatch):
     duoc, bo = tong_ket_cl.loc_suat_mua(ds, _vt_quy(5, tuan_nay=5), t)          # đã mua 5 mã mới tuần này
     assert duoc == [] and all("5/5 mã mới tuần này" in ly for _, ly in bo)
     assert tong_ket_cl.loc_suat_mua(ds, {}, t) == (ds, [])                      # không đọc được danh mục → như cũ
-    assert tong_ket_cl.tin_bo_suat([], t) is None and "CCC: đang giữ 8/8" in tong_ket_cl.tin_bo_suat([("CCC", "đang giữ 8/8 mã")], t)
 
 
-def test_15p_du_suat_khong_bao_mua_ma_moi(monkeypatch, tmp_path):
-    """Vòng 15' với danh mục đủ 8 mã: CCC (không 💪) → tin ⛔ không nút; DDD (💪) → tin MUA + nút như cũ."""
+def test_15p_du_suat_khong_bao_mua_ma_moi(monkeypatch, tmp_path, capsys):
+    """Vòng 15' với danh mục đủ 8 mã: CCC (không 💪) → KHÔNG tin nào (chờ suất, trạng thái riêng); DDD (💪) → tin MUA + nút.
+    Lượt sau danh mục còn 7 mã (vừa bán 1) → CCC (vẫn MUA) được báo kèm nút "🔓 vừa có suất". Log công khai không đổi."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
     monkeypatch.setattr(tong_ket_cl, "_quy", lambda ten, md: {"QUY_SO_MA": 8, "QUY_SUAT_DU_PHONG": 1,
                                                              "QUY_MOI_TUAN_TOI_DA": 5}.get(ten, md))
     monkeypatch.setattr(vi_the, "bat_day_cua", lambda v: None)
-    k = {"nhom": "VAO_NHU_MOI", "tu": 14.0, "den": 15.0, "cl": 13.5, "mt1": 15.5, "mt3": 17.0, "atc": True,
-         "trang_thai": "MUA", "ly_do": "vào trễ – lệnh ATC trong vùng", "gia_nay": 14.5, "gia_mua": 14.5,
+    k = {"nhom": "VAO_NHU_MOI", "tu": 14.0, "den": 15.0, "cl": 13.5, "mt1": 15.5, "mt3": 17.0, "atc": False,
+         "trang_thai": "MUA", "ly_do": "vào trễ – khớp LO trong vùng", "gia_nay": 14.5, "gia_mua": 14.5,
          "thoi_diem": None, "tieu_chi": []}
     ds = [{"ma": "CCC", "uu_tien": 1.0}, {"ma": "DDD", "uu_tien": 2.0, "manh_b": True}]
     monkeypatch.setattr(diem_vao, "doc_ds_mua", lambda bay_gio: ds)
     monkeypatch.setattr(diem_vao, "danh_gia", lambda z, dp, bay_gio, bt: {**k, **z})
+    monkeypatch.setattr(diem_vao, "so_lenh", lambda ma: None)
     monkeypatch.setattr(tong_ket_cl, "cach_vao", lambda kq: ("15P+GIO", "cấu hình"))
+    tt = {}
     for ten, gt in (("nen_15p", lambda ma, bay_gio: pd.DataFrame()), ("bo_nen_chua_dong", lambda df, *a: df),
-                    ("doc_trang_thai", lambda: {}), ("ghi_trang_thai", lambda tt: None), ("_anh_mua_ngay", lambda *a: None),
+                    ("doc_trang_thai", lambda: tt), ("ghi_trang_thai", lambda x: tt.update(x)),
+                    ("_anh_mua_ngay", lambda *a: None),
                     ("_canh_bao_ban", lambda *a: None), ("_trang", lambda *a: None), ("_in_nguon", lambda: None)):
         monkeypatch.setattr(chay, ten, gt)
     monkeypatch.setattr(chay.C, "GHI_NHAT_KY", False)
     monkeypatch.setattr(diem_vao, "nut_mua", lambda kq: [[("🛒", f"dl|M|{kq['ma']}")]])
     gui = []
     monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, anh=None, nut=None: gui.append((nd, nut)))
-    chay.trong_phien_15p(pd.Timestamp("2026-11-13 14:30"), _vt_quy(8))
+    chay.trong_phien_15p(pd.Timestamp("2026-11-13 10:00"), _vt_quy(8))
+    log1 = capsys.readouterr().out
     co_nut = [str(nut) for nd, nut in gui if nut]
-    assert len(co_nut) == 1 and "DDD" in co_nut[0] and not any("CCC" in nd for nd, _ in gui if not nd.startswith("⛔"))
-    chan = [nd for nd, _ in gui if nd.startswith("⛔")]
-    assert len(chan) == 1 and "CCC" in chan[0] and "DDD" not in chan[0]
+    assert len(co_nut) == 1 and "DDD" in co_nut[0] and not any("CCC" in nd for nd, _ in gui)   # CCC: im lặng
+    assert vi_the.doc_trang_thai_ban()["_cho_suat"] == {"ngay": "2026-11-13", "ma": ["CCC"]}
     gui.clear()
-    chay.trong_phien_15p(pd.Timestamp("2026-11-13 14:30"), {})                 # chưa giữ mã nào → báo cả 2 như cũ
-    assert not [nd for nd, _ in gui if nd.startswith("⛔")] and any("CCC" in str(nut) for nd, nut in gui if nut)
+    chay.trong_phien_15p(pd.Timestamp("2026-11-13 10:15"), _vt_quy(8))       # vẫn đủ suất → vẫn im
+    assert not any("CCC" in nd for nd, _ in gui) and vi_the.doc_trang_thai_ban()["_cho_suat"]["ma"] == ["CCC"]
+    capsys.readouterr()
+    chay.trong_phien_15p(pd.Timestamp("2026-11-13 10:30"), _vt_quy(6))       # bán 2 mã → có suất
+    mo = [nd for nd, nut in gui if nut and "CCC" in str(nut)]
+    assert len(mo) == 1 and mo[0].startswith("🔓 VỪA CÓ SUẤT TRỐNG")
+    assert vi_the.doc_trang_thai_ban()["_cho_suat"]["ma"] == []
+    gui.clear()
+    chay.trong_phien_15p(pd.Timestamp("2026-11-13 10:45"), _vt_quy(6))       # đã báo → không lặp
+    assert not any("CCC" in str(nut) for nd, nut in gui if nut)
+    chay.trong_phien_15p(pd.Timestamp("2026-11-14 10:00"), _vt_quy(8))       # ngày mới: bỏ danh sách chờ cũ
+    assert vi_the.doc_trang_thai_ban()["_cho_suat"]["ngay"] == "2026-11-14"
+    tt.clear(), gui.clear(), capsys.readouterr()
+    chay.trong_phien_15p(pd.Timestamp("2026-11-13 10:00"), {})               # chưa giữ mã nào → báo cả 2 như cũ
+    assert any("CCC" in str(nut) for nd, nut in gui if nut) and any("DDD" in str(nut) for nd, nut in gui if nut)
+    assert capsys.readouterr().out == log1                                   # log công khai không phụ thuộc danh mục
