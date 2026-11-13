@@ -427,8 +427,9 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
                 gia, cl, mt1, _ = diem_vao.muc_sau_mua(kq)
                 if not kq.get("atc"):                       # sổ lệnh lúc báo – 1 lần gọi, tin riêng bên dưới dùng lại
                     kq["_so"] = diem_vao.so_lenh(kq["ma"])
-                nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1,
-                                      "gia_lo": diem_vao.gia_lo_cong_khai(kq, kq.get("_so"))}, bay_gio)
+                gia_lo, cho_lo = diem_vao.gia_lo_cong_khai(kq, kq.get("_so"))
+                nhat_ky.ghi_mua_ngay({"ma": kq["ma"], "gia": gia, "cat_lo": cl, "muc_tieu": mt1, "gia_lo": gia_lo,
+                                      "cho_lo": cho_lo}, bay_gio)
             so_bao += 1
     # MỌI tin của vòng 15' là riêng tư (09/11/2026): mã trạng thái MUA trong bảng mà thiếu tin MUA công khai = mã đang giữ
     # → log công khai giống hệt nhau dù giữ mã nào (tests/test_tong_ket_cl.py::test_log_15p_khong_phu_thuoc_danh_muc)

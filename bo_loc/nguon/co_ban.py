@@ -91,6 +91,12 @@ def _pct(v):
 
 
 # ================================================================ NGUỒN 1: TCBS
+def _loi_phan(ma, phan, e):
+    """1 phần của nguồn TCBS lỗi → ghi nhật ký nguồn (sheet "Nguon du lieu" – 13/11/2026: trước bỏ qua im lặng, đổi API thì
+    chỉ tiêu lặng lẽ thành "thiếu dữ liệu" ở bộ lọc mà không ai biết)."""
+    NHAT_KY.ghi(f"Cơ bản {ma}", f"TCBS · {phan}", "Lỗi", f"{type(e).__name__}: {str(e)[:70]}")
+
+
 def tu_tcbs(ma):
     kq = {}
     goc = "https://apipubaws.tcbs.com.vn/tcanalysis/v1"
@@ -103,8 +109,8 @@ def tu_tcbs(ma):
         fp = _so(j.get("foreignPercent"))
         if fp is not None:
             kq["so_huu_nn"] = _pct(fp)
-    except Exception:
-        pass
+    except Exception as e:                           # noqa: BLE001 – phần này thiếu, phần khác vẫn lấy
+        _loi_phan(ma, "tổng quan (sở hữu NN, ngành)", e)
     try:
         q = lay_json(f"{goc}/finance/{ma}/financialratio", params={"yearly": 0, "isAll": "true"})
         if isinstance(q, list) and q:
@@ -119,14 +125,14 @@ def tu_tcbs(ma):
                 kq["no_vay_tts"] = _pct(_so(r["debtOnAsset"]))
             if len(q) > 4:
                 kq["eps_quy_cung_ky"] = _so(q[4].get("earningPerShare"))
-    except Exception:
-        pass
+    except Exception as e:                           # noqa: BLE001 – phần này thiếu, phần khác vẫn lấy
+        _loi_phan(ma, "chỉ số quý (EPS, ROE, nợ)", e)
     try:
         y = lay_json(f"{goc}/finance/{ma}/financialratio", params={"yearly": 1, "isAll": "true"})
         if isinstance(y, list) and len(y) > 1:
             kq["eps_nam"], kq["eps_nam_truoc"] = _so(y[0].get("earningPerShare")), _so(y[1].get("earningPerShare"))
-    except Exception:
-        pass
+    except Exception as e:                           # noqa: BLE001 – phần này thiếu, phần khác vẫn lấy
+        _loi_phan(ma, "chỉ số năm (EPS năm)", e)
     try:
         dv = lay_json(f"{goc}/company/{ma}/dividend-payment-histories",
                       params={"page": 0, "size": 40}).get("listDividendPaymentHis") or []
@@ -141,8 +147,8 @@ def tu_tcbs(ma):
             kq["so_nam_co_tuc"] = dem if nam[0] >= date.today().year - 2 else 0
             kq["co_tuc_tien_mat_cp"] = sum((x.get("cashDividendPercentage") or 0) * 10_000
                                            for x in tien if int(x.get("cashYear", 0)) == nam[0])
-    except Exception:
-        pass
+    except Exception as e:                           # noqa: BLE001 – phần này thiếu, phần khác vẫn lấy
+        _loi_phan(ma, "cổ tức", e)
     try:
         q = lay_json(f"{goc}/finance/{ma}/incomestatement", params={"yearly": 0, "isAll": "true"})
         if isinstance(q, list) and len(q) > 4:
@@ -163,8 +169,8 @@ def tu_tcbs(ma):
             dt4 = [_so(r.get("revenue")) for r in q[:4]]
             if all(v is not None for v in dt4) and bon_quy_lien_tiep(ds4):
                 kq["dt_4q_ty"] = sum(dt4)
-    except Exception:
-        pass
+    except Exception as e:                           # noqa: BLE001 – phần này thiếu, phần khác vẫn lấy
+        _loi_phan(ma, "KQKD quý (LNST / doanh thu 4 quý)", e)
     try:
         cf = lay_json(f"{goc}/finance/{ma}/cashflow", params={"yearly": 1, "isAll": "true"})
         if isinstance(cf, list) and cf:
@@ -173,8 +179,8 @@ def tu_tcbs(ma):
                 kq["fcf"] = _so(r["freeCashFlow"])
             elif r.get("fromSale") is not None and r.get("investCost") is not None:
                 kq["fcf"] = _so(r["fromSale"]) + _so(r["investCost"])
-    except Exception:
-        pass
+    except Exception as e:                           # noqa: BLE001 – phần này thiếu, phần khác vẫn lấy
+        _loi_phan(ma, "lưu chuyển tiền (FCF)", e)
     return {k: v for k, v in kq.items() if v is not None}
 
 

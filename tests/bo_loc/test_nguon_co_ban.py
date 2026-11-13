@@ -318,3 +318,21 @@ def test_pe_theo_lnst_vndirect_bctc(monkeypatch, tmp_path):
     monkeypatch.setitem(co_ban.NGUON_CO_BAN, "vnstock", lambda ma: pytest.fail("không cần vnstock"))
     m = co_ban.tinh_chi_so(co_ban.gop(co_ban.lay_online("VPB", thu_muc_cache=str(tmp_path))), 30.0)
     assert goi == ["VPB"] and m["eps_dung"] == pytest.approx(3000.0) and m["pe"] == pytest.approx(10.0)
+
+
+def test_tcbs_phan_loi_ghi_nhat_ky_nguon(monkeypatch):
+    """13/11/2026: 1 phần của nguồn TCBS lỗi (đổi API…) → ghi sheet "Nguon du lieu" (trước bỏ qua im lặng), phần khác vẫn lấy."""
+    from bo_loc.nguon.http import NHAT_KY
+
+    def lay(url, params=None, **k):
+        if url.endswith("/overview"):
+            return {"outstandingShare": 1000, "exchange": "HOSE", "industry": "Thép"}
+        raise ValueError("HTTP 404")
+    monkeypatch.setattr(co_ban, "lay_json", lay)
+    NHAT_KY.xoa()
+    kq = co_ban.tu_tcbs("AAA")
+    assert kq.get("san") == "HOSE"
+    b = NHAT_KY.bang()
+    assert len(b) == 5 and set(b["Kết quả"]) == {"Lỗi"} and b["Nguồn"].str.startswith("TCBS · ").all()
+    assert "TCBS · lưu chuyển tiền (FCF)" in set(b["Nguồn"]) and b["Chi tiết"].str.contains("ValueError").all()
+    NHAT_KY.xoa()

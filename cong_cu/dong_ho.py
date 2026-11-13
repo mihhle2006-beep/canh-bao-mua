@@ -70,6 +70,8 @@ LICH = [
     # repo kín danh-muc – chạy trên máy Mac (như may_mac/bat_vong.sh): Mac ngủ thì lần chạy chờ, Mac thức là chạy
     ("danh-muc/dnse_dong_bo.yml", "35 8 * * 1-5", {"vong": "true"}, 360),     # vòng đồng bộ DNSE 10' / lần tới 15:05
     ("danh-muc/dat_lenh.yml", "40 8 * * 1-5", {}, 20),                       # xin mã giao dịch (Smart OTP)
+    ("danh-muc/dat_lenh.yml", "5 9 * * 1-5", {}, 20),     # xin lại nếu 08:40 chưa duyệt (có mã thì im) – lịch GitHub 09:05
+                                                          # hay trễ / bỏ (12 & 13/11/2026: OTP 08:40 hết hạn, 09:05 không chạy)
     ("danh-muc/dnse_dong_bo.yml", "47 12 * * 1-5", {"vong": "true"}, 120),    # vòng chết buổi trưa → bật lại
 ]
 BO_NEU_DANG_CHAY = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml"}   # đang chạy / chờ máy Mac → không gọi thêm
