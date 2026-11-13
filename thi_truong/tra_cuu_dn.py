@@ -372,22 +372,25 @@ CAFEF_TL = "https://cafef.vn/du-lieu/Ajax/PageNew/FileBCTC.ashx?Symbol={ma}&Type
 LOAI_TL = ((1, "BCTC", 48), (3, "Báo cáo thường niên", 12), (4, "Nghị quyết HĐQT", 12), (5, "Báo cáo quản trị", 6))
 
 
+def _nam_tl(x):
+    try:
+        return int(str(x.get("Year") or "").strip()[:4])
+    except ValueError:
+        return 0
+
+
 def tai_lieu(ma):
     """File gốc trên CafeF: BCTC (quý / năm, hợp nhất / mẹ, kiểm toán), BCTN, nghị quyết HĐQT, báo cáo quản trị →
-    [{loai, ten, nam, ky, link}] (link PDF / trang gốc – không tải về)."""
+    [{loai, ten, nam, ky, link}] (link PDF / trang gốc – không tải về). MỚI NHẤT TRƯỚC rồi mới cắt `so` bản / loại –
+    13/11/2026: CafeF không trả theo năm giảm dần → lấy 12 bản đầu, BCTN GMD trên web chỉ tới 2022 (thiếu 2023–2025)."""
     out = []
     for loai, ten, so in LOAI_TL:
         j = nguon.goi(CAFEF_TL.format(ma=ma, loai=loai), so_lan=2, timeout=20,
                       headers={"Referer": "https://cafef.vn/", "Origin": "https://cafef.vn"})
-        n = 0
-        for x in (j or {}).get("Data") or []:
-            if not str(x.get("Link") or "").startswith("http"):
-                continue
+        ds = [x for x in (j or {}).get("Data") or [] if str(x.get("Link") or "").startswith("http")]
+        for x in sorted(ds, key=_nam_tl, reverse=True)[:so]:           # năm mới → cũ (cùng năm giữ thứ tự CafeF)
             out.append({"loai": ten, "ten": re.sub(r"\s+", " ", str(x.get("Name") or "")).strip()[:200],
                         "nam": str(x.get("Year") or ""), "ky": str(x.get("Time") or ""), "link": x["Link"]})
-            n += 1
-            if n >= so:
-                break
     return out
 
 
@@ -502,6 +505,19 @@ HAN_PHAN = {"ct": 7, "cc": 7, "cd": 7, "cs": 7, "kbs": 14, "sz": 30, "sk": 2, "n
             "tl": 3}
 
 
+def _tl_sai_thu_tu(tl):
+    """Danh sách tài liệu cũ (trước 13/11/2026) chưa sắp năm mới → cũ trong từng loại → lấy lại ngay (bản cũ có thể thiếu
+    các năm mới nhất vì bị cắt N bản đầu)."""
+    if not isinstance(tl, list):
+        return False
+    tl = [x for x in tl if isinstance(x, dict)]
+    for loai in {x.get("loai") for x in tl}:
+        nam = [_nam_tl({"Year": x.get("nam")}) for x in tl if x.get("loai") == loai]
+        if nam != sorted(nam, reverse=True):
+            return True
+    return False
+
+
 def lay_dn(ma, cu=None, hom_nay=None):
     """Mọi phần doanh nghiệp; phần còn hạn giữ nguyên, phần lỗi giữ bản cũ (cu). → (dn, phần lỗi) – dn["ngay_phan"]
     ghi ngày làm mới từng phần."""
@@ -526,7 +542,8 @@ def lay_dn(ma, cu=None, hom_nay=None):
     out, loi = {}, []
     for k, f in phan.items():
         n = ngay_phan.get(k)
-        if k in cu and n and (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days < HAN_PHAN.get(k, 1):
+        if k in cu and n and (date.fromisoformat(hom_nay) - date.fromisoformat(n)).days < HAN_PHAN.get(k, 1) \
+                and not (k == "tl" and _tl_sai_thu_tu(cu[k])):
             out[k] = cu[k]
             continue
         t0 = time.time()
