@@ -53,8 +53,9 @@ class Xuat:
         self.lm += 1
         return 2
 
-    def nhanh(self, ten, du_lieu):
+    def nhanh(self, ten, du_lieu, nen=None):
         self.o.append((ten, json.loads(du_lieu)["cap_nhat"]))
+        self.nen_phut = getattr(self, "nen_phut", []) + [nen]
 
     def nen(self, f):
         self.nen_ds.append(f)
@@ -91,7 +92,7 @@ def test_vong_buoi_sang(tmp_path):
     def chup(cb, f, luc=None, in_tien_do=None):
         dh.t += pd.Timedelta(seconds=12)
         return _chup(ra, loi_luc=("10:15",))(cb, f, luc=luc, in_tien_do=in_tien_do)
-    luot, loi = V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=chup, in_ra=log.append)
+    luot, loi = V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=chup, in_ra=log.append, nen_fn=lambda ds, luc: {"AAA": {"t0": 1}})
     ten = [t for t, _ in x.o]
     assert ten[0] == "p/20261116/1080.json" and ten[-1] == "p/20261116/1381.json"   # 09:00:01 → 11:30:31
     assert len(ten) == len(set(ten)) == luot == 302 - 2 and loi == 2               # 10:15:00 & 10:15:30 lỗi
@@ -99,18 +100,21 @@ def test_vong_buoi_sang(tmp_path):
     assert all(b - a in (1, 3) for a, b in zip(o, o[1:]))                          # liền ô (trừ 2 ô lỗi)
     assert 15 <= len(x.nen_ds) <= 17 and dh.t >= T("2026-11-16 11:36")              # 10' / lần + cuối buổi
     assert any("10:15:01" in d and "nguồn chập chờn" in d for d in log)
+    assert all(n == {"AAA": {"t0": 1}} for n in x.nen_phut)                            # nến phút đi cùng mỗi lượt
 
 
 def test_vong_chot_phien_va_chay_thu(tmp_path):
     dh, x = DongHo("2026-11-16 15:04:40"), Xuat()
     ra = str(tmp_path / "du_lieu.json")
-    luot, loi = V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=_chup(ra))
+    luot, loi = V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=_chup(ra), nen_fn=lambda ds, luc: {})
     assert (luot, loi) == (2, 0) and [t for t, _ in x.o] == ["p/20261116/1809.json", "p/20261116/1810.json"]  # 15:05:01 chốt
     assert len(x.nen_ds) == 2
     dh, x = DongHo("2026-11-14 20:00:00"), Xuat()                                 # thứ Bảy, chạy thử 3 lượt
-    assert V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=_chup(ra), so_luot=3) == (3, 0) and len(x.o) == 3
+    assert V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=_chup(ra), so_luot=3, nen_fn=lambda ds, luc: {}) == (3, 0)
+    assert len(x.o) == 3
     dh, x = DongHo("2026-11-14 20:00:00"), Xuat()                                 # ngoài khung, không chạy thử → thoát
-    assert V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=_chup(ra)) == (0, 0) and x.nen_ds == []
+    assert V.vong({}, x, ra, luc_fn=dh.luc, ngu=dh.ngu, chup=_chup(ra), nen_fn=lambda ds, luc: {}) == (0, 0)
+    assert x.nen_ds == []
 
 
 def test_git_day_ghi_de_1_commit(tmp_path):
@@ -146,3 +150,34 @@ def test_workflow_bang_rieng():
     b = yaml.safe_load(open(".github/workflows/bang_thi_truong.yml", encoding="utf-8"))
     tb = json.dumps(b, ensure_ascii=False)
     assert "bang_rieng/*.yml" in tb and "chuan-bi" in tb and "du-lieu-nhanh" not in tb and "nhanh" not in b["jobs"]
+
+
+def test_nen_phut_hom_nay(tmp_path, monkeypatch):
+    """Nến 1' hôm nay (trang Tra cứu khung phút): mã = top GTGD lượt trước + mã đang giữ / bot / bộ lọc; tải từ 09:00 giờ VN;
+    ghi n/<ngày>/<ô>/<MÃ>.json cùng commit lượt bảng, giữ 3 ô gần nhất."""
+    from thi_truong import phut_web
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "giu.txt").write_text("ZZZ")
+    monkeypatch.setenv("MA_GIU_FILE", str(tmp_path / "giu.txt"))
+    monkeypatch.setattr("thi_truong.ma_them", lambda: [])
+    out = {"loc": {"cot": ["ma", "san", "nganh", "gia", "pt", "gt"],
+                   "dong": [["AAA", "HSX", 0, 10, 1, 50.0], ["BBB", "HSX", 0, 10, 1, 90.0], ["CCC", "HSX", 0, 10, 1, None]]}}
+    assert V.ma_nen(out, so_ma=1) == ["BBB", "ZZZ"] and V.ma_nen(None) == ["ZZZ"]
+    goi = []
+
+    def tai(m, tu, den):
+        goi.append((m, tu, den))
+        if m == "LOI":
+            raise ValueError("x")
+        return [[tu, tu + 60], [10.0, 10.1], [10.2, 10.2], [9.9, 10.0], [10.1, 10.2], [100, 200]] if m != "RONG" else [[]] * 6
+    nen = V.nen_hom_nay(["AAA", "LOI", "RONG"], T("2026-11-16 10:00:05"), tai=tai)
+    assert list(nen) == ["AAA"] and phut_web.giai_ma(nen["AAA"])[4] == [10.1, 10.2]
+    assert goi[0][1] == int(T("2026-11-16 02:00", tz="UTC").timestamp())         # 09:00 giờ VN
+    x = V.XuatGit("chu/bang", "tk", str(tmp_path / "g"))
+    x.git.day = lambda nhanh, td: None
+    for i in range(5):
+        x.nhanh(f"p/20261116/{1200 + i:04d}.json", "{}", {"AAA": nen["AAA"], "BBB": nen["AAA"]})
+    d = tmp_path / "g" / "nhanh"
+    assert sorted(os.listdir(d / "n" / "20261116")) == ["1202", "1203", "1204"]
+    assert sorted(os.listdir(d / "n" / "20261116" / "1204")) == ["AAA.json", "BBB.json"]
+    assert json.loads((d / "n" / "20261116" / "1204" / "AAA.json").read_text()) == nen["AAA"]

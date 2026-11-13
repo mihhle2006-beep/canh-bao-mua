@@ -3,8 +3,8 @@
 # sang nhánh main repo này. Code: canh-bao-mua thi_truong/vong_bang.py (repo công khai – checkout không cần token).
 #   • 1 job / buổi: sáng 08:50–11:36, chiều 12:50–15:12 (đồng hồ canh-bao-mua gọi; lịch dưới dự phòng – job ngoài khung tự
 #     thoát, lượt trùng xếp hàng rồi thoát)
-#   • mỗi lượt → nhánh "nhanh" p/<ngày>/<ô>.json (trang đọc qua raw.githubusercontent.com); 10' / lần + cuối buổi → nhánh
-#     du-lieu + trien_khai.yml (Pages)
+#   • mỗi lượt → nhánh "nhanh" p/<ngày>/<ô>.json (trang đọc qua raw.githubusercontent.com) + nến 1' hôm nay
+#     n/<ngày>/<ô>/<MÃ>.json (Tra cứu mã khung phút); 10' / lần + cuối buổi → nhánh du-lieu + trien_khai.yml (Pages)
 #   • dữ liệu chuẩn bị: nhánh chuan-bi (canh-bao-mua đẩy sau lượt 19:07); mã đang giữ: du_lieu.json nhánh du-lieu
 name: Bang thi truong
 

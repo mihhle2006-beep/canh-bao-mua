@@ -9,6 +9,10 @@ VÒNG BẢNG THỊ TRƯỜNG – chạy ở repo bang-thi-truong (workflow bang.
     FILE MỚI; trang đọc ô (giờ máy − 25") – lượt đó đã đẩy xong – thiếu thì ô trước (trang_bang/index.html lay_o).
   • TRIEN_KHAI giây / lần + cuối buổi: nhánh du-lieu (trang + du_lieu.json) + gọi trien_khai.yml (Pages – bản nền khi mở
     trang, ngoài giờ giao dịch).
+  • NẾN 1' HÔM NAY (trang Tra cứu mã khung 1' / 5' / 15' / 1 giờ – người dùng 13/11/2026): cùng lượt, song song với chụp
+    bảng, tải nến phút từ 09:00 của SO_MA_NEN mã GTGD lớn nhất + mã đang giữ / bot / bộ lọc → n/<ngày>/<ô>/<MÃ>.json
+    (mã hoá như phut_web: trang nối vào lịch sử phut/ của canh-bao-mua). DNSE / Vietcap không cho trình duyệt gọi thẳng
+    (thiếu Access-Control-Allow-Origin – đo 13/11/2026) nên phải đi qua vòng này.
   • Mã đang giữ (mục 💼): đọc từ du_lieu.json nhánh du-lieu (canh-bao-mua đẩy kèm mỗi lượt của nó); tín hiệu bot: file
     trang_thai_chien_luoc.json của canh-bao-mua (lấy lại TRIEN_KHAI giây / lần). Không cần token repo kín.
 Token: GITHUB_TOKEN của bang-thi-truong (contents + actions: write) – gửi qua header, không ghi vào URL / log.
@@ -29,6 +33,9 @@ from . import dung, tinh
 CHU_KY = 30                                   # giây / lượt chụp (chụp ~10–15 giây)
 TRIEN_KHAI = 600                              # giây / lần cập nhật nhánh du-lieu + Pages
 GIU_O = 12                                    # số file ô gần nhất giữ trên nhánh nhanh
+GIU_O_NEN = 3                                 # số ô nến phút gần nhất giữ (mỗi ô 1 thư mục, 1 file / mã)
+SO_MA_NEN = 60                                # nến 1' hôm nay: mã GTGD lớn nhất + mã đang giữ / bot / bộ lọc / ma_them.txt
+FILE_BO_LOC = "ma_mua_bo_loc.json"
 CUA_SO = ((8 * 60 + 50, 11 * 60 + 36), (12 * 60 + 50, 15 * 60 + 12))      # phút trong ngày: job chạy trong khoảng này
 GIO_GD = ((9 * 60, 11 * 60 + 31), (13 * 60, 15 * 60 + 5))                # chụp khi đang giao dịch
 TRANG = ("index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png")
@@ -119,6 +126,53 @@ def don_o(thu_muc, giu=GIU_O):
             os.rmdir(os.path.join(goc, ngay))
 
 
+def don_o_nen(thu_muc, giu=GIU_O_NEN):
+    """Chỉ giữ giu thư mục ô mới nhất trong <thu_muc>/n/<ngày>/<ô>/ (ngày cũ xoá hẳn)."""
+    goc = os.path.join(thu_muc, "n")
+    if not os.path.isdir(goc):
+        return
+    ds = sorted((ngay, o) for ngay in os.listdir(goc) for o in os.listdir(os.path.join(goc, ngay)))
+    for ngay, o in ds[:-giu] if giu else ds:
+        shutil.rmtree(os.path.join(goc, ngay, o))
+    for ngay in os.listdir(goc):
+        if not os.listdir(os.path.join(goc, ngay)):
+            os.rmdir(os.path.join(goc, ngay))
+
+
+def ma_nen(out, so_ma=SO_MA_NEN, file_ra=None):
+    """Mã lấy nến 1' hôm nay: so_ma mã GTGD trong phiên lớn nhất (bảng lọc của lượt trước) + mã đang giữ (MA_GIU_FILE) +
+    mã bot khuyến nghị (file_ra – du_lieu.json) + bộ lọc (ma_mua_bo_loc.json) + thi_truong/ma_them.txt."""
+    from . import phut_web
+    loc = (out or {}).get("loc") or {}
+    cot = loc.get("cot") or []
+    i_gt = cot.index("gt") if "gt" in cot else None
+    dong = [r for r in loc.get("dong") or [] if i_gt is not None and isinstance(r[i_gt], (int, float))]
+    top = [r[0] for r in sorted(dong, key=lambda r: -r[i_gt])[:so_ma]]
+    them = phut_web.ma_them(them_file=os.environ.get("MA_GIU_FILE"), tin_hieu=file_ra,
+                            bo_loc=FILE_BO_LOC if os.path.exists(FILE_BO_LOC) else None)
+    return list(dict.fromkeys(top + them))
+
+
+def nen_hom_nay(ds_ma, luc, luong=8, tai=None):
+    """Nến 1' từ 09:00 hôm nay (giờ VN) tới luc của ds_ma → {MÃ: dict gọn phut_web.ma_hoa} (mã lỗi / chưa có nến bỏ)."""
+    from concurrent.futures import ThreadPoolExecutor
+    from . import phut_web
+    tai = tai or (lambda m, tu, den: phut_web.tai(m, "1", tu, den, so_lan=1))
+    import pandas as pd
+    goc = pd.Timestamp(luc).normalize() + pd.Timedelta(hours=9) - tinh.LECH_GIO          # 09:00 VN → UTC
+    tu = int(goc.tz_localize("UTC").timestamp()) if goc.tzinfo is None else int(goc.timestamp())
+    den = tu + 7 * 3600
+
+    def mot(m):
+        try:
+            x = tai(m, tu, den)
+            return m, phut_web.ma_hoa(*x) if x and x[0] else None
+        except Exception:                                               # noqa: BLE001 – 1 mã lỗi bỏ qua
+            return m, None
+    with ThreadPoolExecutor(luong) as ex:
+        return {m: d for m, d in ex.map(mot, ds_ma) if d}
+
+
 def ma_giu(du_lieu):
     """Mã đang giữ từ du_lieu.json (chuỗi JSON) nhánh du-lieu → list."""
     try:
@@ -154,12 +208,20 @@ class XuatGit:
                            capture_output=True, timeout=60)
         return len(ds)
 
-    def nhanh(self, ten, du_lieu):
+    def nhanh(self, ten, du_lieu, nen=None):
+        """ten p/<ngày>/<ô>.json; nen {MÃ: dict gọn} → n/<ngày>/<ô>/<MÃ>.json (cùng 1 commit)."""
         d = self.git.thu_muc("nhanh")
         os.makedirs(os.path.dirname(os.path.join(d, ten)), exist_ok=True)
         with open(os.path.join(d, ten), "w", encoding="utf-8") as f:
             f.write(du_lieu)
+        if nen:
+            tm = os.path.join(d, "n", ten[2:-5])
+            os.makedirs(tm, exist_ok=True)
+            for m, x in nen.items():
+                with open(os.path.join(tm, f"{m}.json"), "w", encoding="utf-8") as f:
+                    json.dump(x, f, separators=(",", ":"))
         don_o(d)
+        don_o_nen(d)
         self.git.day("nhanh", f"Bảng {ten}")
 
     def nen(self, file_du_lieu):
@@ -178,9 +240,14 @@ class XuatGit:
         return goi_trien_khai(self.repo, self.token)
 
 
-def vong(cb, xuat, file_ra, luc_fn=tinh.gio_vn, ngu=time.sleep, chup=None, so_luot=0, in_ra=print):
-    """so_luot > 0: chạy thử đúng so_luot lượt bất kể giờ (rồi cập nhật nền). → (số lượt chụp được, số lượt lỗi)."""
+def vong(cb, xuat, file_ra, luc_fn=tinh.gio_vn, ngu=time.sleep, chup=None, so_luot=0, in_ra=print, nen_fn=None):
+    """so_luot > 0: chạy thử đúng so_luot lượt bất kể giờ (rồi cập nhật nền). nen_fn(ds_mã, luc) → {MÃ: nến 1' hôm nay}
+    (None = nen_hom_nay; chạy song song với chụp, danh sách mã theo bảng lượt trước). → (số lượt chụp được, số lượt lỗi)."""
+    from concurrent.futures import ThreadPoolExecutor
     chup = chup or dung.chup
+    nen_fn = nen_fn or nen_hom_nay
+    ex = ThreadPoolExecutor(1)
+    out_truoc = dang = None
     luot = loi = 0
     lan_nen, chot = None, False
     in_ra(f"Mã đang giữ: {xuat.lam_moi()} mã")
@@ -201,8 +268,21 @@ def vong(cb, xuat, file_ra, luc_fn=tinh.gio_vn, ngu=time.sleep, chup=None, so_lu
                     continue
         t0 = time.monotonic()
         try:
-            out = chup(cb, file_ra, luc=luc, in_tien_do=lambda *_: None)
-            xuat.nhanh(ten_o(luc), json.dumps(out, ensure_ascii=False, separators=(",", ":"), default=dung._mac_dinh))
+            cua_luot = dang is None or dang.done()                      # lượt nến trước còn chạy (nguồn chậm) → bỏ lượt này
+            if cua_luot:
+                dang = ex.submit(nen_fn, ma_nen(out_truoc, file_ra=file_ra if os.path.exists(file_ra) else None), luc)
+            try:
+                out = chup(cb, file_ra, luc=luc, in_tien_do=lambda *_: None)
+            finally:                                                    # chụp lỗi vẫn chờ lượt nến xong (không chồng lượt)
+                nen = None
+                if cua_luot:
+                    try:
+                        nen = dang.result(timeout=10)
+                    except Exception as e:                              # noqa: BLE001 – lượt này không có nến phút
+                        in_ra(f"⚠ nến phút {luc:%H:%M:%S}: {type(e).__name__}")
+            xuat.nhanh(ten_o(luc), json.dumps({**out, "nen_ma": sorted(nen or {})}, ensure_ascii=False,
+                                              separators=(",", ":"), default=dung._mac_dinh), nen)
+            out_truoc = out
             luot += 1
         except Exception as e:                                          # noqa: BLE001 – 1 lượt lỗi, lượt sau chạy tiếp
             loi += 1
@@ -217,6 +297,7 @@ def vong(cb, xuat, file_ra, luc_fn=tinh.gio_vn, ngu=time.sleep, chup=None, so_lu
         ngu(cho_toi_o_sau(luc_fn()))
     if luot:                                                            # cuối buổi / chốt phiên: bản nền mới nhất
         _nen(xuat, file_ra, in_ra)
+    ex.shutdown(wait=False)
     return luot, loi
 
 
