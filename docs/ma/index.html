@@ -332,8 +332,11 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .chu-bd .cg-mo{pointer-events:auto;border:0;background:none;cursor:pointer;font-size:13px;line-height:1;padding:0 4px 0 0;color:#4b5565}
 .chu-bd{position:absolute;left:8px;top:6px;z-index:3;max-width:calc(100% - 78px);font-size:12px;line-height:1.5;background:#ffffffd9;border-radius:6px;padding:2px 6px;pointer-events:none}
 .chu-bd b{font-weight:650}
-.cg-g{color:#6b7280}.cg-n{pointer-events:auto;border:0;background:none;cursor:pointer;font-size:11px;line-height:1;padding:0 3px;color:#9aa3af}.cg-n:hover,.cg-n:focus-visible{color:#1f2937}
-.cg-d .cg-n:first-of-type{margin-left:4px}.cg-n svg{vertical-align:-2px}.cg-an{opacity:.5}
+.cg-g{color:#6b7280}.cg-n{pointer-events:auto;border:0;background:none;cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;border-radius:4px;color:#374151;opacity:0;transition:opacity .12s}
+.cg-d,.chu-pane{pointer-events:auto}.cg-d:hover .cg-n,.chu-pane:hover .cg-n,.cg-n:focus-visible,.cg-an .cg-n{opacity:1}.cg-n:hover,.cg-n:focus-visible{background:#e5ebf3;color:#111827}
+@media (hover:none){.cg-n{opacity:1}}
+.cg-gon{display:inline-block;max-width:min(640px,70vw);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.cg-d .cg-n:first-of-type{margin-left:4px}.cg-n svg{vertical-align:-3px}.cg-an{opacity:.5}
 .hop-cb{position:fixed;left:50%;top:max(12px,12vh);transform:translateX(-50%);z-index:1000;width:min(460px,calc(100vw - 24px));max-height:calc(100vh - max(24px,12vh) - 12px);overflow:auto;background:#fff;color:#1f2328;border:1px solid #d0d7de;border-radius:10px;box-shadow:0 12px 40px #0003;font-size:14px}
 .hop-dau{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px}.hop-dau b{font-size:17px}.hop-x{border:0;background:none;font-size:24px;line-height:1;cursor:pointer;color:#57606a}
 .hop-tab{display:flex;gap:4px;border-bottom:1px solid #d8dee4;padding:0 10px}.hop-tab button{border:0;border-bottom:2px solid transparent;background:none;padding:9px 10px;cursor:pointer;color:#57606a;font:inherit}.hop-tab [aria-selected=true]{color:#1f2328;border-bottom-color:#1f6feb}
@@ -1177,8 +1180,11 @@ const ts_chu = k => CB.ts[k].map(v => String(v).replace(".", ",")).join(", ");
 const cb_o_chip = (khoa, ds, gt) => ds.map(m => `<label><input type="checkbox" data-cbx="${khoa}:${m}"${gt.includes(m) ? " checked" : ""}>${m}</label>`).join("");
 const cb_o_ts = (ts, ten) => CB.ts[ts].map((v, j) => `<input type="number" data-cbt="${ts}:${j}" value="${v}" min="${CB_GH[ts][j][0]}" max="${CB_GH[ts][j][1]}" step="${CB_GH[ts][j][2]}" aria-label="${ten} – tham số ${j + 1}">`).join("");
 const CB_TEN = {bb: "BB", st: "Supertrend", ich: "Ichimoku", sar: "SAR"};
-const MAT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const MAT = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const MAT_AN = MAT.replace("</svg>", `<path d="M3 3l18 18"/></svg>`);
+// dòng chú giải GỌN (13/11/2026 – kiểu FireAnt): 1 dòng, dài thì "…" – rê chuột / giữ ngón tay xem đủ (title); ✕ tắt chỉ báo k
+const gon = (html, mau, k, dai) => `<br><span class="cg-d"><span class="cg-gon"${mau ? ` style="color:${mau}"` : ""} title="${esc(dai ?? String(html).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim())}">${html}</span>` +
+  (k ? `<button type="button" class="cg-n" data-cgx="${k}" title="Tắt" aria-label="Tắt">✕</button>` : "") + `</span>`;
 const NET = [[0, "━ Liền"], [2, "╍ Gạch"], [3, "— Gạch dài"], [1, "┈ Chấm"]];
 function cb_tieu_de(k) {
   const d = CB_DUOI.find(z => "p:" + z[0] === k), kt = CB.khung_tinh[k] ? ` (${CB.khung_tinh[k] === "W" ? "tuần" : "tháng"})` : "";
@@ -1730,9 +1736,9 @@ async function ve_bd_gia(el, x0, them = {}) {
         nen.createPriceLine({price: v, color: c, lineWidth: 1, lineStyle: s_, axisLabelVisible: true, title: t});
       for (const v of [cl, vao + 2 * R]) duong(x.d.map((_, i) => i === n - 1 ? v : null), {color: "rgba(0,0,0,0)", lastValueVisible: false});   // trục giá tự co giãn đủ cắt lỗ … 2R
       const het = kh === "D" && n ? ngay_toi(x.d[n - 1], 63, "D").pop() : null;
-      tv_chu += `<br><span style="color:#1f4fa8">Kế hoạch thoát (giả sử mua ${ty_(vao)} giữa vùng mua): cắt lỗ ${ty_(cl)} (${pt(cl / vao - 1, 1)}) · đạt 1R ${ty_(vao + R)} → cắt lỗ lên hoà vốn / đóng cửa cao nhất − 3×ATR · đạt 2R ${ty_(vao + 2 * R)} → bán khi tuần đóng dưới MA10 tuần (cam), sàn khoá 1R${het ? ` · tới ${ngay_vn(het)} (63 phiên) chưa đạt 1R → bán` : ""}</span>`;
+      tv_chu += gon(`Kế hoạch thoát: cắt lỗ ${ty_(cl)} (${pt(cl / vao - 1, 1)}) · 1R ${ty_(vao + R)} · 2R ${ty_(vao + 2 * R)}`, "#1f4fa8", "kh", `Kế hoạch thoát (giả sử mua ${ty_(vao)} giữa vùng mua): cắt lỗ ${ty_(cl)} (${pt(cl / vao - 1, 1)}) · đạt 1R ${ty_(vao + R)} → cắt lỗ lên hoà vốn / đóng cửa cao nhất − 3×ATR · đạt 2R ${ty_(vao + 2 * R)} → bán khi tuần đóng dưới MA10 tuần (cam), sàn khoá 1R${het ? ` · tới ${ngay_vn(het)} (63 phiên) chưa đạt 1R → bán` : ""}`);
     }
-  } else if (CB.kh && !PHUT(kh)) tv_chu += `<br><span class="phu">Kế hoạch thoát: chỉ vẽ khi bot đang khuyến nghị mua mã này</span>`;
+  } else if (CB.kh && !PHUT(kh)) tv_chu += gon(`<span class="phu">Kế hoạch thoát: chỉ có khi bot khuyến nghị mã này</span>`, null, "kh");
   if (CB.nen && n > 30) {
     let b = null, vua = false;                   // vượt nền trước: nến vượt (< +15%) vẫn lọt vào "nền" tính tới nến cuối
     for (let k = 1; k <= 5 && !b; k++) { const z = nen_tai(x, n - 1 - k); if (z && x.c[n - 1] > z.cao) { b = z; vua = true; } }
@@ -1743,27 +1749,28 @@ async function ve_bd_gia(el, x0, them = {}) {
       nen.createPriceLine({price: b.cao, color: "#9b3fd1", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Đỉnh nền"});
     }
     const bc = kh === "D" || kh === "W" ? nen_bang_chung(x) : null;
-    tv_chu += `<br><span style="color:#7b2fa8">` + (b ? `${vua ? "Vừa vượt nền" : "Đang trong nền"} ${b.L} ${u_} · biên độ ${pt(b.bien, 0, false)}${b.vcp ? ` · VCP co hẹp ${b.co.map(z => pt(z, 0, false)).join(" → ")}` : ""}${b.kl ? ` · KL 10 ${u_} cuối = ${pt(b.kl, 0, false)} TB nền` : ""}${vua ? "" : ` · vượt nền khi đóng cửa > ${ty_(b.cao)}`}`
-      : "Chưa có nền tích lũy (≥ 15 nến, biên độ ≤ 15%, gần đỉnh 52 tuần)") + `</span>` +
-      (bc ? ` <span class="phu" title="Mọi lần trong quá khứ mã này đóng cửa vượt đỉnh một nền (≥ 15 ${u_}, biên độ ≤ 15%, gần đỉnh 52 tuần): sau đó lên +10% trước khi thủng đáy nền bao nhiêu % số lần; trung vị lãi 20 ${u_} sau ngày vượt">· trên mã: ${bc.n} lần vượt nền, ${pt(bc.thang, 0, false)} lên +10% trước khi thủng đáy nền${bc.tv20 != null ? `, trung vị 20 ${u_} ${pt(bc.tv20, 1)}` : ""}</span>` : "");
+    tv_chu += gon((b ? `${vua ? "Vừa vượt nền" : "Đang trong nền"} ${b.L} ${u_} · biên độ ${pt(b.bien, 0, false)}${b.vcp ? ` · VCP co hẹp ${b.co.map(z => pt(z, 0, false)).join(" → ")}` : ""}${b.kl ? ` · KL 10 ${u_} cuối = ${pt(b.kl, 0, false)} TB nền` : ""}${vua ? "" : ` · vượt nền khi đóng cửa > ${ty_(b.cao)}`}`
+      : "Chưa có nền tích lũy (≥ 15 nến, biên độ ≤ 15%, gần đỉnh 52 tuần)") +
+      (bc ? ` <span class="phu" title="Mọi lần trong quá khứ mã này đóng cửa vượt đỉnh một nền (≥ 15 ${u_}, biên độ ≤ 15%, gần đỉnh 52 tuần): sau đó lên +10% trước khi thủng đáy nền bao nhiêu % số lần; trung vị lãi 20 ${u_} sau ngày vượt">· trên mã: ${bc.n} lần vượt nền, ${pt(bc.thang, 0, false)} lên +10% trước khi thủng đáy nền${bc.tv20 != null ? `, trung vị 20 ${u_} ${pt(bc.tv20, 1)}` : ""}</span>` : ""), "#7b2fa8", "nen");
   }
   if (CB.fib && n > 20) {
     const f = fib_tu_dong(x, CB.fib_n);
     nen.attachPrimitive(new FibPrim(ch, nen, {i0: Math.min(f.ih, f.il), i1: Math.max(f.ih, f.il), a: f.len ? x.l[f.il] : x.h[f.ih], b: f.len ? x.h[f.ih] : x.l[f.il], muc: f.muc}));
     f.muc.forEach(([k, v], j) => nen.createPriceLine({price: v, color: MAU_FIB_TD[j], lineVisible: false, axisLabelVisible: true, title: ""}));
-    tv_chu += `<br><span style="color:#8a6100">Fibonacci tự động: nhịp ${f.len ? "tăng" : "giảm"} ${ngay_vn(x.d[f.len ? f.il : f.ih])} → ${ngay_vn(x.d[f.len ? f.ih : f.il])} (${CB.fib_n} ${u_} gần nhất) · thoái lui 38,2–61,8% ${ty_(f.muc[2][1])}–${ty_(f.muc[4][1])}</span>`;
+    tv_chu += gon(`Fibonacci tự động: nhịp ${f.len ? "tăng" : "giảm"} ${ngay_vn(x.d[f.len ? f.il : f.ih])} → ${ngay_vn(x.d[f.len ? f.ih : f.il])} (${CB.fib_n} ${u_} gần nhất) · thoái lui 38,2–61,8% ${ty_(f.muc[2][1])}–${ty_(f.muc[4][1])}`, "#8a6100", "fib");
   }
   if (CB.vp && n > 10) {
     const p_ = vp_tinh(x, Math.max(0, n - Math.min(so_nen_vp(kh), n)), n - 1);
     if (p_) { nen.attachPrimitive(new VpPrim(nen, p_)); nen.createPriceLine({price: p_.gia_poc, color: "#e8710a", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "POC"});
-      tv_chu += `<br><span style="color:#b85a00">Volume Profile ${p_.n} ${u_} gần nhất: giá khớp nhiều nhất (POC) ${ty_(p_.gia_poc)} · vùng 70% khối lượng ${ty_(p_.va[0])}–${ty_(p_.va[1])}</span>`; }
+      tv_chu += gon(`Volume Profile ${p_.n} ${u_} gần nhất: giá khớp nhiều nhất (POC) ${ty_(p_.gia_poc)} · vùng 70% khối lượng ${ty_(p_.va[0])}–${ty_(p_.va[1])}`, "#b85a00", "vp"); }
   }
   if (CB.bg && them.ma) {
     if (BG?.b?.length && BG.phien === hom_nay()) {
       nen.attachPrimitive(new BgPrim(nen, BG.b));
       const tong = BG.b.reduce((a, z) => a + z[2] + z[3], 0), mua_ = BG.b.reduce((a, z) => a + z[2], 0), dinh = BG.b.reduce((a, z) => z[1] > a[1] ? z : a);
-      tv_chu += `<br><span style="color:#0f6b3a">Khớp theo bước giá hôm nay (${esc(BG.cap_nhat || "")}): mua chủ động ${tong ? pt(mua_ / tong, 0, false) : "–"} · bán chủ động ${tong ? pt(1 - mua_ / tong, 0, false) : "–"} · khớp nhiều nhất tại ${ty_(dinh[0])}</span>`;
-    } else if (kh === "D" || PHUT(kh)) tv_chu += `<br><span class="phu">Khớp theo bước giá: chưa có số hôm nay (chỉ 120 mã thanh khoản cao nhất + mã bot / bộ lọc, cập nhật trong giờ giao dịch)</span>`;
+      tv_chu += gon(`Khớp theo bước giá hôm nay (${esc(BG.cap_nhat || "")}): mua chủ động ${tong ? pt(mua_ / tong, 0, false) : "–"} · bán chủ động ${tong ? pt(1 - mua_ / tong, 0, false) : "–"} · khớp nhiều nhất tại ${ty_(dinh[0])}`, "#0f6b3a", "bg");
+    } else if (kh === "D" || PHUT(kh)) tv_chu += gon(`<span class="phu">Khớp theo bước giá: chưa có số hôm nay</span>`, null, "bg",
+      "Khớp theo bước giá: chưa có số hôm nay (chỉ 120 mã thanh khoản cao nhất + mã bot / bộ lọc, cập nhật trong giờ giao dịch)");
   }
   // --- khung riêng bên dưới (mỗi chỉ báo 1 khung, trục giá riêng)
   const PH = [], co_dinh = {autoscaleInfoProvider: () => ({priceRange: {minValue: 0, maxValue: 100}})};
@@ -1866,11 +1873,17 @@ async function ve_bd_gia(el, x0, them = {}) {
   const u = {D: "phiên", W: "tuần", M: "tháng"}[kh] || "nến";
   const pt0 = v => so(v * 100, 0) + "%", tk = lh ? tk_lenh_he(lh) : null;
   const sap = them.ma && !tua ? sk_sap(them.ma).slice(0, 3) : [], hb = them.ma && !tua && !CHI_SO_TEN[them.ma] ? han_bctc(hom_nay(), 1).filter(([d]) => d <= new Date(Date.now() + 15 * 864e5).toISOString().slice(0, 10)) : [];
-  const sap_chu = sap.length || hb.length ? `<br><span style="color:#8a6100">Sắp tới: ${[...sap.map(e => `${ngay_vn(e.ngay).slice(0, 5)} ${esc(NHOM_SK[e.nhom] || e.nhom)}${e.ten ? ` – ${esc(String(e.ten).slice(0, 50))}` : ""}`), ...hb.map(([d, t]) => `${ngay_vn(d).slice(0, 5)} hạn BCTC ${esc(t)}`)].join(" · ")}</span>` : "";
-  const lh_chu = !lh ? "" : `<br><span style="color:#1f6feb">Lệnh của hệ trên ${esc(them.ma)} (backtest từ ${ngay_vn(LH.tu || "2012-01-01")}): ` + (tk ? `${tk.n} lệnh đã đóng · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R · tổng ${tk.tong > 0 ? "+" : ""}${so(tk.tong, 1)}R</span>${LH.chung != null ? ` <span class="phu">(mọi mã TB ${LH.chung > 0 ? "+" : ""}${so(LH.chung, 2)}R)</span>` : ""}` : `chưa có lệnh đã đóng${LH.ma ? "" : " – chưa có dữ liệu"}</span>`) + (lh.some(z => z[4]) ? ` <span class="phu">· 1 lệnh đang mở</span>` : "");
-  const non_chu = non ? `<span class="chu-non"><br><span style="color:#1f4fa8">Nón ${H} ${u} (${non.kieu === "ls" ? (non.ti ? `kết hợp phân vị lịch sử + σ – biến động đang ${so(non.ti, 2)} lần mức nền` : "phân vị lịch sử") : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`}): 50% ${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)} · 95% ${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}</span>` +
-    (non.trung ? `<br><span class="phu" title="Lùi lại toàn bộ lịch sử của mã: ở ${non.trung.n} mốc, dựng nón CHỈ bằng dữ liệu tới mốc đó rồi xem giá ${H} ${u} sau có nằm trong dải không. Các mốc chồng nhau nên chỉ tính ${non.trung.doc_lap} quãng ${H} ${u} không chồng nhau – ± là sai số 95% theo số quãng đó. Gần 50 / 80 / 95% là nón đáng tin; thấp hơn nhiều là nón hẹp hơn thực tế của mã này.">Độ trúng trên lịch sử từ ${String(x.d[non.trung.tu]).slice(0, 4)} (${non.trung.doc_lap} quãng ${H} ${u}): dải 50% ${pt0(non.trung.p[0])} ±${so(non.trung.sai[0] * 100, 0)} · 80% ${pt0(non.trung.p[1])} ±${so(non.trung.sai[1] * 100, 0)} · 95% ${pt0(non.trung.p[2])} ±${so(non.trung.sai[2] * 100, 0)}</span>` +
-      (non.chuan ? ` <span class="phu" title="Cùng cách tính, đo trên ${non.chuan[3]} mã ${non.it_gd ? "ít giao dịch (giá đứng > 25% số phiên)" : "HOSE / HNX / UPCoM có giao dịch đều"} – mức nền để so mã này">· chuẩn ${non.chuan[3]} mã${non.it_gd ? " ít giao dịch" : ""}: ${non.chuan.slice(0, 3).map(v => pt0(v)).join(" / ")}</span>` : "") : "") + ` <span class="phu">· thống kê, không phải khuyến nghị</span></span>` : "";
+  const sap_chu = sap.length || hb.length ? gon(`Sắp tới: ${[...sap.map(e => `${ngay_vn(e.ngay).slice(0, 5)} ${esc(NHOM_SK[e.nhom] || e.nhom)}${e.ten ? ` – ${esc(String(e.ten).slice(0, 50))}` : ""}`), ...hb.map(([d, t]) => `${ngay_vn(d).slice(0, 5)} hạn BCTC ${esc(t)}`)].join(" · ")}`, "#8a6100") : "";
+  const lh_dai = !lh ? "" : `Lệnh của hệ trên ${them.ma} (backtest từ ${ngay_vn(LH.tu || "2012-01-01")}): ` + (tk ? `${tk.n} lệnh đã đóng · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R · tổng ${tk.tong > 0 ? "+" : ""}${so(tk.tong, 1)}R${LH.chung != null ? ` (mọi mã TB ${LH.chung > 0 ? "+" : ""}${so(LH.chung, 2)}R)` : ""}` : `chưa có lệnh đã đóng${LH.ma ? "" : " – chưa có dữ liệu"}`) + (lh.some(z => z[4]) ? " · 1 lệnh đang mở" : "");
+  const lh_chu = !lh ? "" : gon(`Lệnh hệ: ` + (tk ? `${tk.n} lệnh · thắng ${pt0(tk.thang)} · TB ${tk.r_tb > 0 ? "+" : ""}${so(tk.r_tb, 2)}R` : "chưa có lệnh đã đóng") + (lh.some(z => z[4]) ? " · 1 đang mở" : ""), "#1f6feb", "lh", lh_dai);
+  const non_chu = !non ? "" : (() => {                  // 1 dòng: 2 dải + độ trúng; giải thích đủ ở title (13/11/2026: chú giải dài quá)
+    const t = non.trung, kieu = non.kieu === "ls" ? (non.ti ? `kết hợp phân vị lịch sử + σ – biến động đang ${so(non.ti, 2)} lần mức nền` : "phân vị lịch sử") : `σ ${non.so_mau} ${u}${non.thay ? ", lịch sử chưa đủ" : ""}`;
+    const d50 = `${so(non.p[2][H], 2)}–${so(non.p[4][H], 2)}`, d95 = `${so(non.p[0][H], 2)}–${so(non.p[6][H], 2)}`;
+    const dai = `Nón ${H} ${u} (${kieu}): 50% ${d50} · 95% ${d95}` + (t ? `. Độ trúng trên lịch sử từ ${String(x.d[t.tu]).slice(0, 4)} (${t.doc_lap} quãng ${H} ${u}): dải 50% ${pt0(t.p[0])} ±${so(t.sai[0] * 100, 0)} · 80% ${pt0(t.p[1])} ±${so(t.sai[1] * 100, 0)} · 95% ${pt0(t.p[2])} ±${so(t.sai[2] * 100, 0)}` +
+      (non.chuan ? ` · chuẩn ${non.chuan[3]} mã${non.it_gd ? " ít giao dịch" : ""}: ${non.chuan.slice(0, 3).map(v => pt0(v)).join(" / ")}` : "") +
+      `. Lùi lại toàn bộ lịch sử của mã: ở ${t.n} mốc, dựng nón chỉ bằng dữ liệu tới mốc đó rồi xem giá ${H} ${u} sau có nằm trong dải không; gần 50 / 80 / 95% là nón đáng tin` : "") + ". Thống kê, không phải khuyến nghị.";
+    return `<span class="chu-non">` + gon(`Nón ${H} ${u} 50% <b>${d50}</b> · 95% <b>${d95}</b>` + (t ? ` <span class="phu">· trúng ${t.p.slice(0, 3).map(v => so(v * 100, 0)).join("/")}%</span>` : ""), "#1f4fa8", "non", dai) + `</span>`;
+  })();
   // TradingView: dòng O H L C, mỗi chỉ báo 1 dòng – ẩn / ⚙ cài đặt (bảng hop_mo) / ✕ xoá ngay tại dòng
   const nut = (k, tat = true) => (tat ? `<button type="button" class="cg-n" data-cgan="${k}" title="${an_(k) ? "Hiện" : "Ẩn"}" aria-label="${an_(k) ? "Hiện" : "Ẩn"}">${an_(k) ? MAT_AN : MAT}</button>` : "") +
     `<button type="button" class="cg-n" data-cgs="${k}" title="Cài đặt" aria-label="Cài đặt">⚙</button>` + (tat ? `<button type="button" class="cg-n" data-cgx="${k}" title="Xoá" aria-label="Xoá">✕</button>` : "");
