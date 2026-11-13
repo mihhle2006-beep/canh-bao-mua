@@ -84,6 +84,14 @@ function bang_chung(x, ten, huong) {                    // mẫu nến trên CH�
   const ds = []; for (let i = 6; i < x.c.length; i++) { let ok = false; try { ok = m[2](x, i); } catch (e) {} if (ok) ds.push(i); }
   return thong_ke(x, ds, huong, SAU);
 }
+function quet_nen(x) {                                 // lớp "Mẫu nến tự nhận diện": MỌI lần xuất hiện trên chuỗi → {ds [{i, ten, huong}], bc {tên: bằng chứng}}
+  const ds = [], bc = {};
+  for (let i = 6; i < x.c.length; i++) for (const [ten, huong, f] of MAU_NEN) { let ok = false; try { ok = f(x, i); } catch (e) {} if (ok) ds.push({i, ten, huong}); }
+  for (const z of ds) if (!(z.ten in bc)) bc[z.ten] = bang_chung(x, z.ten, z.huong);
+  return {ds, bc};
+}
+const VT_NEN = {"Búa": "B", "Người treo cổ": "TC", "Búa ngược": "BN", "Sao băng": "SB", "Nhấn chìm tăng": "NC", "Nhấn chìm giảm": "NC", "Sao mai": "SM", "Sao hôm": "SH",
+  "Ba chàng lính trắng": "3L", "Ba con quạ đen": "3Q"};
 function mau_nen_cuoi(x, so_nen = 3) {                  // mẫu nến xuất hiện ở so_nen nến cuối (mới nhất trước)
   const N = x.c.length, out = [];
   for (let i = N - 1; i >= Math.max(6, N - so_nen); i--) for (const [ten, huong, f] of MAU_NEN) { let ok = false; try { ok = f(x, i); } catch (e) {}
@@ -264,7 +272,7 @@ function phan_tich(x) {                                 // → {vung, xh, nen, g
   const gon = S.kieu === "gon";
   return {vung: vg, xh: xu_huong(x, pivots_dong(x, 5, Math.max(0, N - 250)), a), nen: mau_nen_cuoi(x, gon ? 5 : 20), gia: mau_gia(x, P, a), mh: mau_hinh(x, A, gon ? 10 : 30), smc: smc(x, A, gon ? 3 : 8), a, N, c};
 }
-CP._thu = {atr, pivots, pivots_dong, vung_gia, bang_chung, mau_nen_cuoi, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh, cau_truc, fvg, order_block, smc, SAU, SAU_MH};
+CP._thu = {atr, pivots, pivots_dong, vung_gia, bang_chung, mau_nen_cuoi, quet_nen, xu_huong, mau_gia, phan_tich, MAU_NEN, wilson, thong_ke, quet_mau_hinh, mau_hinh, cau_truc, fvg, order_block, smc, SAU, SAU_MH};
 
 // ---------------------------------------------------------------- DỮ LIỆU HỆ THỐNG
 let HT_P = null; const TH_P = {};
@@ -335,6 +343,16 @@ class LopPrim {
             if ([x1, x2, y1, y2].every(z => z != null)) { ctx.fillStyle = it.huong > 0 ? "rgba(15,138,74,0.10)" : "rgba(209,52,43,0.10)"; ctx.fillRect(x1, y1, Math.max(2, x2 - x1), Math.max(2, y2 - y1));
               ctx.strokeStyle = m; ctx.lineWidth = 1; ctx.strokeRect(x1, y1, Math.max(2, x2 - x1), Math.max(2, y2 - y1)); } nhan = [H.can[2], H.can[3]]; }
           if (nhan) { const x0 = X(nhan[0]), y0 = Y(nhan[1]); if (x0 != null && y0 != null) chu(x0, y0 + (it.huong > 0 ? 16 : -16), `${it.id} ${it.ten}`, {can: "giua", m, vien: m}); } }
+        if (it.loai === "nen_ls" && !nen) { const r = ts.getVisibleLogicalRange(); if (!r) continue;
+          const bs = (ts.options?.() || {}).barSpacing || 6, chu_ = bs >= 9, tang = {}, da = new Set(d.items.filter(z => z.loai === "nen").map(z => z.i + ":" + z.ten));
+          ctx.save(); ctx.font = "600 9px Inter,system-ui,sans-serif"; ctx.textAlign = "center";
+          for (const z of it.ds) { if (z.i < r.from - 1 || z.i > r.to + 1 || da.has(z.i + ":" + z.ten)) continue;
+            const x = X(z.i), len = z.huong > 0, y0 = Y(len ? this.B.x.l[z.i] : this.B.x.h[z.i]); if (x == null || y0 == null) continue;
+            const k = z.i + (len ? "+" : "-"), j = tang[k] = (tang[k] || 0) + 1, y = y0 + (len ? 1 : -1) * (5 + (j - 1) * (chu_ ? 19 : 7));
+            ctx.fillStyle = len ? "#0f8a4a" : "#d1342b"; ctx.beginPath();
+            if (len) { ctx.moveTo(x, y); ctx.lineTo(x - 3.5, y + 5); ctx.lineTo(x + 3.5, y + 5); } else { ctx.moveTo(x, y); ctx.lineTo(x - 3.5, y - 5); ctx.lineTo(x + 3.5, y - 5); }
+            ctx.closePath(); ctx.fill(); if (chu_) ctx.fillText(VT_NEN[z.ten] || "", x, len ? y + 14 : y - 8); }
+          ctx.restore(); }
         if (it.loai === "nen" && !nen) { const x = X(it.i), cao = it.huong > 0 ? this.B.x.l[it.i] : this.B.x.h[it.i], y = Y(cao); if (x == null || y == null) continue;
           chu(x, y + (it.huong > 0 ? 18 : -18), it.ten, {can: "giua", m: it.huong > 0 ? "#0f6b3a" : "#a3241d", vien: it.huong > 0 ? "#0f8a4a" : "#d1342b", c: 10}); }
         if (it.loai === "bot" && !nen) { const n = this.B.n, x0 = X(n - 1); if (x0 == null) continue;
@@ -402,6 +420,12 @@ function dung(B, kq, ht, th) {
       items.push({id: `N${items.filter(z => z.loai === "nen").length + 1}`, loai: "nen", i: m.i, huong: m.huong, ten: m.ten, nhom: "Mẫu nến", tin,
         tieu_de: `${m.ten} (${m.huong > 0 ? "tăng" : "giảm"}) · ${ngay(m.i)}`, bang: bang_tk(b, SAU, "Xuất hiện trên mã").concat(dong_ro("nen:" + m.ten)),
         cach: `Bằng chứng: mọi lần mẫu này xuất hiện trong lịch sử ${ma}, vào ở giá mở cửa nến sau, ra sau ${SAU} nến`}); }
+    if (kq.nen_ls) { const {ds, bc} = kq.nen_ls, giu = t => !gon || !RO || RO.loai["nen:" + t]?.ket_luan === "hơn nền" || bc[t]?.tin;
+      const hien = ds.filter(z => giu(z.ten)), loai = [...new Set(hien.map(z => z.ten))], bo = [...new Set(ds.map(z => z.ten))].filter(t => !giu(t));
+      if (hien.length) items.push({id: "N0", loai: "nen_ls", ds: hien, i: hien[hien.length - 1].i, nhom: "Mẫu nến", tieu_de: `Mẫu nến trên toàn biểu đồ · ${hien.length} lần (${loai.length} loại)`,
+        bang: loai.map(t => [`${VT_NEN[t]} · ${t}`, bc[t]?.n ? `${bc[t].n} lần · đúng hướng ${pt(bc[t].tl, 0, false)} · nền ${pt(bc[t].nen, 0, false)}` : "–"]),
+        cach: `Đánh dấu mọi lần mẫu xuất hiện: ▲ dưới nến = mẫu tăng, ▼ trên nến = mẫu giảm, chữ viết tắt hiện khi phóng to. Đúng hướng = giá sau ${SAU} nến đi cùng hướng mẫu (vào ở giá mở cửa nến sau)` +
+          (gon && RO ? `. Chế độ Gọn: chỉ mẫu hơn nền trên rổ mã thanh khoản hoặc đáng tin trên ${ma}${bo.length ? ` – đang ẩn ${bo.join(", ")}` : ""}` : "")}); }
     const mh_hien = kq.mh.filter(g => !an_gon(`mh:${g.loai}:${g.huong}`, g.bc));
     for (const g of mh_hien) { const b = g.bc, tin = muc_tin(b), xn = g.t != null;
       cau.push(`Mẫu hình ${g.ten}${xn ? ` – đã xác nhận ${ngay(g.t)} (${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)})` : ` – đang hình thành, ${g.huong > 0 ? "vượt" : "thủng"} ${so(g.kich, 2)} là xác nhận`}` +
@@ -522,33 +546,40 @@ function panel_html(B, kq, dd, ht, th) {
     ${th_mua.length ? `<div class="cp-the"><b>Bot đã báo MUA ${th_mua.length} lần trên ${esc_(ma)}</b><div>${dung} đúng · ${sai} sai · ${cho} đang chờ${tbv != null ? ` · kết quả TB ${tbv > 0 ? "+" : ""}${so(tbv, 2)}%` : ""}</div>
       <table class="cp-bang">${th_mua.slice(-8).reverse().map(z => `<tr><td class="${z.ket_qua === "ĐÚNG" ? "t" : z.ket_qua === "SAI" ? "g" : "m"}">${z.ket_qua === "ĐÚNG" ? "✓" : z.ket_qua === "SAI" ? "✗" : "…"}</td><td>${esc_(ngay_vn(z.ngay))} · ${esc_(z.khuyen_nghi)} · giá ${esc_(z.gia)}<div class="cp-phu">${esc_(z.giai_thich || z.ket_qua)}${z.ket_qua_pct ? ` (${esc_(z.ket_qua_pct)}%)` : ""}</div></td></tr>`).join("")}</table></div>` : ""}
     <h4>CHÚ THÍCH · ${dd.items.length} · ĐANG HIỆN ${muc}</h4>
-    ${dd.items.map(it => `<div class="cp-the cp-ct${it.an ? " an" : ""}" data-cpid="${it.id}"><div class="cp-ct-dau"><i class="cham ${it.loai === "vung" ? (it.ho_tro ? "t" : it.trong ? "cam" : "g") : it.huong > 0 ? "t" : it.huong < 0 ? "g" : "tim"}"></i><span class="cp-id">${it.id}</span><b>${esc_(it.tieu_de)}</b>${it.tin ? `<span class="cp-nhan ${it.tin === "đáng tin" ? "t" : /SAI/.test(it.tin) ? "g" : ""}">${esc_(it.tin.replace(/ \(.*\)| trên mã.*$/g, ""))}</span>` : ""}${S.lop && !it.an && !["bot", "lich_su"].includes(it.loai) ? '<span class="cp-nhan b">trên biểu đồ</span>' : ""}</div>
+    ${dd.items.map(it => `<div class="cp-the cp-ct${it.an ? " an" : ""}" data-cpid="${it.id}"><div class="cp-ct-dau"><i class="cham ${it.loai === "vung" ? (it.ho_tro ? "t" : it.trong ? "cam" : "g") : it.huong > 0 ? "t" : it.huong < 0 ? "g" : "tim"}"></i><span class="cp-id">${it.id}</span><b>${esc_(it.tieu_de)}</b>${it.tin ? `<span class="cp-nhan ${it.tin === "đáng tin" ? "t" : /SAI/.test(it.tin) ? "g" : ""}">${esc_(it.tin.replace(/ \(.*\)| trên mã.*$/g, ""))}</span>` : ""}${it.ve && !it.an && !["bot", "lich_su"].includes(it.loai) ? '<span class="cp-nhan b">trên biểu đồ</span>' : ""}</div>
       <div class="cp-phu">${esc_(it.nhom)}</div>${it.bang.length ? `<table class="cp-bang">${it.bang.map(([a, v]) => `<tr><td>${esc_(a)}</td><td class="so">${esc_(v)}</td></tr>`).join("")}</table>` : ""}
       <div class="cp-cach"><b>Chỉ báo</b> ${esc_(it.cach)}</div>
       <div class="cp-nut"><button data-cpx="${it.id}">Xem trên biểu đồ</button>${["vung", "xh", "tam_giac", "hai", "mh", "fvg", "ob", "ct"].includes(it.loai) ? `<button data-cpg="${it.id}">Giữ thành hình vẽ</button>` : ""}<button data-cpb="${it.id}">${it.an ? "Hiện lại" : "Bỏ"}</button></div></div>`).join("")}
   </div>`;
 }
+// lớp phân tích (menu ⋯ của biểu đồ, bật riêng từng loại, không cần mở panel): loại chú thích → lớp
+const LOP_CUA = {vung: "vung", xh: "xh", nen: "nen", nen_ls: "nen", mh: "mh", tam_giac: "mh", hai: "mh", ct: "smc", fvg: "smc", ob: "smc", bot: "he", lich_su: "he"};
+CP.dat_kieu = k => { S.kieu = k === "du" ? "du" : "gon"; luu_s(); ve_lai(); };
+CP.kieu = () => S.kieu;
 let TUA_CHU = () => "";
 let HT = null, CUR = null;
-CP.ve = async (B, o) => {                               // B: BD_DK; o: {el (khung biểu đồ), panel, mo (đang mở), ten_khung, phut, tua}
+CP.ve = async (B, o) => {                               // B: BD_DK; o: {el (khung biểu đồ), panel, mo (đang mở), lop [lớp bật ở menu ⋯], ten_khung, phut, tua}
   if (!B?.x || !B.ma) return;
-  if (!o.mo) {                                          // đóng: bỏ lớp vẽ, hộp tóm tắt, panel
+  const lop = new Set(o.lop || []);
+  if (!o.mo && !lop.size) {                             // panel đóng, không lớp nào: bỏ lớp vẽ, hộp tóm tắt, panel
     if (B._cp_prim) { B._cp_prim.d = null; B._cp_prim.req?.(); }
     if (o.panel) { o.panel.hidden = true; o.panel.innerHTML = ""; } CUR = null; return;
   }
   TUA_CHU = () => o.tua ? ` (đang tua lại tới ${o.tua})` : "";
   B.tua = o.tua || null;
   const [ht, th, tkm] = await Promise.all([tai_ht(), tai_th(B.ma), tai_tkm()]); HT = ht; TKM = tkm?.loai ? tkm : null;
-  const kq = phan_tich({o: B.x.o.slice(0, B.n), h: B.x.h.slice(0, B.n), l: B.x.l.slice(0, B.n), c: B.x.c.slice(0, B.n), v: B.x.v.slice(0, B.n)});
+  const xs = {o: B.x.o.slice(0, B.n), h: B.x.h.slice(0, B.n), l: B.x.l.slice(0, B.n), c: B.x.c.slice(0, B.n), v: B.x.v.slice(0, B.n)}, kq = phan_tich(xs);
+  if (kq && lop.has("nen")) kq.nen_ls = quet_nen(xs);
   B.ten_khung = o.ten_khung || ""; B.phut = !!o.phut;
   const dd = dung(B, kq, ht, th);
   CUR = {B, o, kq, dd, ht, th};
   if (BD_DK !== B) return;
   // lớp vẽ + hộp tóm tắt trên biểu đồ
   if (!B._cp_prim) { B._cp_prim = new LopPrim(B); B.nen.attachPrimitive(B._cp_prim); }
-  B._cp_prim.d = S.lop || S.he ? {items: dd.items.filter(it => (S.lop && !["bot", "lich_su"].includes(it.loai)) || (S.he && ["bot", "lich_su"].includes(it.loai)))} : null;
+  for (const it of dd.items) { const l = LOP_CUA[it.loai]; it.ve = l === "he" ? !!(o.mo && S.he) : lop.has(l) || !!(o.mo && S.lop && it.loai !== "nen_ls"); }
+  B._cp_prim.d = {items: dd.items.filter(it => it.ve)};
   B._cp_prim.req?.();
-  if (o.panel && o.mo) { o.panel.hidden = false; o.panel.innerHTML = panel_html(B, kq, dd, ht, th); gan_panel(o.panel); }
+  if (o.panel) { if (o.mo) { o.panel.hidden = false; o.panel.innerHTML = panel_html(B, kq, dd, ht, th); gan_panel(o.panel); } else { o.panel.hidden = true; o.panel.innerHTML = ""; } }
 };
 function ve_lai() { if (CUR) CP.ve(CUR.B, CUR.o); }
 function gan_panel(p) {

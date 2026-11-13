@@ -285,3 +285,44 @@ def test_thong_ke_mau_tren_ro(tmp_path):
     (tmp_path / "loc.json").write_text(json.dumps({"hang_gtgd": {"M00": 1, "M01": 2}}))
     kq = subprocess.run(["node", "thi_truong/thong_ke_mau.js", str(tmp_path), str(tmp_path / "loc.json")], capture_output=True, text=True, timeout=60)
     assert kq.returncode == 0 and "giữ file cũ" in kq.stdout and not (tmp_path / "thong_ke_mau.json").exists()
+
+
+def test_lop_phan_tich_bat_rieng_khong_can_panel():
+    """Menu ⋯ (lớp phân tích kiểu FireAnt): panel đóng, chỉ bật "vung" + "nen" → chỉ vẽ vùng + mẫu nến (cả lớp mẫu nến toàn
+    lịch sử nen_ls), không vẽ xu hướng / hệ thống, panel vẫn ẩn; tắt hết lớp → bỏ lớp vẽ. Đổi Gọn / Đầy đủ qua CP.dat_kieu."""
+    x = _chuoi()
+    kq = _chay(f"const x = {json.dumps(x)}; const DATA = {{}};\n" + r"""
+      const CP = window.BD_DOC, n = x.d.length;
+      BOT.AAA = ["AAA", "Mua mới", 10.5, 10.8, 10.1, 11.2, 12.4, "x"];
+      const B = {ch, nen, x, n, ma: "AAA"}; globalThis.BD_DK = B;
+      const panel = {hidden: true, innerHTML: "cu"};
+      (async () => {
+        await CP.ve(B, {el: mk(), panel, mo: false, lop: ["vung", "nen"]});
+        PR.paneViews().forEach(v => v.renderer().draw(target));
+        const lop = PR.d.items.map(i => i.loai), ls = PR.d.items.find(i => i.loai === "nen_ls");
+        const ph = [panel.hidden, panel.innerHTML];
+        await CP.ve(B, {el: mk(), panel, mo: true, lop: ["vung"]});
+        const mo = PR.d.items.map(i => i.loai), p = panel.innerHTML;
+        CP.dat_kieu("du"); const k1 = CP.kieu(); CP.dat_kieu("gon");
+        await CP.ve(B, {el: mk(), panel, mo: false, lop: []});
+        console.log(JSON.stringify({lop, ls: ls ? {n: ls.ds.length, i: ls.i, bang: ls.bang} : null, ph, mo, p_ls: p.includes("Mẫu nến trên toàn biểu đồ"),
+          tat: PR.d, k1, k2: CP.kieu()}));
+      })();
+    """)
+    assert "vung" in kq["lop"] and "nen_ls" in kq["lop"] and not {"xh", "hai", "fvg", "bot"} & set(kq["lop"])
+    assert kq["ls"] and kq["ls"]["n"] >= 1 and kq["ls"]["bang"]
+    assert kq["ph"] == [True, ""]                                                                  # panel đóng: ẩn, xoá nội dung
+    assert {"bot", "hai", "fvg"} <= set(kq["mo"]) and "nen_ls" not in kq["mo"]                    # mở panel: như cũ, không thêm lớp lịch sử
+    assert kq["tat"] is None and kq["k1"] == "du" and kq["k2"] == "gon"
+
+
+def test_menu_lop_phan_tich_tren_trang():
+    h = open("docs/ma/index.html", encoding="utf-8").read()
+    for k in ("function menu_lp()", 'class="fs-cb fs-lp"', "data-lp=", 'data-lpt="${k}"', "data-lpd", "data-lpv=\"tu\"", "Đặt lại vùng nhìn",
+              "Chỉ số hoá 100", "Đảo trục giá", "PriceScaleMode.IndexedTo100", "invertScale", 'data-cbx="cw"', "Chứng quyền (hoà vốn, đáo hạn)",
+              'data-cbx="non"', 'data-cbx="mk"', "class CwPrim", 'lay(DL + "cw.json"', "CP.ve(B, {el, panel: p, mo, lop,"):
+        assert k in h, k
+    for k, _t, _g, _ts in [("vung", 0, 0, 0), ("xh", 0, 0, 0), ("nen", 0, 0, 0), ("mh", 0, 0, 0), ("smc", 0, 0, 0)]:
+        assert f'["{k}", ' in h
+    # menu ƒx và ⋯ dựng lại đúng loại
+    assert 'd.classList.contains("lp-ds") ? menu_lp() : menu_cb()' in h

@@ -156,6 +156,13 @@ jobs:
             python -m thi_truong.buoc_gia_web --ra docs/ma/du_lieu --tin_hieu docs/thi_truong/du_lieu.json --bo_loc ma_mua_bo_loc.json
           else echo "Ngoài giờ giao dịch – bỏ qua"; fi
 
+      # chứng quyền (dữ liệu thị trường công khai, ~400 mã CW, 1–2 lệnh gọi): mọi lượt – giá CW đổi thì giá hoà vốn đổi
+      - name: Chứng quyền (trang Biểu đồ – lớp hoà vốn / đáo hạn)
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
+        timeout-minutes: 2
+        continue-on-error: true
+        run: python -m thi_truong.chung_quyen_web --ra docs/ma/du_lieu
+
       - name: Gói trang
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
         run: |
