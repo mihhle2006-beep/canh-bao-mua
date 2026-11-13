@@ -991,3 +991,39 @@ def test_15p_du_suat_khong_bao_mua_ma_moi(monkeypatch, tmp_path, capsys):
     assert any("CCC" in str(nut) for nd, nut in gui if nut) and any("DDD" in str(nut) for nd, nut in gui if nut)
     assert not any(nd.startswith(("DANH MỤC", "CÓ SUẤT")) for nd, _ in gui)
     assert capsys.readouterr().out == log1                                   # log công khai không phụ thuộc danh mục
+
+
+def test_tong_ket_het_suat_chi_theo_doi(monkeypatch):
+    """13/11/2026 (mua nhầm KBC khi đủ 8/8): hết suất → mã ★ không mạnh chỉ 1 dòng "Hết suất – chỉ theo dõi, KHÔNG mua";
+    mã mạnh còn suất dự phòng vẫn đủ dòng. Còn suất → như cũ. Bản công khai (suat None) như cũ."""
+    n = C.SO_MA_MOI_TUAN
+    ks = [{"ma": f"M{i:02d}", "nhom": "VAO_NHU_MOI", "uu_tien": float(i), "gia": 10.0, "tu": 9.9, "den": 10.2,
+           "mt1": 10.5, "mt3": 11.5, "cl": 9.5, "rui_ro": 5.0, "ly_do": "MACD", "hieu_luc": pd.Timestamp("2026-10-30"),
+           "manh_b": i == 2} for i in range(1, n + 2)]
+    monkeypatch.setattr(tong_ket_cl, "ds_khuyen_nghi", lambda ra: ks)
+    ra = {"doc": {"diem": 3, "so_chi_bao": 8}, "ty_trong": {"B": 1.0}, "vni": 1700.0, "cl": 2}
+    du = {"giu": 8, "so_ma": 8, "dp": 1, "moi": 1, "td": 5}
+    t = "\n".join(tong_ket_cl._tin(ra, "2026-10-29 15:20", None, {"X"}, suat=du))
+    assert "★2 M02💪 10.00 | VÀO NHƯ LỆNH MỚI" in t and "★1 M01 10.00 | VÀO NHƯ LỆNH MỚI" not in t   # mạnh: đủ dòng
+    assert "THỨ TỰ MUA" not in t
+    assert "   Hết suất – chỉ theo dõi, KHÔNG mua: ★1 M01 9.90–10.20 · " in t and "Dự phòng (chỉ khi" not in t
+    t = "\n".join(tong_ket_cl._tin(ra, "2026-10-29 15:20", None, {"X"}, suat={**du, "giu": 9}))   # dự phòng đã dùng
+    assert "★2 M02💪 10.00 | VÀO NHƯ LỆNH MỚI" not in t and "KHÔNG mua: ★1 M01 9.90–10.20 · ★2 M02" in t
+    t = "\n".join(tong_ket_cl._tin(ra, "2026-10-29 15:20", None, {"X"}, suat={**du, "giu": 7}))   # còn suất
+    assert "★1 M01 10.00 | VÀO NHƯ LỆNH MỚI" in t and "Hết suất" not in t and "THỨ TỰ MUA" in t
+
+
+def test_tinh_suat_dem_ca_ma_da_ban_trong_tuan(monkeypatch):
+    """13/11/2026: "5 mã mới / tuần" trước chỉ đếm mã còn giữ → mua rồi bán trong tuần không bị tính. Nay đếm thêm lệnh MUA
+    thật (lenh_that.csv); lệnh MUA mã đã giữ từ trước tuần = mua thêm, không tính."""
+    monkeypatch.setattr(tong_ket_cl, "_quy", lambda ten, md: {"QUY_SO_MA": 8, "QUY_SUAT_DU_PHONG": 1,
+                                                             "QUY_MOI_TUAN_TOI_DA": 5}.get(ten, md))
+    monkeypatch.setattr(vi_the, "bat_day_cua", lambda v: None)
+    vt = {"AAA": {"ma": "AAA", "ngay_mua": "11/11/2026"}, "BBB": {"ma": "BBB", "ngay_mua": "01/10/2026"}}
+    mua = [("AAA", "2026-11-11"), ("BBB", "2026-11-12"), ("CCC", "2026-11-10"), ("DDD", "2026-11-12"),
+           ("EEE", "2026-11-05")]
+    st = tong_ket_cl.tinh_suat(vt, "2026-11-13 10:00", mua_that=mua)
+    assert (st["giu"], st["moi"]) == (2, 3)                                  # AAA, CCC (đã bán), DDD (đã bán)
+    monkeypatch.setattr(vi_the, "_LENH_THAT", {"v": mua + [("FFF", "2026-11-13"), ("GGG", "2026-11-13")]})
+    duoc, bo = tong_ket_cl.loc_suat_mua([{"ma": "ZZZ", "uu_tien": 1.0}], vt, "2026-11-13 10:00")
+    assert duoc == [] and bo == [("ZZZ", "đã mua 5/5 mã mới tuần này")]

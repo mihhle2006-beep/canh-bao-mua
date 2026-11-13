@@ -338,6 +338,8 @@ def luu_ds_mua(ra, bay_gio, path=None):
                     "ma": [{k_: (None if isinstance(v, float) and v != v else
                                  (f"{v:%Y-%m-%d}" if isinstance(v, pd.Timestamp) else v))
                             for k_, v in k.items()} for k in ds]}
+    cu["suat"] = {"so_ma": int(_quy("QUY_SO_MA", 8)), "dp": int(_quy("QUY_SUAT_DU_PHONG", 1) or 0),
+                  "td": int(_quy("QUY_MOI_TUAN_TOI_DA", 5))}                  # nút đặt lệnh (lenh_tele) kiểm suất – không có ptcp
     bd = ra.get("bat_day")
     if bd and not bd.get("loi") and bd.get("ngay"):   # hệ bắt đáy: lệnh ATO phiên tới (công khai – dữ liệu thị trường)
         cu["bat_day"] = {"ngay_du_lieu": bd["ngay"],
@@ -478,7 +480,15 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
     → (tin đầy đủ, tin công khai) – tin công khai không có gì về danh mục (in ra log được).
     """
     dang_giu = {vt["ma"] for vt, _, _ in (giu or [])}
-    day_du = _tin(ra, bay_gio, kq_bt, dang_giu)
+    st = None
+    if giu:                                      # bản riêng: hết suất → mã ★ chỉ 1 dòng "theo dõi" (13/11/2026)
+        hl = next((k["hieu_luc"] for k in ds_khuyen_nghi(ra) if k.get("hieu_luc") is not None), None)
+        try:
+            st = tinh_suat({vt["ma"]: vt for vt, _, _ in giu}, hl if hl is not None else bay_gio)
+        except Exception as e:                   # noqa: BLE001 – không tính được suất → tin đủ như cũ
+            from . import loi_phu
+            loi_phu.ghi("suất Quỹ Bứt Phá (tin tổng kết)", e, an=True)
+    day_du = _tin(ra, bay_gio, kq_bt, dang_giu, suat=st)
     ds = dong_suat(ra, giu)
     if ds:                                       # bản riêng: còn bao nhiêu suất → mua lần lượt theo ★ tới hết suất
         i = next((j for j, x in enumerate(day_du) if x.startswith(tuple(TIEU_DE[n] for n in NHOM_MUA))), len(day_du))
@@ -502,32 +512,33 @@ def dong_suat(ra, giu):
     theo ★ tới hết suất' – theo danh mục thật (ngày mua trong tuần của phiên hiệu lực). Không có danh mục → None."""
     if giu is None:
         return None
-    from .vi_the import _ngay
-    giu = [x for x in giu if not (x[1] or {}).get("bat_day")]            # mã hệ bắt đáy không chiếm suất B
     hl = next((k["hieu_luc"] for k in ds_khuyen_nghi(ra) if k.get("hieu_luc") is not None), None)
     if hl is None:
         return None
     tuan = pd.Timestamp(hl).isocalendar()[:2]
-    moi = sum(1 for vt, _, _ in giu if _ngay(vt.get("ngay_mua")) is not None
-              and pd.Timestamp(_ngay(vt.get("ngay_mua"))).isocalendar()[:2] == tuan)
-    td, so_ma, dp = _quy("QUY_MOI_TUAN_TOI_DA", 5), _quy("QUY_SO_MA", 8), _quy("QUY_SUAT_DU_PHONG", 1)
-    con, con_ma = max(td - moi, 0), max(so_ma - len(giu), 0)
+    st = tinh_suat({vt["ma"]: vt for vt, _, _ in giu}, hl)
+    moi, td, so_ma, dp = st["moi"], st["td"], st["so_ma"], st["dp"]
+    con, con_ma = max(td - moi, 0), max(so_ma - st["giu"], 0)
     goi_y = (f"mua tối đa {min(con, con_ma)} mã theo thứ tự ★1 → ★{min(con, con_ma)}" if min(con, con_ma) else
              ("hết suất tuần – chỉ chờ ✅ vào trễ tuần sau" if not con else
               f"đủ {so_ma} mã – chỉ mua thêm mã tín hiệu mạnh 💪 (suất dự phòng)"))
-    return (f"Tuần {tuan[1]}: đã mua {moi}/{td} mã mới tuần này → còn {con} suất · đang giữ {len(giu)}/{so_ma} mã"
+    return (f"Tuần {tuan[1]}: đã mua {moi}/{td} mã mới tuần này → còn {con} suất · đang giữ {st['giu']}/{so_ma} mã"
             + (f" (+{dp} suất dự phòng)" if dp else "") + f" → {goi_y}")
 
 
-def tinh_suat(vt, bay_gio):
-    """Suất Quỹ Bứt Phá theo danh mục thật vt {mã: vị thế} (mã hệ bắt đáy không tính) → {giu: số mã hệ B, so_ma, dp: suất
-    dự phòng cho tín hiệu mạnh, moi: mã mua trong tuần của bay_gio, td: tối đa mã mới / tuần}."""
-    from .vi_the import _ngay, bat_day_cua
-    giu = [v for v in vt.values() if not bat_day_cua(v)]
-    tuan = pd.Timestamp(bay_gio).isocalendar()[:2]
-    moi = sum(1 for v in giu if _ngay(v.get("ngay_mua")) is not None
-              and pd.Timestamp(_ngay(v.get("ngay_mua"))).isocalendar()[:2] == tuan)
-    return {"giu": len(giu), "so_ma": int(_quy("QUY_SO_MA", 8)), "dp": int(_quy("QUY_SUAT_DU_PHONG", 1) or 0),
+def tinh_suat(vt, bay_gio, mua_that=None):
+    """Suất Quỹ Bứt Phá theo danh mục thật vt {mã: vị thế} + lệnh MUA thật (lenh_that.csv – mã mua rồi bán trong tuần vẫn
+    tính mã mới) → {giu: số mã hệ B (mã hệ bắt đáy không tính), so_ma, dp: suất dự phòng cho tín hiệu mạnh, moi: mã mới
+    trong tuần của bay_gio, td: tối đa mã mới / tuần} – đếm ở canh_bao/suat.py (dùng chung với nút đặt lệnh)."""
+    from . import suat
+    from .vi_the import bat_day_cua, doc_lenh_that
+    mua_that = doc_lenh_that() if mua_that is None else mua_that
+
+    def la_bd(m, n):
+        v = vt.get(m) or {"ma": m, "ngay_mua": f"{n:%Y-%m-%d}" if n else None}
+        return bool(bat_day_cua({**v, "ma": m}))
+    giu, moi = suat.dem({m: v.get("ngay_mua") for m, v in vt.items()}, mua_that, pd.Timestamp(bay_gio).date(), la_bd)
+    return {"giu": giu, "so_ma": int(_quy("QUY_SO_MA", 8)), "dp": int(_quy("QUY_SUAT_DU_PHONG", 1) or 0),
             "moi": moi, "td": int(_quy("QUY_MOI_TUAN_TOI_DA", 5))}
 
 
@@ -561,21 +572,10 @@ def loc_suat_mua(ds, vt, bay_gio):
     chỉ tin tổng kết ghi "đủ N mã". Danh mục rỗng / không đọc được → báo hết như cũ."""
     if not vt:
         return list(ds), []
+    from . import suat
     from .diem_vao import _theo_uu_tien
     st = tinh_suat(vt, bay_gio)
-    so_ma, dp, td = st["so_ma"], st["dp"], st["td"]
-    n, moi, duoc, bo = st["giu"], st["moi"], [], []
-    for k in _theo_uu_tien(ds):
-        if moi >= td:
-            bo.append((k["ma"], f"đã mua {moi}/{td} mã mới tuần này"))
-        elif n >= so_ma and not k.get("manh_b"):
-            bo.append((k["ma"], f"đủ {so_ma} mã, không phải tín hiệu mạnh"))
-        elif n >= so_ma + dp:
-            bo.append((k["ma"], f"đủ {so_ma} mã + {dp} suất dự phòng"))
-        else:
-            duoc.append(k)
-            n, moi = n + 1, moi + 1
-    return duoc, bo
+    return suat.quyet(_theo_uu_tien(ds), st["giu"], st["moi"], st["so_ma"], st["dp"], st["td"])
 
 
 def dong_thu_tu(ks):
@@ -589,7 +589,7 @@ def dong_thu_tu(ks):
             + (f" (+{len(x) - len(sao)} mã sau)" if len(x) > len(sao) else ""))
 
 
-def _tin(ra, bay_gio, kq_bt, dang_giu):
+def _tin(ra, bay_gio, kq_bt, dang_giu, suat=None):
     d = ra["doc"]
     try:
         bt = cach_vao(kq_bt)[0]
@@ -618,7 +618,7 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
     n_max = C.SO_MA_MOI_NHOM
     if any(k["nhom"] in NHOM_MUA for k in ks) and mo_ta_cach_vao(bt):
         dong.append(mo_ta_cach_vao(bt))
-    tt = dong_thu_tu(ks)
+    tt = dong_thu_tu(ks) if suat is None or not het_suat(suat) else None     # hết suất: không có "thứ tự mua"
     if tt:
         dong += ["", tt]
     if sum(k["nhom"] in NHOM_MUA for k in ks) >= 2:                  # nghĩa ★ / 💪: 1 dòng ngắn (luật ở README)
@@ -640,6 +640,17 @@ def _tin(ra, bay_gio, kq_bt, dang_giu):
         sao = [k for k in x if nhan_uu_tien(k.get("uu_tien")).startswith("★")]
         if not any(nhan_uu_tien(k.get("uu_tien")) for k in x):           # chưa xếp hạng → như cũ (đủ, tối đa n_max)
             sao = x[:n_max]
+        if suat is not None and het_suat(suat):     # HẾT SUẤT (người dùng 13/11/2026: đủ 8/8 vẫn liệt kê ★ như lệnh mua → mua
+            # nhầm): chỉ mã mạnh còn suất dự phòng đủ dòng, còn lại 1 dòng "chỉ theo dõi"
+            con_dp = suat["moi"] < suat["td"] and suat["giu"] < suat["so_ma"] + suat["dp"]
+            day = [k for k in sao if con_dp and k.get("manh_b")]
+            dong += [dong_mua(k, dang_giu, bt) for k in day]
+            theo = [k for k in x if k not in day]
+            if theo:
+                dong.append("   Hết suất – chỉ theo dõi, KHÔNG mua: " + " · ".join(
+                    f"{(nhan_uu_tien(k.get('uu_tien')) + ' ').lstrip()}{k['ma']} {_f(k['tu'])}–{_f(k['den'])}"
+                    for k in theo[:n_max]) + (f" · … +{len(theo) - n_max} mã" if len(theo) > n_max else ""))
+            continue
         dong += [dong_mua(k, dang_giu, bt) for k in sao]                 # ★: đủ 3 dòng (30/10/2026)
         du = [k for k in x if k not in sao]                              # #6+ / quá n_max: 1 dòng (mua khi ★ không vào)
         if du:
