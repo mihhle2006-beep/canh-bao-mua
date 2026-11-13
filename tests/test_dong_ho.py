@@ -517,3 +517,23 @@ def test_giam_sat_ghi_ten_repo():
     gs.buoc()
     assert "❌ [bảng] Bang thi truong lỗi" in tin[0]
     assert "bang.yml" in dong_ho.CHAY_LAI and "trien_khai.yml" in dong_ho.KHONG_BAO
+
+
+def test_giam_sat_danh_muc():
+    """13/11/2026: đồng bộ DNSE / đặt lệnh ở repo danh-muc chạy mà lỗi → tin "[danh-muc]" (trước chỉ báo khi máy Mac không
+    nhận việc); thử đặt lệnh bấm tay không báo."""
+    class Gh:
+        def _goi(self, duong, *a):
+            return {"workflow_runs": [
+                {"id": 7, "path": ".github/workflows/dnse_dong_bo.yml", "name": "Dong bo DNSE (may o Viet Nam)",
+                 "status": "completed", "conclusion": "failure", "head_branch": "main", "event": "schedule",
+                 "updated_at": "2026-11-16T03:00:00Z", "created_at": "2026-11-16T02:00:00Z", "html_url": "u"},
+                {"id": 8, "path": ".github/workflows/dat_lenh_thu.yml", "name": "Thu dat lenh", "status": "completed",
+                 "conclusion": "failure", "head_branch": "main", "event": "workflow_dispatch",
+                 "updated_at": "2026-11-16T03:01:00Z", "created_at": "2026-11-16T03:00:00Z", "html_url": "v"}]}
+    tin = []
+    dong_ho.GiamSat(Gh(), datetime(2026, 11, 16, tzinfo=UTC), gui=tin.append, in_ra=lambda *_: None,
+                    nhan="[danh-muc] ").buoc()
+    assert len(tin) == 1 and "❌ [danh-muc] Dong bo DNSE" in tin[0] and "Thu dat lenh" not in tin[0]
+    src = open(os.path.join(GOC, "cong_cu", "dong_ho.py"), encoding="utf-8").read()
+    assert 'GiamSat(gh_khac["danh-muc"]' in src and '("giám sát danh-muc", gs_dm.buoc)' in src
