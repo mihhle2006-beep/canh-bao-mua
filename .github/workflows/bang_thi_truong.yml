@@ -103,7 +103,18 @@ jobs:
         run: |
           mkdir -p cache_thi_truong
           T0=$(stat -c %Y cache_thi_truong/chuan_bi.json 2>/dev/null || echo 0)
-          python -m thi_truong $CHUAN_BI
+          if ! python -m thi_truong $CHUAN_BI; then
+            # Lượt ĐỔI CODE (push): nguồn lỗi (14/11/2026 02:50 – Vietcap gap-chart quá hạn cả request 5 nến) → vẫn triển
+            # khai code mới với dữ liệu ĐANG CHẠY trên trang. Lượt dữ liệu (lịch / đồng hồ / bấm tay) vẫn báo lỗi → đồng hồ
+            # chạy lại 1 lần / nhắn Telegram, không đẩy bảng hỏng (phiên sai, thiếu chỉ số).
+            G="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/thi_truong"
+            if [ "$GITHUB_EVENT_NAME" = push ] && curl -sf --max-time 60 "$G/du_lieu.json" -o docs/thi_truong/du_lieu.json; then
+              curl -sf --max-time 60 "$G/quy_ls.json" -o docs/thi_truong/quy_ls.json || rm -f docs/thi_truong/quy_ls.json
+              echo "::warning::Nguồn dữ liệu lỗi – lượt đổi code: triển khai với dữ liệu đang chạy trên trang"
+            else
+              exit 1
+            fi
+          fi
           T1=$(stat -c %Y cache_thi_truong/chuan_bi.json 2>/dev/null || echo 0)
           if [ "$T1" != "$T0" ]; then echo "LUU_CACHE=1" >> "$GITHUB_ENV"; fi
 
