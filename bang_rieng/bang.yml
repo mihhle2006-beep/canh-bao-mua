@@ -5,6 +5,7 @@
 #     thoát, lượt trùng xếp hàng rồi thoát)
 #   • mỗi lượt → nhánh "nhanh" p/<ngày>/<ô>.json (trang đọc qua raw.githubusercontent.com) + nến 1' hôm nay
 #     n/<ngày>/<ô>/<MÃ>.json (Tra cứu mã khung phút); 10' / lần + cuối buổi → nhánh du-lieu + trien_khai.yml (Pages)
+#   • cuối job chiều: kho nến 1' lâu dài – Release nen-1p (thi_truong/luu_nen.py)
 #   • dữ liệu chuẩn bị: nhánh chuan-bi (canh-bao-mua đẩy sau lượt 19:07); mã đang giữ: du_lieu.json nhánh du-lieu
 name: Bang thi truong
 
@@ -56,3 +57,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SO_LUOT: ${{ github.event_name == 'push' && '3' || inputs.so_luot || '0' }}
         run: python -m thi_truong.vong_bang --repo "$GITHUB_REPOSITORY" --so_luot "$SO_LUOT"
+      # kho nến 1' lâu dài (nguồn chỉ giữ ~3 tháng): chỉ T2–T6 sau 15:05 (cuối job chiều) – Release nen-1p, mỗi tháng 1 file
+      - name: Kho nến 1' (Release nen-1p)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -m thi_truong.luu_nen --repo "$GITHUB_REPOSITORY" --sau_phien
