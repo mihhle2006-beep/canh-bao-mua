@@ -316,7 +316,7 @@ def dong_mua(k, dang_giu=(), bien_the=None):
          f"   Vùng mua {_f(k['tu'])} – {_f(k['den'])}{lo} · Cắt lỗ {_f(cl)}"
          + (f" ({(cl / g - 1) * 100:+.1f}%)" if g == g and cl == cl and g else ""),
          f"   Mục tiêu 1R {_f(k['mt1'])} → 3R {_f(k['mt3'])}" + (f" · {von}" if von else "")]
-    d += ["   💼 đang giữ → xem mua thêm"] if k["ma"] in dang_giu else []
+    d += ["   ➕ đang giữ – đủ điều kiện MUA THÊM (số CP ở mục ĐANG GIỮ)"] if k["ma"] in dang_giu else []
     d += [f"   {nganh}"] if nganh else []
     return "\n".join(d)
 
@@ -488,7 +488,8 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
         except Exception as e:                   # noqa: BLE001 – không tính được suất → tin đủ như cũ
             from . import loi_phu
             loi_phu.ghi("suất Quỹ Bứt Phá (tin tổng kết)", e, an=True)
-    day_du = _tin(ra, bay_gio, kq_bt, dang_giu, suat=st)
+    nhoi = {vt["ma"] for vt, _, mt in (giu or []) if (mt or {}).get("du")}      # đủ điều kiện mua thêm
+    day_du = _tin(ra, bay_gio, kq_bt, dang_giu, suat=st, nhoi=nhoi)
     ds = dong_suat(ra, giu)
     if ds:                                       # bản riêng: còn bao nhiêu suất → mua lần lượt theo ★ tới hết suất
         i = next((j for j, x in enumerate(day_du) if x.startswith(tuple(TIEU_DE[n] for n in NHOM_MUA))), len(day_du))
@@ -589,13 +590,16 @@ def dong_thu_tu(ks):
             + (f" (+{len(x) - len(sao)} mã sau)" if len(x) > len(sao) else ""))
 
 
-def _tin(ra, bay_gio, kq_bt, dang_giu, suat=None):
+def _tin(ra, bay_gio, kq_bt, dang_giu, suat=None, nhoi=frozenset()):
     d = ra["doc"]
     try:
         bt = cach_vao(kq_bt)[0]
     except ImportError:
         bt = None
     ks = ds_khuyen_nghi(ra)
+    if dang_giu:                  # bản riêng (người dùng 13/11/2026): mã ĐANG GIỮ không nằm ở mục mua mới – trừ khi đủ điều
+        # kiện mua thêm (nhoi – luật nhồi lệnh, chi tiết ở mục 💼 ĐANG GIỮ); bản công khai giữ nguyên
+        ks = [k for k in ks if not (k["nhom"] in NHOM_MUA and k["ma"] in dang_giu and k["ma"] not in nhoi)]
     n = d["so_chi_bao"]
     w = ra["ty_trong"]
     chia = " + ".join(f"{ {'VNI': 'VN-Index', 'TIEN': 'tiền nhàn rỗi'}.get(k, k)} {w[k] * 100:.0f}%"
