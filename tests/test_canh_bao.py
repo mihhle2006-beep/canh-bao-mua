@@ -414,7 +414,7 @@ def test_nut_mua_chon_so_luong_co_lo_le(monkeypatch):
     assert diem_vao.nut_mua({**kq, "atc": True})[0] == [("🛒 Mua 200", "dl|M|REE|200|46600")]
     monkeypatch.setattr(diem_vao, "so_cp_nav", lambda k, g, c: 37)
     assert diem_vao.nut_mua({**kq, "atc": True}) is None
-    monkeypatch.setattr("canh_bao.tong_ket_cl.chu_von_lenh", lambda k: "💰 ≤20,0% NAV")    # tin ghi rõ vì sao không có nút
+    monkeypatch.setattr("canh_bao.tong_ket_cl.chu_von_lenh", lambda k: "≤20,0% NAV")    # tin ghi rõ vì sao không có nút
     s = diem_vao._von_nav({**kq, "atc": True}, 46.0, 43.0)
     assert "37 CP ≈ 1.7 tr" in s and "KHÔNG có nút" in s and diem_vao.co_so_cp_nav(s)     # có số CP → tin riêng tư
     assert "KHÔNG có nút" not in diem_vao._von_nav(kq, 46.0, 43.0)                        # phiên liên tục: lô lẻ có nút

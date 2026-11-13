@@ -9,7 +9,7 @@ CẢNH BÁO MUA TRONG PHIÊN (mỗi 15 phút) – ĐỒNG BỘ với chiến lư
     [15']   MACD 15' cắt lên Signal (≤ 3 nến) HOẶC phá đỉnh 20 nến kèm KL ≥ 1,5× · giá ≥ VWAP · RSI 15' ≤ 75
     [Giờ]   MACD giờ > Signal (chỉ khi cách vào là 15P+GIO)
   Cách vào (ATO / 15P / 15P+ATC / LO …) lấy theo backtest (tong_ket_cl.cach_vao).
-Tin: 🟢 MUA NGAY (đủ tiêu chí) · ⏰ MUA ATC (hết phiên chưa có điểm vào, giá còn trong vùng) · 🚫 BỎ (vô hiệu).
+Tin: MUA NGAY (đủ tiêu chí) · MUA ATC (hết phiên chưa có điểm vào, giá còn trong vùng) · BỎ (vô hiệu).
 """
 import json
 
@@ -202,7 +202,7 @@ def tin_giu_theo_he_thong(kq, bay_gio, vt=None):
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
     gv = vt.get("gia_von") if isinstance(vt, dict) else None
     return "\n".join([
-        f"💼 GIỮ THEO HỆ THỐNG – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
+        f"GIỮ THEO HỆ THỐNG – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m})",
         f"Đang giữ, hệ thống vừa có điểm mua ({TEN_NHOM.get(kq['nhom'], kq['nhom'])}) → KHÔNG mua trùng; mua thêm chỉ "
         "khi tin tổng kết ghi MUA THÊM"]
         + ([dong_da_vao(vt.get("ngay_mua"), gv, (gia / gv - 1) * 100 if gia == gia else None)] if gv else [])
@@ -295,21 +295,21 @@ def dong_dat_lenh(kq, bien_the, gia, so=None, kl=0):
     LO ≤ giới hạn (sàn khớp ngay ở giá người bán đang chào – như lệnh thị trường có trần; MTL / MP không có trần)."""
     den = kq.get("den")
     if kq.get("atc"):
-        return f"👉 Đặt lệnh ATC (giá ước tính {_f(gia)}). Không mua nếu giá cao hơn {_f(den)}"
+        return f"Đặt lệnh ATC (giá ước tính {_f(gia)}). Không mua nếu giá cao hơn {_f(den)}"
     goc = (bien_the or "").partition("+ATC")[0]
     if goc == "ATO":
-        return f"👉 Đặt lệnh ATO {_f(gia)}. Không mua nếu mở cửa cao hơn {_f(den)}"
+        return f"Đặt lệnh ATO {_f(gia)}. Không mua nếu mở cửa cao hơn {_f(den)}"
     if goc == "LO" or den is None or den != den:          # cách LO: lệnh chờ ở giá LO dưới thị trường (cố ý)
         if gia == gia and kq.get("ma"):                    # ⅓ dưới vùng chưa tròn bước giá → làm tròn xuống theo sàn
             gia = gia_lo_dong(gia, kq["ma"]) / 1000
-        return f"👉 Đặt lệnh {_f(gia)}. Không đặt cao hơn {_f(den)}"
+        return f"Đặt lệnh {_f(gia)}. Không đặt cao hơn {_f(den)}"
     tran = gia_lo_dong(den, kq["ma"]) / 1000
     p = gia_hop_ly(so, "M", max(int(kl or 0), 100), tran)
     if p is not None:
-        return f"👉 Mua LO {_f(p)}" + ("" if abs(p - tran) < 1e-9 else f" (tối đa {_f(tran)})")
+        return f"Mua LO {_f(p)}" + ("" if abs(p - tran) < 1e-9 else f" (tối đa {_f(tran)})")
     if so and so.get("ban"):                               # người bán thấp nhất đã cao hơn giới hạn → không đuổi
-        return f"👉 Chưa mua: giá bán thấp nhất {_f(so['ban'][0][0])} > tối đa {_f(tran)} – muốn chờ thì đặt LO {_f(tran)}"
-    return f"👉 Mua LO ≤ {_f(tran)} – khớp ngay ở giá người bán đang chào (vừa khớp {_f(gia)})"
+        return f"Chưa mua: giá bán thấp nhất {_f(so['ban'][0][0])} > tối đa {_f(tran)} – muốn chờ thì đặt LO {_f(tran)}"
+    return f"Mua LO ≤ {_f(tran)} – khớp ngay ở giá người bán đang chào (vừa khớp {_f(gia)})"
 
 
 def tin_mua(kq, bay_gio, bien_the, dang_giu=None, so=None):
@@ -317,7 +317,7 @@ def tin_mua(kq, bay_gio, bien_the, dang_giu=None, so=None):
     if dang_giu:                                       # True hoặc dict vị thế thật (chay.py)
         return tin_giu_theo_he_thong(kq, bay_gio, dang_giu)
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
-    dau = "⏰ MUA ATC" if kq.get("atc") else "🟢 MUA NGAY"
+    dau = "MUA ATC" if kq.get("atc") else "MUA NGAY"
     # tin gọn (người dùng 17/10/2026): giá đặt + nhóm / vùng / cắt lỗ / mục tiêu – bỏ dòng tiêu chí & khối lượng;
     # 19/10/2026: ghi đủ chữ (đọc trên điện thoại) · 29/10/2026: 4 dòng (gộp nhóm · vùng · cắt lỗ, mục tiêu · khối lượng)
     from .tong_ket_cl import nhan_uu_tien
@@ -340,7 +340,7 @@ def co_so_cp_nav(nd):
 
 
 def _von_nav(kq, gia, cl):
-    """'💰 ≤5.4% NAV (…) → 45 CP ≈ 1,7 tr' – cùng công thức tin tổng kết, khoảng cắt lỗ tính theo giá đặt lệnh; có NAV tài
+    """'≤5.4% NAV (…) → 45 CP ≈ 1,7 tr' – cùng công thức tin tổng kết, khoảng cắt lỗ tính theo giá đặt lệnh; có NAV tài
     khoản thật (vi_the.nav_that) thì quy ra SỐ CỔ PHIẾU (lô lẻ < 100 CP đặt ở bảng lô lẻ)."""
     from .tong_ket_cl import chu_von_lenh
     s = chu_von_lenh(_k_rui_ro(kq, gia, cl))
@@ -447,8 +447,8 @@ def tin_tong_hop_mua(ds, bay_gio, rieng=None):
     x = _theo_uu_tien(ds)
     co_rieng = {k["ma"] for k in (chia_tin_mua(x)[0] if rieng is None else rieng)}
     co_atc = any(k.get("atc") for k in x)
-    d = [f"📋 {len(x)} MÃ BÁO MUA CÙNG LÚC ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – thứ tự đặt lệnh"
-         + (" · ⏰ ATC đặt TRƯỚC 14:45" if co_atc else "") + ":"]
+    d = [f"{len(x)} MÃ BÁO MUA CÙNG LÚC ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – thứ tự đặt lệnh"
+         + (" · ATC đặt TRƯỚC 14:45" if co_atc else "") + ":"]
     for i, k in enumerate(x, 1):
         gia, cl = muc_sau_mua(k)[:2]
         dau = f"   {i}. {(nhan_uu_tien(k.get('uu_tien')) + ' ').lstrip()}{k['ma']} {_f(gia)} – " \
@@ -465,16 +465,16 @@ def tin_lo_le(kq, bay_gio, n):
     trong phiên liên tục (chay.lo_le_1425). Có số CP theo NAV → tin riêng tư."""
     gia, cl, mt1, mt3 = muc_sau_mua(kq)
     return "\n".join([
-        f"⏰ MUA LÔ LẺ NGAY – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – đặt TRƯỚC 14:30",
+        f"MUA LÔ LẺ NGAY – {kq['ma']} {_f(gia)} ({pd.Timestamp(bay_gio):%H:%M %d/%m}) – đặt TRƯỚC 14:30",
         f"Vào trễ, tỷ trọng theo NAV chỉ đủ {n} CP ≈ {n * gia * 1000 / 1e6:.1f} tr – phiên ATC không nhận lô lẻ nên mua ngay "
         "trong phiên liên tục (bảng lô lẻ)",
-        f"👉 LO lô lẻ ≤ giá khớp bảng chính + 1 bước (~{_f(min(kq['den'], (int(round(gia * 1000)) // 100 + 1) / 10))}) – bảng lô lẻ "
+        f"LO lô lẻ ≤ giá khớp bảng chính + 1 bước (~{_f(min(kq['den'], (int(round(gia * 1000)) // 100 + 1) / 10))}) – bảng lô lẻ "
         f"chào giá cao hơn, đừng đặt tới {_f(kq['den'])} · Cắt lỗ {_f(cl)}" + (f" ({(cl / gia - 1) * 100:+.1f}%)" if cl == cl and gia else ""),
         f"Mục tiêu 1R {_f(mt1)} → 3R {_f(mt3)}"])
 
 
 def tin_bo(kq, bay_gio):
-    return (f"🚫 BỎ {kq['ma']} phiên {pd.Timestamp(bay_gio):%d/%m} – {kq['ly_do']}\n"
+    return (f"BỎ {kq['ma']} phiên {pd.Timestamp(bay_gio):%d/%m} – {kq['ly_do']}\n"
             f"(vùng mua {_f(kq['tu'])}–{_f(kq['den'])}; chờ bản tin tổng kết mới)")
 
 

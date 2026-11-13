@@ -245,12 +245,12 @@ def von_lenh(k):
 
 
 def chu_von_lenh(k):
-    """'💰 ≤5.4% NAV (VNI ×0.5 · ĐẮT ×0.5)' – tỷ trọng mua tối đa, đã nhân mọi hệ số (rủi ro % ÷ khoảng cắt lỗ)."""
+    """'≤5.4% NAV (VNI ×0.5 · ĐẮT ×0.5)' – tỷ trọng mua tối đa, đã nhân mọi hệ số (rủi ro % ÷ khoảng cắt lỗ)."""
     v = von_lenh(k)
     if v["ty_trong"] != v["ty_trong"]:
         return ""
     ct = " · ".join(f"{t} ×{h:g}" for t, h in v["he_so"])
-    return f"💰 ≤{v['ty_trong']:.1f}% NAV" + (f" ({ct})" if ct else "")
+    return f"≤{v['ty_trong']:.1f}% NAV" + (f" ({ct})" if ct else "")
 
 
 DK_ATC = {"_VWAP": " và giá ≥ VWAP phiên", "_XANH": " và giá ≥ giá mở cửa", "_TREN": " và giá ở nửa trên biên độ phiên"}
@@ -258,12 +258,12 @@ DK_ATC = {"_VWAP": " và giá ≥ VWAP phiên", "_XANH": " và giá ≥ giá m�
 
 def mo_ta_cach_vao(bien_the):
     """Dòng cách vào chung cho tin tổng kết (in 1 lần; từng mã chỉ ghi vùng / giá LO). Tin gọn 29/10/2026: tiêu chí 15'
-    chi tiết nằm ở tin 🟢 MUA NGAY."""
+    chi tiết nằm ở tin MUA NGAY."""
     if not bien_the:
         return None
     goc, atc, dk = bien_the.partition("+ATC")
     if goc.startswith("15P"):
-        mo = "chờ tin 🟢 MUA NGAY 15'" + (" (cần MACD giờ > Signal)" if "GIO" in goc else "") + " rồi mua giá thị trường"
+        mo = "chờ tin MUA NGAY 15'" + (" (cần MACD giờ > Signal)" if "GIO" in goc else "") + " rồi mua giá thị trường"
     elif goc == "LO":
         mo = "đặt LO ở ⅓ dưới vùng mua từ đầu phiên"
     elif goc == "VWAP":
@@ -498,7 +498,7 @@ def tin_tong_ket(ra, bay_gio, giu=None, kq_bt=None):
 
 
 def dong_suat(ra, giu):
-    """'🗓 Phiên 20/10 (tuần 43): đã mua a/b mã mới tuần này → còn c suất · đang giữ d/e mã (+suất 💪) – mua lần lượt
+    """'Phiên 20/10 (tuần 43): đã mua a/b mã mới tuần này → còn c suất · đang giữ d/e mã (+suất 💪) – mua lần lượt
     theo ★ tới hết suất' – theo danh mục thật (ngày mua trong tuần của phiên hiệu lực). Không có danh mục → None."""
     if giu is None:
         return None
@@ -514,36 +514,64 @@ def dong_suat(ra, giu):
     con, con_ma = max(td - moi, 0), max(so_ma - len(giu), 0)
     goi_y = (f"mua tối đa {min(con, con_ma)} mã theo thứ tự ★1 → ★{min(con, con_ma)}" if min(con, con_ma) else
              ("hết suất tuần – chỉ chờ ✅ vào trễ tuần sau" if not con else
-              f"đủ {so_ma} mã – chỉ mã 💪 được mua (suất dự phòng)"))
-    return (f"🗓 Tuần {tuan[1]}: đã mua {moi}/{td} mã mới tuần này → còn {con} suất · đang giữ {len(giu)}/{so_ma} mã"
-            + (f" (+{dp} cho 💪)" if dp else "") + f" → {goi_y}")
+              f"đủ {so_ma} mã – chỉ mua thêm mã tín hiệu mạnh 💪 (suất dự phòng)"))
+    return (f"Tuần {tuan[1]}: đã mua {moi}/{td} mã mới tuần này → còn {con} suất · đang giữ {len(giu)}/{so_ma} mã"
+            + (f" (+{dp} suất dự phòng)" if dp else "") + f" → {goi_y}")
 
 
-def loc_suat_mua(ds, vt, bay_gio):
-    """Mã MỚI báo MUA trong phiên (ds) → (được báo, bị bỏ [(mã, lý do)]) theo suất Quỹ Bứt Phá của danh mục thật vt
-    {mã: vị thế}: ≤ QUY_SO_MA mã hệ B (mã hệ bắt đáy không tính) + QUY_SUAT_DU_PHONG chỉ cho tín hiệu 💪 (manh_b),
-    ≤ QUY_MOI_TUAN_TOI_DA mã mới / tuần (như dong_suat) – xét theo thứ tự ưu tiên, mã được báo chiếm suất. 13/11/2026:
-    danh mục đã đủ suất mà tin 15' vẫn báo MUA mã mới không 💪 kèm nút đặt lệnh – trước chỉ tin tổng kết ghi "đủ N mã".
-    Danh mục rỗng / không đọc được → báo hết như cũ."""
-    if not vt:
-        return list(ds), []
-    from .diem_vao import _theo_uu_tien
+def tinh_suat(vt, bay_gio):
+    """Suất Quỹ Bứt Phá theo danh mục thật vt {mã: vị thế} (mã hệ bắt đáy không tính) → {giu: số mã hệ B, so_ma, dp: suất
+    dự phòng cho tín hiệu mạnh, moi: mã mua trong tuần của bay_gio, td: tối đa mã mới / tuần}."""
     from .vi_the import _ngay, bat_day_cua
-    giu = [v for v in vt.values() if not bat_day_cua(v)]                # mã hệ bắt đáy không chiếm suất B
+    giu = [v for v in vt.values() if not bat_day_cua(v)]
     tuan = pd.Timestamp(bay_gio).isocalendar()[:2]
     moi = sum(1 for v in giu if _ngay(v.get("ngay_mua")) is not None
               and pd.Timestamp(_ngay(v.get("ngay_mua"))).isocalendar()[:2] == tuan)
-    td, so_ma = int(_quy("QUY_MOI_TUAN_TOI_DA", 5)), int(_quy("QUY_SO_MA", 8))
-    dp = int(_quy("QUY_SUAT_DU_PHONG", 1) or 0)
-    n, duoc, bo = len(giu), [], []
-    du = f"đủ {so_ma} mã (đang giữ {len(giu)})"
+    return {"giu": len(giu), "so_ma": int(_quy("QUY_SO_MA", 8)), "dp": int(_quy("QUY_SUAT_DU_PHONG", 1) or 0),
+            "moi": moi, "td": int(_quy("QUY_MOI_TUAN_TOI_DA", 5))}
+
+
+def het_suat(st):
+    """Không còn suất THƯỜNG cho mã mới: đủ so_ma mã hoặc đã mua đủ td mã mới tuần này."""
+    return st["giu"] >= st["so_ma"] or st["moi"] >= st["td"]
+
+
+def tin_het_suat(st):
+    """Tin 1 lần / ngày khi hết suất (người dùng 13/11/2026: đủ 8/8 thì báo đủ danh mục, chờ suất trống)."""
+    giu, so_ma, td = st["giu"], st["so_ma"], st["td"]
+    if giu < so_ma:                                                      # chỉ hết suất tuần
+        return f"ĐÃ MUA ĐỦ {td} MÃ MỚI TUẦN NÀY – không mua mã mới tới tuần sau (đang giữ {giu}/{so_ma} mã)."
+    con_dp = 0 if st["moi"] >= td else max(so_ma + st["dp"] - giu, 0)
+    dau = f"DANH MỤC ĐỦ {giu}/{so_ma} MÃ" if giu == so_ma else f"DANH MỤC ĐỦ {giu} MÃ (tối đa {so_ma} + {st['dp']} dự phòng)"
+    return (dau + " – hôm nay không mua mã mới" + (f", trừ tín hiệu mạnh (còn {con_dp} suất dự phòng)" if con_dp else "")
+            + ". Khi bán bớt mã sẽ báo suất trống.")
+
+
+def tin_co_suat(st, cho=()):
+    """Tin khi vừa có suất trống (bán bớt mã / sang tuần mới) – kèm mã đang chờ suất sẽ báo ngay sau."""
+    con = min(st["so_ma"] - st["giu"], st["td"] - st["moi"])
+    return (f"CÓ SUẤT TRỐNG – đang giữ {st['giu']}/{st['so_ma']} mã, tuần này đã mua {st['moi']}/{st['td']} mã mới → "
+            f"mua được {max(con, 0)} mã mới." + (f" Mã chờ suất báo ngay sau tin này: {', '.join(cho)}." if cho else ""))
+
+
+def loc_suat_mua(ds, vt, bay_gio):
+    """Mã MỚI báo MUA trong phiên (ds) → (được báo, bị bỏ [(mã, lý do)]) theo suất Quỹ Bứt Phá (tinh_suat): ≤ QUY_SO_MA
+    mã hệ B + QUY_SUAT_DU_PHONG chỉ cho tín hiệu mạnh (manh_b), ≤ QUY_MOI_TUAN_TOI_DA mã mới / tuần – xét theo thứ tự ưu
+    tiên, mã được báo chiếm suất. 13/11/2026: danh mục đã đủ suất mà tin 15' vẫn báo MUA mã mới kèm nút đặt lệnh – trước
+    chỉ tin tổng kết ghi "đủ N mã". Danh mục rỗng / không đọc được → báo hết như cũ."""
+    if not vt:
+        return list(ds), []
+    from .diem_vao import _theo_uu_tien
+    st = tinh_suat(vt, bay_gio)
+    so_ma, dp, td = st["so_ma"], st["dp"], st["td"]
+    n, moi, duoc, bo = st["giu"], st["moi"], [], []
     for k in _theo_uu_tien(ds):
         if moi >= td:
             bo.append((k["ma"], f"đã mua {moi}/{td} mã mới tuần này"))
         elif n >= so_ma and not k.get("manh_b"):
-            bo.append((k["ma"], du + (" – suất dự phòng chỉ cho tín hiệu 💪, mã này không 💪" if dp else "")))
+            bo.append((k["ma"], f"đủ {so_ma} mã, không phải tín hiệu mạnh"))
         elif n >= so_ma + dp:
-            bo.append((k["ma"], du + f" + {dp} suất dự phòng 💪 đã dùng"))
+            bo.append((k["ma"], f"đủ {so_ma} mã + {dp} suất dự phòng"))
         else:
             duoc.append(k)
             n, moi = n + 1, moi + 1

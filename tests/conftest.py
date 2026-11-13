@@ -20,6 +20,13 @@ def _xoa_loi_phu():
 
 
 @pytest.fixture(autouse=True)
+def _trang_thai_rieng_tam(monkeypatch, tmp_path):
+    """Trạng thái riêng (suất Quỹ Bứt Phá "_suat" – chay._qua_suat) ghi vào thư mục tạm của test, không vào repo."""
+    from canh_bao import vi_the
+    monkeypatch.setattr(vi_the, "FILE_TRANG_THAI_BAN", str(tmp_path / "cache_ptcp" / "trang_thai_ban.json"))
+
+
+@pytest.fixture(autouse=True)
 def _khong_doc_nav_that(monkeypatch):
     """Test không đọc NAV tài khoản thật (vi_the.nav_that) – tin MUA không kèm số CP trừ test tự đặt."""
     from canh_bao import vi_the

@@ -16,10 +16,10 @@ def gui_thu(bay_gio=None):
         print("Đang trong giờ nhận lệnh – không gửi tin thử (bấm ✅ sẽ đặt lệnh THẬT)")
         return 1
     nd = (f"🧪 TIN THỬ {bg:%H:%M %d/%m} – không phải tín hiệu; ngoài giờ nên máy Mac KHÔNG đặt lệnh\n"
-          "🟢 MUA NGAY – VND 23,5 · ưu tiên ★1\n"
-          "👉 Đặt lệnh 23,5. Không đặt cao hơn 23,8\n"
+          "MUA NGAY – VND 23,5 · ưu tiên ★1\n"
+          "Đặt lệnh 23,5. Không đặt cao hơn 23,8\n"
           "Chứng khoán · Vùng mua 23,0 – 23,8 · Cắt lỗ 22,0 (−6,4%)\n"
-          "Mục tiêu 1R 25,0 → 3R 28,0 · 💰 ≤5% NAV → 237 CP ≈ 5,6 tr")
+          "Mục tiêu 1R 25,0 → 3R 28,0 · ≤5% NAV → 237 CP ≈ 5,6 tr")
     return 0 if gui(nd, rieng_tu=True, nut=nut_chon("VND", 237, 23_800)) else 1
 
 
