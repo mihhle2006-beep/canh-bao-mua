@@ -738,3 +738,24 @@ def test_quy_web_lay_va_mua_ban(monkeypatch):
     # Fmarket lỗi → giữ bản cũ
     monkeypatch.setattr(Q, "_goi", lambda *a, **k: (_ for _ in ()).throw(ValueError("HTTP 503")))
     assert Q.lay(b, in_tien_do=lambda *_: None) is b
+
+
+def test_tai_lieu_moi_nhat_truoc_roi_moi_cat(monkeypatch):
+    """13/11/2026: CafeF trả BCTN cũ → mới; lấy 12 bản đầu → web chỉ tới 2022 (GMD). Nay sắp năm mới → cũ rồi mới cắt."""
+    from thi_truong import tra_cuu_dn as T
+
+    def goi(url, **k):
+        if "Type=3" in url:
+            return {"Data": [{"Name": f"BCTN {y}", "Year": y, "Time": "CN", "Link": f"https://x/{y}.pdf"}
+                             for y in range(2009, 2026)] + [{"Name": "lạ", "Year": "", "Link": "https://x/la.pdf"}]}
+        return {"Data": []}
+    monkeypatch.setattr(T.nguon, "goi", goi)
+    bctn = [x["nam"] for x in T.tai_lieu("AAA") if x["loai"] == "Báo cáo thường niên"]
+    assert bctn == [str(y) for y in range(2025, 2013, -1)]                # 12 bản: 2025 → 2014
+
+
+def test_tai_lieu_cu_sai_thu_tu_lay_lai_ngay():
+    from thi_truong import tra_cuu_dn as T
+    cu = [{"loai": "Báo cáo thường niên", "nam": str(y)} for y in range(2011, 2023)]          # bản cũ: cũ → mới, tới 2022
+    assert T._tl_sai_thu_tu(cu) and not T._tl_sai_thu_tu(cu[::-1]) and not T._tl_sai_thu_tu([])
+    assert not T._tl_sai_thu_tu([{"loai": "BCTC", "nam": "2026"}, {"loai": "BCTC", "nam": "2026"}, {"loai": "BCTC", "nam": "2025"}])
