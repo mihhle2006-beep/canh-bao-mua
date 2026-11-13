@@ -971,12 +971,18 @@ $("#loc-tk").onclick = () => { ST.du_tk = !ST.du_tk; luu_st(); ve_loc(); };
 $("#loc-tim").oninput = e => { ST.tim = e.target.value; ST.so_dong = 100; ve_loc(); };
 $("#loc-them").onclick = () => { ST.so_dong += 200; ve_loc(); };
 
-function ve_tat() {
+function ve_trang_thai() {                     // 13/11/2026: bảng ~30 giây / lượt → dữ liệu cũ > 2' là bảng đứng (trước 12'); nghỉ trưa không tính
   if (!D) return;
   const tuoi = (Date.now() - new Date(D.cap_nhat.replace(" ", "T") + "+07:00")) / 60000;
-  const cu = D.dang_gd && tuoi > 12;
-  $("#cham").className = "cham" + (D.dang_gd && !cu ? " song" : "");
-  $("#trang-thai").textContent = `Phiên ${ngay_vn(D.phien)}/${D.phien.slice(0, 4)} · ${D.dang_gd ? (cu ? `dữ liệu cách đây ${Math.round(tuoi)} phút` : "đang giao dịch") : "đã đóng cửa"} · cập nhật ${D.cap_nhat.slice(11, 16)}`;
+  const v = gio_vn_ms(Date.now()), p = v.getUTCHours() * 60 + v.getUTCMinutes();
+  const trua = p >= 691 && p < 780 && D.phien === v.toISOString().slice(0, 10);          // nghỉ trưa của chính phiên hôm nay
+  const cu = D.dang_gd && !trua && tuoi > 2;
+  $("#cham").className = "cham" + (D.dang_gd && !cu && !trua ? " song" : "");
+  $("#trang-thai").textContent = `Phiên ${ngay_vn(D.phien)}/${D.phien.slice(0, 4)} · ${D.dang_gd ? (trua ? "nghỉ trưa" : cu ? `dữ liệu cách đây ${Math.round(tuoi)} phút` : "đang giao dịch") : "đã đóng cửa"} · cập nhật ${D.cap_nhat.slice(11, D.dang_gd ? 19 : 16)}`;
+}
+function ve_tat() {
+  if (!D) return;
+  ve_trang_thai();
   // mỗi khối vẽ riêng: 1 khối lỗi không làm trống cả trang (09/11/2026: lỗi khung theo dõi chặn mọi khối sau)
   if (ST.tab === "tq") for (const f of [ve_the, ve_theo_doi, ve_bieu_do, ve_ban_do, ve_tk, ve_tac, ve_dtn]) {
     try { f(); } catch (e) { console.error(f.name, e); } }
@@ -1028,7 +1034,8 @@ document.querySelectorAll("#nd-kich button").forEach(x => x.setAttribute("aria-p
 $("#loc-tim").value = ST.tim;
 doi_tab(["loc", "quy"].includes(ST.tab) ? ST.tab : "tq");
 tai();
-setInterval(() => { if (!document.hidden) tai(); }, 10000);                 // trong giờ: lượt ~30 giây; ngoài giờ: chỉ bản nền
+setInterval(() => { if (!document.hidden) tai().then(ve_trang_thai); }, 10000);   // trong giờ: lượt ~30 giây; ngoài giờ: chỉ bản nền
+                                                                             // (dòng trạng thái vẽ lại cả khi không có lượt mới → thấy bảng đứng)
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") tai(); });
 let hen; addEventListener("resize", () => { clearTimeout(hen); hen = setTimeout(ve_tat, 150); });
 // ---------------------------------------------------------------- TỰ CẬP NHẬT BẢN MỚI (ứng dụng ở màn hình chính iPhone giữ trang chạy nền;

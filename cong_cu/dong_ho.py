@@ -14,6 +14,7 @@ chạy 10:24, Danh mục 08:30 chạy 15:18, Kiểm thử 07:41 chạy 14:22, Qu
   • 20:05 hằng ngày: kiểm hạn token repo kín (DANH_MUC_TOKEN_GHI) – còn < 14 ngày → nhắn Telegram.
   • Giám sát 5 phút / lần: workflow trên main vừa LỖI → workflow dữ liệu / trang (CHAY_LAI – chạy lại không gửi tin
     trùng) tự chạy lại job lỗi 1 lần; còn lại, hoặc chạy lại vẫn lỗi → nhắn Telegram NGAY (không đợi tin 🩺 19:55).
+  • Lỗi workflow repo danh-muc (đồng bộ DNSE, đặt lệnh) và bang-thi-truong (vòng bảng): cùng GiamSat, tin có nhãn repo.
   • Máy Mac (cùng nhịp 5 phút, T2–T6 08:30–15:10): job của repo kín chờ máy self-hosted > 10 phút (Mac ngủ / tắt / mất
     mạng → vòng đồng bộ DNSE, lệnh đứng) → nhắn Telegram NGAY 1 tin / đợt; máy nhận việc lại → 1 tin báo đã ổn.
 Chỉ dùng thư viện chuẩn (không cần pip). Log chỉ in tên workflow / giờ.
@@ -86,7 +87,8 @@ CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_b
 KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu tự nhắn khi lỗi
              "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml",     # công cụ bấm tay – người bấm tự xem
              "thu_kenh_tele.yml",
-             "trien_khai.yml"}                                      # bang-thi-truong Pages (chập chờn – BangTre theo dõi bảng đứng)
+             "trien_khai.yml",                                      # bang-thi-truong Pages (chập chờn – BangTre theo dõi bảng đứng)
+             "dat_lenh_thu.yml"}                                    # danh-muc: thử đặt lệnh bấm tay
 LOI = ("failure", "timed_out", "startup_failure")
 GIAM_SAT_GIAY = 300
 MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
@@ -615,6 +617,8 @@ def main(argv=None):
     gs_bang = (GiamSat(gh_khac["bang-thi-truong"], datetime.now(timezone.utc) - timedelta(minutes=10), nhan="[bảng] ")
                if gh_khac else None)                                # repo bang-thi-truong: vòng bảng / kho nến lỗi
     tre = BangTre(gh_khac["bang-thi-truong"]) if gh_khac else None
+    gs_dm = (GiamSat(gh_khac["danh-muc"], datetime.now(timezone.utc) - timedelta(minutes=10), nhan="[danh-muc] ")
+             if gh_khac else None)                                  # đồng bộ DNSE / đặt lệnh chạy mà lỗi (13/11/2026)
     bat_dau, da_kiem, lan_gs, lan_tre = time.time(), None, 0.0, 0.0
     print(f"Đồng hồ chạy {a.phut:.0f} phút, {len(LICH)} dòng lịch", flush=True)
     while time.time() - bat_dau < a.phut * 60:
@@ -631,6 +635,8 @@ def main(argv=None):
                 viec.append(("máy Mac", lambda: mac.buoc(bay_gio)))
             if gs_bang:
                 viec.append(("giám sát bảng", gs_bang.buoc))
+            if gs_dm:
+                viec.append(("giám sát danh-muc", gs_dm.buoc))
         if tre and time.time() - lan_tre >= 60:                     # bảng đứng: xét mỗi phút
             lan_tre = time.time()
             viec.append(("bảng đứng", lambda: tre.buoc(bay_gio)))
