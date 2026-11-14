@@ -58,7 +58,7 @@ def main(argv=None):
             print(f"{bay_gio:%H:%M %d/%m} ngoài giờ giao dịch → không làm gì.")
             return 0
     if che_do == "lich_su":
-        return xem_lich_su()
+        return xem_lich_su(bay_gio, a.khong_gui)
     if che_do == "tai_nen":                                         # chỉ tải nến 15' cho backtest (hằng tuần)
         from canh_bao.backtest_bot import tai_nen_15p
         return 0 if tai_nen_15p() else 1
@@ -594,8 +594,9 @@ def _in_nguon():
         print("Nguồn giá đã dùng: " + ", ".join(f"{n} ({k} lần)" for n, k in dem.items()))
 
 
-def xem_lich_su():
-    """Chấm lại & in bảng độ chính xác. Trên Actions (repo công khai) chỉ in phần công khai."""
+def xem_lich_su(bay_gio=None, khong_gui=False):
+    """Chấm lại & in bảng độ chính xác. Trên Actions (repo công khai) chỉ in phần công khai. Lần chạy ĐẦU mỗi tháng (lịch
+    thứ Bảy 09:07): gửi Telegram 1 tin tóm tắt + file Excel công khai (14/11/2026 – trước chỉ nằm trong log, không ai đọc)."""
     rieng = not os.environ.get("GITHUB_ACTIONS")
     xong = nhat_ky.cap_nhat(lambda ma: tai(ma, "D", C.NGAY_BAT_DAU))
     print(f"Vừa có kết luận: {xong} tín hiệu")
@@ -604,7 +605,15 @@ def xem_lich_su():
             tk = nhat_ky.thong_ke(nhat_ky.doc(path))
             print(f"\n=== ĐỘ CHÍNH XÁC – {ten} ===")
             print(tk.round(1).to_string(index=False) if len(tk) else "(chưa có tín hiệu)")
-    print("\nĐã xuất", nhat_ky.xuat_excel(rieng=rieng))
+    xlsx = nhat_ky.xuat_excel(rieng=rieng)
+    print("\nĐã xuất", xlsx)
+    bay_gio = pd.Timestamp(bay_gio) if bay_gio is not None else gio_viet_nam()
+    tt, thang = doc_trang_thai(), f"{bay_gio:%Y-%m}"
+    if not khong_gui and tt.get("_do_chinh_xac_thang") != thang:
+        gui(nhat_ky.dong_tong_ket(tieu_de=f"📊 ĐỘ CHÍNH XÁC TÍN HIỆU BOT – tới {bay_gio:%d/%m/%Y} (tháng 1 lần)"))
+        gui_file(xlsx, chu_thich="Nhật ký tín hiệu công khai + thống kê (chấm lại mỗi thứ Bảy)")
+        tt["_do_chinh_xac_thang"] = thang
+        ghi_trang_thai(tt)
     return 0
 
 
