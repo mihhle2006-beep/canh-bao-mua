@@ -99,7 +99,9 @@ def _site(tmp_path, monkeypatch):
 
 TRANG = [
     "ma/index.html||cho:500",                                   # trang đầu Tra cứu mã
-    "ma/index.html#AAA|#noi-dung|sk",                           # tổng quan mã (biểu đồ nến) + rê / chạm bong bóng sự kiện
+    "ma/index.html#AAA|#noi-dung|sk;skmo",                      # tổng quan mã: rê / chạm bong bóng → hộp; bấm CT → bảng Cổ tức
+    "ma/index.html#AAA/co-tuc|.ct-luoi",                        # trang Cổ tức (thẻ tóm tắt, theo năm, điểm nhấn, lịch sử)
+    "ma/index.html#AAA/co-dong|#noi-dung",
     "ma/index.html#AAA/tai-chinh|#noi-dung",
     "ma/index.html#AAA/dinh-gia|#noi-dung",
     "ma/index.html#AAA/lich-su|#noi-dung",

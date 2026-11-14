@@ -320,7 +320,15 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .nut-tai{border:1px solid var(--nhan);color:var(--nhan);background:var(--the);border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:600}
 .nut-tai:hover{background:var(--nhan-nen)}
 .bd-gia{position:relative;height:480px;margin:0 8px 8px}
+.ct-luoi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 12px}.ct-o{background:var(--the);border:1px solid var(--vien);border-radius:10px;padding:10px 12px}
+.ct-t{font-size:13px;font-weight:600}.ct-lon{font-size:22px;font-weight:700;margin:4px 0 2px}.ct-cuoi{border-top:1px dashed var(--vien);margin-top:6px;padding-top:5px;font-size:12px}
+.ct-nhan>div{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--luoi);font-size:13px;line-height:1.45}.ct-nhan>div:last-child{border-bottom:0}.ct-nhan i{flex:0 0 9px;height:9px;border-radius:50%;margin-top:5px}
+@media (max-width:700px){.ct-luoi{grid-template-columns:repeat(2,minmax(0,1fr))}.ct-lon{font-size:19px}}
+.sk-pnl{position:fixed;top:0;right:0;bottom:0;width:min(640px,100vw);background:var(--nen);z-index:500;box-shadow:-10px 0 28px rgba(0,0,0,.16);overflow-y:auto;transform:translateX(105%);transition:transform .18s ease;overscroll-behavior:contain}
+.sk-pnl.mo{transform:none}.sk-pnl-dau{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--vien)}
+.sk-pnl-dau b{font-size:16px}.sk-pnl-dau a{margin-left:auto;font-size:13px}.sk-pnl-dau button{border:0;background:none;font-size:22px;line-height:1;cursor:pointer;padding:2px 6px;color:#4b5565}.sk-pnl-than{padding:12px}
 .sk-hop{position:absolute;z-index:6;display:none;max-width:340px;background:#fff;border:1px solid #1f6feb;border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.12);pointer-events:none;color:#1b1f24}
+.sk-hop .sk-goi{margin-top:4px;color:#1f6feb;font-weight:600}.sk-pnl .hai{grid-template-columns:minmax(0,1fr)}
 .sk-hop .sk-dau{display:flex;align-items:center;gap:6px}.sk-hop .sk-dau i{width:9px;height:9px;border-radius:50%;display:inline-block}
 @media (max-width:600px){.bd-gia{height:380px}.chu-bd{font-size:11px;line-height:1.4}}
 .gc-nut{border:1px solid #e3e7ee;background:#fff;border-radius:6px;padding:2px 6px;cursor:pointer}.gc-nut.co{background:#fff3c4;border-color:#e8a400}
@@ -2105,20 +2113,26 @@ async function ve_bd_gia(el, x0, them = {}) {
   if (SKP) {                                              // rê / chạm vào bong bóng sự kiện → hộp chi tiết cạnh bong bóng (như FireAnt)
     const hop = el.querySelector(".sk-hop") || el.appendChild(Object.assign(document.createElement("div"), {className: "sk-hop"}));
     hop.style.display = "none";
-    let ghim = false;                                     // điện thoại: chạm bong bóng → giữ hộp tới lần chạm sau
-    const hien = h => {
+    const cham = matchMedia("(hover: none)").matches;
+    let ghim = null;                                      // điện thoại: chạm 1 lần → hộp (giữ tới lần chạm sau), chạm lại → bảng chi tiết
+    const hien = h => {                                   // điện thoại: hộp đang ghim chạm được (mở bảng chi tiết); máy tính: hộp không chặn chuột
       const ev = h.e, ds = ev.ct.slice(0, 8);
+      if (ghim !== ev) { hop.style.pointerEvents = "none"; hop.onclick = null; }
       hop.innerHTML = `<div class="sk-dau"><i style="background:${ev.mau}"></i><b>${esc(ev.ten)}</b>${ev.so > 1 ? ` <span class="cg-g">× ${ev.so}</span>` : ""}</div>` +
         `<div class="cg-g">${PHUT(kh) ? "" : ngay_vn(x.d[ev.i])}</div>` + ds.map(c => `<div>${esc(c)}</div>`).join("") +
-        (ev.ct.length > ds.length ? `<div class="cg-g">… và ${ev.ct.length - ds.length} mục khác</div>` : "");
+        (ev.ct.length > ds.length ? `<div class="cg-g">… và ${ev.ct.length - ds.length} mục khác</div>` : "") +
+        `<div class="sk-goi">${cham ? "Chạm vào đây hoặc chạm lại bong bóng" : "Bấm vào bong bóng"} để xem chi tiết ›</div>`;
       hop.style.display = "block";
       const W = el.clientWidth, w = hop.offsetWidth, hh = hop.offsetHeight;
       hop.style.left = Math.max(4, Math.min(W - w - 4, h.x - w / 2)) + "px";
       hop.style.top = Math.max(4, h.y - h.r - hh - 8) + "px";
     };
     const tim = e => e?.point && !(e.paneIndex > 0) ? SKP.tim(e.point) : null;
-    ch.subscribeCrosshairMove(e => { const h = tim(e); if (h) { ghim = false; hien(h); } else if (!ghim) hop.style.display = "none"; });
-    ch.subscribeClick(e => { const h = tim(e); ghim = !!h; if (h) hien(h); else hop.style.display = "none"; });
+    ch.subscribeCrosshairMove(e => { const h = tim(e); if (h) { if (ghim !== h.e) ghim = null; hien(h); } else if (!ghim) hop.style.display = "none"; });
+    ch.subscribeClick(e => { const h = tim(e);                // bấm bong bóng → bảng cạnh bên (như FireAnt): CT/CP cổ tức, M/B cổ đông, BC KQKD…
+      if (!h) { ghim = null; hop.style.display = "none"; return; }
+      if (!cham || ghim === h.e) { ghim = null; hop.style.display = "none"; mo_sk_pnl(them.ma, h.e.k); return; }
+      ghim = h.e; hien(h); hop.style.pointerEvents = "auto"; hop.onclick = () => { ghim = null; hop.style.display = "none"; mo_sk_pnl(them.ma, h.e.k); }; });
   }
   el._cap = () => { nut_bd(); dat_cp(); };                        // gắn sự kiện 1 lần / khung (vẽ lại không chồng sự kiện)
   if (!el._nghe) { el._nghe = true;
@@ -2971,23 +2985,111 @@ function co_dong(ma, k) {
   }
   return sub + h;
 }
-// ---------------------------------------------------------------- CỔ TỨC & SỰ KIỆN
-function co_tuc(ma, k) {
-  const sk = k.n?.sk || [], gn = gia_nay(ma, k), nay = new Date().toISOString().slice(0, 10);
-  const tien = sk.filter(x => x.ma_sk === "DIV" && x.gia_tri), cp = sk.filter(x => x.ma_sk === "ISS" && x.ty_le && /cổ tức|thưởng/i.test(x.ten));
-  const nam = [...new Set(sk.map(x => x.ngay.slice(0, 4)))].sort().slice(-7);
-  const t_nam = nam.map(y => tien.filter(x => x.ngay.startsWith(y)).reduce((a, x) => a + x.gia_tri, 0) || null);
-  const c_nam = nam.map(y => cp.filter(x => x.ngay.startsWith(y)).reduce((a, x) => a + x.ty_le * 100, 0) || null);
-  const t12 = tien.filter(x => x.ngay > new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10) && x.ngay <= nay).reduce((a, x) => a + x.gia_tri, 0);
-  let h = `<div class="hai">` + the("Cổ tức tiền mặt", `đồng / CP theo năm GDKHQ${t12 && gn.gia ? ` · tỷ suất 12 tháng ${so(t12 / (gn.gia * 1000) * 100, 2)}%` : ""}`,
-    `<div class="bieu" style="padding:6px 8px">${ve_ket_hop(nam, [{ten: "Cổ tức tiền", v: t_nam, mau: "#3f7fbf"}], null, {h: 200})}</div>`) +
-    the("Cổ tức bằng cổ phiếu / thưởng", "% theo năm", `<div class="bieu" style="padding:6px 8px">${ve_ket_hop(nam, [{ten: "CP thưởng / cổ tức CP", v: c_nam, mau: "#9b3fd1"}], null, {h: 200})}</div>`) + `</div>`;
+// ---------------------------------------------------------------- CỔ TỨC & SỰ KIỆN (14/11/2026 kiểu FireAnt: thẻ tóm tắt · cổ tức theo năm ·
+// điểm nhấn tự động · lịch sử chi trả; số liệu sự kiện Vietcap – năm theo ngày GDKHQ)
+// BẢNG CẠNH BÊN (14/11/2026 – như FireAnt): bấm bong bóng sự kiện trên biểu đồ → trang chi tiết ngay cạnh, không rời biểu đồ
+const SK_TRANG = {CT: ["co-tuc", "Cổ tức"], CP: ["co-tuc", "Cổ tức"], M: ["co-dong", "Giao dịch cổ đông & nội bộ"], B: ["co-dong", "Giao dịch cổ đông & nội bộ"],
+  BC: ["tai-chinh", "Kết quả kinh doanh"], "ĐH": ["co-tuc", "Đại hội cổ đông"], K: ["co-tuc", "Lịch sự kiện"]};
+async function mo_sk_pnl(ma, loai) {
+  let p = $(".sk-pnl");
+  if (!p) {
+    p = document.body.appendChild(Object.assign(document.createElement("aside"), {className: "sk-pnl"}));
+    p.setAttribute("role", "dialog");
+    p.addEventListener("click", e => { const b = e.target.closest("[data-sk],[data-cd],[data-skp-dong]"); if (!b) return;
+      if (b.dataset.skpDong != null) return dong_sk_pnl();
+      e.stopPropagation(); if (b.dataset.sk) ST.sk = b.dataset.sk; if (b.dataset.cd) ST.cd = b.dataset.cd; ve_sk_pnl(); });
+    addEventListener("keydown", e => { if (e.key === "Escape") dong_sk_pnl(); });
+  }
+  p._ma = ma; p._loai = loai;
+  if (loai === "M" || loai === "B") ST.cd = "nb"; else if (loai === "ĐH") ST.sk = "dh"; else if (loai === "K") ST.sk = "tat"; else if (loai === "CT" || loai === "CP") ST.sk = "div";
+  await ve_sk_pnl();
+  requestAnimationFrame(() => p.classList.add("mo"));
+}
+function dong_sk_pnl() { $(".sk-pnl")?.classList.remove("mo"); }
+async function ve_sk_pnl() {
+  const p = $(".sk-pnl"); if (!p) return;
+  const ma = p._ma, loai = p._loai, [tab, tieu] = SK_TRANG[loai] || SK_TRANG.K, k = await tai_ma(ma);
+  const than = loai === "CT" || loai === "CP" ? co_tuc(ma, k) : loai === "M" || loai === "B" ? co_dong(ma, k)
+    : loai === "BC" ? kq_quy_pnl(ma, k) : bang_su_kien(k.n?.sk || [], ST.sk, hom_nay(), 80);
+  p.innerHTML = `<div class="sk-pnl-dau"><i style="width:10px;height:10px;border-radius:50%;background:${SK_LOAI[loai]?.[0] || "#6b7280"}"></i><b>${esc(ma)} · ${esc(tieu)}</b>` +
+    `<a href="#${esc(ma)}/${tab}" data-skp-dong>Mở trang đầy đủ ↗</a><button type="button" data-skp-dong aria-label="Đóng">✕</button></div><div class="sk-pnl-than">${than}</div>`;
+}
+function kq_quy_pnl(ma, k) {                             // BC: KQKD theo quý + ngày công bố BCTC + so cùng kỳ
+  const r = k.r || {}, cot = r.cot || [];
+  if (!cot.length) return the("Kết quả kinh doanh", "", `<div class="trong">Chưa có số liệu BCTC</div>`);
+  const yoy = a => (a || []).map((v, j) => j >= 4 && a[j - 4] > 0 && v != null ? v / a[j - 4] - 1 : null), ydt = yoy(r.dt), yln = yoy(r.ln);
+  const cb = new Map((r.cb || []).map(([ky, d]) => [ky, d]));
+  return the("Kết quả kinh doanh theo quý", "tỷ đồng · ngày công bố BCTC", `<div class="bieu" style="padding:6px 8px">${ve_ket_hop(cot, [{ten: "Doanh thu", v: r.dt || [], mau: "#9db7e6"}, {ten: "LNST", v: r.ln || [], mau: "#2f5fd0"}], null, {h: 220})}</div>` +
+    `<div class="bang-boc"><table><thead><tr><th class="trai">Quý</th><th>Công bố</th><th>Doanh thu</th><th>± cùng kỳ</th><th>LNST</th><th>± cùng kỳ</th></tr></thead><tbody>` +
+    cot.map((q, j) => [q, j]).reverse().map(([q, j]) => `<tr><td class="trai"><b>${q}</b></td><td>${cb.has(q) ? ngay_vn(cb.get(q)) : "–"}</td><td>${so(r.dt?.[j], 0)}</td><td class="${mau(ydt[j])}">${ydt[j] != null ? pt(ydt[j], 0) : "–"}</td>` +
+      `<td>${so(r.ln?.[j], 0)}</td><td class="${mau(yln[j])}">${yln[j] != null ? pt(yln[j], 0) : "–"}</td></tr>`).join("") + `</tbody></table></div>`) +
+    (r.nhan_xet ? the("Nhận xét", "", `<div class="than">${esc(r.nhan_xet)}</div>`) : "");
+}
+function so_co_tuc(ma, k) {
+  const sk = k.n?.sk || [], nay = hom_nay(), y1 = +nay.slice(0, 4), xep = a => a.sort((p, q) => p.ngay < q.ngay ? -1 : p.ngay > q.ngay ? 1 : 0);
+  const tien = xep(sk.filter(x => x.ma_sk === "DIV" && x.gia_tri > 0)), cp = xep(sk.filter(x => x.ma_sk === "ISS" && x.ty_le > 0 && /cổ tức|thưởng/i.test(`${x.ten} ${x.loai}`)));
+  const da = a => a.filter(x => x.ngay <= nay), nam = Array.from({length: 10}, (_, i) => String(y1 - 9 + i));
+  const theo = nam.map(y => { const t = tien.filter(x => x.ngay.startsWith(y)), c = cp.filter(x => x.ngay.startsWith(y));
+    return {nam: y, tien: t.reduce((a, x) => a + x.gia_tri, 0), dot: t.length, cp: c.reduce((a, x) => a + x.ty_le * 100, 0)}; });
+  const tu = new Date(Date.now() + 7 * 3600e3 - 365 * 864e5).toISOString().slice(0, 10), t12 = da(tien).filter(x => x.ngay > tu);
+  let lien = 0, j = theo.length - 1;
+  if (!theo[j].tien) j--;                                          // năm nay chưa trả → tính tới năm trước
+  for (; j >= 0 && theo[j].tien > 0; j--) lien++;
+  const dau_lien = theo[theo.length - (theo[theo.length - 1].tien ? 1 : 2) - lien + 1];
+  const co_so = theo.filter(z => z.tien > 0 || z.cp > 0 || sk.some(x => x.ngay.startsWith(z.nam)));
+  return {nay, tien, cp, theo, t12, t12_tong: t12.reduce((a, x) => a + x.gia_tri, 0), lien, dau_lien, nam_cuoi: lien ? theo[theo.length - (theo[theo.length - 1].tien ? 1 : 2)] : null,
+    so_nam: co_so.length, nam_cp: theo.filter(z => z.cp > 0).length, sap: sk.filter(x => x.ngay > nay && (x.ma_sk === "DIV" || x.ma_sk === "ISS"))};
+}
+const ty_le_cp = pct => { const r = 100 / pct; return Math.abs(r - Math.round(r)) < .05 ? `${Math.round(r)}:1` : `100:${so(pct, 1)}`; };
+function ve_co_tuc_nam(theo) {                          // cột tiền mặt đ/CP theo năm (số trên cột), dòng % cổ phiếu dưới năm, đường TB
+  const W = innerWidth < 700 ? 400 : 640, H = 230, L = 10, R = 10, T = 22, B = 40, n = theo.length, mx = Math.max(1, ...theo.map(z => z.tien));
+  const co = theo.filter(z => z.tien > 0), tbv = co.length ? co.reduce((a, z) => a + z.tien, 0) / co.length : 0;
+  const gw = (W - L - R) / n, Y = v => T + (1 - v / mx) * (H - T - B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cổ tức theo năm">`;
+  if (tbv) s += `<line x1="${L}" x2="${W - R}" y1="${Y(tbv)}" y2="${Y(tbv)}" stroke="#9aa4b2" stroke-dasharray="4 3"/><text x="${L + 2}" y="${Y(tbv) - 4}" font-size="10.5" fill="#6b7280">TB ${so(tbv, 0)}đ</text>`;
+  theo.forEach((z, i) => { const x = L + gw * i + gw * .2, w = gw * .6, cuoi = i === n - 1;
+    if (z.tien > 0) s += `<rect x="${x}" y="${Y(z.tien)}" width="${w}" height="${Y(0) - Y(z.tien)}" rx="2" fill="${cuoi ? "#9db7e6" : "#2f5fd0"}"${cuoi ? ' stroke="#2f5fd0" stroke-dasharray="3 2"' : ""}><title>${z.nam}: ${so(z.tien, 0)} đ/CP · ${z.dot} đợt</title></rect>
+      <text x="${x + w / 2}" y="${Y(z.tien) - 5}" text-anchor="middle" font-size="11" font-weight="600" fill="#1b1f24">${so(z.tien, 0)}</text>`;
+    else s += `<text x="${x + w / 2}" y="${Y(0) - 5}" text-anchor="middle" font-size="11" fill="#9aa4b2">0</text>`;
+    s += `<text x="${x + w / 2}" y="${H - B + 15}" text-anchor="middle" font-size="11" fill="#4b5565"${cuoi ? ' font-weight="700"' : ""}>${z.nam}${cuoi ? "*" : ""}</text>` +
+      (z.cp > 0 ? `<text x="${x + w / 2}" y="${H - B + 30}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#9b3fd1">+${so(z.cp, 0)}%</text>` : ""); });
+  return s + `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#d9e7dc"/></svg>`;
+}
+function bang_su_kien(sk, loc_k, nay, so_dong = 60) {
   const loc = {tat: () => true, div: x => x.ma_sk === "DIV" || x.nhom === "DIVIDEND", ph: x => x.ma_sk === "ISS", dh: x => /AGM|EGM/.test(x.ma_sk) || x.nhom === "SHAREHOLDER_MEETING", nb: x => /^DD/.test(x.ma_sk)};
-  const ds = sk.filter(loc[ST.sk] || loc.tat);
-  h += the("Lịch sự kiện", `${sk.length} sự kiện · Vietcap`, ds.length ? `<div class="bang-boc"><table><thead><tr><th class="trai">Ngày GDKHQ / diễn ra</th><th class="trai">Sự kiện</th><th>Chốt quyền</th><th>Thực hiện</th></tr></thead><tbody>` +
-    ds.slice(0, 60).map(x => `<tr style="${x.ngay > nay ? "background:#eef6ff" : ""}"><td class="trai"><b>${ngay_vn(x.ngay)}</b>${x.ngay > nay ? ` <span class="huy bot">sắp tới</span>` : ""}</td><td class="trai bo">${esc(x.ten || x.loai)}${x.gia_tri && x.ma_sk === "DIV" ? ` <span class="m">(${so(x.gia_tri, 0)} đ/CP)</span>` : ""}</td><td>${ngay_vn(x.chot)}</td><td>${ngay_vn(x.thuc_hien)}</td></tr>`).join("") + `</tbody></table></div>`
-    : `<div class="trong">Chưa có sự kiện</div>`, nut([["tat", "Tất cả"], ["div", "Cổ tức"], ["ph", "Phát hành"], ["dh", "ĐHCĐ"], ["nb", "Nội bộ"]], ST.sk, "sk"));
-  return h;
+  const ds = sk.filter(loc[loc_k] || loc.tat);
+  return the("Lịch sự kiện", `${sk.length} sự kiện · Vietcap`, ds.length ? `<div class="bang-boc"><table><thead><tr><th class="trai">Ngày GDKHQ / diễn ra</th><th class="trai">Sự kiện</th><th>Chốt quyền</th><th>Thực hiện</th></tr></thead><tbody>` +
+    ds.slice(0, so_dong).map(x => `<tr style="${x.ngay > nay ? "background:#eef6ff" : ""}"><td class="trai"><b>${ngay_vn(x.ngay)}</b>${x.ngay > nay ? ` <span class="huy bot">sắp tới</span>` : ""}</td><td class="trai bo">${esc(x.ten || x.loai)}${x.gia_tri && x.ma_sk === "DIV" ? ` <span class="m">(${so(x.gia_tri, 0)} đ/CP)</span>` : ""}</td><td>${ngay_vn(x.chot)}</td><td>${ngay_vn(x.thuc_hien)}</td></tr>`).join("") + `</tbody></table></div>`
+    : `<div class="trong">Chưa có sự kiện</div>`, nut([["tat", "Tất cả"], ["div", "Cổ tức"], ["ph", "Phát hành"], ["dh", "ĐHCĐ"], ["nb", "Nội bộ"]], loc_k, "sk"));
+}
+function co_tuc(ma, k) {
+  const S = so_co_tuc(ma, k), gn = gia_nay(ma, k), eps = k.r?.eps, ct = S.tien[S.tien.length - 1] && S.tien.filter(x => x.ngay <= S.nay).pop(), cpg = S.cp.filter(x => x.ngay <= S.nay).pop();
+  const dot = x => (String(x?.ten || "").match(/đợt\s*\d+\s*\/\s*\d{4}/i) || [""])[0].replace(/\s+/g, " ");
+  const loi = S.t12_tong && gn.gia ? S.t12_tong / (gn.gia * 1000) * 100 : null, chi = S.t12_tong && eps > 0 ? S.t12_tong / eps * 100 : null;
+  const o = (tieu, phu, lon, nho, cuoi) => `<div class="ct-o"><div class="ct-t">${tieu}${phu ? ` <span class="m">${phu}</span>` : ""}</div><div class="ct-lon">${lon}</div><div class="m">${nho || "&nbsp;"}</div><div class="ct-cuoi m">${cuoi || "&nbsp;"}</div></div>`;
+  let h = `<div class="ct-luoi">` +
+    o("Lợi suất 12 tháng", "", loi != null ? `${so(loi, 2)}%` : "–", S.t12.length ? `${so(S.t12_tong, 0)}đ/CP · ${S.t12.length} đợt` : "chưa trả tiền 12 tháng qua", gn.gia ? `Theo giá ${so(gn.gia, 2)}` : "") +
+    o("Tiền mặt gần nhất", dot(ct), ct ? `${so(ct.gia_tri, 0)} <span class="m">đ/CP</span>` : "–", ct ? `GDKHQ ${ngay_vn(ct.ngay)}` : "", ct?.thuc_hien ? `Thanh toán ${ngay_vn(ct.thuc_hien)}` : "") +
+    o("Cổ phiếu gần nhất", cpg ? `Năm ${cpg.ngay.slice(0, 4)}` : "", cpg ? `${ty_le_cp(cpg.ty_le * 100)} <span class="m">${so(cpg.ty_le * 100, 0)}%</span>` : "–", cpg ? `GDKHQ ${ngay_vn(cpg.ngay)}` : "", S.so_nam ? `Chia cổ phiếu ${S.nam_cp}/${S.so_nam} năm` : "") +
+    o("Trả tiền liên tiếp", "", `${S.lien} <span class="m">năm</span>`, S.nam_cuoi ? `Đến năm ${S.nam_cuoi.nam}` : "", chi != null ? `Tỷ lệ chi trả ≈ ${so(chi, 0)}% EPS 4 quý` : "") + `</div>`;
+  const nhan = [];                                        // điểm nhấn tự động
+  if (S.lien >= 2) { const tron = S.theo[S.theo.length - 2], a = S.dau_lien?.tien, b = (S.nam_cuoi === S.theo[S.theo.length - 1] && tron?.tien > 0 ? tron : S.nam_cuoi)?.tien;   // năm nay chưa hết → so năm trọn gần nhất
+    const xu = a && b && a !== b ? `, ${b > a ? "tăng" : "giảm"} từ ${so(a, 0)}đ ${b > a ? "lên" : "xuống"} ${so(b, 0)}đ/CP` : a ? `, giữ ${so(a, 0)}đ/CP` : "";
+    nhan.push(["#0f8a4a", `${esc(ma)} trả cổ tức tiền mặt <b>${S.lien} năm liên tiếp</b>${xu}.`]); }
+  else if (!S.tien.length) nhan.push(["#6b7280", "Chưa ghi nhận cổ tức tiền mặt trong dữ liệu sự kiện."]);
+  if (loi != null) nhan.push(["#1f6feb", `Lợi suất cổ tức tiền 12 tháng <b>${so(loi, 2)}%</b>: ${so(S.t12_tong, 0)}đ/CP (${S.t12.length} đợt) so với giá hiện tại ${so(gn.gia, 2)}.`]);
+  if (cpg) nhan.push(["#9b3fd1", `Chia cổ tức bằng cổ phiếu <b>${S.nam_cp}/${S.so_nam} năm</b> gần đây, gần nhất tỷ lệ ${ty_le_cp(cpg.ty_le * 100)} (${so(cpg.ty_le * 100, 0)}%), GDKHQ ${ngay_vn(cpg.ngay)}.`]);
+  if (chi != null) nhan.push(["#b88a00", `Cổ tức tiền 12 tháng ≈ <b>${so(chi, 0)}% EPS</b> 4 quý gần nhất${chi < 100 ? ", phần còn lại giữ lại tái đầu tư" : " – trả nhiều hơn lợi nhuận, khó duy trì nếu lợi nhuận không tăng"}.`]);
+  for (const x of S.sap) nhan.push(["#d1342b", `Sắp GDKHQ <b>${ngay_vn(x.ngay)}</b>: ${esc(x.ten || x.loai)}${x.gia_tri && x.ma_sk === "DIV" ? ` (${so(x.gia_tri, 0)} đ/CP)` : ""}.`]);
+  h += `<div class="hai">` + the("Cổ tức theo năm", `10 năm gần nhất · tiền mặt đ/CP · <span style="color:#9b3fd1">+% cổ phiếu</span> · * năm nay, tính tới ${ngay_vn(S.nay)}`,
+    `<div class="bieu" style="padding:6px 8px">${ve_co_tuc_nam(S.theo)}</div>`) +
+    the("Điểm nhấn cổ tức", "tự động", `<div class="than ct-nhan">${nhan.map(([m, t]) => `<div><i style="background:${m}"></i><span>${t}</span></div>`).join("") || `<div class="trong">Chưa có số liệu</div>`}</div>`) + `</div>`;
+  const ls = [...S.tien.map(x => ({...x, loai_: "Tiền mặt", gt: `${so(x.gia_tri, 0)} đ/CP`})), ...S.cp.map(x => ({...x, loai_: "Cổ phiếu", gt: `${ty_le_cp(x.ty_le * 100)} (${so(x.ty_le * 100, 0)}%)`}))]
+    .sort((a, b) => a.ngay < b.ngay ? 1 : -1);
+  h += the("Lịch sử chi trả", `${ls.length} lần trong dữ liệu`, ls.length ? `<div class="bang-boc"><table><thead><tr><th class="trai">GDKHQ</th><th class="trai">Loại</th><th>Giá trị</th><th>Chốt quyền</th><th>Thanh toán</th><th class="trai">Nội dung</th></tr></thead><tbody>` +
+    ls.slice(0, 40).map(x => `<tr style="${x.ngay > S.nay ? "background:#eef6ff" : ""}"><td class="trai"><b>${ngay_vn(x.ngay)}</b>${x.ngay > S.nay ? ` <span class="huy bot">sắp tới</span>` : ""}</td><td class="trai"><span style="color:${x.loai_ === "Tiền mặt" ? "#c98a00" : "#9b3fd1"}">●</span> ${x.loai_}</td><td><b>${x.gt}</b></td><td>${ngay_vn(x.chot)}</td><td>${ngay_vn(x.thuc_hien)}</td><td class="trai bo m">${esc(x.ten || x.loai)}</td></tr>`).join("") + `</tbody></table></div>`
+    : `<div class="trong">Chưa có lần chi trả nào trong dữ liệu</div>`);
+  return h + bang_su_kien(k.n?.sk || [], ST.sk, S.nay);
 }
 
 // ---------------------------------------------------------------- LỊCH SỬ GIÁ

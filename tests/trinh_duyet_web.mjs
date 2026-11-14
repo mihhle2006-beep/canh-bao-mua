@@ -45,6 +45,20 @@ for (const t of trang) {
         const [lenh, ...x] = b.split(":"), v = x.join(":");
         if (lenh === "click") await pg.click(v, {timeout: 10000});
         else if (lenh === "cho") await pg.waitForTimeout(+v);
+        else if (lenh === "skmo") {                   // bấm (máy tính) / chạm lần 2 (điện thoại) bong bóng CT → bảng cạnh bên Cổ tức
+          const p = await pg.evaluate(() => { const hop = document.querySelector(".sk-hop"), hit = typeof BD_DK !== "undefined" ? BD_DK?.skp?.hit || [] : [];
+            if (!hop) return null; const r = hop.parentElement.getBoundingClientRect();
+            for (const h of hit.filter(z => z.e.k === "CT")) { const x = r.left + h.x, y = r.top + h.y; if (document.elementFromPoint(x, y)?.tagName === "CANVAS") return {x, y}; }
+            return null; });
+          if (!p) throw new Error("không thấy bong bóng CT bấm được");
+          if (kho === "điện thoại") { await pg.touchscreen.tap(p.x, p.y); await pg.waitForTimeout(700); await pg.click(".sk-hop"); }   // chạm bong bóng → hộp → chạm hộp
+          else await pg.mouse.click(p.x, p.y);
+          await pg.waitForSelector(".sk-pnl.mo .ct-luoi", {state: "visible", timeout: 5000});
+          const chu = await pg.$eval(".sk-pnl", e => e.innerText);
+          if (!/Lợi suất 12 tháng/.test(chu) || !/Lịch sử chi trả/.test(chu)) throw new Error("bảng Cổ tức thiếu nội dung");
+          await pg.click(".sk-pnl [aria-label='Đóng']");
+          await pg.waitForTimeout(400);
+        }
         else if (lenh === "sk") {                     // rê chuột / chạm vào bong bóng sự kiện đầu tiên → hộp chi tiết phải hiện
           await pg.waitForTimeout(800);
           await pg.evaluate(() => document.querySelector(".sk-hop")?.parentElement.scrollIntoView({block: "center"}));
