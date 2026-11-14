@@ -1,6 +1,6 @@
 # 📈 Cảnh báo mua cổ phiếu
 
-> **Cái gì ở đâu, chạy thế nào:** xem [CAU_TRUC.md](CAU_TRUC.md) (30 workflow, lịch, cách bấm chạy, code nằm ở repo nào).
+> **Cái gì ở đâu, chạy thế nào:** xem [CAU_TRUC.md](CAU_TRUC.md) (41 workflow, lịch, cách bấm chạy, code nằm ở repo nào).
 
 Bot Telegram chạy trên GitHub Actions. Mỗi ngày bot chọn mã nên mua, báo lúc nào mua trong phiên,
 nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
@@ -15,7 +15,7 @@ nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
 | 9:00 – 14:45, mỗi 15 phút (T2–T6) | 🟢 MUA NGAY · ⏰ MUA ATC · 🚫 BỎ cho mã trong danh sách mua hôm trước (nhiều mã cùng lúc: tin riêng chỉ mã ★, còn lại 1 dòng dự phòng trong tin 📋); cảnh báo bán mã đang giữ |
 | 15:20 (T2–T6) | Tổng kết: thị trường, danh sách mua phiên tới, file Excel và file HTML "Bảng tổng hợp" |
 | 16:20 ngày 1 hằng tháng | 🚀 File HTML "Siêu CP tiềm năng": mã vốn hoá ≤ 10.000 tỷ, thanh khoản tăng ≥ 1,3× (danh sách theo dõi, chưa phải lệnh mua) |
-| 9:07 thứ Bảy | Không gửi tin: chấm lại đúng/sai mọi tín hiệu cũ, kết quả xem trong log |
+| 9:07 thứ Bảy | Chấm lại đúng/sai mọi tín hiệu cũ (kết quả trong log); lần đầu mỗi tháng gửi 1 tin tóm tắt + file Excel |
 
 - Ngày nghỉ lễ bot tự bỏ qua.
 - Backtest (chạy hằng tháng hoặc chạy tay) **không gửi Telegram**, kết quả xem trong log.

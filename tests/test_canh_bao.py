@@ -493,6 +493,29 @@ def test_nen_15p_cu_khong_tu_ban(monkeypatch):
     assert kq[0]["gia"] == 10.1 and goi == []
 
 
+def test_lich_su_gui_telegram_thang_1_lan(monkeypatch, tmp_path):
+    """Thứ Bảy chấm lại: lần đầu trong tháng gửi 1 tin tóm tắt + Excel, các lần sau trong tháng không; --khong_gui không gửi."""
+    from canh_bao import nhat_ky
+    monkeypatch.setenv("GITHUB_ACTIONS", "1")
+    monkeypatch.setattr(nhat_ky, "cap_nhat", lambda *a, **k: 3)
+    monkeypatch.setattr(nhat_ky, "doc", lambda p: pd.DataFrame())
+    monkeypatch.setattr(nhat_ky, "thong_ke", lambda d: pd.DataFrame())
+    monkeypatch.setattr(nhat_ky, "xuat_excel", lambda **k: str(tmp_path / "dg.xlsx"))
+    monkeypatch.setattr(nhat_ky, "dong_tong_ket", lambda **k: "📊 " + k["tieu_de"])
+    tt, gui, tep = {}, [], []
+    monkeypatch.setattr(chay, "doc_trang_thai", lambda: tt)
+    monkeypatch.setattr(chay, "ghi_trang_thai", lambda t: None)
+    monkeypatch.setattr(chay, "gui", lambda nd, **k: gui.append(nd))
+    monkeypatch.setattr(chay, "gui_file", lambda p, **k: tep.append(p))
+    assert chay.xem_lich_su("2026-11-07 09:07") == 0 and len(gui) == len(tep) == 1 and "07/11/2026" in gui[0]
+    assert tt["_do_chinh_xac_thang"] == "2026-11"
+    chay.xem_lich_su("2026-11-14 09:07")                                   # cùng tháng → không gửi lại
+    chay.xem_lich_su("2026-12-05 09:07", khong_gui=True)                   # chạy thử → không gửi, không ghi
+    assert len(gui) == 1 and tt["_do_chinh_xac_thang"] == "2026-11"
+    chay.xem_lich_su("2026-12-05 09:07")
+    assert len(gui) == 2 and tt["_do_chinh_xac_thang"] == "2026-12"
+
+
 def test_gui_loi_mang_khong_nem(monkeypatch, capsys):
     import requests
     monkeypatch.setenv("TELEGRAM_TOKEN", "t:bimat")

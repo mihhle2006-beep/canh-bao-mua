@@ -5,7 +5,7 @@ Nguyên tắc (11/2026): **thứ gì KÍN để ở repo riêng tư, việc CH�
 
 | Repo | Công khai? | Chứa gì |
 |---|---|---|
-| **canh-bao-mua** (repo này) | công khai | 30 workflow · bot cảnh báo (`canh_bao/`, `chay.py`) · bộ lọc (`bo_loc/`) · công cụ sở hữu (`cong_cu/so_huu`) · kết quả công khai (tín hiệu, lịch sử ★, backtest điểm vào) |
+| **canh-bao-mua** (repo này) | công khai | 41 workflow · bot cảnh báo (`canh_bao/`, `chay.py`) · bộ lọc (`bo_loc/`) · công cụ sở hữu (`cong_cu/so_huu`) · kết quả công khai (tín hiệu, lịch sử ★, backtest điểm vào) |
 | **danh-muc** | kín | thư viện chung `ptcp/` (luật Quỹ Bứt Phá, chỉ báo, backtest, định giá, BCTC…) · danh mục thật `dmuc/` + file danh mục / tiền / lệnh / Trứng vàng · script nghiên cứu (backtest quỹ, báo cáo mã, siêu cổ phiếu) · kho dữ liệu `du_lieu/` (BCTC, BCTN, bất thường) – xem `CAU_TRUC.md` trong danh-muc |
 | **gia_lap** | kín | giao dịch giả lập (tài khoản ảo theo đúng luật), sức khoẻ hệ thống, tổng kết tuần |
 | Bo_Loc | kín | phần bộ lọc riêng (PTĐTTC) – không chạy từ đây |
@@ -42,6 +42,13 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Tra cuu ma | 07:53 thứ Bảy (+ chạy tay) | tra cứu mã đang giữ / theo dõi | danh-muc `ptcp.tra_cuu` |
 | Backtest quy But Pha | 09:13 ngày 1 hằng tháng (+ chạy tay) | mốc luật đang chạy (`chuan`); kết luận các phần cũ đã xoá ở danh-muc `KET_LUAN_BACKTEST_CU.md` | danh-muc `chay_backtest_quy_b.py` |
 | Backtest | 02:17 ngày 2 hằng tháng | backtest điểm vào 15' → `ket_qua_backtest.json` (bot tự chọn cách vào) | repo này |
+| Dong ho | liên tục (lượt ≈ 5 giờ 40', tự gọi lượt sau; lịch 2 giờ / lần chỉ để khởi động lại chuỗi) | gọi các workflow đúng giờ VN thay cron GitHub hay trễ; giám sát lỗi, máy Mac, bảng đứng; 20:05 kiểm hạn token | repo này `cong_cu/dong_ho.py` |
+| Gac lich | – (job dùng chung, workflow_call) | lịch cron tới trễ mà đồng hồ / bấm tay đã chạy từ mốc đó → job chính bỏ qua, không gửi lặp | repo này `cong_cu/dong_ho.py --gac` |
+| Lenh Telegram | phút 37 mỗi giờ (cả cuối tuần; trong phiên vòng 15' nghe liên tục) | tin nhắn lệnh của chủ quỹ → `nhap.txt` danh-muc; nút 🛒 / 🛑 / ✅ → máy Mac đặt lệnh; chuyển kết quả lệnh về Telegram | repo này `canh_bao/lenh_tele.py` |
+| Nhip bang thi truong | 08:45 / 12:43 T2–T6 (+ dự phòng) | 1 job chạy suốt buổi, 15' gọi Bang thi truong một lần (lịch */5 của GitHub không tin được) | repo này |
+| Bang thi truong | được Nhịp gọi 15' / lần · 15:10 chốt phiên · 19:07 chuẩn bị phiên sau | dựng trang Bảng thị trường (`docs/thi_truong`) + dữ liệu Tra cứu mã trong phiên | repo này `thi_truong/` |
+| Ke hoach DHCD | 00:23 hằng đêm (mã còn thiếu) + chạy tay | kế hoạch DT / LNTT / LNST năm từ tài liệu ĐHCĐ + tỷ lệ hoàn thành | danh-muc `ptcp/ke_hoach_dhcd.py` |
+| Kho quy dau tu | 20:41 hằng ngày | NAV / danh mục quỹ mở Fmarket → `du_lieu/quy/` (danh-muc) | danh-muc |
 
 ### Chạy trên máy Mac ở Việt Nam (repo danh-muc, runner `vn` – API DNSE chỉ gọi được từ VN)
 
@@ -69,5 +76,9 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Xuat CSV gia | mã, từ ngày | 1 file CSV giá ngày → Telegram | danh-muc |
 | Kiem tra DNSE API | – | gọi thử API DNSE (chỉ đọc) – log chỉ in mã phản hồi / số lượng / tên trường | danh-muc `dmuc/dnse_api.py` |
 | Doc trang | URL | in nội dung trang công khai (VD hướng dẫn DNSE) | – |
+| Kiem quyen token | – | thử quyền + hạn `DANH_MUC_TOKEN_GHI` (đồng hồ cũng tự thử 20:05) | repo này `cong_cu/dong_ho.py --kiem_quyen` |
+| File KQKD theo quy | tai_them | Excel KQKD theo quý HOSE + HNX từ kho BCTC (BCTC moi hang dem tự gửi khi quý mới đủ) | danh-muc `ptcp/kqkd_excel.py` |
+| Thu kenh Telegram | – | gửi 1 tin thử vào từng kênh để kiểm đã nối đúng | repo này |
+| Tra tai lieu doanh nghiep | mã, năm, từ khoá | đọc BCTN + BCTC kiểm toán (PDF / OCR), in câu có từ khoá | danh-muc `ptcp/giai_thich_bat_thuong.py --tra` |
 
 Thêm / đổi workflow: sửa ở repo này; nếu workflow lấy repo kín thì phải có bước xoá file danh mục thật (test sẽ báo).
