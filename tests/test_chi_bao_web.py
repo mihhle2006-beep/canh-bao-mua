@@ -409,7 +409,7 @@ def test_chi_bao_moi_tinh_duoc_moi_mau():
     x = _nen(320, 7)
     kq = _js_moi(f"const x = {json.dumps(x)};\n" + """
       const o = {};
-      for (const z of CB_MOI) { const r = z.f(x, z.ts.map(t => t[1]), "D"), d = {};
+      for (const z of CB_MOI.filter(z => z.nhom !== "dn")) { const r = z.f(x, z.ts.map(t => t[1]), "D"), d = {};
         for (const [id] of z.d) { const a = r[id] || []; d[id] = [a.length, a.filter(v => v != null && isFinite(v)).length, a.slice(-1)[0]]; }
         o[z.k] = {noi: z.noi, d, so_ts: z.ts.length, gh: z.ts.every(t => t[2] <= t[1] && t[1] <= t[3])}; }
       console.log(JSON.stringify(o));""")
@@ -466,3 +466,27 @@ def test_magic_trend_mui_ten_o_cho_doi_chieu():
     h = open(TRANG, encoding="utf-8").read()
     assert 'shape: r.doi[i] > 0 ? "arrowUp" : "arrowDown"' in h and '"▲ Mua" : "▼ Bán"' in h
     assert 'r.chieu[i + 1] !== r.chieu[i] ? "rgba(0,0,0,0)"' in h                # đoạn nối sang chiều mới trong suốt (đường ngắt)
+
+
+def test_chi_bao_du_lieu_theo_ngay_cong_bo():
+    import datetime as dt
+    d = [(dt.date(2018, 1, 1) + dt.timedelta(days=k)).isoformat() for k in range(0, 1100, 3)]
+    c = [20.0] * len(d)
+    q = [f"Q{k % 4 + 1}.{18 + k // 4}" for k in range(8)]                     # Q1.18 … Q4.19
+    b = {"q": q, "y": [], "kd": {"isa22": [10.0, 20, 30, 40, 50, 60, 70, 80], "isa3": [100.0, 100, 100, 100, 150, 100, 100, 50]},
+         "cd": {"bsa80": [100.0] * 8, "bsa78": [1000.0] * 4 + [1200.0] * 4}}
+    sk = [{"ma_sk": "DIV", "gia_tri": 2000, "ngay": "2019-06-03"}]
+    kq = _js_moi(f"const x = {{d: {json.dumps(d)}, c: {json.dumps(c)}}}, ng = {{b: {json.dumps(b)}, sk: {json.dumps(sk)}}};\n" + """
+      const o = {}; for (const k of ["pe", "pb", "eps", "roe", "tdt", "tln", "vh", "dy"]) o[k] = CB_MOI.find(z => z.k === k).f(x, [], "D", ng).v;
+      console.log(JSON.stringify(o));""")
+    i = lambda n: d.index(min((x for x in d if x >= n)))
+    # Q4.18 (cuối 31/12/2018) công bố từ 14/02/2019: LN 4 quý 2018 = 100 tỷ, 10 triệu CP (vốn góp 100 tỷ) → EPS 10.000 đ
+    assert kq["eps"][i("2019-02-14")] == pytest.approx(10000) and kq["eps"][i("2019-02-14") - 1] is None
+    assert kq["pe"][i("2019-02-14")] == pytest.approx(2.0)                     # giá 20 nghìn ÷ 10.000 đ
+    assert kq["pb"][i("2019-02-14")] == pytest.approx(0.2)                     # BVPS 100.000 đ
+    assert kq["roe"][i("2020-02-15")] == pytest.approx(100 * 260 / 1100)       # LN 2019 = 260 · VCSH TB (1000 + 1200) / 2
+    assert kq["tdt"][i("2019-05-16")] == pytest.approx(50) and kq["tln"][i("2019-05-16")] == pytest.approx(400)
+    assert kq["vh"][i("2019-05-16")] == pytest.approx(20e3 * 1e7)               # 20.000 đ × 10 triệu CP
+    assert kq["dy"][i("2019-07-01")] == pytest.approx(10) and kq["dy"][i("2020-07-01")] == 0
+    h = open(TRANG, encoding="utf-8").read()
+    assert "await tai_bctc(them.ma)" in h and '["dn", "Dữ liệu cơ bản"]' in h

@@ -1367,6 +1367,31 @@ const cb_prank = (c, n) => c.map((v, i) => { if (i < n || !cb_ok(v)) return null
 const cb_trung_vi = (c, n) => cb_cua(c, n, w => { const s = [...w].sort((a, b) => a - b); return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; });
 const cb_noi = r => ({v: r.v, chieu: r.len, len: r.v.map((v, i) => r.len[i] === true ? v : null), xuong: r.v.map((v, i) => r.len[i] === false ? v : null),
   doi: r.len.map((v, i) => i && v != null && r.len[i - 1] != null && v !== r.len[i - 1] ? (v ? 1 : -1) : 0)});   // đường đổi chiều: doi 1 sang tăng · −1 sang giảm
+// ---- DỮ LIỆU CƠ BẢN theo nến (BCTC quý web: {q: ["Q3.25"…], kd / cd: {mã: [quý…, năm…]}} – tỷ đồng): số quý dùng từ cuối quý + 45 ngày
+const cb_ngay = d => typeof d === "number" ? new Date(d * 1000).toISOString().slice(0, 10) : String(d).slice(0, 10);
+const cb_cong_bo = l => { const m = /^Q([1-4])\.(\d\d)$/.exec(l || ""); if (!m) return null;
+  const t = new Date(Date.UTC(2000 + +m[2], 3 * m[1], 0)); t.setUTCDate(t.getUTCDate() + 45); return t.toISOString().slice(0, 10); };
+function cb_theo_quy(d, b, v) {                           // v[j] (theo quý) → mỗi nến: quý gần nhất đã công bố
+  const cb = (b?.q || []).map(cb_cong_bo); let j = -1;
+  return d.map(x => { const n = cb_ngay(x); while (j + 1 < cb.length && (cb[j + 1] == null || cb[j + 1] <= n)) j++; return j >= 0 ? v[j] ?? null : null; });
+}
+const cb_quy = (b, bang, ...ma) => (b?.q || []).map((_, j) => { for (const c of ma) { const x = b?.[bang]?.[c]?.[j]; if (cb_ok(x)) return x; } return null; });
+const cb_4q = (a, j) => j >= 3 && a.slice(j - 3, j + 1).every(cb_ok) ? cb_tong(a.slice(j - 3, j + 1)) : null;
+function cb_co_ban(d, c, b) {                             // → {eps (đ, 4 quý), bvps (đ), cp, roe (%), tdt / tln (% cùng kỳ)} theo nến
+  const ln = cb_quy(b, "kd", "isa22", "isa20"), dt = cb_quy(b, "kd", "isa3"), vg = cb_quy(b, "cd", "bsa80"), vc = cb_quy(b, "cd", "bsa78");
+  const ts = cb_quy(b, "cd", "bsa210", "bsa95"), vcm = vc.map((v, j) => cb_ok(v) ? v - (ts[j] || 0) : null), cp = vg.map(v => cb_ok(v) && v > 0 ? v * 1e5 : null);
+  const yoy = a => a.map((v, j) => j >= 4 && cb_ok(v) && a[j - 4] > 0 ? 100 * (v / a[j - 4] - 1) : null);
+  const q = {eps: ln.map((_, j) => { const s = cb_4q(ln, j); return s != null && cp[j] ? s * 1e9 / cp[j] : null; }),
+    bvps: vcm.map((v, j) => cb_ok(v) && cp[j] ? v * 1e9 / cp[j] : null), cp,
+    roe: ln.map((_, j) => { const s = cb_4q(ln, j), a = j >= 4 && cb_ok(vcm[j]) && cb_ok(vcm[j - 4]) ? (vcm[j] + vcm[j - 4]) / 2 : null; return s != null && a > 0 ? 100 * s / a : null; }),
+    tdt: yoy(dt), tln: yoy(ln)};
+  return Object.fromEntries(Object.entries(q).map(([k, v]) => [k, cb_theo_quy(d, b, v)]));
+}
+function cb_co_tuc(d, c, sk) {                            // tỷ suất cổ tức tiền 12 tháng (%) = Σ đồng/CP có ngày GDKHQ trong 365 ngày ÷ giá
+  const ds = (sk || []).filter(x => x.ma_sk === "DIV" && x.gia_tri > 0 && x.ngay).sort((a, b) => a.ngay < b.ngay ? -1 : 1);
+  return d.map((x, i) => { const n = cb_ngay(x), t = new Date(Date.parse(n) - 365 * 864e5).toISOString().slice(0, 10);
+    const s = cb_tong(ds.filter(z => z.ngay > t && z.ngay <= n).map(z => z.gia_tri)); return cb_ok(c[i]) && c[i] > 0 ? 100 * s / (c[i] * 1000) : null; });
+}
 // ---------------------------------------------------------------- hết chỉ báo kỹ thuật
 // ---------------------------------------------------------------- CHỈ BÁO: trạng thái (lưu trong trình duyệt) + menu ƒx (trang thường + toàn màn hình)
 const KHOA_CB = "ma_chi_bao";
@@ -1486,6 +1511,15 @@ const CB_MOI = [
   cb_m("prank", "Hạng phần trăm", "%Rank", "tk", "duoi", "Giá hiện tại cao hơn bao nhiêu phần trăm số phiên trong N phiên trước: 100 là cao nhất kỳ.", [["Chu kỳ", 100, 10, 1000, 1]], [["v", "%Rank", "#00897b", "l"]], (x, t) => ({v: cb_prank(x.c, t[0])}), {ng: [20, 80], cd: [0, 100]}),
   cb_m("doc", "Hệ số góc hồi quy tuyến tính", "Slope", "tk", "duoi", "Độ dốc của đường hồi quy tuyến tính N phiên (% giá mỗi phiên): dương là xu hướng tăng, càng lớn càng dốc.", [["Chu kỳ", 20, 3, 400, 1]], [["v", "%/phiên", "#26a69a", "h"]], (x, t) => ({v: cb_doc(x.c, t[0])}), {ng: [0]}),
   cb_m("med", "Trung vị", "Median", "tk", "tren", "Giá trị ở giữa của N phiên gần nhất: ít bị kéo lệch bởi phiên đột biến.", [["Chu kỳ", 20, 3, 400, 1]], [["v", "Trung vị", "#546e7a", "l"]], (x, t) => ({v: cb_trung_vi(x.c, t[0])})),
+  cb_m("nn", "Khối ngoại mua / bán ròng", "Khối ngoại", "dn", "duoi", "Giá trị mua − bán của nhà đầu tư nước ngoài mỗi phiên (tỷ đồng), kèm tổng ròng N phiên. Mua ròng liên tục thường đi cùng xu hướng tăng dài hạn (chỉ có ở phần lịch sử có số khối ngoại).", [["Cộng dồn (phiên)", 20, 1, 250, 1]], [["v", "Ròng phiên", "#26a69a", "h"], ["cd", "Cộng dồn", "#1565c0", "l"]], (x, t) => { const v = x.nn || x.c.map(() => null); return {v, cd: cb_cua(v, t[0], cb_tong)}; }, {ng: [0]}),
+  cb_m("pe", "P/E theo ngày công bố", "P/E", "dn", "duoi", "Giá chia lợi nhuận cổ đông công ty mẹ 4 quý gần nhất trên mỗi cổ phiếu, chỉ dùng BCTC đã công bố tới từng ngày (cuối quý + 45 ngày); lỗ thì trống.", [], [["v", "P/E", "#6d4c41", "l"]], (x, t, kh, ng) => { const q = cb_co_ban(x.d, x.c, ng?.b); return {v: x.c.map((c, i) => q.eps[i] > 0 ? c * 1000 / q.eps[i] : null)}; }, {can: 1}),
+  cb_m("pb", "P/B theo ngày công bố", "P/B", "dn", "duoi", "Giá chia giá trị sổ sách mỗi cổ phiếu (vốn chủ công ty mẹ ÷ số CP từ vốn góp) đã công bố tới từng ngày.", [], [["v", "P/B", "#3949ab", "l"]], (x, t, kh, ng) => { const q = cb_co_ban(x.d, x.c, ng?.b); return {v: x.c.map((c, i) => q.bvps[i] > 0 ? c * 1000 / q.bvps[i] : null)}; }, {can: 1}),
+  cb_m("eps", "EPS 4 quý", "EPS", "dn", "duoi", "Lợi nhuận cổ đông công ty mẹ 4 quý gần nhất đã công bố trên mỗi cổ phiếu (đồng) – bậc thang đổi khi có BCTC quý mới.", [], [["v", "EPS (đ)", "#00897b", "l"]], (x, t, kh, ng) => ({v: cb_co_ban(x.d, x.c, ng?.b).eps}), {can: 1, ng: [0]}),
+  cb_m("roe", "ROE 4 quý", "ROE", "dn", "duoi", "Lợi nhuận cổ đông công ty mẹ 4 quý ÷ vốn chủ bình quân (đầu – cuối kỳ), % – theo BCTC đã công bố tới từng ngày.", [], [["v", "ROE %", "#c2185b", "l"]], (x, t, kh, ng) => ({v: cb_co_ban(x.d, x.c, ng?.b).roe}), {can: 1, ng: [0, 15]}),
+  cb_m("tdt", "Tăng trưởng doanh thu", "Tăng DT", "dn", "duoi", "Doanh thu thuần quý gần nhất đã công bố so cùng kỳ năm trước (%).", [], [["v", "% cùng kỳ", "#26a69a", "h"]], (x, t, kh, ng) => ({v: cb_co_ban(x.d, x.c, ng?.b).tdt}), {can: 1, ng: [0]}),
+  cb_m("tln", "Tăng trưởng lợi nhuận", "Tăng LN", "dn", "duoi", "Lợi nhuận sau thuế của cổ đông công ty mẹ quý gần nhất đã công bố so cùng kỳ năm trước (%; cùng kỳ lỗ thì trống).", [], [["v", "% cùng kỳ", "#26a69a", "h"]], (x, t, kh, ng) => ({v: cb_co_ban(x.d, x.c, ng?.b).tln}), {can: 1, ng: [0, 25]}),
+  cb_m("vh", "Vốn hoá", "Vốn hoá", "dn", "duoi", "Giá × số cổ phiếu (từ vốn góp quý gần nhất đã công bố) – giá trị thị trường của doanh nghiệp theo từng phiên.", [], [["v", "Vốn hoá", "#5d4037", "v"]], (x, t, kh, ng) => { const q = cb_co_ban(x.d, x.c, ng?.b); return {v: x.c.map((c, i) => q.cp[i] ? c * 1000 * q.cp[i] : null)}; }, {can: 1}),
+  cb_m("dy", "Tỷ suất cổ tức", "Cổ tức", "dn", "duoi", "Cổ tức tiền mặt có ngày giao dịch không hưởng quyền trong 12 tháng gần nhất ÷ giá đóng cửa (%).", [], [["v", "% / năm", "#f57c00", "l"]], (x, t, kh, ng) => ({v: cb_co_tuc(x.d, x.c, ng?.sk)})),
   cb_m("khq", "Kênh hồi quy", "RegCh", "tk", "tren", "Đường hồi quy tuyến tính N nến cuối kèm hai biên cách k độ lệch chuẩn phần dư: giá về biên dưới trong kênh dốc lên là vùng mua.", [["Số nến", 100, 10, 1000, 1], ["Độ lệch chuẩn", 2, 0.5, 5, 0.1]], [["tr", "Trên", "#0277bd", "l"], ["gi", "Giữa", "#90caf9", "l"], ["du", "Dưới", "#0277bd", "l"]], (x, t) => cb_kenh_hq(x.c, ...t)),
 ];
 const MOI = Object.fromEntries(CB_MOI.map(z => [z.k, z]));
@@ -1655,7 +1689,7 @@ function cg_tat(k) {                                    // ✕ trên dòng chú 
 }
 // ---- hộp "Chỉ báo và dữ liệu" (14/11/2026 – bố cục kiểu FireAnt): danh mục · danh sách có mô tả · tham số + nút thêm
 const CBM_NHOM = [["dung", "Đang dùng"], ["tbd", "Trung bình động"], ["xh", "Xu hướng"], ["dl", "Động lượng"], ["bd", "Biến động"], ["kl", "Khối lượng"],
-  ["mh", "Mẫu hình"], ["tk", "Thống kê"], ["he", "Hệ thống & dữ liệu"]];
+  ["mh", "Mẫu hình"], ["tk", "Thống kê"], ["dn", "Dữ liệu cơ bản"], ["he", "Hệ thống & dữ liệu"]];
 const CBM = [["ma", "Đường trung bình động", "MA", "tbd"], ["ema", "Trung bình hàm mũ", "EMA", "tbd"], ["ma10t", "MA10 tuần (đường thoát của hệ)", "MA10T", "tbd"],
   ["st", "Supertrend", "ST", "xh"], ["ich", "Mây Ichimoku", "Ichimoku", "xh"], ["sar", "Parabolic SAR", "SAR", "xh"], ["dc:20", "Kênh Donchian 20", "DC", "xh"],
   ["dc:52", "Kênh 52 tuần", "DC52", "xh"], ["p:adx", "Chỉ số định hướng (ADX / DMI)", "ADX", "xh"],
@@ -2152,7 +2186,9 @@ function dk_bd(c, khung) {                           // điều khiển biểu �
 }
 async function ve_bd_gia(el, x0, them = {}) {
   const LW = await tai_lwc();
-  const VNM = CB.duoi.includes("rs") || CB.ss === "VNINDEX" ? await tai_vni() : null;            // tải trước khi dựng biểu đồ (không chen giữa lúc vẽ)
+  const VNM = CB.duoi.includes("rs") || CB.ss === "VNINDEX" ? await tai_vni() : null;
+  const NG = {b: them.ma && KHO[them.ma] && CB_MOI.some(z => z.can && CB.duoi.includes(z.k) && !an_("p:" + z.k)) ? await tai_bctc(them.ma).catch(() => null) : null,
+    sk: them.n?.sk || []};                                // chỉ báo dữ liệu (P/E, ROE…): BCTC quý + sự kiện cổ tức            // tải trước khi dựng biểu đồ (không chen giữa lúc vẽ)
   if (them.ma && !CHI_SO_TEN[them.ma]) await tai_sk().catch(() => null);
   const BG = CB.bg && them.ma && (ST.khung === "D" || PHUT(ST.khung)) ? await lay(DL + "buoc_gia/" + them.ma + ".json", false) : null;
   const CW = CB.cw && them.ma && !CHI_SO_TEN[them.ma] && !PHUT(ST.khung) ? await tai_cw() : null;
@@ -2217,7 +2253,7 @@ async function ve_bd_gia(el, x0, them = {}) {
     const tr = cua(x.h, Math.max), d_ = cua(x.l, Math.min); dc = {p, tr, du: d_, gi: tr.map((v, i) => v == null ? null : (v + d_[i]) / 2)};
     duong(dc.tr, kd("dc", "tr")); duong(dc.du, kd("dc", "du")); duong(dc.gi, kd("dc", "gi")); }
   const MOI_R = {};                                     // chỉ báo mới vẽ trên nến (CB_MOI)
-  for (const z of CB_MOI) if (z.noi === "tren" && CB[z.k] && !an_(z.k)) { const r = MOI_R[z.k] = z.f(x, CB.ts[z.k] || [], kh);
+  for (const z of CB_MOI) if (z.noi === "tren" && CB[z.k] && !an_(z.k)) { const r = MOI_R[z.k] = z.f(x, CB.ts[z.k] || [], kh, NG);
     if (!r.chieu) { for (const [id] of z.d) if (r[id]) duong(r[id], kd(z.k, id)); continue; }
     // đường đổi chiều (Magic Trend, Chandelier): 1 đường, mỗi điểm 1 màu; đoạn nối sang chiều mới trong suốt → ngắt như FireAnt
     const ml = mk(z.k, "len"), mx = mk(z.k, "xuong"), s_ = S("LineSeries", {lineWidth: 1.5, priceLineVisible: false, lastValueVisible: nhan, crosshairMarkerVisible: false, ...kd(z.k, "len")});
@@ -2324,7 +2360,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   DUOI.forEach((k, j) => {
     const p = j + 1, ts = CB.ts[k], d_ = (v, id, o) => duong(v, kd("p:" + k, id, {lastValueVisible: true, ...o}), p), c_ = id => mk("p:" + k, id), l_ = l => so_k("p:" + k, l);
     const zm = MOI[k];
-    if (zm) { const r = zm.f(x, ts || [], kh); let s0 = null;          // chỉ báo mới (CB_MOI): đường / cột theo khai báo
+    if (zm) { const r = zm.f(x, ts || [], kh, NG); let s0 = null;          // chỉ báo mới (CB_MOI): đường / cột theo khai báo
       for (const [id, , , kieu] of zm.d) { let s_;
         if (kieu === "h" || kieu === "c") { s_ = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: true, ...(zm.kl ? {priceFormat: {type: "volume"}} : {})}, p);
           const m = c_(id); s_.setData(T.map((d, i) => cb_ok(r[id]?.[i]) ? {time: d, value: r[id][i], color: kieu === "h" ? (r[id][i] >= 0 ? "#26a69a" : "#ef5350") : m} : {time: d})); }
