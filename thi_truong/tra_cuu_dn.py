@@ -321,7 +321,23 @@ def gon_co_dong(ds, so=40):
     return out
 
 
+SK_GIU_HET = ("DIV", "ISS", "AGM", "EGM")         # cổ tức / phát hành / đại hội: giữ HẾT từ 2012 (trang Cổ tức 10 năm, bong bóng biểu đồ)
+SK_TRANG, SK_SO_TRANG = 200, 5                    # sự kiện IQ: 200 / trang, lật tối đa 5 trang (≤ 1.000 sự kiện từ 2012)
+
+
+def lay_su_kien(ma):
+    """Mọi sự kiện IQ của mã từ 2012 – lật trang tới khi trang thiếu (14/11/2026: trước chỉ 1 trang 300, giữ 80 mục)."""
+    tat = []
+    for p in range(SK_SO_TRANG):
+        d = iq(f"events?ticker={ma}&fromDate=20120101&toDate={date.today().year + 1}1231&page={p}&size={SK_TRANG}") or []
+        tat += d
+        if len(d) < SK_TRANG:
+            break
+    return tat
+
+
 def gon_su_kien(ds, so=80):
+    """Sự kiện IQ → gọn, mới → cũ: cổ tức / phát hành / đại hội (SK_GIU_HET) giữ hết, loại khác ≤ `so` mục mới nhất."""
     out = []
     for x in ds or []:
         ngay = _ngay(x.get("exrightDate") or x.get("issueDate") or x.get("publicDate") or x.get("displayDate1"))
@@ -332,7 +348,9 @@ def gon_su_kien(ds, so=80):
                     "loai": x.get("eventNameVi") or "", "ten": x.get("eventTitleVi") or "", "nhom": x.get("category") or "",
                     "ty_le": _r(x.get("exerciseRatio"), 4), "gia_tri": _r(x.get("valuePerShare"), 2)})
     out.sort(key=lambda r: r["ngay"], reverse=True)
-    return out[:so]
+    chinh = lambda r: str(r["ma_sk"]).upper().startswith(SK_GIU_HET)   # noqa: E731
+    giu = {id(r) for r in out if chinh(r)} | {id(r) for r in [r for r in out if not chinh(r)][:so]}
+    return [r for r in out if id(r) in giu]
 
 
 def gon_noi_bo(ds, so=100):
@@ -542,8 +560,7 @@ def lay_dn(ma, cu=None, hom_nay=None):
         "ct": lambda: gon_chi_tiet(iq(f"company/{ma}")),
         "cc": lambda: gon_co_cau(iq(f"company/{ma}/shareholder-structure")),
         "cd": lambda: gon_co_dong(iq(f"company/{ma}/shareholder")),
-        "sk": lambda: gon_su_kien(iq(f"events?ticker={ma}&fromDate=20120101&toDate={date.today().year + 1}1231"
-                                     f"&page=0&size=300")),
+        "sk": lambda: gon_su_kien(lay_su_kien(ma)),
         "nb": lambda: gon_noi_bo(iq(f"company/{ma}/insider-transaction?page=0&size=100")),   # 100 lượt: đủ ~2 năm cho biểu đồ
         "cs": lambda: gon_chi_so(iq(f"company/{ma}/statistics-financial")),
         "tin": lambda: tin_cafef(ma),
