@@ -661,7 +661,7 @@ function tk_lenh_he(ds) {                        // lệnh đã đóng → {n, t
   const r = (ds || []).filter(z => !z[4]).map(z => z[3]);
   return r.length ? {n: r.length, thang: r.filter(v => v > 0).length / r.length, r_tb: tb(r), tong: r.reduce((a, b) => a + b, 0)} : null;
 }
-// SỰ KIỆN DOANH NGHIỆP kiểu FireAnt (14/11/2026): bong bóng tròn xếp chồng ở đáy khung giá (trên thanh khối lượng); rê chuột /
+// SỰ KIỆN DOANH NGHIỆP kiểu FireAnt (14/11/2026): bong bóng tròn xếp chồng đè lên vùng thanh khối lượng; rê chuột /
 // chạm vào bong bóng → hộp chi tiết. M / B mua – bán của người nội bộ & cổ đông lớn (mục Cổ đông) · BC công bố BCTC (kèm
 // DT / LNST so cùng kỳ) · CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · K sự kiện khác.
 const SK_LOAI = {M: ["#0f8a4a", "Cổ đông / nội bộ MUA"], B: ["#d1342b", "Cổ đông / nội bộ BÁN"], BC: ["#1f6feb", "BCTC, kết quả kinh doanh"],
@@ -696,7 +696,7 @@ function su_kien_nen(x, n, r) {                  // sự kiện DN theo nến: [
   }
   return [...gom.values()].sort((a, b) => a.i - b.i || SK_THU_TU.indexOf(a.k) - SK_THU_TU.indexOf(b.k));
 }
-class SuKienPrim {                               // bong bóng tròn ở đáy khung giá, cùng nến xếp chồng lên; nến sát nhau chồng lệch tầng
+class SuKienPrim {                               // bong bóng tròn đè lên vùng thanh khối lượng (đáy khung giá), cùng nến xếp chồng lên; nến sát nhau lệch tầng
   constructor(ch, ds) { this.ch = ch; this.ds = ds; this.hit = []; this.v = [{zOrder: () => "top", renderer: () => ({draw: t => this.ve(t)})}]; }
   paneViews() { return this.v; }
   ve(t) {
@@ -1877,7 +1877,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   }
   // --- khối lượng / khối ngoại: dải dưới khung giá (+ đường TB 20 KL)
   const duoi = S("HistogramSeries", {priceScaleId: "duoi", priceFormat: ST.duoi === "kl" ? {type: "volume"} : {type: "price", precision: 1, minMove: .1}, lastValueVisible: false, priceLineVisible: false});
-  ch.priceScale("duoi").applyOptions({scaleMargins: {top: SK_.length ? .78 : .8, bottom: SK_.length ? .085 : 0}});   // chừa dải sự kiện dưới cùng
+  ch.priceScale("duoi").applyOptions({scaleMargins: {top: .8, bottom: 0}});   // bong bóng sự kiện đè lên vùng thanh khối lượng (như FireAnt)
   duoi.setData(x.d.map((d, i) => { const v = ST.duoi === "kl" ? x.v[i] : x.nn?.[i];
     if (v == null) return null; const tang = ST.duoi === "kl" ? x.c[i] >= x.o[i] : v >= 0;
     return {time: d, value: v, color: tang ? "#0f8a4a66" : "#d1342b66"}; }).filter(Boolean));
