@@ -1365,8 +1365,8 @@ const cb_rvol = (v, n) => v.map((x, i) => { if (i < n || !cb_ok(x)) return null;
 const cb_zscore = (c, n) => { const m = cb_sma(c, n), d = cb_do_lech(c, n); return c.map((v, i) => cb_ok(m[i]) && d[i] ? (v - m[i]) / d[i] : null); };
 const cb_prank = (c, n) => c.map((v, i) => { if (i < n || !cb_ok(v)) return null; let k = 0; for (let j = i - n; j < i; j++) if (cb_ok(c[j]) && c[j] < v) k++; return 100 * k / n; });
 const cb_trung_vi = (c, n) => cb_cua(c, n, w => { const s = [...w].sort((a, b) => a - b); return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; });
-const cb_noi = r => { const noi = len => r.v.map((v, i) => r.len[i] === len || (r.len[i + 1] === len && r.len[i] !== len) ? v : null);   // tách tăng / giảm, nối điểm đổi chiều
-  return {len: noi(true), xuong: noi(false), doi: r.len.map((v, i) => i && v != null && r.len[i - 1] != null && v !== r.len[i - 1] ? (v ? 1 : -1) : 0)}; };   // doi: 1 sang tăng · −1 sang giảm
+const cb_noi = r => ({v: r.v, chieu: r.len, len: r.v.map((v, i) => r.len[i] === true ? v : null), xuong: r.v.map((v, i) => r.len[i] === false ? v : null),
+  doi: r.len.map((v, i) => i && v != null && r.len[i - 1] != null && v !== r.len[i - 1] ? (v ? 1 : -1) : 0)});   // đường đổi chiều: doi 1 sang tăng · −1 sang giảm
 // ---------------------------------------------------------------- hết chỉ báo kỹ thuật
 // ---------------------------------------------------------------- CHỈ BÁO: trạng thái (lưu trong trình duyệt) + menu ƒx (trang thường + toàn màn hình)
 const KHOA_CB = "ma_chi_bao";
@@ -2217,10 +2217,14 @@ async function ve_bd_gia(el, x0, them = {}) {
     const tr = cua(x.h, Math.max), d_ = cua(x.l, Math.min); dc = {p, tr, du: d_, gi: tr.map((v, i) => v == null ? null : (v + d_[i]) / 2)};
     duong(dc.tr, kd("dc", "tr")); duong(dc.du, kd("dc", "du")); duong(dc.gi, kd("dc", "gi")); }
   const MOI_R = {};                                     // chỉ báo mới vẽ trên nến (CB_MOI)
-  for (const z of CB_MOI) if (z.noi === "tren" && CB[z.k] && !an_(z.k)) { const r = MOI_R[z.k] = z.f(x, CB.ts[z.k] || [], kh), sr = {};
-    for (const [id] of z.d) if (r[id]) sr[id] = duong(r[id], kd(z.k, id));
-    if (r.doi) for (const [id, h] of [["len", 1], ["xuong", -1]]) if (sr[id])            // ▲ / ▼ ở mỗi chỗ đổi chiều (Magic Trend, Chandelier)
-      LW.createSeriesMarkers(sr[id], x.d.map((d, i) => r.doi[i] === h ? {time: d, position: h > 0 ? "belowBar" : "aboveBar", shape: h > 0 ? "arrowUp" : "arrowDown", color: mk(z.k, id), size: 1} : null).filter(Boolean)); }
+  for (const z of CB_MOI) if (z.noi === "tren" && CB[z.k] && !an_(z.k)) { const r = MOI_R[z.k] = z.f(x, CB.ts[z.k] || [], kh);
+    if (!r.chieu) { for (const [id] of z.d) if (r[id]) duong(r[id], kd(z.k, id)); continue; }
+    // đường đổi chiều (Magic Trend, Chandelier): 1 đường, mỗi điểm 1 màu; đoạn nối sang chiều mới trong suốt → ngắt như FireAnt
+    const ml = mk(z.k, "len"), mx = mk(z.k, "xuong"), s_ = S("LineSeries", {lineWidth: 1.5, priceLineVisible: false, lastValueVisible: nhan, crosshairMarkerVisible: false, ...kd(z.k, "len")});
+    s_.setData(T.map((d, i) => r.v[i] == null || r.chieu[i] == null ? {time: d}
+      : {time: d, value: r.v[i], color: r.chieu[i + 1] != null && r.chieu[i + 1] !== r.chieu[i] ? "rgba(0,0,0,0)" : r.chieu[i] ? ml : mx}));
+    LW.createSeriesMarkers(s_, x.d.map((d, i) => r.doi[i] ? {time: d, position: r.doi[i] > 0 ? "belowBar" : "aboveBar", shape: r.doi[i] > 0 ? "arrowUp" : "arrowDown",
+      color: r.doi[i] > 0 ? ml : mx, size: 1} : null).filter(Boolean)); }
   if ((kh === "D" || PHUT(kh)) && them.gn && !tua) for (const [v, t, c] of [[them.gn.tran, "Trần", "#9b3fd1"], [them.gn.tc, "TC", "#b88a00"], [them.gn.san, "Sàn", "#0e9fb3"]])
     if (v > 0) nen.createPriceLine({price: v, color: c, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: t});
   const lh = LH && !PHUT(kh) ? (LH.ma?.[them.ma] || []).filter(z => z[0] <= x.d[n - 1]).map(z => z[1] > x.d[n - 1] ? [z[0], "", z[2], z[3], 1, z[5], null, z[7], "", z[9]] : z) : null;   // tua lại: không lộ lệnh tương lai
