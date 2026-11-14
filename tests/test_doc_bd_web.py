@@ -324,5 +324,5 @@ def test_menu_lop_phan_tich_tren_trang():
         assert k in h, k
     for k, _t, _g, _ts in [("vung", 0, 0, 0), ("xh", 0, 0, 0), ("nen", 0, 0, 0), ("mh", 0, 0, 0), ("smc", 0, 0, 0)]:
         assert f'["{k}", ' in h
-    # menu ƒx và ⋯ dựng lại đúng loại
-    assert 'd.classList.contains("lp-ds") ? menu_lp() : menu_cb()' in h
+    # menu ⋯ dựng lại (ƒx nay là hộp riêng)
+    assert 'document.querySelectorAll(".fs-cb-ds.lp-ds").forEach(d => { d.innerHTML = menu_lp(); })' in h
