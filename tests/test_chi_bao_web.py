@@ -453,3 +453,15 @@ def test_chi_bao_moi_dung_cong_thuc():
     a8, a16 = wma(list(c), 8), wma(list(c), 16)
     raw = [None if a8[k] is None or a16[k] is None else 2 * a8[k] - a16[k] for k in range(len(c))]
     assert kq["hma"][i] == pytest.approx(wma(raw, 4)[i])
+
+
+def test_magic_trend_mui_ten_o_cho_doi_chieu():
+    x = _nen(320, 7)
+    kq = _js_moi(f"const x = {json.dumps(x)};\n" + """
+      const r = cb_magic(x.h, x.l, x.c, 20, 5, 1), n = cb_noi(r);
+      console.log(JSON.stringify({len: r.len, doi: n.doi}));""")
+    ln, doi = kq["len"], kq["doi"]
+    mong = [0] + [(1 if ln[i] else -1) if ln[i] is not None and ln[i - 1] is not None and ln[i] != ln[i - 1] else 0 for i in range(1, len(ln))]
+    assert doi == mong and 1 in doi and -1 in doi
+    h = open(TRANG, encoding="utf-8").read()
+    assert 'shape: h > 0 ? "arrowUp" : "arrowDown"' in h and '"▲ Mua" : "▼ Bán"' in h
