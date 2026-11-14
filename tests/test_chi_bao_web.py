@@ -205,8 +205,8 @@ def test_menu_chi_bao_va_thu_vien_v5():
     assert h.count("${menu_khoi()}") == 2                           # trang thường + toàn màn hình dùng chung menu
     for k in ("rsi", "macd", "stoch", "adx", "atr", "obv", "mfi"):
         assert f'["{k}", ' in h
-    for k in ('data-cbx="bb"', "data-cbh", "data-cbk", "data-cbmd", "localStorage.setItem(KHOA_CB"):
-        assert k in h.replace("${khoa}", "bb") if k == 'data-cbx="bb"' else k in h, k
+    for k in ('["bb", "Dải Bollinger"', "data-cbh", "data-cbk", "data-cbmd", "localStorage.setItem(KHOA_CB"):
+        assert k in h, k
     assert "addLineSeries" not in h and ".setMarkers(" not in h and "addHistogramSeries" not in h   # API v4 cũ
     assert "LW.createSeriesMarkers(" in h and "ch.addSeries(LW[loai]" in h and "attachPrimitive(new NonPrim(" in h
     lib = open("docs/ma/lib/lightweight-charts.standalone.production.js", encoding="utf-8").read(300)
@@ -382,3 +382,17 @@ def test_su_kien_duoi_khoi_luong_va_lenh_he_co_gia():
     # điện thoại: nút chú giải ẩn + không bấm được cho tới khi chạm dòng
     assert ".chu-pane:not(.cg-cham) .cg-n{opacity:0;pointer-events:none}" in h and "function cg_cham(el)" in h
     assert 'data-cbx="lh"${CB.lh ? " checked" : ""}>Điểm mua – bán của hệ (backtest)' in h
+
+
+def test_hop_chi_bao_va_du_lieu():
+    """ƒx mở hộp "Chỉ báo và dữ liệu" (14/11/2026, bố cục kiểu FireAnt): mọi chỉ báo ngăn dưới / lớp phân tích đều có mục."""
+    import re
+    h = open(TRANG, encoding="utf-8").read()
+    for k in ("function cbm_mo()", "data-cbm aria-haspopup", "Chỉ báo và dữ liệu", "data-cbmq", "Thêm vào biểu đồ", "Thêm vào ngăn mới",
+              "Gỡ khỏi biểu đồ", "function ts_html(k)", "ts_doc(el, k);", "↑↓ chọn · Enter thêm", "e.stopImmediatePropagation()"):
+        assert k in h, k
+    assert "menu_cb" not in h and "data-cbmo>ƒx" not in h                    # menu thả xuống cũ đã bỏ
+    duoi = set(re.findall(r'\["(\w+)", "[^"]+", "\w*"\]', h[h.index("const CB_DUOI"):h.index("// Kiểu từng đường")]))
+    cbm = h[h.index("const CBM = ["):h.index("const cbm_ta")]
+    assert duoi and set(re.findall(r'\["p:(\w+)"', cbm)) == duoi
+    assert '...LP_DS.map(([k, ten, , ta]) => ["lp:" + k' in cbm

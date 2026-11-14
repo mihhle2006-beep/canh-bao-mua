@@ -361,6 +361,35 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .hop-lk{justify-self:center;border:0;background:none;color:#1f6feb;cursor:pointer;font:inherit}
 .hop-cuoi{display:flex;gap:8px;padding:12px 16px 16px;border-top:1px solid #d8dee4}.hop-cuoi span{flex:1}.hop-cuoi button{font:inherit;padding:7px 14px;border:1px solid #d0d7de;border-radius:6px;background:#fff;cursor:pointer}
 .hop-cuoi .hop-ok{background:#1f6feb;border-color:#1f6feb;color:#fff}.hop-cuoi .hop-xoa{color:#d1342b}
+/* hộp "Chỉ báo và dữ liệu" (14/11/2026 – bố cục kiểu FireAnt): danh mục · danh sách có mô tả · tham số + nút thêm */
+.cbm{position:fixed;inset:0;z-index:1000;background:rgba(15,20,25,.35);display:flex;align-items:flex-start;justify-content:center;padding:max(12px,6vh) 12px 12px}
+.cbm-hop{width:min(1040px,100%);height:min(660px,calc(100vh - max(24px,6vh) - 12px));display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:#fff;color:#1f2328;border:1px solid #d0d7de;border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.25);overflow:hidden;font-size:14px}
+.cbm-dau{display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid #d8dee4}.cbm-dau b{font-size:17px;white-space:nowrap}
+.cbm-dau input{flex:1;min-width:0;font:inherit;padding:8px 12px 8px 34px;border:1px solid #d0d7de;border-radius:8px;color:inherit;background:#f6f8fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%2357606a' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E") no-repeat 11px 50%}
+.cbm-dau input:focus{outline:2px solid #1f6feb;outline-offset:-1px;background-color:#fff}
+.cbm-than{display:grid;grid-template-columns:210px minmax(0,1fr) minmax(0,1fr);min-height:0}
+.cbm-nhom{display:grid;align-content:start;gap:2px;padding:10px;border-right:1px solid #d8dee4;overflow:auto}
+.cbm-nhom button{display:flex;justify-content:space-between;gap:8px;border:0;background:none;border-radius:8px;padding:9px 12px;font:inherit;color:#57606a;cursor:pointer;text-align:left}
+.cbm-nhom button:hover{background:#f6f8fa}.cbm-nhom button[aria-pressed=true]{background:#eaeef2;color:#1f2328;font-weight:600}.cbm-nhom span{font-size:12.5px;font-weight:400}
+.cbm-ds{overflow:auto;padding:10px;border-right:1px solid #d8dee4;display:grid;align-content:start;gap:2px}
+.cbm-tieu{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#6e7781;padding:4px 12px 6px}
+.cbm-ds button{display:grid;gap:3px;text-align:left;border:0;background:none;border-radius:8px;padding:9px 12px;font:inherit;color:inherit;cursor:pointer;min-width:0}
+.cbm-ds button:hover{background:#f6f8fa}.cbm-ds button[aria-selected=true]{background:#e7efff}
+.cbm-ds b{font-weight:500;display:flex;justify-content:space-between;gap:8px}.cbm-ds i{font-style:normal;font-size:11.5px;font-weight:600;color:#0f8a4a;background:#e6f4ea;border-radius:5px;padding:1px 6px;white-space:nowrap;align-self:center}
+.cbm-ds span{color:#57606a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbm-ct{overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.cbm-ct h3{margin:0;font-size:18px;font-weight:600}.cbm-ct h3 span{font-weight:400;color:#57606a}.cbm-ct>p{margin:0;line-height:1.5}
+.cbm-ts{display:grid;gap:10px}.cbm-ts .hop-o{grid-template-columns:130px minmax(0,1fr)}
+.cbm-ts input:not([type=checkbox]),.cbm-ts select{font:inherit;padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;background:#f6f8fa;color:inherit;min-width:0}.cbm-ts .cb-fib{padding-left:0}.cbm-ts .cb-fib input{width:5em;padding:4px 6px}
+.cbm-nut{margin-top:auto;display:flex;gap:8px;flex-wrap:wrap;padding-top:12px}
+.cbm-nut button{font:inherit;padding:9px 16px;border:1px solid #d0d7de;border-radius:8px;background:#fff;color:#1f2328;cursor:pointer}
+.cbm-nut .hop-ok{background:#1f6feb;border-color:#1f6feb;color:#fff}.cbm-nut .hop-xoa{color:#d1342b}.cbm-loi{color:#d1342b}
+.cbm-cuoi{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid #d8dee4;color:#57606a;font-size:13px}
+.cbm-cuoi label{display:inline-flex;gap:5px;align-items:center;cursor:pointer}.cbm-cuoi button{font:inherit;padding:4px 10px;border:1px solid #d0d7de;border-radius:6px;background:#fff;color:#1f2328;cursor:pointer}
+.cbm-phim{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+@media (max-width:760px){.cbm{padding:0}.cbm-hop{height:100%;border-radius:0;border:0}.cbm-dau b{display:none}
+  .cbm-than{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto}.cbm-nhom{display:flex;overflow-x:auto;border-right:0;border-bottom:1px solid #d8dee4;padding:6px}
+  .cbm-nhom button{white-space:nowrap;padding:6px 10px}.cbm-ds{border-right:0;border-bottom:1px solid #d8dee4}.cbm-ct{max-height:48vh}.cbm-phim{display:none}}
 .cham-song{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--tang);margin-right:5px;vertical-align:middle}
 .dai-cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
 .cs-o{display:flex;flex-direction:column;gap:2px;background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:10px 14px;color:inherit}
@@ -1220,6 +1249,22 @@ const MO_TA = {ma: "Trung bình giá đóng cửa N phiên. Giá trên MA dốc 
   sar: "Điểm dừng lùi dần theo xu hướng; giá cắt qua điểm là đảo chiều.", dc: "Giá cao nhất / thấp nhất N phiên – vượt cạnh trên là phá đỉnh.",
   ss: "Vẽ thêm mã khác / VN-Index cùng trục, thang % từ nến đầu vùng xem.", kl: "Khối lượng khớp mỗi nến, kèm đường trung bình 20.",
   "p:rsi": "Sức mạnh tương đối (Wilder): trên 70 quá mua, dưới 30 quá bán.", "p:macd": "Chênh EMA nhanh − chậm và đường tín hiệu; cắt lên là động lượng tăng."};
+Object.assign(MO_TA, {"p:rs": "Sức mạnh giá so với VN-Index; chấm khi RS lập đỉnh mới 52 tuần – cổ phiếu đang dẫn dắt thị trường.",
+  "p:macdt": "MACD tính trên nến tuần, vẽ trên khung ngày – bộ lọc tuần của hệ.", "p:adx": "Độ mạnh xu hướng: ADX trên 25 là có xu hướng; +DI trên −DI là bên mua mạnh hơn.",
+  "p:stoch": "Vị trí giá đóng cửa trong biên cao – thấp N phiên: trên 80 quá mua, dưới 20 quá bán; %K cắt %D là tín hiệu.",
+  "p:atr": "Biên độ dao động thực trung bình (% giá) – dùng đặt cắt lỗ và đo độ biến động.", "p:mfi": "RSI có tính khối lượng: trên 80 quá mua, dưới 20 quá bán.",
+  "p:obv": "Cộng khối lượng phiên tăng, trừ khối lượng phiên giảm – OBV thường đi trước giá khi dòng tiền vào / ra.",
+  "p:sqz": "Bollinger co vào trong Keltner là giá đang nén; nén nhả ra kèm cột động lượng là tín hiệu bùng nổ.",
+  "p:wvf": "Đo mức hoảng loạn từ đỉnh gần nhất: cột vượt ngưỡng trên thường trùng đáy ngắn hạn.",
+  kl_ma: "Đường trung bình 20 phiên trên ngăn khối lượng – cột vượt đường là phiên khối lượng lớn.",
+  vp: "Khối lượng khớp theo từng mức giá trong vùng đang xem; mức nhiều khối lượng (POC) thường là hỗ trợ / kháng cự.",
+  bg: "Khối lượng khớp hôm nay theo từng bước giá, tách mua chủ động / bán chủ động (khung ngày / phút).",
+  non: "Dải giá 50% / 80% / 95% trong N phiên tới từ biến động của chính mã – thống kê, không phải khuyến nghị.",
+  lh: "Mọi lệnh luật mua đang dùng (hệ B · 2R · MA10 tuần) đã vào trên mã này từ 2012 trong backtest: ▲ ngày mua · ▼ ngày bán kèm lãi theo R.",
+  kh: "Khi bot đang khuyến nghị mua mã này: vùng mua, cắt lỗ, mốc 1R / 2R và đường thoát MA10 tuần.",
+  nen: "Tự tìm nền giá tích lũy / mẫu VCP (biên độ co dần) gần nhất và mức phá nền.",
+  fib: "Tự tìm nhịp tăng / giảm lớn nhất trong N nến gần nhất rồi vẽ các mức Fibonacci thoái lui.",
+  mk: "Nhãn dưới thanh khối lượng: CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán."});
 const NGUON = {c: ["Đóng cửa", x => x.c], o: ["Mở cửa", x => x.o], h: ["Cao", x => x.h], l: ["Thấp", x => x.l],
   hl2: ["(Cao + Thấp) / 2", x => x.h.map((v, i) => v == null || x.l[i] == null ? null : (v + x.l[i]) / 2)],
   hlc3: ["(Cao + Thấp + Đóng) / 3", x => x.h.map((v, i) => v == null || x.l[i] == null || x.c[i] == null ? null : (v + x.l[i] + x.c[i]) / 3)],
@@ -1268,8 +1313,6 @@ const CB = cb_mac();
 } catch (e) {} })();
 const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB, fib3: true})); } catch (e) {} };
 const ts_chu = k => CB.ts[k].map(v => String(v).replace(".", ",")).join(", ");
-const cb_o_chip = (khoa, ds, gt) => ds.map(m => `<label><input type="checkbox" data-cbx="${khoa}:${m}"${gt.includes(m) ? " checked" : ""}>${m}</label>`).join("");
-const cb_o_ts = (ts, ten) => CB.ts[ts].map((v, j) => `<input type="number" data-cbt="${ts}:${j}" value="${v}" min="${CB_GH[ts][j][0]}" max="${CB_GH[ts][j][1]}" step="${CB_GH[ts][j][2]}" aria-label="${ten} – tham số ${j + 1}">`).join("");
 const CB_TEN = {bb: "BB", st: "Supertrend", ich: "Ichimoku", sar: "SAR"};
 const MAT = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const MAT_AN = MAT.replace("</svg>", `<path d="M3 3l18 18"/></svg>`);
@@ -1296,15 +1339,19 @@ function hop_kieu(k) {
     `<label class="hop-c"><input type="checkbox" data-h="nhan" data-n0="${nhan_mac(k) ? 1 : 0}"${(u.nhan ?? nhan_mac(k)) ? " checked" : ""}>Nhãn trên thang giá</label>` +
     `<label class="hop-c"><input type="checkbox" data-h="chu"${u.chu === false ? "" : " checked"}>Giá trị trên chú giải</label><button type="button" class="hop-lk" data-hmd>Về kiểu mặc định</button>`;
 }
-function hop_html(k) {
+function ts_html(k) {                                  // ô tham số (data-h) – bảng ⚙ và hộp "Chỉ báo và dữ liệu" dùng chung
   const d = CB_DUOI.find(z => "p:" + z[0] === k), tk = d ? d[2] : CB_TEN[k] ? k : "";
-  let ts = `<p class="phu">${MO_TA[k] || (d ? d[1] : "")}</p>`;
+  let ts = "";
   if (k === "ma" || k === "ema") ts += hop_o("Chu kỳ", `<input data-h="chu_ky" value="${(k === "ma" ? ST.ma_tb : ST.ema).join(" ")}" placeholder="vd: 9 26" spellcheck="false" autocomplete="off">`);
   if (tk) ts += CB.ts[tk].map((v, j) => hop_o((TS_NHAN[tk] || [])[j] || `Tham số ${j + 1}`, `<input type="number" data-h="ts" value="${v}" min="${CB_GH[tk][j][0]}" max="${CB_GH[tk][j][1]}" step="${CB_GH[tk][j][2]}">`)).join("");
   if (k === "dc") ts += hop_o("Chu kỳ", hop_sel('data-h="dc"', [[20, "20 phiên"], [52, "52 tuần"]], ST.dc));
   if (k === "ss") ts += hop_o("Mã", `<input data-h="ss" value="${esc(CB.ss)}" maxlength="12" spellcheck="false" placeholder="mã / VNINDEX">`);
   if (k === "kl") ts += `<label class="hop-c"><input type="checkbox" data-h="kl_ma"${CB.kl_ma ? " checked" : ""}>Đường TB 20 khối lượng</label>`;
   if (CO_NGUON.includes(k)) ts += hop_o("Nguồn", hop_sel('data-h="nguon"', Object.entries(NGUON).map(([v, [t]]) => [v, t]), CB.nguon[k] || "c"));
+  return ts;
+}
+function hop_html(k) {
+  const d = CB_DUOI.find(z => "p:" + z[0] === k), ts = `<p class="phu">${MO_TA[k] || (d ? d[1] : "")}</p>` + ts_html(k);
   const ht = k === "ma" || k === "ema" ? hop_o("Khung tính", hop_sel('data-h="khung"', [["", "Theo biểu đồ"], ["W", "Tuần"], ["M", "Tháng"]], CB.khung_tinh[k] || "")) +
     `<p class="phu">Tính trên nến tuần / tháng rồi vẽ lên biểu đồ ngày (tháng: cả biểu đồ tuần); kỳ đang chạy tính theo giá hiện tại. Biểu đồ phút giữ theo biểu đồ.</p>` : "";
   const tab = [["ts", "Tham số"], ["kieu", "Kiểu"], ...(ht ? [["ht", "Hiển thị"]] : [])];
@@ -1322,17 +1369,20 @@ function hop_mo(k) {
   HOP.dataset.k = k; HOP.setAttribute("role", "dialog"); HOP.setAttribute("aria-label", "Cài đặt " + cb_tieu_de(k));
   HOP.querySelector("[data-htk] input, [data-htk] select")?.focus();
 }
-function hop_ap() {                                     // Áp dụng: đọc cả 3 tab → CB / ST → vẽ lại
-  const el = HOP, k = el.dataset.k, q = z => el.querySelector(`[data-h="${z}"]`);
-  const d = CB_DUOI.find(z => "p:" + z[0] === k), tk = d ? d[2] : CB_TEN[k] ? k : "";
+function ts_doc(el, k) {                               // đọc ô tham số (ts_html) trong el → CB / ST
+  const q = z => el.querySelector(`[data-h="${z}"]`), d = CB_DUOI.find(z => "p:" + z[0] === k), tk = d ? d[2] : CB_TEN[k] ? k : "";
   if (q("chu_ky")) { const a = [...new Set(q("chu_ky").value.split(/[\s,;]+/).map(Number).filter(m => Number.isInteger(m) && m >= 2 && m <= 400))].sort((x, y) => x - y).slice(0, 8);
     if (a.length) { if (k === "ma") ST.ma_tb = a; else ST.ema = a; } }
-  if (tk) CB.ts[tk] = cb_ts_dung(tk, [...el.querySelectorAll('[data-h="ts"]')].map(z => z.value));
+  if (tk && q("ts")) CB.ts[tk] = cb_ts_dung(tk, [...el.querySelectorAll('[data-h="ts"]')].map(z => z.value));
   if (q("dc")) ST.dc = +q("dc").value;
   if (q("ss")) { const v = q("ss").value.trim().toUpperCase(); CB.ss = v === "VNINDEX" || MA_OK(v) ? v : ""; }
   if (q("kl_ma")) CB.kl_ma = q("kl_ma").checked;
   if (q("nguon")) { if (q("nguon").value === "c") delete CB.nguon[k]; else CB.nguon[k] = q("nguon").value; }
   if (q("khung")) { if (q("khung").value) CB.khung_tinh[k] = q("khung").value; else delete CB.khung_tinh[k]; }
+}
+function hop_ap() {                                     // Áp dụng: đọc cả 3 tab → CB / ST → vẽ lại
+  const el = HOP, k = el.dataset.k, q = z => el.querySelector(`[data-h="${z}"]`);
+  ts_doc(el, k);
   const u = {d: {}};                                    // Kiểu: chỉ lưu chỗ khác mặc định
   el.querySelectorAll("[data-hd]").forEach(r => { const g = z => r.querySelector(`[data-hk="${z}"]`), z = {}, w = +g("day").value;
     if (g("mau").value !== r.dataset.m0) z.mau = g("mau").value;
@@ -1356,7 +1406,7 @@ function hop_bam(t) {
   if (t.closest("[data-hmd]")) { const u = CB.kieu[k]; delete CB.kieu[k]; el.querySelector('[data-htk="kieu"]').innerHTML = hop_kieu(k); if (u) CB.kieu[k] = u; }
 }
 document.addEventListener("keydown", e => { if (!HOP) return; if (e.key === "Escape") hop_dong(); else if (e.key === "Enter" && HOP.contains(e.target) && e.target.matches("input:not([type=checkbox]):not([type=color])")) hop_ap(); });
-const menu_lai = () => document.querySelectorAll(".fs-cb-ds").forEach(d => { d.innerHTML = d.classList.contains("lp-ds") ? menu_lp() : menu_cb(); });
+const menu_lai = () => document.querySelectorAll(".fs-cb-ds.lp-ds").forEach(d => { d.innerHTML = menu_lp(); });
 function cb_an(k) { CB.an = an_(k) ? CB.an.filter(z => z !== k) : [...CB.an, k]; return cb_doi(); }   // nút ẩn / hiện – giữ cài đặt
 let CG_CHAM = null;                                      // điện thoại: dòng chú giải đang mở nút (giữ qua mỗi lần vẽ lại)
 const cham_nut = () => matchMedia("(hover:none)").matches;
@@ -1372,28 +1422,106 @@ function cg_tat(k) {                                    // ✕ trên dòng chú 
   CB.an = CB.an.filter(z => z !== k);
   menu_lai(); return cb_doi();
 }
-function menu_cb() {
-  const chip = (ten, khoa, ds, gt) => `<div class="cb-dong cb-chip"><span>${ten}</span>${cb_o_chip(khoa, ds, gt)}</div>`;
-  const dong = (khoa, gt, ten, ts) => `<div class="cb-dong"><label><input type="checkbox" data-cbx="${khoa}"${gt ? " checked" : ""}>${ten}${ts ? ` <span class="phu" data-cbn="${ts}">(${ts_chu(ts)})</span>` : ""}</label>` +
-    (ts ? `<button type="button" class="cb-g" data-cbg="${ts}" title="Sửa tham số">⚙</button></div><div class="cb-ts" data-cbtk="${ts}" hidden>` +
-      cb_o_ts(ts, ten) : "") + `</div>`;
-  return `<div class="cb-nhom"><b>Vẽ trên nến giá</b>${chip("MA", "ma", [...new Set([10, 20, 50, 200, ...ST.ma_tb])].sort((a, b) => a - b), ST.ma_tb)}${chip("EMA", "ema", [...new Set([9, 21, 50, 200, ...ST.ema])].sort((a, b) => a - b), ST.ema)}
-      <div class="cb-dong"><label title="Trung bình giá đóng cửa 10 tuần (tuần đang chạy tính theo giá hiện tại) – đường thoát lệnh của hệ, hiện trên khung ngày / tuần / phút"><input type="checkbox" data-cbx="ma10t"${CB.ma10t ? " checked" : ""}>MA10 tuần (đường thoát của hệ)</label></div>
-      ${dong("bb", CB.bb, "Bollinger Bands", "bb")}${dong("st", CB.st, "Supertrend", "st")}${dong("ich", CB.ich, "Ichimoku", "ich")}${dong("sar", CB.sar, "Parabolic SAR", "sar")}
-      ${dong("dc:20", ST.dc === 20, "Donchian 20")}${dong("dc:52", ST.dc === 52, "Kênh 52 tuần")}
-      <div class="cb-dong"><label title="Mọi lệnh luật mua đang dùng (hệ B · 2R · MA10 tuần) đã vào trên mã này từ 2012 trong backtest – chỉ lệnh quỹ được mua lúc đó (top 100 GTGD, RS không quá nóng). ▲ ngày mua · ▼ ngày bán kèm lãi theo R"><input type="checkbox" data-cbx="lh"${CB.lh ? " checked" : ""}>Điểm mua – bán của hệ (backtest từ 2012)</label></div>
-      <div class="cb-dong"><label>So sánh với <input class="cb-ss" data-cbss value="${esc(CB.ss)}" placeholder="mã / VN30…" maxlength="12" spellcheck="false" aria-label="Mã so sánh"></label></div>
-      <div class="cb-dong"><label title="CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · M / B cổ đông nội bộ mua / bán"><input type="checkbox" data-cbx="mk"${ST.mk ? " checked" : ""}>Sự kiện (cổ tức, ĐHCĐ, nội bộ)</label></div></div>
-    <div class="cb-nhom"><b>Khung riêng bên dưới</b>${dong("kl_ma", CB.kl_ma, "Đường TB 20 khối lượng")}
-      ${CB_DUOI.map(([k, t, ts]) => dong("p:" + k, CB.duoi.includes(k), t, ts)).join("")}</div>
-    <div class="cb-nhom"><b>Tự vẽ</b>${dong("kh", CB.kh, "Kế hoạch thoát của hệ (khi bot khuyến nghị mua)")}${dong("nen", CB.nen, "Nền tích lũy / VCP")}${dong("fib", CB.fib, "Fibonacci tự động")}<div class="cb-dong cb-fib">Tìm nhịp trong <span class="nut">${[30, 60, 120, 250].map(h => `<button type="button" data-cbf="${h}" aria-pressed="${CB.fib_n === h}">${h}</button>`).join("")}</span><input type="number" data-cbfn value="${CB.fib_n}" min="10" max="2000" step="1" aria-label="Số nến tự chọn cho Fibonacci tự động" title="Tự nhập số nến (10–2000)"> nến gần nhất</div>${dong("vp", CB.vp, "Volume Profile tự động")}${dong("bg", CB.bg, "Khớp theo bước giá hôm nay")}</div>
-    <div class="cb-nhom"><b>Nón dự báo</b>${dong("non", CB.non, "Hiện nón xác suất")}
-      <div class="cb-dong">Tầm <span class="nut">${[5, 20, 60].map(h => `<button type="button" data-cbh="${h}" aria-pressed="${CB.non_h === h}">${h}</button>`).join("")}</span> phiên</div>
+// ---- hộp "Chỉ báo và dữ liệu" (14/11/2026 – bố cục kiểu FireAnt): danh mục · danh sách có mô tả · tham số + nút thêm
+const CBM_NHOM = [["dung", "Đang dùng"], ["tbd", "Trung bình động"], ["xh", "Xu hướng"], ["dl", "Động lượng"], ["bd", "Biến động"], ["kl", "Khối lượng"],
+  ["mh", "Mẫu hình"], ["he", "Hệ thống & dữ liệu"]];
+const CBM = [["ma", "Đường trung bình động", "MA", "tbd"], ["ema", "Trung bình hàm mũ", "EMA", "tbd"], ["ma10t", "MA10 tuần (đường thoát của hệ)", "MA10T", "tbd"],
+  ["st", "Supertrend", "ST", "xh"], ["ich", "Mây Ichimoku", "Ichimoku", "xh"], ["sar", "Parabolic SAR", "SAR", "xh"], ["dc:20", "Kênh Donchian 20", "DC", "xh"],
+  ["dc:52", "Kênh 52 tuần", "DC52", "xh"], ["p:adx", "Chỉ số định hướng (ADX / DMI)", "ADX", "xh"],
+  ["p:rsi", "Chỉ số sức mạnh tương đối", "RSI", "dl"], ["p:macd", "MACD", "MACD", "dl"], ["p:macdt", "MACD tuần trên khung ngày", "MACD W", "dl"],
+  ["p:stoch", "Stochastic", "STOCH", "dl"], ["p:rs", "Sức mạnh so VN-Index (RS)", "RS", "dl"], ["p:sqz", "Squeeze Momentum (nén giá)", "SQZ", "dl"],
+  ["bb", "Dải Bollinger", "BOLL", "bd"], ["p:atr", "Biên độ dao động thực (% giá)", "ATR", "bd"], ["p:wvf", "Williams Vix Fix (hoảng loạn)", "WVF", "bd"],
+  ["non", "Nón dự báo (xác suất)", "Nón", "bd"], ["kl_ma", "Đường TB 20 khối lượng", "KL20", "kl"], ["p:obv", "Cân bằng khối lượng", "OBV", "kl"],
+  ["p:mfi", "Dòng tiền (MFI)", "MFI", "kl"], ["vp", "Volume Profile tự động", "VP", "kl"], ["bg", "Khớp theo bước giá hôm nay", "Bước giá", "kl"],
+  ...LP_DS.map(([k, ten, , ta]) => ["lp:" + k, ten, ten.split(" ")[0], "mh", ta]), ["nen", "Nền tích lũy / VCP", "VCP", "mh"], ["fib", "Fibonacci tự động", "Auto Fibo", "mh"],
+  ["lh", "Điểm mua – bán của hệ (backtest)", "Hệ B", "he"], ["kh", "Kế hoạch mua – thoát khi bot báo mua", "Kế hoạch", "he"],
+  ["mk", "Sự kiện (cổ tức, ĐHCĐ, nội bộ)", "Sự kiện", "he"], ["cw", "Chứng quyền (hoà vốn, đáo hạn)", "CW", "he",
+    "Chứng quyền mua đang lưu hành trên mã: đường nét đứt tại giá hoà vốn (giá thực hiện + giá CW × tỷ lệ) kéo tới ngày đáo hạn."],
+  ["ss", "So sánh với mã khác", "So sánh", "he"]];
+const cbm_ta = z => z[4] || MO_TA[z[0]] || MO_TA[z[0].split(":")[0]] || "";
+const bo_dau = v => String(v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").toLowerCase();
+const cbm_bat = k => k === "ma" ? ST.ma_tb.length > 0 : k === "ema" ? ST.ema.length > 0 : k.startsWith("dc:") ? ST.dc === +k.slice(3) : k === "mk" ? !!ST.mk
+  : k.startsWith("p:") ? CB.duoi.includes(k.slice(2)) : k.startsWith("lp:") ? CB.lp.includes(k.slice(3)) : k === "ss" ? !!CB.ss : !!CB[k];
+const cbm_lk = k => k.startsWith("dc:") ? "dc" : k.startsWith("lp:") ? "lp" : k;   // khoá dòng chú giải / bảng ⚙
+const NON_NUT = () => `<div class="cb-dong">Tầm <span class="nut">${[5, 20, 60].map(h => `<button type="button" data-cbh="${h}" aria-pressed="${CB.non_h === h}">${h}</button>`).join("")}</span> phiên</div>
       <div class="cb-dong"><span class="nut"><button type="button" data-cbk="ls" aria-pressed="${CB.non_kieu === "ls"}" title="Phân vị mức tăng / giảm thực tế của chính mã trong 3 năm (ngày) / 5 năm (tuần) / toàn bộ (tháng), co giãn theo biến động hiện tại của mã so với mức nền, rồi lấy trung bình với nón σ. Khung phút: phân vị lịch sử thuần">Kết hợp</button><button type="button" data-cbk="sigma" aria-pressed="${CB.non_kieu === "sigma"}" title="Biến động σ 60 phiên gần nhất, loe theo căn bậc hai thời gian">σ 60 phiên</button></span></div>
-      <div class="phu cb-ghi">Ba lớp 95% · 80% · 50%, nét đứt là trung vị (giá hiện tại – đã bỏ xu hướng quá khứ). Khung tuần / tháng quy đổi tầm theo phiên. Thống kê, không phải khuyến nghị.</div></div>
-    <div class="cb-nhom"><b>Hiển thị</b><div class="cb-dong"><label title="Khung góc trái biểu đồ chỉ còn dòng giá O H L C – bấm ▸ để hiện lại các chỉ báo"><input type="checkbox" data-cggon${CG_GON ? " checked" : ""}>Ẩn chỉ báo ở khung góc trái (giữ O H L C)</label></div></div>
-    <div class="cb-cuoi"><button type="button" data-cbmd>Về mặc định</button></div>`;
+      <div class="phu cb-ghi">Ba lớp 95% · 80% · 50%, nét đứt là trung vị (giá hiện tại – đã bỏ xu hướng quá khứ). Khung tuần / tháng quy đổi tầm theo phiên. Thống kê, không phải khuyến nghị.</div>`;
+const FIB_NUT = () => `<div class="cb-dong cb-fib">Tìm nhịp trong <span class="nut">${[30, 60, 120, 250].map(h => `<button type="button" data-cbf="${h}" aria-pressed="${CB.fib_n === h}">${h}</button>`).join("")}</span><input type="number" data-cbfn value="${CB.fib_n}" min="10" max="2000" step="1" aria-label="Số nến tự chọn cho Fibonacci tự động" title="Tự nhập số nến (10–2000)"> nến gần nhất</div>`;
+let CBM_EL = null, CBM_N = "tbd", CBM_K = "ma", CBM_Q = "";
+function cbm_dat(k, on) {                               // bật / tắt 1 mục của hộp → vẽ lại
+  if (!on) { if (k === "mk") { ST.mk = false; return cb_doi(); }
+    if (k.startsWith("lp:")) { CB.lp = CB.lp.filter(z => z !== k.slice(3)); if (!CB.lp.length) CB.an = CB.an.filter(z => z !== "lp"); menu_lai(); return cb_doi(); }
+    return cg_tat(cbm_lk(k)); }
+  if (k === "ma" && !ST.ma_tb.length) ST.ma_tb = [20, 50]; else if (k === "ema" && !ST.ema.length) ST.ema = [9, 21];
+  else if (k.startsWith("dc:")) ST.dc = +k.slice(3); else if (k === "mk") ST.mk = true;
+  else if (k.startsWith("p:")) CB.duoi = [...CB.duoi.filter(z => z !== k.slice(2)), k.slice(2)];
+  else if (k.startsWith("lp:")) CB.lp = [...CB.lp.filter(z => z !== k.slice(3)), k.slice(3)];
+  else if (k !== "ma" && k !== "ema" && k !== "ss") CB[k] = true;
+  CB.an = CB.an.filter(z => z !== cbm_lk(k));
+  menu_lai(); return cb_doi();
 }
+const cbm_ds = () => { const q = bo_dau(CBM_Q.trim());
+  return CBM.filter(z => q ? bo_dau(`${z[1]} ${z[2]} ${cbm_ta(z)}`).includes(q) : CBM_N === "dung" ? cbm_bat(z[0]) : z[3] === CBM_N); };
+function cbm_ct(k) {                                    // cột phải: tên · mã gọn, mô tả, tham số, nút
+  const z = CBM.find(r => r[0] === k); if (!z) return "";
+  const on = cbm_bat(k), ts = k.includes(":") && !k.startsWith("p:") ? "" : ts_html(k), them = k === "non" ? NON_NUT() : k === "fib" ? FIB_NUT() : "";
+  return `<h3>${esc(z[1])} <span>· ${esc(z[2])}</span></h3><p class="phu">${esc(cbm_ta(z))}</p>${ts || them ? `<div class="cbm-ts">${ts}${them}</div>` : ""}<p class="cbm-loi" data-cbmloi hidden></p>
+    <div class="cbm-nut">${on ? (ts ? `<button type="button" class="hop-ok" data-cbmok>Áp dụng</button>` : "") + (cb_duong(cbm_lk(k)).length ? `<button type="button" data-cbmk>Kiểu & hiển thị…</button>` : "")
+      + `<button type="button" class="hop-xoa" data-cbmgo>Gỡ khỏi biểu đồ</button>` : `<button type="button" class="hop-ok" data-cbmok>${k.startsWith("p:") ? "Thêm vào ngăn mới" : "Thêm vào biểu đồ"}</button>`}</div>`;
+}
+function cbm_ve(ct = true) {                            // vẽ lại cột trái / giữa (+ phải) – ô tìm giữ nguyên để không mất chữ đang gõ
+  const el = CBM_EL; if (!el) return;
+  const ds = cbm_ds(), dem = n => CBM.filter(z => n === "dung" ? cbm_bat(z[0]) : z[3] === n).length;
+  if (ds.length && !ds.some(z => z[0] === CBM_K)) CBM_K = ds[0][0];
+  el.querySelector(".cbm-nhom").innerHTML = CBM_NHOM.map(([v, t]) => `<button type="button" data-cbmn="${v}" aria-pressed="${!CBM_Q && CBM_N === v}">${t}<span>${dem(v)}</span></button>`).join("");
+  el.querySelector(".cbm-ds").innerHTML = `<div class="cbm-tieu">${CBM_Q ? `Kết quả tìm · ${ds.length}` : CBM_NHOM.find(z => z[0] === CBM_N)[1]}</div>` + (ds.map(z =>
+    `<button type="button" role="option" data-cbmc="${z[0]}" aria-selected="${z[0] === CBM_K}"><b>${esc(z[1])}${cbm_bat(z[0]) ? "<i>đang dùng</i>" : ""}</b><span>${esc(cbm_ta(z))}</span></button>`).join("")
+    || `<p class="phu">${CBM_Q ? "Không có chỉ báo khớp." : "Chưa bật chỉ báo nào."}</p>`);
+  el.querySelector('.cbm-ds [aria-selected="true"]')?.scrollIntoView({block: "nearest"});
+  if (ct) el.querySelector(".cbm-ct").innerHTML = ds.length ? cbm_ct(CBM_K) : "";
+  el.querySelector("[data-cbmdem]").textContent = `${CBM.length} chỉ báo vẽ được · ${dem("dung")} đang dùng`;
+}
+function cbm_dong() { CBM_EL?.remove(); CBM_EL = null; }
+function cbm_mo() {
+  hop_dong(); cbm_dong(); CBM_Q = "";
+  if (CBM.some(z => cbm_bat(z[0])) && !CBM.some(z => z[3] === CBM_N && cbm_bat(z[0]))) CBM_N = "dung";
+  CBM_EL = (document.fullscreenElement || document.body).appendChild(Object.assign(document.createElement("div"), {className: "cbm", innerHTML:
+    `<div class="cbm-hop" role="dialog" aria-modal="true" aria-label="Chỉ báo và dữ liệu"><div class="cbm-dau"><b>Chỉ báo và dữ liệu</b>
+      <input type="search" data-cbmq placeholder="Tìm theo tên, không cần dấu: rsi, bollinger, khoi luong…" autocomplete="off" spellcheck="false" aria-label="Tìm chỉ báo">
+      <button type="button" class="hop-x" data-cbmx aria-label="Đóng">×</button></div>
+    <div class="cbm-than"><nav class="cbm-nhom" aria-label="Nhóm chỉ báo"></nav><div class="cbm-ds" role="listbox" aria-label="Chỉ báo"></div><div class="cbm-ct"></div></div>
+    <div class="cbm-cuoi"><span data-cbmdem></span><label title="Khung góc trái biểu đồ chỉ còn dòng giá O H L C – bấm ▸ để hiện lại các chỉ báo"><input type="checkbox" data-cggon${CG_GON ? " checked" : ""}>Ẩn chỉ báo ở khung góc trái</label>
+      <button type="button" data-cbmd>Về mặc định</button><span class="cbm-phim">↑↓ chọn · Enter thêm · Esc đóng</span></div></div>`}));
+  cbm_ve(); CBM_EL.querySelector("[data-cbmq]").focus();
+}
+function cbm_them() {                                   // Thêm / Áp dụng: đọc ô tham số rồi bật
+  const k = CBM_K, ct = CBM_EL.querySelector(".cbm-ct");
+  if (!CBM.some(z => z[0] === k) || !cbm_ds().some(z => z[0] === k)) return;
+  ts_doc(ct, k);
+  if (k === "ss" && !CB.ss) { const l = ct.querySelector("[data-cbmloi]"); l.textContent = "Nhập mã hợp lệ (vd FPT, VN30, VNINDEX) để so sánh."; l.hidden = false; return; }
+  return cbm_dat(k, true);
+}
+function cbm_bam(t) {                                   // bấm trong hộp → true khi đã xử lý
+  if (t === CBM_EL || t.closest("[data-cbmx]")) { cbm_dong(); return true; }
+  const n = t.closest("[data-cbmn]"), c = t.closest("[data-cbmc]");
+  if (n) { CBM_N = n.dataset.cbmn; CBM_Q = ""; CBM_EL.querySelector("[data-cbmq]").value = ""; cbm_ve(); return true; }
+  if (c) { CBM_K = c.dataset.cbmc; cbm_ve(); return true; }
+  if (t.closest("[data-cbmok]")) { cbm_them(); return true; }
+  if (t.closest("[data-cbmgo]")) { cbm_dat(CBM_K, false); return true; }
+  if (t.closest("[data-cbmk]")) { const k = cbm_lk(CBM_K); cbm_dong(); hop_mo(k); return true; }
+  return false;
+}
+document.addEventListener("input", e => { if (CBM_EL && e.target.matches?.("[data-cbmq]")) { CBM_Q = e.target.value; cbm_ve(); } });
+document.addEventListener("keydown", e => {             // trước phím tắt biểu đồ (đăng ký sau) – chặn chúng khi hộp đang mở
+  if (!CBM_EL) return;
+  const t = e.target, o = t.closest?.(".cbm-ct input, .cbm-ct select");
+  if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); return cbm_dong(); }
+  if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !o) { e.preventDefault(); e.stopImmediatePropagation();
+    const ds = cbm_ds(), i = ds.findIndex(z => z[0] === CBM_K); if (!ds.length) return;
+    CBM_K = ds[Math.max(0, Math.min(ds.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))][0]; return cbm_ve(); }
+  if (e.key === "Enter" && !t.closest?.("button, select, [data-cbfn]")) { e.preventDefault(); e.stopImmediatePropagation(); return cbm_them(); }
+  if (CBM_EL.contains(t) || t === document.body) e.stopImmediatePropagation();
+}, true);
 const cp_kieu = () => { try { return (JSON.parse(localStorage.getItem("cp_cai_dat") || "{}") || {}).kieu === "du" ? "du" : "gon"; } catch (e) { return "gon"; } };
 function menu_lp() {                                    // menu ⋯ của biểu đồ (kiểu FireAnt): lớp phân tích tự động · thang giá · vùng nhìn
   const th = thang_hl(), o = (k, ten, ts) => `<button type="button" data-lpt="${k}" aria-pressed="${th === k}" title="${ts}">${ten}</button>`;
@@ -1411,7 +1539,7 @@ function menu_lp() {                                    // menu ⋯ của biểu
       <div class="cb-dong"><label title="Lật ngược trục giá (giá cao ở dưới)"><input type="checkbox" data-lpd${ST.dao ? " checked" : ""}>Đảo trục giá</label></div></div>
     <div class="cb-nhom"><b>Vùng nhìn</b><div class="cb-dong"><span class="nut"><button type="button" data-lpv="tu" title="Trục thời gian về khoảng đã chọn + cột giá tự co giãn">Đặt lại vùng nhìn</button><button type="button" data-lpv="vua" title="Xem toàn bộ lịch sử trong khung">Vừa khung</button></span></div></div>`;
 }
-const menu_khoi = () => `<div class="fs-cb"><button type="button" data-cbmo>ƒx Chỉ báo ▾</button><div class="fs-cb-ds" hidden>${menu_cb()}</div></div>` +
+const menu_khoi = () => `<div class="fs-cb"><button type="button" data-cbm aria-haspopup="dialog">ƒx Chỉ báo</button></div>` +
   `<div class="fs-cb fs-lp"><button type="button" data-cbmo title="Lớp phân tích · thang giá · vùng nhìn" aria-label="Lớp phân tích, thang giá, vùng nhìn">⋯</button><div class="fs-cb-ds lp-ds" hidden>${menu_lp()}</div></div>`;
 function fib_n_dat(v) {                                 // số nến tìm nhịp của Fibonacci tự động (nút 30 / 60 / 120 / 250 hoặc tự nhập) → bật Fibonacci
   CB.fib_n = v; CB.fib = true;
@@ -1420,7 +1548,7 @@ function fib_n_dat(v) {                                 // số nến tìm nhị
   document.querySelectorAll('[data-cbx="fib"]').forEach(b => { b.checked = true; });
   return cb_doi();
 }
-function cb_doi() { cb_luu(); if (FS) return fs_ve(true); bd_ve_lai(); }
+function cb_doi() { cb_luu(); cbm_ve(); if (FS) return fs_ve(true); bd_ve_lai(); }
 function bd_ve_lai() { if (!BD_DK?.lai) return; let v = null; try { v = BD_GIA?.timeScale().getVisibleLogicalRange(); } catch (e) {} BD_DK.lai(v); }
 document.addEventListener("change", e => {
   const t = e.target;
@@ -1451,6 +1579,8 @@ document.addEventListener("change", e => {
 });
 document.addEventListener("click", e => {
   const t = e.target;
+  if (t.closest("[data-cbm]")) return cbm_mo();
+  if (CBM_EL?.contains(t) && cbm_bam(t)) return;
   const mo = t.closest("[data-cbmo]");
   if (mo) { e.stopPropagation(); const d = mo.parentElement.querySelector(".fs-cb-ds"); d.hidden = !d.hidden;
     if (!d.hidden && d.classList.contains("lp-ds")) d.innerHTML = menu_lp();          // thang / gọn có thể đã đổi ở nút khác
@@ -1461,8 +1591,6 @@ document.addEventListener("click", e => {
   const lt = t.closest("[data-lpt]"), lv = t.closest("[data-lpv]");
   if (lt) return dk_bd("thang:" + lt.dataset.lpt);
   if (lv) return dk_bd(lv.dataset.lpv);
-  const g = t.closest("[data-cbg]");
-  if (g) { const r = g.closest(".fs-cb-ds")?.querySelector(`[data-cbtk="${g.dataset.cbg}"]`); if (r) r.hidden = !r.hidden; return; }
   const f = t.closest("[data-cbf]");
   if (f) return fib_n_dat(+f.dataset.cbf);
   const h = t.closest("[data-cbh]"), k = t.closest("[data-cbk]");
