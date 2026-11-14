@@ -113,6 +113,24 @@ jobs:
           DUONG_DAN: ${{ vars.PTCP_PATH || 'ptcp' }}
         run: python lay_ptcp.py
 
+      # KIỂM THỬ TRÌNH DUYỆT THẬT (14/11/2026 – tests/test_trinh_duyet_web.py): mở trang Tra cứu / Biểu đồ / Bảng trong Chromium
+      # với dữ liệu mẫu, khổ máy tính + điện thoại → lỗi JS / trang trắng thì hỏng. Node + Playwright (bản Chromium lưu cache
+      # theo phiên bản); cài lỗi → test trình duyệt tự bỏ qua, các test khác vẫn chạy.
+      - name: Bản Chromium lưu sẵn (Playwright)
+        if: steps.co.outputs.co == '1'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-${{ runner.os }}-1.63.0
+      - name: Playwright + Chromium cho kiểm thử web
+        if: steps.co.outputs.co == '1'
+        continue-on-error: true
+        run: |
+          npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/pw" playwright@1.63.0 > /dev/null
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium > /dev/null
+          NODE_PATH="$RUNNER_TEMP/pw/node_modules" node -e "require('playwright'); console.log('Playwright sẵn sàng')"
+
       - name: Test canh-bao-mua
         if: steps.co.outputs.co == '1'
         run: python -m pytest -q
