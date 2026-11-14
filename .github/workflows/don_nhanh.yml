@@ -1,0 +1,54 @@
+# DỌN NHÁNH ĐÃ GỘP (chạy tay, 14/11/2026 – chủ quỹ: "xoá bớt các PR đã gộp"): xoá nhánh có đầu nhánh TRÙNG ĐÚNG commit đầu
+# của một PR đã gộp (tức không còn commit nào chưa gộp). Giữ: nhánh mặc định, nhánh có PR đang mở, nhánh có commit sau lần
+# gộp, nhánh trong GIU. Xoá nhầm → mở PR cũ bấm "Restore branch". Chạy với chi_xem = true trước để xem số lượng.
+#   • repo canh-bao-mua: token của chính lần chạy (GITHUB_TOKEN). repo kín danh-muc: DANH_MUC_TOKEN_GHI (Contents R/W; cần
+#     thêm quyền đọc Pull requests – thiếu thì danh sách PR gộp rỗng → không xoá gì) và KHÔNG in tên nhánh ra log công khai.
+#   • Về sau: Settings → General → Pull Requests → "Automatically delete head branches" để không phải dọn nữa.
+name: Don nhanh da gop
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "Repo cần dọn"
+        type: choice
+        options: [canh-bao-mua, danh-muc]
+        default: canh-bao-mua
+      chi_xem:
+        description: "Chỉ đếm / liệt kê nhánh sẽ xoá, KHÔNG xoá"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  don:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Xoá nhánh đã gộp (${{ inputs.repo }}${{ inputs.chi_xem && ' – chỉ xem' || '' }})
+        env:
+          GH_TOKEN: ${{ inputs.repo == 'danh-muc' && secrets.DANH_MUC_TOKEN_GHI || github.token }}
+          REPO: ${{ inputs.repo == 'danh-muc' && (vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc') || github.repository }}
+          KIN: ${{ inputs.repo == 'danh-muc' && '1' || '' }}
+          CHI_XEM: ${{ inputs.chi_xem }}
+          GIU: claude/paper-trading-dashboard-l8f3g0
+        run: |
+          set -eo pipefail
+          goc=$(gh api "repos/$REPO" --jq .default_branch)
+          gh api --paginate "repos/$REPO/pulls?state=closed&per_page=100" --jq '.[] | select(.merged_at != null) | .head.sha' | sort -u > gop.txt
+          gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" --jq '.[].head.ref' | sort -u > mo.txt
+          gh api --paginate "repos/$REPO/branches?per_page=100" --jq '.[] | [.name, .commit.sha] | @tsv' > nhanh.tsv
+          echo "PR đã gộp: $(wc -l < gop.txt) · PR mở: $(wc -l < mo.txt) · nhánh: $(wc -l < nhanh.tsv) · nhánh mặc định: $goc"
+          n=0; giu=0
+          while IFS=$'\t' read -r b sha; do
+            if [ "$b" = "$goc" ] || grep -qxF "$b" mo.txt || [[ " $GIU " == *" $b "* ]] || ! grep -qxF "$sha" gop.txt; then
+              giu=$((giu + 1)); continue
+            fi
+            [ -n "$KIN" ] || echo "xoá $b"                        # repo kín: chỉ in số lượng
+            n=$((n + 1))
+            [ "$CHI_XEM" = "true" ] || gh api -X DELETE "repos/$REPO/git/refs/heads/$b" --silent
+          done < nhanh.tsv
+          echo "### $REPO: $([ "$CHI_XEM" = "true" ] && echo 'sẽ xoá' || echo 'đã xoá') $n nhánh · giữ $giu" | tee -a "$GITHUB_STEP_SUMMARY"
