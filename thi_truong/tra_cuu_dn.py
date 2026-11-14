@@ -335,7 +335,7 @@ def gon_su_kien(ds, so=80):
     return out[:so]
 
 
-def gon_noi_bo(ds, so=40):
+def gon_noi_bo(ds, so=100):
     out = []
     for x in (ds or [])[:so]:
         out.append({"ngay": _ngay(x.get("publicDate") or x.get("displayDate2")), "tu": _ngay(x.get("startDate")),
@@ -544,7 +544,7 @@ def lay_dn(ma, cu=None, hom_nay=None):
         "cd": lambda: gon_co_dong(iq(f"company/{ma}/shareholder")),
         "sk": lambda: gon_su_kien(iq(f"events?ticker={ma}&fromDate=20120101&toDate={date.today().year + 1}1231"
                                      f"&page=0&size=300")),
-        "nb": lambda: gon_noi_bo(iq(f"company/{ma}/insider-transaction?page=0&size=40")),
+        "nb": lambda: gon_noi_bo(iq(f"company/{ma}/insider-transaction?page=0&size=100")),   # 100 lượt: đủ ~2 năm cho biểu đồ
         "cs": lambda: gon_chi_so(iq(f"company/{ma}/statistics-financial")),
         "tin": lambda: tin_cafef(ma),
         "bc": lambda: bao_cao_ctck(ma),
