@@ -13,13 +13,6 @@ def co(x):
         return True
 
 
-def so_vn(x, le=0):
-    """34500 → '34,500' (kiểu quốc tế bên trong; đổi sang 34.500 ở đầu ra bằng so.vn_hoa)."""
-    if not co(x):
-        return "N/A"
-    return f"{x:,.{le}f}"
-
-
 def bac(x, cac_bac, mac_dinh=0.0):
     """Chấm điểm theo bậc: [(ngưỡng, điểm), ...] xét lần lượt, x ≤ ngưỡng → điểm."""
     if not co(x):

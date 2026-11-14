@@ -57,8 +57,8 @@ def test_cho_long_poll(monkeypatch):
     assert "timeout=50&" in goi[0][0] and goi[0][1] == 50                # chặn 50s, urlopen chờ lâu hơn
 
 
-def _nut(uid, data, mid=7, date=NGAY, chat=111):
-    return {"update_id": uid, "callback_query": {"id": f"c{uid}", "data": data,
+def _nut(uid, data, mid=7, date=NGAY, chat=111, tu=None):
+    return {"update_id": uid, "callback_query": {"id": f"c{uid}", "data": data, "from": {"id": tu or chat},
                                                  "message": {"message_id": mid, "date": date, "chat": {"id": chat}}}}
 
 
@@ -67,7 +67,8 @@ def test_bam_nut_hoi_xac_nhan_roi_moi_dat(monkeypatch, capsys):
                     _nut(2, "dl|B|VIX", mid=8, date=NGAY - 4 * 3600),            # tin > 3 giờ
                     _nut(3, "dx|M|REE|237|46600", mid=9), _nut(4, "dx|M|REE|237|46600", mid=9),   # ✅ 2 lần
                     _nut(5, "dx|M|REE|100|46600", mid=11, date=NGAY - 400),      # ✅ quá 5 phút
-                    _nut(6, "dl|M|REE|237|46600", chat=999), _nut(7, "dt", mid=12), _nut(8, "dh", mid=7)]
+                    _nut(6, "dl|M|REE|237|46600", chat=999), _nut(7, "dt", mid=12), _nut(8, "dh", mid=7),
+                    _nut(9, "dx|B|VIX", mid=14, tu=555)]                           # người khác bấm trong đúng chat
 
     def gia(url, data=None, headers=None, method=None, cho=0):
         goi.append((url.split("?")[0].rsplit("/", 1)[-1], data))
@@ -88,8 +89,35 @@ def test_bam_nut_hoi_xac_nhan_roi_moi_dat(monkeypatch, capsys):
     assert [g[1]["message_id"] for g in goi if g[0] == "deleteMessage"] == [12]          # ❌ Thôi: xoá tin xác nhận
     assert [g[1]["message_id"] for g in goi if g[0] == "editMessageReplyMarkup"] == [7]  # ❌ Bỏ trên tin gốc
     assert ten.index("getUpdates", 1) < ten.index("dispatches")
+    tu_choi = [g[1].get("text") for g in goi if g[0] == "answerCallbackQuery" and g[1].get("text") == "Không nhận nút này"]
+    assert len(tu_choi) == 2                                                     # chat lạ + người lạ bấm
     out = capsys.readouterr().out
-    assert "REE" not in out and "8 nút bấm, 1 lệnh gửi máy Mac" in out
+    assert "REE" not in out and "9 nút bấm, 1 lệnh gửi máy Mac" in out
+
+
+def test_kenh_phai_dat_user_id_va_nut_cu_400_van_xu_ly(monkeypatch):
+    import urllib.error
+    goi = []
+
+    def gia(url, data=None, headers=None, method=None, cho=0, ma=None):
+        ten = url.split("?")[0].rsplit("/", 1)[-1]
+        goi.append((ten, data))
+        if ten == "answerCallbackQuery":                                         # nút bấm đã lâu: Telegram 400 query is too old
+            raise urllib.error.HTTPError(url, 400, "Bad Request", {}, None)
+        return None
+    monkeypatch.setattr(T, "_goi", gia)
+    # kênh: TELEGRAM_USER_ID = chủ quỹ → chỉ chủ quỹ bấm được; 400 khi trả lời nút không chặn việc xử lý
+    n = T.xu_ly_nut("api", [_nut(1, "dl|B|VIX", mid=7, chat=-100, tu=42)["callback_query"],
+                            _nut(2, "dx|B|VIX", mid=8, chat=-100, tu=43)["callback_query"]], -100, "g", "r",
+                    bay_gio=NGAY + 60, nguoi=42)
+    assert n == 0 and [g[0] for g in goi] == ["answerCallbackQuery", "sendMessage", "answerCallbackQuery"]
+    assert goi[1][1]["text"].startswith("Xác nhận BÁN HẾT VIX") and goi[2][1]["text"] == "Không nhận nút này"
+    monkeypatch.setattr(T, "_goi", lambda url, *a, **k: (_ for _ in ()).throw(urllib.error.HTTPError(url, 500, "x", {}, None)))
+    try:                                                                         # lỗi khác 400 vẫn ném ra
+        T.xu_ly_nut("api", [_nut(3, "dt", mid=9)["callback_query"]], 111, "g", "r", bay_gio=NGAY + 60)
+        assert False
+    except urllib.error.HTTPError as e:
+        assert e.code == 500
 
 
 def test_chu_kl():
@@ -104,7 +132,7 @@ def test_hai_bot_doc_song_song(monkeypatch):
         == ["acb", "b"]
 
 
-def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
+def test_chuyen_ket_qua_gui_roi_moi_xoa(monkeypatch, capsys):
     goi = []
     nd = base64.b64encode('"✅ Đã đặt MUA 300 REE"\n"✘ lỗi"\n{"text": "✅ MUA 37 lẻ REE", "ok": true, "tin": 7}\n'
                           '{"text": "⚠ VIX chưa khớp", "nut": [[["🛑 Bán lại", "dl|B|VIX"]]]}\n'.encode()).decode()
@@ -118,13 +146,34 @@ def test_chuyen_ket_qua_xoa_truoc_roi_gui(monkeypatch, capsys):
     monkeypatch.setattr(T, "_goi", gia)
     T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"})
     ten = [(g[0], g[1]) for g in goi]
-    assert ten.index(("ket_qua.jsonl", "DELETE")) < ten.index(("sendMessage", None))
+    assert ten.index(("ket_qua.jsonl", "DELETE")) > max(i for i, t in enumerate(ten) if t[0] in ("sendMessage", "editMessageText"))
     gui = [g[2] for g in goi if g[0] == "sendMessage"]
     assert [g["text"] for g in gui] == ["✅ Đã đặt MUA 300 REE", "✘ lỗi", "⚠ VIX chưa khớp"]
     assert gui[2]["reply_markup"] == {"inline_keyboard": [[{"text": "🛑 Bán lại", "callback_data": "dl|B|VIX"}]]}
     out = capsys.readouterr().out
     assert [g[2]["text"] for g in goi if g[0] == "editMessageText"] == ["✅ MUA 37 lẻ REE"]   # sửa tin xác nhận
     assert "REE" not in out and "chuyển 4 kết quả" in out
+    # gửi lỗi giữa chừng → KHÔNG xoá file (lượt sau gửi lại); xoá gặp 409 (máy Mac vừa ghi thêm) → không ném lỗi
+    import urllib.error
+    goi.clear()
+
+    def gia2(url, data=None, headers=None, method=None, cho=0, loi=[None]):
+        goi.append((url.rsplit("/", 1)[-1].split("?")[0], method))
+        if url.endswith("ket_qua.jsonl") and method is None:
+            return {"sha": "s", "content": nd}
+        if "sendMessage" in url and loi[0] != 409:
+            raise urllib.error.URLError("mạng")
+        if method == "DELETE":
+            raise urllib.error.HTTPError(url, loi[0], "Conflict", {}, None)
+        return {}
+    monkeypatch.setattr(T, "_goi", gia2)
+    try:
+        T.chuyen_ket_qua("t", "111", "g", "r")
+        assert False
+    except urllib.error.URLError:
+        assert ("ket_qua.jsonl", "DELETE") not in goi
+    gia2.__defaults__[-1][0] = 409
+    assert T.chuyen_ket_qua("t", "111", "g", "r") == 4 and ("ket_qua.jsonl", "DELETE") in goi
 
 
 def test_tu_dat_id_theo_ngay(monkeypatch, capsys):
