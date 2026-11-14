@@ -464,4 +464,5 @@ def test_magic_trend_mui_ten_o_cho_doi_chieu():
     mong = [0] + [(1 if ln[i] else -1) if ln[i] is not None and ln[i - 1] is not None and ln[i] != ln[i - 1] else 0 for i in range(1, len(ln))]
     assert doi == mong and 1 in doi and -1 in doi
     h = open(TRANG, encoding="utf-8").read()
-    assert 'shape: h > 0 ? "arrowUp" : "arrowDown"' in h and '"▲ Mua" : "▼ Bán"' in h
+    assert 'shape: r.doi[i] > 0 ? "arrowUp" : "arrowDown"' in h and '"▲ Mua" : "▼ Bán"' in h
+    assert 'r.chieu[i + 1] !== r.chieu[i] ? "rgba(0,0,0,0)"' in h                # đoạn nối sang chiều mới trong suốt (đường ngắt)
