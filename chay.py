@@ -536,7 +536,10 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
         if dn is None or not hom_nay_co_giao_dich(dn, bay_gio):
             continue
         dp = bo_nen_chua_dong(tai(ma, C.KHUNG_PHUT), C.KHUNG_PHUT, bay_gio)
-        gia = float(dp.close.iloc[-1]) if dp is not None and len(dp) else float(dn.close.iloc[-1])
+        # nến 15' phải là của HÔM NAY (nguồn 15' lỗi → tai trả cache cũ): không thì giá = nến ngày (đã kiểm là hôm nay)
+        # và chỉ báo + nút, KHÔNG tự đặt lệnh bán theo giá không chắc
+        moi = dp is not None and len(dp) > 0 and dp.index[-1].normalize() == pd.Timestamp(bay_gio).normalize()
+        gia = float(dp.close.iloc[-1]) if moi else float(dn.close.iloc[-1])
         kq = {"ma": ma, "gia": gia}
         kb = vi_the.danh_gia_ban(v, kq, dn, bay_gio)
         if vi_the.can_bao_ban(ma, kb["muc"], bay_gio, tt_ban):
@@ -546,7 +549,7 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
                 f"{ma} – {vi_the.NHAN.get(kb['muc'], kb['muc'])} @ {bieu_do_moc._f(gia)}", gia_nay=gia,
                 ngay_mua=v.get("ngay_mua") or None) if kb.get("he_thoat") else None
             nut = [[(f"🛑 Bán hết {ma} (giá theo sổ lệnh)", f"dl|B|{ma}")]] if kb["muc"] in vi_the.BAN_ATO else None
-            if kb["muc"] == "CAT_LO" and not kb.get("gdkhq") and _tu_dat(bay_gio, khong_gui, "B", ma):   # GDKHQ: chỉ báo
+            if kb["muc"] == "CAT_LO" and not kb.get("gdkhq") and moi and _tu_dat(bay_gio, khong_gui, "B", ma):   # GDKHQ: chỉ báo
                 nd, nut = nd + f"\n🤖 Đã gửi máy Mac lệnh BÁN HẾT {ma} (lô chẵn + lẻ, giá theo sổ lệnh){DUYET}", None
             gui(nd, rieng_tu=True, anh=anh, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
             if anh and os.path.exists(anh):

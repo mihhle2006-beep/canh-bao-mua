@@ -59,17 +59,21 @@ def gui(noi_dung, rieng_tu=False, anh=None, nut=None):
             if r.status_code != 200:
                 print("Telegram (ảnh) lỗi:", r.text[:200])
                 con = noi_dung                                   # ảnh lỗi → vẫn gửi đủ tin chữ
-        except requests.RequestException as e:
-            print("Telegram (ảnh) lỗi:", str(e)[:100])
+        except requests.RequestException as e:                     # không in str(e): URL trong đó có token bot
+            print("Telegram (ảnh) lỗi:", type(e).__name__)
             con = noi_dung
     ds = _chia(con)
     for i, phan in enumerate(ds):
         them = rm if i == len(ds) - 1 else {}
-        r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": dinh_dang_html(phan.rstrip()),
-                                                       "parse_mode": "HTML", "disable_web_page_preview": "true", **them},
-                          timeout=30)
-        if r.status_code != 200:                                     # HTML lỗi → gửi lại dạng chữ thường
-            r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": phan.rstrip(), **them}, timeout=30)
+        try:
+            r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": dinh_dang_html(phan.rstrip()),
+                                                           "parse_mode": "HTML", "disable_web_page_preview": "true", **them},
+                              timeout=30)
+            if r.status_code != 200:                                 # HTML lỗi → gửi lại dạng chữ thường
+                r = requests.post(f"{goc}/sendMessage", data={"chat_id": chat, "text": phan.rstrip(), **them}, timeout=30)
+        except requests.RequestException as e:                       # mạng đứt: không vỡ cả lượt quét (mã sau vẫn được xét)
+            print("Telegram lỗi mạng:", type(e).__name__)
+            return False
         if r.status_code != 200:
             print("Telegram lỗi:", r.text[:200])
             ok = False
@@ -92,7 +96,7 @@ def gui_anh(path, chu_thich="", rieng_tu=False):
             print("Telegram (ảnh) lỗi:", r.text[:200])
         return r.status_code == 200
     except requests.RequestException as e:
-        print("Telegram (ảnh) lỗi:", str(e)[:100])
+        print("Telegram (ảnh) lỗi:", type(e).__name__)
         return False
 
 

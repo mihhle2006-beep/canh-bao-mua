@@ -122,6 +122,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}   # lenh_tele: ai được bấm nút đặt lệnh (trống = id chat – chat riêng)
           DANH_MUC_TOKEN: ${{ secrets.DANH_MUC_TOKEN_GHI }}   # token repo danh-muc (cảnh báo BÁN)
           DANH_MUC_REPO: ${{ vars.DANH_MUC_REPO }}           # VD: ten-ban/danh-muc
           DANH_MUC_PATH: ${{ vars.DANH_MUC_PATH }}           # để trống = danh_muc.csv

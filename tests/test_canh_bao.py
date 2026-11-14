@@ -454,7 +454,8 @@ def test_gdkhq_khong_tu_dat_lenh_ban(monkeypatch):
     goi, tin = [], []
     monkeypatch.setattr(chay, "tai", lambda *a, **k: dn)
     monkeypatch.setattr(chay, "hom_nay_co_giao_dich", lambda *a: True)
-    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda *a: None)
+    dp = pd.DataFrame({"close": [10.05]}, index=[pd.Timestamp("2026-11-12 09:45")])   # nến 15' hôm nay
+    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda *a: dp)
     monkeypatch.setattr(chay, "_tu_dat", lambda *a: goi.append(a) or True)
     monkeypatch.setattr(chay, "gui", lambda nd, **k: tin.append(nd))
     monkeypatch.setattr(VT, "can_bao_ban", lambda *a: True)
@@ -468,6 +469,41 @@ def test_gdkhq_khong_tu_dat_lenh_ban(monkeypatch):
         chay._canh_bao_ban(pd.Timestamp("2026-11-12 10:00"), {"AAA": {"ma": "AAA", "so_cp": 100}}, False)
         assert len(goi) == so_lan
     assert len(tin) == 2
+
+
+def test_nen_15p_cu_khong_tu_ban(monkeypatch):
+    """Nguồn 15' lỗi → tai trả cache hôm qua: giá lấy từ nến ngày (đã kiểm là hôm nay), vẫn báo nhưng KHÔNG tự gửi lệnh bán."""
+    from canh_bao import vi_the as VT
+    dn = pd.DataFrame({"close": [10.0, 10.1]}, index=pd.bdate_range(end="2026-11-12", periods=2))
+    dp_cu = pd.DataFrame({"close": [9.0]}, index=[pd.Timestamp("2026-11-11 14:30")])
+    goi, kq = [], []
+    monkeypatch.setattr(chay, "tai", lambda *a, **k: dn)
+    monkeypatch.setattr(chay, "hom_nay_co_giao_dich", lambda *a: True)
+    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda *a: dp_cu)
+    monkeypatch.setattr(chay, "_tu_dat", lambda *a: goi.append(a) or True)
+    monkeypatch.setattr(chay, "gui", lambda nd, **k: None)
+    monkeypatch.setattr(VT, "danh_gia_ban", lambda v, k, *a: kq.append(k) or {"muc": "CAT_LO", "he_thoat": False})
+    monkeypatch.setattr(VT, "can_bao_ban", lambda *a: True)
+    monkeypatch.setattr(VT, "tin_ban", lambda *a, **k: "tin")
+    monkeypatch.setattr(VT, "doc_trang_thai_ban", lambda: {})
+    monkeypatch.setattr(VT, "ghi_trang_thai_ban", lambda *a, **k: None)
+    monkeypatch.setattr(C, "QUET_DANH_MUC_CU", False, raising=False)
+    monkeypatch.setattr(C, "GHI_NHAT_KY", False, raising=False)
+    chay._canh_bao_ban(pd.Timestamp("2026-11-12 10:00"), {"AAA": {"ma": "AAA", "so_cp": 100}}, False)
+    assert kq[0]["gia"] == 10.1 and goi == []
+
+
+def test_gui_loi_mang_khong_nem(monkeypatch, capsys):
+    import requests
+    monkeypatch.setenv("TELEGRAM_TOKEN", "t:bimat")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "1")
+
+    def post(url, **k):
+        raise requests.ConnectionError(f"Max retries exceeded with url: {url}")
+    monkeypatch.setattr(thong_bao.requests, "post", post)
+    assert thong_bao.gui("x") is False
+    out = capsys.readouterr().out
+    assert "Telegram lỗi mạng: ConnectionError" in out and "bimat" not in out
 
 
 def test_tin_thu_nut_chi_ngoai_gio(monkeypatch):

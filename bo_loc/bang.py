@@ -71,7 +71,3 @@ def ve_bang(df, dinh_dang=None, thut=2, bo_cot_trong=True, can_phai=(), toi_da_r
     for i in range(len(d)):
         dong.append(le + "  ".join(_can(o[c][i], rong[c], phai[c]) for c in d.columns))
     return "\n".join(x.rstrip() for x in dong)
-
-
-def in_bang(df, **kw):
-    print(ve_bang(df, **kw))
