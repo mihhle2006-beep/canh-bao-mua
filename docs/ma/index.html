@@ -1214,6 +1214,158 @@ function cb_rs(c, v, nhin = 250) {                    // RS = (giá / VN-Index) 
   }
   return {rs, dinh, som};
 }
+// ---- CHỈ BÁO MỚI (14/11/2026 – danh sách hộp "Chỉ báo và dữ liệu"): hàm thuần trên mảng nến, null = chưa đủ dữ liệu
+const cb_ok = z => z != null && isFinite(z);
+const cb_cua = (c, n, f) => c.map((_, i) => { if (i < n - 1) return null; const w = c.slice(i - n + 1, i + 1); return w.every(cb_ok) ? f(w, i) : null; });
+const cb_tong = w => w.reduce((a, b) => a + b, 0);
+const cb_tru = (a, b) => a.map((v, i) => cb_ok(v) && cb_ok(b[i]) ? v - b[i] : null);
+const cb_lui = (c, n) => c.map((_, i) => i >= n ? c[i - n] : null);
+const cb_hh = (c, n) => cb_cua(c, n, w => Math.max(...w)), cb_ll = (c, n) => cb_cua(c, n, w => Math.min(...w));
+const cb_do_lech = (c, n) => cb_cua(c, n, w => { const m = cb_tong(w) / n; return Math.sqrt(cb_tong(w.map(v => (v - m) ** 2)) / n); });
+const cb_wma = (c, n) => cb_cua(c, n, w => w.reduce((a, v, j) => a + v * (j + 1), 0) / (n * (n + 1) / 2));
+const cb_hma = (c, n) => { const a = cb_wma(c, Math.max(1, Math.round(n / 2))), b = cb_wma(c, n);
+  return cb_wma(a.map((v, i) => cb_ok(v) && cb_ok(b[i]) ? 2 * v - b[i] : null), Math.max(1, Math.round(Math.sqrt(n)))); };
+const cb_vwma = (c, v, n) => c.map((_, i) => { if (i < n - 1) return null; let a = 0, b = 0;
+  for (let j = i - n + 1; j <= i; j++) { if (!cb_ok(c[j]) || !cb_ok(v[j])) return null; a += c[j] * v[j]; b += v[j]; } return b > 0 ? a / b : null; });
+const cb_dema = (c, n) => { const a = cb_ema(c, n), b = cb_ema(a, n); return a.map((v, i) => cb_ok(v) && cb_ok(b[i]) ? 2 * v - b[i] : null); };
+const cb_tema = (c, n) => { const a = cb_ema(c, n), b = cb_ema(a, n), d = cb_ema(b, n); return a.map((v, i) => [v, b[i], d[i]].every(cb_ok) ? 3 * v - 3 * b[i] + d[i] : null); };
+const cb_alma = (c, n, off, sig) => { const m = off * (n - 1), s = n / sig, w = [...Array(n)].map((_, j) => Math.exp(-((j - m) ** 2) / (2 * s * s))), sw = cb_tong(w);
+  return cb_cua(c, n, x => x.reduce((a, v, j) => a + v * w[j], 0) / sw); };
+function cb_kama(c, n, f, s) {
+  const o = c.map(() => null), fa = 2 / (f + 1), sl = 2 / (s + 1);
+  for (let i = n; i < c.length; i++) { let d = 0; for (let j = i - n + 1; j <= i; j++) d += Math.abs(c[j] - c[j - 1]);
+    const er = d ? Math.abs(c[i] - c[i - n]) / d : 0, sc = (er * (fa - sl) + sl) ** 2, tr = o[i - 1] ?? c[i - 1]; o[i] = tr + sc * (c[i] - tr); }
+  return o;
+}
+function cb_t3(c, n, a) {
+  let e = cb_ema(c, n); const es = []; for (let j = 0; j < 6; j++) { if (j) e = cb_ema(e, n); es.push(e); }
+  const c1 = -(a ** 3), c2 = 3 * a * a + 3 * a ** 3, c3 = -6 * a * a - 3 * a - 3 * a ** 3, c4 = 1 + 3 * a + a ** 3 + 3 * a * a;
+  return c.map((_, i) => [es[5][i], es[4][i], es[3][i], es[2][i]].every(cb_ok) ? c1 * es[5][i] + c2 * es[4][i] + c3 * es[3][i] + c4 * es[2][i] : null);
+}
+const cb_aroon = (h, l, n) => { const up = h.map(() => null), dn = h.map(() => null);
+  for (let i = n; i < h.length; i++) { let a = i - n, b = i - n; for (let j = i - n; j <= i; j++) { if (h[j] >= h[a]) a = j; if (l[j] <= l[b]) b = j; }
+    up[i] = 100 * (n - (i - a)) / n; dn[i] = 100 * (n - (i - b)) / n; } return {up, dn}; };
+function cb_vortex(h, l, c, n) {
+  const tr = cb_tr(h, l, c), p = h.map((v, i) => i ? Math.abs(v - l[i - 1]) : null), m = l.map((v, i) => i ? Math.abs(v - h[i - 1]) : null);
+  const st = cb_cua(tr.map((v, i) => i ? v : null), n, cb_tong), sp = cb_cua(p, n, cb_tong), sm = cb_cua(m, n, cb_tong);
+  return {p: sp.map((v, i) => cb_ok(v) && st[i] ? v / st[i] : null), m: sm.map((v, i) => cb_ok(v) && st[i] ? v / st[i] : null)};
+}
+const cb_hq = w => { const n = w.length, sx = n * (n - 1) / 2, sxx = (n - 1) * n * (2 * n - 1) / 6, sy = cb_tong(w), sxy = w.reduce((a, v, j) => a + v * j, 0);
+  const b = (n * sxy - sx * sy) / (n * sxx - sx * sx || 1); return {b, a: (sy - b * sx) / n}; };   // hồi quy y = a + b·x, x = 0…n−1
+const cb_hoi_quy = (c, n) => cb_cua(c, n, w => { const {a, b} = cb_hq(w); return a + b * (n - 1); });
+const cb_doc = (c, n) => cb_cua(c, n, w => { const {a, b} = cb_hq(w), y = a + b * (n - 1); return y ? b / y * 100 : null; });   // %/phiên
+function cb_kenh_hq(c, n, k) {                            // kênh hồi quy N nến cuối ± k độ lệch chuẩn phần dư
+  const o = {gi: c.map(() => null), tr: c.map(() => null), du: c.map(() => null)}, N = c.length; if (N < n) return o;
+  const w = c.slice(N - n); if (!w.every(cb_ok)) return o; const {a, b} = cb_hq(w);
+  const sd = Math.sqrt(cb_tong(w.map((v, j) => (v - a - b * j) ** 2)) / n);
+  for (let j = 0; j < n; j++) { const y = a + b * j; o.gi[N - n + j] = y; o.tr[N - n + j] = y + k * sd; o.du[N - n + j] = y - k * sd; }
+  return o;
+}
+function cb_zigzag(h, l, pt) {                            // nối đỉnh / đáy đảo chiều ≥ pt % (đoạn cuối chưa xác nhận – còn đổi)
+  const n = h.length, d = [], k = pt / 100; if (!n) return [];
+  let xu = 0, e = 0, hi = 0, lo = 0;
+  for (let i = 1; i < n; i++) {
+    if (!xu) { if (h[i] > h[hi]) hi = i; if (l[i] < l[lo]) lo = i;
+      if (hi > lo && h[hi] >= l[lo] * (1 + k)) { d.push([lo, l[lo]]); xu = 1; e = hi; } else if (lo > hi && l[lo] <= h[hi] * (1 - k)) { d.push([hi, h[hi]]); xu = -1; e = lo; } }
+    else if (xu === 1) { if (h[i] >= h[e]) e = i; else if (l[i] <= h[e] * (1 - k)) { d.push([e, h[e]]); xu = -1; e = i; } }
+    else if (l[i] <= l[e]) e = i; else if (h[i] >= l[e] * (1 + k)) { d.push([e, l[e]]); xu = 1; e = i; }
+  }
+  if (xu) d.push([e, xu === 1 ? h[e] : l[e]]);
+  const o = h.map(() => null);
+  for (let j = 1; j < d.length; j++) { const [i0, v0] = d[j - 1], [i1, v1] = d[j]; for (let i = i0; i <= i1; i++) o[i] = v0 + (v1 - v0) * (i - i0) / ((i1 - i0) || 1); }
+  return o;
+}
+function cb_cci(h, l, c, n) {
+  const tp = h.map((v, i) => (v + l[i] + c[i]) / 3);
+  return cb_cua(tp, n, w => { const m = cb_tong(w) / n, md = cb_tong(w.map(v => Math.abs(v - m))) / n; return md ? (w[n - 1] - m) / (0.015 * md) : 0; });
+}
+function cb_magic(h, l, c, nc, na, k) {                   // Magic Trend: CCI ≥ 0 → nền dưới giá (thấp − k·ATR, chỉ đi lên); < 0 → trần trên giá
+  const cc = cb_cci(h, l, c, nc), at = cb_atr(h, l, c, na), v = c.map(() => null), len = c.map(() => null);
+  for (let i = 0; i < c.length; i++) { if (!cb_ok(cc[i]) || !cb_ok(at[i])) continue; const tr = v[i - 1];
+    if (cc[i] >= 0) { const u = l[i] - at[i] * k; v[i] = tr != null && u < tr ? tr : u; len[i] = true; }
+    else { const d = h[i] + at[i] * k; v[i] = tr != null && d > tr ? tr : d; len[i] = false; } }
+  return {v, len};
+}
+function cb_chandelier(h, l, c, n, k) {                   // Chandelier Exit: dừng mua = đỉnh N − k·ATR(N), dừng bán = đáy N + k·ATR(N)
+  const at = cb_atr(h, l, c, n), hh = cb_hh(h, n), ll = cb_ll(l, n), v = c.map(() => null), len = c.map(() => null);
+  let ls = null, ss = null, dir = 1;
+  for (let i = 0; i < c.length; i++) { if (!cb_ok(at[i]) || !cb_ok(hh[i])) continue;
+    let a = hh[i] - k * at[i], b = ll[i] + k * at[i];
+    if (ls != null && c[i - 1] > ls) a = Math.max(a, ls); if (ss != null && c[i - 1] < ss) b = Math.min(b, ss);
+    if (ss != null && c[i] > ss) dir = 1; else if (ls != null && c[i] < ls) dir = -1;
+    ls = a; ss = b; v[i] = dir === 1 ? a : b; len[i] = dir === 1; }
+  return {v, len};
+}
+const cb_chia = (a, b, k = 1) => a.map((v, i) => cb_ok(v) && cb_ok(b[i]) && b[i] ? k * v / b[i] : null);
+const cb_roc = (c, n) => c.map((v, i) => i >= n && c[i - n] ? 100 * (v / c[i - n] - 1) : null);
+const cb_willr = (h, l, c, n) => { const a = cb_hh(h, n), b = cb_ll(l, n); return c.map((v, i) => cb_ok(a[i]) && a[i] > b[i] ? -100 * (a[i] - v) / (a[i] - b[i]) : null); };
+function cb_trix(c, n, s) { const e = cb_ema(cb_ema(cb_ema(c, n), n), n), t = e.map((v, i) => i && cb_ok(v) && e[i - 1] ? 100 * (v / e[i - 1] - 1) : null); return {t, s: cb_ema(t, s)}; }
+function cb_uo(h, l, c, a, b, d) {
+  const bp = c.map((v, i) => i ? v - Math.min(l[i], c[i - 1]) : null), tr = c.map((v, i) => i ? Math.max(h[i], c[i - 1]) - Math.min(l[i], c[i - 1]) : null);
+  const tb = n => { const x = cb_cua(bp, n, cb_tong), y = cb_cua(tr, n, cb_tong); return x.map((v, i) => cb_ok(v) && y[i] ? v / y[i] : null); };
+  const A = tb(a), B = tb(b), D = tb(d); return A.map((v, i) => [v, B[i], D[i]].every(cb_ok) ? 100 * (4 * v + 2 * B[i] + D[i]) / 7 : null);
+}
+const cb_ao = (h, l) => { const m = h.map((v, i) => (v + l[i]) / 2); return cb_tru(cb_sma(m, 5), cb_sma(m, 34)); };
+function cb_tsi(c, r, s, g) {
+  const d = c.map((v, i) => i ? v - c[i - 1] : null), t = cb_chia(cb_ema(cb_ema(d, r), s), cb_ema(cb_ema(d.map(v => v == null ? null : Math.abs(v)), r), s), 100);
+  return {t, s: cb_ema(t, g)};
+}
+function cb_kst(c, g) {
+  const r = [[10, 10], [15, 10], [20, 10], [30, 15]].map(([a, b]) => cb_sma(cb_roc(c, a), b));
+  const k = c.map((_, i) => r.every(z => cb_ok(z[i])) ? r[0][i] + 2 * r[1][i] + 3 * r[2][i] + 4 * r[3][i] : null); return {k, s: cb_sma(k, g)};
+}
+const cb_cmo = (c, n) => { const d = c.map((v, i) => i ? v - c[i - 1] : null);
+  return cb_cua(d, n, w => { const u = cb_tong(w.filter(v => v > 0)), x = -cb_tong(w.filter(v => v < 0)); return u + x ? 100 * (u - x) / (u + x) : 0; }); };
+function cb_fisher(h, l, n) {
+  const m = h.map((v, i) => (v + l[i]) / 2), hh = cb_hh(m, n), ll = cb_ll(m, n), f = m.map(() => null); let x = 0, y = 0;
+  for (let i = 0; i < m.length; i++) { if (!cb_ok(hh[i])) continue; const r = hh[i] > ll[i] ? (m[i] - ll[i]) / (hh[i] - ll[i]) - 0.5 : 0;
+    x = Math.max(-0.999, Math.min(0.999, 0.66 * r + 0.67 * x)); y = 0.5 * Math.log((1 + x) / (1 - x)) + 0.5 * y; f[i] = y; }
+  return {f, s: cb_lui(f, 1)};
+}
+function cb_crsi(c, a, b, p) {                            // Connors RSI = (RSI a + RSI chuỗi tăng/giảm b + hạng % thay đổi 1 phiên trong p) / 3
+  const st = c.map(() => 0); for (let i = 1; i < c.length; i++) st[i] = c[i] > c[i - 1] ? Math.max(st[i - 1], 0) + 1 : c[i] < c[i - 1] ? Math.min(st[i - 1], 0) - 1 : 0;
+  const r1 = cb_rsi(c, a), r2 = cb_rsi(st, b), rc = cb_roc(c, 1), pr = rc.map((v, i) => { if (i <= p || !cb_ok(v)) return null; let k = 0;
+    for (let j = i - p; j < i; j++) if (cb_ok(rc[j]) && rc[j] < v) k++; return 100 * k / p; });
+  return c.map((_, i) => [r1[i], r2[i], pr[i]].every(cb_ok) ? (r1[i] + r2[i] + pr[i]) / 3 : null);
+}
+function cb_ppo(c, f, s, g) { const p = cb_chia(cb_tru(cb_ema(c, f), cb_ema(c, s)), cb_ema(c, s), 100), q = cb_ema(p, g); return {p, s: q, h: cb_tru(p, q)}; }
+const cb_coppock = (c, w, a, b) => { const u = cb_roc(c, b); return cb_wma(cb_roc(c, a).map((v, i) => cb_ok(v) && cb_ok(u[i]) ? v + u[i] : null), w); };
+const cb_bop = (o, h, l, c, n) => cb_sma(c.map((v, i) => h[i] > l[i] ? (v - o[i]) / (h[i] - l[i]) : 0), n);
+function cb_rvi(o, h, l, c, n) {
+  const sw = a => a.map((_, i) => i >= 3 ? (a[i] + 2 * a[i - 1] + 2 * a[i - 2] + a[i - 3]) / 6 : null);
+  const v = cb_chia(cb_sma(sw(c.map((x, i) => x - o[i])), n), cb_sma(sw(h.map((x, i) => x - l[i])), n)); return {v, s: sw(v)};
+}
+const cb_psy = (c, n) => cb_cua(c.map((v, i) => i ? (v > c[i - 1] ? 1 : 0) : null), n, w => 100 * cb_tong(w) / n);
+function cb_keltner(h, l, c, n, k, na) { const g = cb_ema(c, n), a = cb_atr(h, l, c, na); return {gi: g, tr: g.map((v, i) => cb_ok(v) && cb_ok(a[i]) ? v + k * a[i] : null), du: g.map((v, i) => cb_ok(v) && cb_ok(a[i]) ? v - k * a[i] : null)}; }
+const cb_env = (c, n, p) => { const g = cb_sma(c, n); return {gi: g, tr: g.map(v => cb_ok(v) ? v * (1 + p / 100) : null), du: g.map(v => cb_ok(v) ? v * (1 - p / 100) : null)}; };
+const cb_pctb = (c, n, k) => { const b = cb_bb(c, n, k); return c.map((v, i) => cb_ok(b.tr[i]) && b.tr[i] > b.du[i] ? (v - b.du[i]) / (b.tr[i] - b.du[i]) : null); };
+const cb_bbw = (c, n, k) => { const b = cb_bb(c, n, k); return c.map((_, i) => cb_ok(b.tr[i]) && b.gi[i] ? 100 * (b.tr[i] - b.du[i]) / b.gi[i] : null); };
+const cb_hv = (c, n, k) => cb_do_lech(c.map((v, i) => i && v > 0 && c[i - 1] > 0 ? Math.log(v / c[i - 1]) : null), n).map(v => cb_ok(v) ? v * Math.sqrt(k) * 100 : null);
+function cb_chop(h, l, c, n) {
+  const tr = cb_cua(cb_tr(h, l, c), n, cb_tong), hh = cb_hh(h, n), ll = cb_ll(l, n);
+  return tr.map((v, i) => cb_ok(v) && hh[i] > ll[i] ? 100 * Math.log10(v / (hh[i] - ll[i])) / Math.log10(n) : null);
+}
+const cb_ulcer = (c, n) => { const m = cb_hh(c, n); return cb_cua(c.map((v, i) => cb_ok(m[i]) ? (100 * (v - m[i]) / m[i]) ** 2 : null), n, w => Math.sqrt(cb_tong(w) / n)); };
+const cb_mass = (h, l, a, b) => { const r = h.map((v, i) => v - l[i]), e = cb_ema(r, a); return cb_cua(cb_chia(e, cb_ema(e, a)), b, cb_tong); };
+const cb_chv = (h, l, a, b) => { const e = cb_ema(h.map((v, i) => v - l[i]), a); return e.map((v, i) => i >= b && cb_ok(v) && e[i - b] ? 100 * (v / e[i - b] - 1) : null); };
+const cb_mfv = (h, l, c, v) => c.map((x, i) => h[i] > l[i] && cb_ok(v[i]) ? ((x - l[i]) - (h[i] - x)) / (h[i] - l[i]) * v[i] : 0);
+const cb_cmf = (h, l, c, v, n) => cb_chia(cb_cua(cb_mfv(h, l, c, v), n, cb_tong), cb_cua(v.map(z => z ?? 0), n, cb_tong));
+const cb_ad = (h, l, c, v) => { let s = 0; return cb_mfv(h, l, c, v).map(z => (s += z)); };
+const cb_cho = (h, l, c, v, a, b) => { const d = cb_ad(h, l, c, v); return cb_tru(cb_ema(d, a), cb_ema(d, b)); };
+const cb_vo = (v, a, b) => { const x = cb_ema(v, a), y = cb_ema(v, b); return cb_chia(cb_tru(x, y), y, 100); };
+const cb_efi = (c, v, n) => cb_ema(c.map((x, i) => i ? (x - c[i - 1]) * (v[i] || 0) : null), n);
+const cb_eom = (h, l, v, n) => cb_sma(h.map((x, i) => { if (!i || !v[i]) return null; const m = (x + l[i]) / 2 - (h[i - 1] + l[i - 1]) / 2; return 10000 * m * (x - l[i]) / v[i]; }), n);
+const cb_pvt = (c, v) => { let s = 0; return c.map((x, i) => { if (i && c[i - 1]) s += (v[i] || 0) * (x - c[i - 1]) / c[i - 1]; return s; }); };
+function cb_nvi(c, v, am) { let s = 1000; return c.map((x, i) => { if (i && c[i - 1] && (am ? v[i] < v[i - 1] : v[i] > v[i - 1])) s *= x / c[i - 1]; return s; }); }
+function cb_klinger(h, l, c, v, f, s, g) {
+  const tp = h.map((x, i) => (x + l[i] + c[i]) / 3), sv = tp.map((x, i) => i ? (x >= tp[i - 1] ? 1 : -1) * (v[i] || 0) : null);
+  const k = cb_tru(cb_ema(sv, f), cb_ema(sv, s)); return {k, s: cb_ema(k, g)};
+}
+const cb_rvol = (v, n) => v.map((x, i) => { if (i < n || !cb_ok(x)) return null; let s = 0; for (let j = i - n; j < i; j++) s += v[j] || 0; return s ? 100 * x * n / s : null; });
+const cb_zscore = (c, n) => { const m = cb_sma(c, n), d = cb_do_lech(c, n); return c.map((v, i) => cb_ok(m[i]) && d[i] ? (v - m[i]) / d[i] : null); };
+const cb_prank = (c, n) => c.map((v, i) => { if (i < n || !cb_ok(v)) return null; let k = 0; for (let j = i - n; j < i; j++) if (cb_ok(c[j]) && c[j] < v) k++; return 100 * k / n; });
+const cb_trung_vi = (c, n) => cb_cua(c, n, w => { const s = [...w].sort((a, b) => a - b); return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; });
+const cb_noi = r => { const noi = len => r.v.map((v, i) => r.len[i] === len || (r.len[i + 1] === len && r.len[i] !== len) ? v : null); return {len: noi(true), xuong: noi(false)}; };   // tách tăng / giảm, nối điểm đổi chiều
 // ---------------------------------------------------------------- hết chỉ báo kỹ thuật
 // ---------------------------------------------------------------- CHỈ BÁO: trạng thái (lưu trong trình duyệt) + menu ƒx (trang thường + toàn màn hình)
 const KHOA_CB = "ma_chi_bao";
@@ -1270,6 +1422,81 @@ const NGUON = {c: ["Đóng cửa", x => x.c], o: ["Mở cửa", x => x.o], h: ["
   hlc3: ["(Cao + Thấp + Đóng) / 3", x => x.h.map((v, i) => v == null || x.l[i] == null || x.c[i] == null ? null : (v + x.l[i] + x.c[i]) / 3)],
   ohlc4: ["(Mở + Cao + Thấp + Đóng) / 4", x => x.h.map((v, i) => [x.o[i], v, x.l[i], x.c[i]].some(z => z == null) ? null : (x.o[i] + v + x.l[i] + x.c[i]) / 4)]};
 const CO_NGUON = ["ma", "ema", "bb", "p:rsi", "p:macd"];
+// CHỈ BÁO MỚI (CB_MOI, 14/11/2026 – từ danh sách hộp "Chỉ báo và dữ liệu"): khai báo 1 lần → hộp ƒx, vẽ, chú giải, bảng ⚙.
+// noi "tren" = vẽ trên nến, "duoi" = ngăn riêng. ts: [nhãn, mặc định, min, max, bước]. d: [id, tên, màu, kiểu] – l đường · v đường khối lượng ·
+// h cột xanh / đỏ theo dấu · c cột 1 màu. f(x, ts, khung) → {id: mảng}. ng = đường ngưỡng, cd = thang cố định [min, max], kl = số dạng khối lượng.
+const cb_m = (k, ten, gon, nhom, noi, ta, ts, d, f, o = {}) => ({k, ten, gon, nhom, noi, ta, ts, d, f, ...o});
+const CB_MOI = [
+  cb_m("wma", "Trung bình trọng số", "WMA", "tbd", "tren", "Trung bình N phiên, phiên gần nặng ký hơn (trọng số 1…N) – bám giá nhanh hơn MA.", [["Chu kỳ", 20, 2, 400, 1]], [["v", "WMA", "#00897b", "l"]], (x, t) => ({v: cb_wma(x.c, t[0])})),
+  cb_m("hma", "Trung bình Hull", "HMA", "tbd", "tren", "Gần như không trễ: WMA của (2 × WMA N/2 − WMA N) trên √N phiên – đổi hướng sớm, hợp xem xu hướng ngắn.", [["Chu kỳ", 20, 4, 400, 1]], [["v", "HMA", "#8e24aa", "l"]], (x, t) => ({v: cb_hma(x.c, t[0])})),
+  cb_m("vwma", "Trung bình theo khối lượng", "VWMA", "tbd", "tren", "Trung bình giá N phiên có trọng số là khối lượng: phiên khớp nhiều kéo đường mạnh hơn.", [["Chu kỳ", 20, 2, 400, 1]], [["v", "VWMA", "#3949ab", "l"]], (x, t) => ({v: cb_vwma(x.c, x.v, t[0])})),
+  cb_m("dema", "Trung bình hàm mũ kép", "DEMA", "tbd", "tren", "2 × EMA − EMA của EMA: bớt độ trễ của EMA mà vẫn mượt.", [["Chu kỳ", 20, 2, 400, 1]], [["v", "DEMA", "#f4511e", "l"]], (x, t) => ({v: cb_dema(x.c, t[0])})),
+  cb_m("tema", "Trung bình hàm mũ bậc ba", "TEMA", "tbd", "tren", "Ghép ba tầng EMA để bỏ gần hết độ trễ: phản ứng nhanh nhất trong họ EMA.", [["Chu kỳ", 20, 2, 400, 1]], [["v", "TEMA", "#6d4c41", "l"]], (x, t) => ({v: cb_tema(x.c, t[0])})),
+  cb_m("alma", "Trung bình Arnaud Legoux", "ALMA", "tbd", "tren", "Trung bình trọng số hình chuông lệch về các phiên gần: mượt mà ít trễ.", [["Chu kỳ", 20, 2, 400, 1], ["Độ lệch", 0.85, 0, 1, 0.01], ["Sigma", 6, 1, 20, 0.5]], [["v", "ALMA", "#c2185b", "l"]], (x, t) => ({v: cb_alma(x.c, ...t)})),
+  cb_m("kama", "Trung bình thích nghi Kaufman", "KAMA", "tbd", "tren", "Tự đổi độ nhạy theo hiệu quả của giá: bám sát khi giá chạy thẳng, gần như đứng yên khi đi ngang.", [["Chu kỳ", 10, 2, 100, 1], ["Nhanh", 2, 2, 50, 1], ["Chậm", 30, 5, 200, 1]], [["v", "KAMA", "#00838f", "l"]], (x, t) => ({v: cb_kama(x.c, ...t)})),
+  cb_m("t3", "Trung bình T3 Tillson", "T3", "tbd", "tren", "Sáu tầng EMA ghép theo hệ số khối lượng: rất trơn, ít nhiễu.", [["Chu kỳ", 5, 2, 100, 1], ["Hệ số", 0.7, 0, 1, 0.05]], [["v", "T3", "#5e35b1", "l"]], (x, t) => ({v: cb_t3(x.c, ...t)})),
+  cb_m("magic", "Xu hướng ma thuật (Magic Trend)", "Magic Trend", "xh", "tren", "Đường dừng theo ATR đổi chiều theo CCI: CCI ≥ 0 thì nằm dưới giá (xanh, chỉ đi lên), CCI < 0 thì nằm trên giá (đỏ); giá cắt qua là đổi xu hướng.", [["Chu kỳ CCI", 20, 5, 200, 1], ["Chu kỳ ATR", 5, 2, 100, 1], ["Hệ số ATR", 1, 0.1, 10, 0.1]], [["len", "Tăng", "#16a34a", "l"], ["xuong", "Giảm", "#dc2626", "l"]], (x, t) => cb_noi(cb_magic(x.h, x.l, x.c, ...t))),
+  cb_m("ce", "Chandelier Exit", "CE", "xh", "tren", "Đường dừng lỗ treo từ đỉnh N phiên trừ k × ATR: giá đóng dưới đường là thoát lệnh mua.", [["Chu kỳ", 22, 5, 200, 1], ["Hệ số ATR", 3, 0.5, 10, 0.1]], [["len", "Dừng mua", "#16a34a", "l"], ["xuong", "Dừng bán", "#dc2626", "l"]], (x, t) => cb_noi(cb_chandelier(x.h, x.l, x.c, ...t))),
+  cb_m("lr", "Hồi quy tuyến tính", "LinReg", "xh", "tren", "Nối điểm cuối của đường hồi quy tuyến tính N phiên qua từng phiên: hướng dốc là xu hướng, ít trễ hơn MA.", [["Chu kỳ", 25, 5, 400, 1]], [["v", "LinReg", "#0277bd", "l"]], (x, t) => ({v: cb_hoi_quy(x.c, t[0])})),
+  cb_m("zz", "Zigzag", "Zigzag", "xh", "tren", "Nối các đỉnh và đáy có biên độ đảo chiều từ N % trở lên – lọc nhiễu để thấy sóng; đoạn cuối còn đổi khi giá chạy tiếp.", [["Đảo chiều (%)", 5, 1, 50, 0.5]], [["v", "Zigzag", "#e53935", "l"]], (x, t) => ({v: cb_zigzag(x.h, x.l, t[0])})),
+  cb_m("aroon", "Aroon", "Aroon", "xh", "duoi", "Đo bao lâu kể từ đỉnh và đáy N phiên gần nhất: Aroon Up trên 70 và trên Aroon Down là xu hướng tăng mạnh.", [["Chu kỳ", 25, 5, 200, 1]], [["up", "Up", "#16a34a", "l"], ["dn", "Down", "#dc2626", "l"]], (x, t) => cb_aroon(x.h, x.l, t[0]), {ng: [30, 70], cd: [0, 100]}),
+  cb_m("vortex", "Chỉ báo Vortex", "VI", "xh", "duoi", "Hai đường VI+ và VI− đo lực đẩy lên / xuống so với biên độ thực: VI+ cắt lên VI− là tín hiệu xu hướng tăng.", [["Chu kỳ", 14, 2, 100, 1]], [["p", "VI+", "#16a34a", "l"], ["m", "VI−", "#dc2626", "l"]], (x, t) => cb_vortex(x.h, x.l, x.c, t[0]), {ng: [1]}),
+  cb_m("cci", "Chỉ số kênh hàng hoá (CCI)", "CCI", "dl", "duoi", "Giá điển hình lệch khỏi trung bình bao nhiêu lần độ lệch trung bình: trên +100 là mạnh / quá mua, dưới −100 là yếu / quá bán.", [["Chu kỳ", 20, 2, 200, 1]], [["v", "CCI", "#1e88e5", "l"]], (x, t) => ({v: cb_cci(x.h, x.l, x.c, t[0])}), {ng: [-100, 100]}),
+  cb_m("roc", "Tốc độ thay đổi giá", "ROC", "dl", "duoi", "Phần trăm thay đổi của giá so với N phiên trước: trên 0 là đang tăng, đỉnh ROC thấp dần là động lượng yếu đi.", [["Chu kỳ", 12, 1, 250, 1]], [["v", "ROC %", "#6d4c41", "l"]], (x, t) => ({v: cb_roc(x.c, t[0])}), {ng: [0]}),
+  cb_m("mom", "Động lượng", "MOM", "dl", "duoi", "Chênh lệch giá so với N phiên trước: dương và tăng dần là động lượng tăng.", [["Chu kỳ", 10, 1, 250, 1]], [["v", "Momentum", "#00897b", "l"]], (x, t) => ({v: cb_tru(x.c, cb_lui(x.c, t[0]))}), {ng: [0]}),
+  cb_m("wr", "Williams %R", "%R", "dl", "duoi", "Vị trí giá đóng cửa so với đỉnh N phiên (0 → −100): trên −20 quá mua, dưới −80 quá bán.", [["Chu kỳ", 14, 2, 200, 1]], [["v", "%R", "#7e57c2", "l"]], (x, t) => ({v: cb_willr(x.h, x.l, x.c, t[0])}), {ng: [-80, -20], cd: [-100, 0]}),
+  cb_m("trix", "TRIX", "TRIX", "dl", "duoi", "Phần trăm thay đổi mỗi phiên của EMA ba tầng: lọc gần hết nhiễu ngắn hạn; cắt lên đường tín hiệu là tín hiệu mua.", [["Chu kỳ", 15, 2, 100, 1], ["Tín hiệu", 9, 1, 50, 1]], [["t", "TRIX", "#1565c0", "l"], ["s", "Tín hiệu", "#ef6c00", "l"]], (x, t) => cb_trix(x.c, ...t), {ng: [0]}),
+  cb_m("uo", "Dao động tổng hợp (Ultimate)", "UO", "dl", "duoi", "Gộp áp lực mua của ba khung thời gian để bớt tín hiệu giả: trên 70 quá mua, dưới 30 quá bán.", [["Ngắn", 7, 2, 50, 1], ["Vừa", 14, 3, 100, 1], ["Dài", 28, 5, 200, 1]], [["v", "UO", "#d81b60", "l"]], (x, t) => ({v: cb_uo(x.h, x.l, x.c, ...t)}), {ng: [30, 70], cd: [0, 100]}),
+  cb_m("ao", "Dao động tuyệt vời (Awesome)", "AO", "dl", "duoi", "Chênh lệch trung bình giá giữa 5 và 34 phiên: cột đổi từ âm sang dương là động lượng chuyển sang tăng.", [], [["v", "AO", "#26a69a", "h"]], x => ({v: cb_ao(x.h, x.l)}), {ng: [0]}),
+  cb_m("tsi", "Chỉ số sức mạnh thực (TSI)", "TSI", "dl", "duoi", "Động lượng đã làm trơn hai lần: cắt lên đường tín hiệu là mua, trên 0 là phe mua chiếm ưu thế.", [["Dài", 25, 2, 100, 1], ["Ngắn", 13, 2, 100, 1], ["Tín hiệu", 13, 1, 50, 1]], [["t", "TSI", "#1565c0", "l"], ["s", "Tín hiệu", "#ef6c00", "l"]], (x, t) => cb_tsi(x.c, ...t), {ng: [0]}),
+  cb_m("kst", "Know Sure Thing", "KST", "dl", "duoi", "Tổng có trọng số của bốn tốc độ thay đổi giá ở bốn chu kỳ (10, 15, 20, 30): cắt lên tín hiệu là động lượng tăng trên nhiều khung.", [["Tín hiệu", 9, 1, 50, 1]], [["k", "KST", "#2e7d32", "l"], ["s", "Tín hiệu", "#c62828", "l"]], (x, t) => cb_kst(x.c, t[0]), {ng: [0]}),
+  cb_m("cmo", "Dao động động lượng Chande", "CMO", "dl", "duoi", "Chênh lệch tổng phiên tăng và tổng phiên giảm trên tổng biến động N phiên: trên +50 quá mua, dưới −50 quá bán.", [["Chu kỳ", 9, 2, 100, 1]], [["v", "CMO", "#3949ab", "l"]], (x, t) => ({v: cb_cmo(x.c, t[0])}), {ng: [-50, 50], cd: [-100, 100]}),
+  cb_m("fisher", "Biến đổi Fisher", "Fisher", "dl", "duoi", "Biến vị trí giá trong biên N phiên thành các đỉnh / đáy sắc: hai đường cắt nhau ở vùng cực trị báo đảo chiều.", [["Chu kỳ", 9, 2, 100, 1]], [["f", "Fisher", "#1e88e5", "l"], ["s", "Trễ 1", "#ef6c00", "l"]], (x, t) => cb_fisher(x.h, x.l, t[0]), {ng: [0]}),
+  cb_m("crsi", "Connors RSI", "CRSI", "dl", "duoi", "Gộp RSI ngắn, RSI của chuỗi phiên tăng / giảm liên tiếp và hạng % của thay đổi 1 phiên: dưới 10 là quá bán sâu.", [["RSI", 3, 2, 50, 1], ["RSI chuỗi", 2, 2, 50, 1], ["Hạng %", 100, 20, 500, 1]], [["v", "CRSI", "#8e24aa", "l"]], (x, t) => ({v: cb_crsi(x.c, ...t)}), {ng: [10, 90], cd: [0, 100]}),
+  cb_m("ppo", "Dao động giá theo phần trăm", "PPO", "dl", "duoi", "Như MACD nhưng tính bằng phần trăm chênh lệch hai EMA – so được giữa các mã giá khác nhau.", [["EMA nhanh", 12, 2, 100, 1], ["EMA chậm", 26, 3, 200, 1], ["Tín hiệu", 9, 1, 50, 1]], [["h", "Histogram", "#26a69a", "h"], ["p", "PPO", "#2962ff", "l"], ["s", "Tín hiệu", "#ff6d00", "l"]], (x, t) => cb_ppo(x.c, ...t), {ng: [0]}),
+  cb_m("cop", "Đường Coppock", "Coppock", "dl", "duoi", "WMA của tổng hai tốc độ thay đổi giá dài hạn: cắt lên 0 từ vùng âm sâu thường báo đáy lớn (khung tháng / tuần).", [["WMA", 10, 2, 50, 1], ["ROC dài", 14, 2, 100, 1], ["ROC ngắn", 11, 2, 100, 1]], [["v", "Coppock", "#00897b", "h"]], (x, t) => ({v: cb_coppock(x.c, ...t)}), {ng: [0]}),
+  cb_m("bop", "Cân bằng lực (Balance of Power)", "BOP", "dl", "duoi", "(Đóng − mở) / (cao − thấp) trung bình N phiên: dương là bên mua chiếm ưu thế trong phiên.", [["Chu kỳ", 14, 1, 100, 1]], [["v", "BOP", "#26a69a", "h"]], (x, t) => ({v: cb_bop(x.o, x.h, x.l, x.c, t[0])}), {ng: [0]}),
+  cb_m("elder", "Tia Elder (lực mua / bán)", "Elder", "dl", "duoi", "Lực mua = giá cao nhất trừ EMA, lực bán = giá thấp nhất trừ EMA: lực bán âm nhưng tăng dần trong xu hướng tăng là điểm mua.", [["EMA", 13, 2, 100, 1]], [["bull", "Lực mua", "#16a34a", "c"], ["bear", "Lực bán", "#dc2626", "c"]], (x, t) => { const e = cb_ema(x.c, t[0]); return {bull: cb_tru(x.h, e), bear: cb_tru(x.l, e)}; }, {ng: [0]}),
+  cb_m("rvgi", "Chỉ số sức sống tương đối (RVI)", "RVGI", "dl", "duoi", "So giá đóng cửa với mở cửa trên biên độ phiên: xu hướng tăng thì đóng cửa thường cao hơn mở cửa; cắt lên tín hiệu là mua.", [["Chu kỳ", 10, 2, 100, 1]], [["v", "RVI", "#2e7d32", "l"], ["s", "Tín hiệu", "#c62828", "l"]], (x, t) => cb_rvi(x.o, x.h, x.l, x.c, t[0]), {ng: [0]}),
+  cb_m("psy", "Chỉ số tâm lý (Psychological Index)", "PSY", "dl", "duoi", "Tỷ lệ phiên tăng giá trong N phiên gần nhất: trên 75 là đám đông hưng phấn, dưới 25 là bi quan – thường báo trước điểm đảo chiều.", [["Chu kỳ", 12, 3, 100, 1]], [["v", "PSY", "#f57c00", "l"]], (x, t) => ({v: cb_psy(x.c, t[0])}), {ng: [25, 75], cd: [0, 100]}),
+  cb_m("kc", "Kênh Keltner", "KC", "bd", "tren", "EMA N phiên ± hệ số × ATR. Giá đóng cửa ngoài kênh là chạy mạnh; Bollinger co vào trong Keltner là giá đang nén.", [["Chu kỳ", 20, 2, 200, 1], ["Hệ số ATR", 2, 0.5, 5, 0.1], ["Chu kỳ ATR", 10, 2, 100, 1]], [["tr", "Trên", "#00897b", "l"], ["gi", "Giữa", "#80cbc4", "l"], ["du", "Dưới", "#00897b", "l"]], (x, t) => cb_keltner(x.h, x.l, x.c, ...t)),
+  cb_m("env", "Dải bao (Envelope)", "ENV", "bd", "tren", "Hai đường cách trung bình N phiên một tỷ lệ phần trăm cố định: chạm dải trên / dưới là giá đi xa trung bình.", [["Chu kỳ", 20, 2, 200, 1], ["Biên (%)", 5, 0.5, 30, 0.5]], [["tr", "Trên", "#5e35b1", "l"], ["gi", "Giữa", "#b39ddb", "l"], ["du", "Dưới", "#5e35b1", "l"]], (x, t) => cb_env(x.c, ...t)),
+  cb_m("pctb", "Bollinger %B", "%B", "bd", "duoi", "Vị trí của giá trong dải Bollinger: 1 là chạm dải trên, 0 là chạm dải dưới, trên 1 là vượt dải.", [["Chu kỳ", 20, 2, 200, 1], ["Độ lệch chuẩn", 2, 0.5, 5, 0.1]], [["v", "%B", "#2962ff", "l"]], (x, t) => ({v: cb_pctb(x.c, ...t)}), {ng: [0, 1]}),
+  cb_m("bbw", "Độ rộng dải Bollinger", "BBW", "bd", "duoi", "Độ rộng dải Bollinger so với đường giữa (%): xuống mức thấp nhiều tháng là giá nén, hay đi trước nhịp bùng nổ.", [["Chu kỳ", 20, 2, 200, 1], ["Độ lệch chuẩn", 2, 0.5, 5, 0.1]], [["v", "BBW %", "#455a64", "l"]], (x, t) => ({v: cb_bbw(x.c, ...t)})),
+  cb_m("sd", "Độ lệch chuẩn", "StdDev", "bd", "duoi", "Độ phân tán của giá quanh trung bình N phiên: càng lớn giá càng biến động.", [["Chu kỳ", 20, 2, 400, 1]], [["v", "Độ lệch chuẩn", "#6d4c41", "l"]], (x, t) => ({v: cb_do_lech(x.c, t[0])})),
+  cb_m("hv", "Biến động lịch sử", "HV", "bd", "duoi", "Độ lệch chuẩn của lợi suất log, thường niên hoá (%): đo mức dao động thực tế của mã.", [["Chu kỳ", 20, 5, 400, 1]], [["v", "HV %", "#ad1457", "l"]], (x, t, kh) => ({v: cb_hv(x.c, t[0], ({W: 52, M: 12})[kh] || 252)})),
+  cb_m("chop", "Chỉ số đi ngang (Choppiness)", "CHOP", "bd", "duoi", "Đo thị trường đang đi ngang hay có xu hướng: trên 61,8 là đi ngang / tích luỹ, dưới 38,2 là xu hướng mạnh.", [["Chu kỳ", 14, 2, 200, 1]], [["v", "CHOP", "#5d4037", "l"]], (x, t) => ({v: cb_chop(x.h, x.l, x.c, t[0])}), {ng: [38.2, 61.8], cd: [0, 100]}),
+  cb_m("ulcer", "Chỉ số Ulcer", "Ulcer", "bd", "duoi", "Đo độ sâu và độ dài các nhịp sụt giảm từ đỉnh N phiên: càng cao càng \"đau\" cho người cầm cổ phiếu.", [["Chu kỳ", 14, 2, 200, 1]], [["v", "Ulcer", "#c62828", "l"]], (x, t) => ({v: cb_ulcer(x.c, t[0])})),
+  cb_m("mass", "Chỉ số khối (Mass Index)", "MI", "bd", "duoi", "Đo biên độ phiên nở ra rồi co lại: vượt 27 rồi rơi dưới 26,5 (vòng cung đảo chiều) hay báo đảo chiều xu hướng.", [["EMA", 9, 2, 50, 1], ["Tổng", 25, 5, 100, 1]], [["v", "Mass", "#00838f", "l"]], (x, t) => ({v: cb_mass(x.h, x.l, ...t)}), {ng: [26.5, 27]}),
+  cb_m("chv", "Biến động Chaikin", "CHV", "bd", "duoi", "Phần trăm thay đổi của biên độ trung bình (EMA của cao − thấp) so với N phiên trước: tăng vọt hay đi cùng đáy hoảng loạn.", [["EMA", 10, 2, 100, 1], ["So với", 10, 1, 100, 1]], [["v", "CHV %", "#6a1b9a", "l"]], (x, t) => ({v: cb_chv(x.h, x.l, ...t)}), {ng: [0]}),
+  cb_m("cmf", "Dòng tiền Chaikin", "CMF", "kl", "duoi", "Đo áp lực mua / bán theo vị trí giá đóng cửa trong biên độ phiên, có trọng số khối lượng: dương kéo dài là tích luỹ.", [["Chu kỳ", 20, 2, 200, 1]], [["v", "CMF", "#26a69a", "h"]], (x, t) => ({v: cb_cmf(x.h, x.l, x.c, x.v, t[0])}), {ng: [0]}),
+  cb_m("ad", "Tích luỹ / Phân phối (A/D)", "A/D", "kl", "duoi", "Cộng dồn khối lượng có trọng số theo vị trí giá đóng cửa trong biên độ phiên: giá đi ngang mà A/D lên là đang gom.", [], [["v", "A/D", "#5d4037", "v"]], x => ({v: cb_ad(x.h, x.l, x.c, x.v)})),
+  cb_m("cho", "Dao động Chaikin", "CHO", "kl", "duoi", "Hiệu hai EMA của đường A/D: cắt lên 0 là dòng tiền tích luỹ đang mạnh lên.", [["Nhanh", 3, 2, 50, 1], ["Chậm", 10, 3, 100, 1]], [["v", "CHO", "#26a69a", "h"]], (x, t) => ({v: cb_cho(x.h, x.l, x.c, x.v, ...t)}), {ng: [0], kl: 1}),
+  cb_m("vo", "Dao động khối lượng", "VO", "kl", "duoi", "Chênh lệch phần trăm giữa khối lượng trung bình ngắn và dài: dương là thanh khoản đang tăng.", [["Ngắn", 5, 2, 50, 1], ["Dài", 10, 3, 200, 1]], [["v", "VO %", "#26a69a", "h"]], (x, t) => ({v: cb_vo(x.v, ...t)}), {ng: [0]}),
+  cb_m("efi", "Chỉ số sức mạnh Elder", "EFI", "kl", "duoi", "Thay đổi giá nhân khối lượng, làm trơn bằng EMA: đo sức mạnh phía sau mỗi nhịp tăng / giảm.", [["EMA", 13, 1, 100, 1]], [["v", "EFI", "#26a69a", "h"]], (x, t) => ({v: cb_efi(x.c, x.v, t[0])}), {ng: [0], kl: 1}),
+  cb_m("eom", "Mức dễ di chuyển (EOM)", "EOM", "kl", "duoi", "Giá đi được bao xa trên mỗi đơn vị khối lượng: dương lớn là giá tăng dễ dàng với ít khối lượng.", [["Chu kỳ", 14, 1, 100, 1]], [["v", "EOM", "#00897b", "l"]], (x, t) => ({v: cb_eom(x.h, x.l, x.v, t[0])}), {ng: [0]}),
+  cb_m("pvt", "Xu hướng giá – khối lượng (PVT)", "PVT", "kl", "duoi", "Như OBV nhưng cộng khối lượng theo tỷ lệ thay đổi giá: phân kỳ với giá báo xu hướng yếu.", [], [["v", "PVT", "#3949ab", "v"]], x => ({v: cb_pvt(x.c, x.v)})),
+  cb_m("nvi", "Chỉ số khối lượng âm (NVI)", "NVI", "kl", "duoi", "Chỉ cộng thay đổi giá ở phiên khối lượng giảm (dòng tiền \"thông minh\"): NVI trên EMA 255 thường là thị trường tăng.", [["EMA", 255, 10, 500, 1]], [["v", "NVI", "#1565c0", "l"], ["e", "EMA", "#ef6c00", "l"]], (x, t) => { const v = cb_nvi(x.c, x.v, true); return {v, e: cb_ema(v, t[0])}; }),
+  cb_m("pvi", "Chỉ số khối lượng dương (PVI)", "PVI", "kl", "duoi", "Chỉ cộng thay đổi giá ở phiên khối lượng tăng (đám đông): so với EMA 255 để xem đám đông đang theo hướng nào.", [["EMA", 255, 10, 500, 1]], [["v", "PVI", "#2e7d32", "l"], ["e", "EMA", "#ef6c00", "l"]], (x, t) => { const v = cb_nvi(x.c, x.v, false); return {v, e: cb_ema(v, t[0])}; }),
+  cb_m("kvo", "Dao động Klinger", "KVO", "kl", "duoi", "So dòng khối lượng theo hướng giá ở hai chu kỳ: cắt lên đường tín hiệu là dòng tiền vào.", [["Nhanh", 34, 2, 100, 1], ["Chậm", 55, 3, 200, 1], ["Tín hiệu", 13, 1, 50, 1]], [["k", "KVO", "#1565c0", "v"], ["s", "Tín hiệu", "#ef6c00", "v"]], (x, t) => cb_klinger(x.h, x.l, x.c, x.v, ...t), {ng: [0]}),
+  cb_m("vroc", "Tốc độ thay đổi khối lượng", "VROC", "kl", "duoi", "Phần trăm thay đổi khối lượng so với N phiên trước: tăng vọt cùng giá phá nền là tín hiệu đáng tin hơn.", [["Chu kỳ", 14, 1, 200, 1]], [["v", "VROC %", "#26a69a", "h"]], (x, t) => ({v: cb_roc(x.v, t[0])}), {ng: [0]}),
+  cb_m("rvol", "Khối lượng tương đối", "RVOL", "kl", "duoi", "Khối lượng phiên so với trung bình N phiên trước (100 = bình thường): trên 150 ở phiên phá nền là có tiền vào.", [["Chu kỳ", 20, 2, 200, 1]], [["v", "RVOL", "#7cb342", "c"]], (x, t) => ({v: cb_rvol(x.v, t[0])}), {ng: [100, 150]}),
+  cb_m("z", "Z-score", "Z", "tk", "duoi", "Giá cách trung bình N phiên bao nhiêu độ lệch chuẩn: trên +2 / dưới −2 là lệch xa bất thường, dễ quay về trung bình.", [["Chu kỳ", 20, 3, 400, 1]], [["v", "Z", "#3949ab", "l"]], (x, t) => ({v: cb_zscore(x.c, t[0])}), {ng: [-2, 0, 2]}),
+  cb_m("prank", "Hạng phần trăm", "%Rank", "tk", "duoi", "Giá hiện tại cao hơn bao nhiêu phần trăm số phiên trong N phiên trước: 100 là cao nhất kỳ.", [["Chu kỳ", 100, 10, 1000, 1]], [["v", "%Rank", "#00897b", "l"]], (x, t) => ({v: cb_prank(x.c, t[0])}), {ng: [20, 80], cd: [0, 100]}),
+  cb_m("doc", "Hệ số góc hồi quy tuyến tính", "Slope", "tk", "duoi", "Độ dốc của đường hồi quy tuyến tính N phiên (% giá mỗi phiên): dương là xu hướng tăng, càng lớn càng dốc.", [["Chu kỳ", 20, 3, 400, 1]], [["v", "%/phiên", "#26a69a", "h"]], (x, t) => ({v: cb_doc(x.c, t[0])}), {ng: [0]}),
+  cb_m("med", "Trung vị", "Median", "tk", "tren", "Giá trị ở giữa của N phiên gần nhất: ít bị kéo lệch bởi phiên đột biến.", [["Chu kỳ", 20, 3, 400, 1]], [["v", "Trung vị", "#546e7a", "l"]], (x, t) => ({v: cb_trung_vi(x.c, t[0])})),
+  cb_m("khq", "Kênh hồi quy", "RegCh", "tk", "tren", "Đường hồi quy tuyến tính N nến cuối kèm hai biên cách k độ lệch chuẩn phần dư: giá về biên dưới trong kênh dốc lên là vùng mua.", [["Số nến", 100, 10, 1000, 1], ["Độ lệch chuẩn", 2, 0.5, 5, 0.1]], [["tr", "Trên", "#0277bd", "l"], ["gi", "Giữa", "#90caf9", "l"], ["du", "Dưới", "#0277bd", "l"]], (x, t) => cb_kenh_hq(x.c, ...t)),
+];
+const MOI = Object.fromEntries(CB_MOI.map(z => [z.k, z]));
+for (const z of CB_MOI) {                                // đăng ký vào bảng chung: tham số, đường (bảng ⚙ Kiểu), khung dưới, mô tả
+  if (z.ts.length) { CB_TS[z.k] = z.ts.map(t => t[1]); CB_GH[z.k] = z.ts.map(t => t.slice(2)); TS_NHAN[z.k] = z.ts.map(t => t[0]); }
+  CB_DUONG[z.k] = z.d.map(([id, ten, mau, kieu]) => [id, ten, mau, 0, kieu === "l" || kieu === "v" ? 1.5 : 1]);
+  if (z.noi === "duoi") { CB_DUOI.push([z.k, z.ten, z.ts.length ? z.k : ""]); MO_TA["p:" + z.k] = z.ta; } else MO_TA[z.k] = z.ta;
+}
+function moi_chu(z, k, r, i) {                          // chú giải chỉ báo mới: mã gọn + tham số + giá trị từng đường (bỏ đường trống tại nến)
+  const co = z.d.filter(([id]) => cb_ok(r?.[id]?.[i])), so_ = (id, v, kieu) => `<b style="color:${mk(k, id)}">${kieu === "v" || z.kl ? kl(v) : so(v, so_k(k))}</b>`;
+  return `${esc(z.gon)}${CB.ts[z.k] ? " " + ts_chu(z.k) : ""} ` + (co.length ? co : z.d).map(([id, ten, , kieu]) => (z.d.length > 1 ? ten + " " : "") + so_(id, r?.[id]?.[i], kieu)).join(" · ");
+}
 const an_ = k => CB.an.includes(k);
 const mau_ok = m => typeof m === "string" && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(m);
 function cb_duong(k) {
@@ -1289,7 +1516,8 @@ function kd(k, id, o = {}) {                            // tuỳ chọn 1 đư�
 }
 const mk = (k, id) => kd(k, id).color;
 const so_k = (k, l = 2) => { const v = CB.kieu[k]?.so; return Number.isInteger(v) && v >= 0 && v <= 4 ? v : l; };
-const cb_mac = () => ({kieu: {}, an: [], nguon: {}, khung_tinh: {}, bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls", lp: [], cw: false});
+const cb_mac = () => ({kieu: {}, an: [], nguon: {}, khung_tinh: {}, bb: false, st: false, ich: false, sar: false, kl_ma: false, ma10t: false, lh: false, ss: "", kh: false, nen: false, fib: false, fib_n: 120, vp: false, bg: false, duoi: [], ts: JSON.parse(JSON.stringify(CB_TS)), non: false, non_h: 20, non_kieu: "ls", lp: [], cw: false,
+  ...Object.fromEntries(CB_MOI.filter(z => z.noi === "tren").map(z => [z.k, false]))});
 const CB = cb_mac();
 (() => { try { const v = JSON.parse(localStorage.getItem(KHOA_CB) || "null"); if (!v || typeof v !== "object") return;
   const cky = a => [...new Set(a.filter(m => Number.isInteger(m) && m >= 2 && m <= 400))].slice(0, 8);
@@ -1301,7 +1529,7 @@ const CB = cb_mac();
   if (v.khung_tinh && typeof v.khung_tinh === "object") for (const k of ["ma", "ema"]) if (["W", "M"].includes(v.khung_tinh[k])) CB.khung_tinh[k] = v.khung_tinh[k];
   if ([0, 20, 52].includes(v.dc)) ST.dc = v.dc;
   if (typeof v.mk === "boolean") ST.mk = v.mk;
-  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "vp", "bg", "non", "cw"]) if (typeof v[k] === "boolean") CB[k] = v[k];
+  for (const k of ["bb", "st", "ich", "sar", "kl_ma", "ma10t", "lh", "kh", "nen", "vp", "bg", "non", "cw", ...CB_MOI.filter(z => z.noi === "tren").map(z => z.k)]) if (typeof v[k] === "boolean") CB[k] = v[k];
   if (typeof v.fib === "boolean" && v.fib3) CB.fib = v.fib;           // 09/11/2026 bật sẵn vài giờ rồi tắt lại: lựa chọn lưu trong lúc đó bỏ qua
   if (typeof v.ss === "string" && (v.ss === "" || v.ss === "VNINDEX" || MA_OK(v.ss))) CB.ss = v.ss;
   if (Array.isArray(v.duoi)) CB.duoi = [...new Set(v.duoi.filter(k => CB_DUOI.some(d => d[0] === k)))];
@@ -1314,6 +1542,7 @@ const CB = cb_mac();
 const cb_luu = () => { try { localStorage.setItem(KHOA_CB, JSON.stringify({ma_tb: ST.ma_tb, ema: ST.ema, dc: ST.dc, mk: ST.mk, ...CB, fib3: true})); } catch (e) {} };
 const ts_chu = k => CB.ts[k].map(v => String(v).replace(".", ",")).join(", ");
 const CB_TEN = {bb: "BB", st: "Supertrend", ich: "Ichimoku", sar: "SAR"};
+for (const z of CB_MOI) if (z.noi === "tren") CB_TEN[z.k] = z.gon;
 const MAT = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const MAT_AN = MAT.replace("</svg>", `<path d="M3 3l18 18"/></svg>`);
 // dòng chú giải GỌN (13/11/2026 – kiểu FireAnt): 1 dòng, dài thì "…" – rê chuột / giữ ngón tay xem đủ (title); ✕ tắt chỉ báo k
@@ -1424,7 +1653,7 @@ function cg_tat(k) {                                    // ✕ trên dòng chú 
 }
 // ---- hộp "Chỉ báo và dữ liệu" (14/11/2026 – bố cục kiểu FireAnt): danh mục · danh sách có mô tả · tham số + nút thêm
 const CBM_NHOM = [["dung", "Đang dùng"], ["tbd", "Trung bình động"], ["xh", "Xu hướng"], ["dl", "Động lượng"], ["bd", "Biến động"], ["kl", "Khối lượng"],
-  ["mh", "Mẫu hình"], ["he", "Hệ thống & dữ liệu"]];
+  ["mh", "Mẫu hình"], ["tk", "Thống kê"], ["he", "Hệ thống & dữ liệu"]];
 const CBM = [["ma", "Đường trung bình động", "MA", "tbd"], ["ema", "Trung bình hàm mũ", "EMA", "tbd"], ["ma10t", "MA10 tuần (đường thoát của hệ)", "MA10T", "tbd"],
   ["st", "Supertrend", "ST", "xh"], ["ich", "Mây Ichimoku", "Ichimoku", "xh"], ["sar", "Parabolic SAR", "SAR", "xh"], ["dc:20", "Kênh Donchian 20", "DC", "xh"],
   ["dc:52", "Kênh 52 tuần", "DC52", "xh"], ["p:adx", "Chỉ số định hướng (ADX / DMI)", "ADX", "xh"],
@@ -1437,7 +1666,7 @@ const CBM = [["ma", "Đường trung bình động", "MA", "tbd"], ["ema", "Trun
   ["lh", "Điểm mua – bán của hệ (backtest)", "Hệ B", "he"], ["kh", "Kế hoạch mua – thoát khi bot báo mua", "Kế hoạch", "he"],
   ["mk", "Sự kiện (cổ tức, ĐHCĐ, nội bộ)", "Sự kiện", "he"], ["cw", "Chứng quyền (hoà vốn, đáo hạn)", "CW", "he",
     "Chứng quyền mua đang lưu hành trên mã: đường nét đứt tại giá hoà vốn (giá thực hiện + giá CW × tỷ lệ) kéo tới ngày đáo hạn."],
-  ["ss", "So sánh với mã khác", "So sánh", "he"]];
+  ["ss", "So sánh với mã khác", "So sánh", "he"], ...CB_MOI.map(z => [z.noi === "duoi" ? "p:" + z.k : z.k, z.ten, z.gon, z.nhom, z.ta])];
 const cbm_ta = z => z[4] || MO_TA[z[0]] || MO_TA[z[0].split(":")[0]] || "";
 const bo_dau = v => String(v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").toLowerCase();
 const cbm_bat = k => k === "ma" ? ST.ma_tb.length > 0 : k === "ema" ? ST.ema.length > 0 : k.startsWith("dc:") ? ST.dc === +k.slice(3) : k === "mk" ? !!ST.mk
@@ -1985,6 +2214,9 @@ async function ve_bd_gia(el, x0, them = {}) {
   if (ST.dc && !an_("dc")) { const p = ST.dc === 52 ? ({D: 250, W: 52, M: 12})[kh] || 20 : 20, cua = (a, f) => a.map((_, i) => i + 1 < p ? null : f(...a.slice(i + 1 - p, i + 1)));
     const tr = cua(x.h, Math.max), d_ = cua(x.l, Math.min); dc = {p, tr, du: d_, gi: tr.map((v, i) => v == null ? null : (v + d_[i]) / 2)};
     duong(dc.tr, kd("dc", "tr")); duong(dc.du, kd("dc", "du")); duong(dc.gi, kd("dc", "gi")); }
+  const MOI_R = {};                                     // chỉ báo mới vẽ trên nến (CB_MOI)
+  for (const z of CB_MOI) if (z.noi === "tren" && CB[z.k] && !an_(z.k)) { const r = MOI_R[z.k] = z.f(x, CB.ts[z.k] || [], kh);
+    for (const [id] of z.d) if (r[id]) duong(r[id], kd(z.k, id)); }
   if ((kh === "D" || PHUT(kh)) && them.gn && !tua) for (const [v, t, c] of [[them.gn.tran, "Trần", "#9b3fd1"], [them.gn.tc, "TC", "#b88a00"], [them.gn.san, "Sàn", "#0e9fb3"]])
     if (v > 0) nen.createPriceLine({price: v, color: c, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: t});
   const lh = LH && !PHUT(kh) ? (LH.ma?.[them.ma] || []).filter(z => z[0] <= x.d[n - 1]).map(z => z[1] > x.d[n - 1] ? [z[0], "", z[2], z[3], 1, z[5], null, z[7], "", z[9]] : z) : null;   // tua lại: không lộ lệnh tương lai
@@ -2083,6 +2315,15 @@ async function ve_bd_gia(el, x0, them = {}) {
   const mau_chu = (m, v, l = 2) => `<b style="color:${m}">${so(v, l)}</b>`;
   DUOI.forEach((k, j) => {
     const p = j + 1, ts = CB.ts[k], d_ = (v, id, o) => duong(v, kd("p:" + k, id, {lastValueVisible: true, ...o}), p), c_ = id => mk("p:" + k, id), l_ = l => so_k("p:" + k, l);
+    const zm = MOI[k];
+    if (zm) { const r = zm.f(x, ts || [], kh); let s0 = null;          // chỉ báo mới (CB_MOI): đường / cột theo khai báo
+      for (const [id, , , kieu] of zm.d) { let s_;
+        if (kieu === "h" || kieu === "c") { s_ = S("HistogramSeries", {priceLineVisible: false, lastValueVisible: true, ...(zm.kl ? {priceFormat: {type: "volume"}} : {})}, p);
+          const m = c_(id); s_.setData(T.map((d, i) => cb_ok(r[id]?.[i]) ? {time: d, value: r[id][i], color: kieu === "h" ? (r[id][i] >= 0 ? "#26a69a" : "#ef5350") : m} : {time: d})); }
+        else s_ = d_(r[id] || [], id, {...(zm.cd ? {autoscaleInfoProvider: () => ({priceRange: {minValue: zm.cd[0], maxValue: zm.cd[1]}})} : {}), ...(kieu === "v" ? {priceFormat: {type: "volume"}} : {})});
+        s0 = s0 || s_; }
+      if (zm.ng && s0) nguong(s0, zm.ng);
+      PH.push(i => moi_chu(zm, "p:" + k, r, i)); return; }
     if (k === "rs") {
       const vv = PHUT(kh) || !VNM?.size ? null : vni_theo(x.d, VNM), nh = ({D: 250, W: 52, M: 12})[kh] || 250;
       if (!vv) { PH.push(() => `RS so VN-Index – ${PHUT(kh) ? "chỉ khung ngày / tuần / tháng" : "chưa có dữ liệu VN-Index"}`); return; }
@@ -2232,6 +2473,7 @@ async function ve_bd_gia(el, x0, them = {}) {
       (sar || (CB.sar && an_("sar")) ? dg("sar", () => `SAR ${ts_chu("sar")} ${gt("sar", sar.len[i] ? "len" : "xuong", sar.v[i])}`) : "") +
       (dc || (ST.dc && an_("dc")) ? dg("dc", () => `DC ${dc.p} Trên ${gt("dc", "tr", dc.tr[i])} Giữa ${gt("dc", "gi", dc.gi[i])} Dưới ${gt("dc", "du", dc.du[i])}`) : "") +
       (ss || (CB.ss && an_("ss")) ? dg("ss", () => `${esc(ss.ten)} ${gt("ss", "v", ss.v[i])} <span class="phu">(thang % từ nến đầu vùng xem)</span>`) : "") +
+      CB_MOI.filter(z => z.noi === "tren" && CB[z.k]).map(z => dg(z.k, () => moi_chu(z, z.k, MOI_R[z.k], i))).join("") +
       CB.duoi.filter(k => an_("p:" + k)).map(k => dg("p:" + k, () => "")).join("") + sap_chu + (rd ? lh_o(i) : lh_chu) + (rd ? sk_o(i) : "") + tv_chu + lp_chu + cw_chu + non_chu);
     if (CG_CHAM) cg.querySelector(`.cg-d[data-cgk="${CG_CHAM}"]`)?.classList.add("cg-cham");
   };

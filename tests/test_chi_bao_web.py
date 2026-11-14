@@ -396,3 +396,60 @@ def test_hop_chi_bao_va_du_lieu():
     cbm = h[h.index("const CBM = ["):h.index("const cbm_ta")]
     assert duoi and set(re.findall(r'\["p:(\w+)"', cbm)) == duoi
     assert '...LP_DS.map(([k, ten, , ta]) => ["lp:" + k' in cbm
+
+
+def _js_moi(ma_js):
+    """Chạy khối CB_MOI (chỉ báo mới) cùng hàm thuần trong node."""
+    h = open(TRANG, encoding="utf-8").read()
+    i, j = h.index("// CHỈ BÁO MỚI (CB_MOI"), h.index("const MOI = Object.fromEntries")
+    return _js(h[i:j] + "\n" + ma_js)
+
+
+def test_chi_bao_moi_tinh_duoc_moi_mau():
+    x = _nen(320, 7)
+    kq = _js_moi(f"const x = {json.dumps(x)};\n" + """
+      const o = {};
+      for (const z of CB_MOI) { const r = z.f(x, z.ts.map(t => t[1]), "D"), d = {};
+        for (const [id] of z.d) { const a = r[id] || []; d[id] = [a.length, a.filter(v => v != null && isFinite(v)).length, a.slice(-1)[0]]; }
+        o[z.k] = {noi: z.noi, d, so_ts: z.ts.length, gh: z.ts.every(t => t[2] <= t[1] && t[1] <= t[3])}; }
+      console.log(JSON.stringify(o));""")
+    assert len(kq) >= 55
+    for k, z in kq.items():
+        assert z["gh"], k                                                   # mặc định nằm trong [min, max]
+        for id_, (n, co, cuoi) in z["d"].items():
+            assert n == 320, (k, id_)
+            assert co > 0, (k, id_)                                          # có giá trị
+            if k not in ("khq", "magic", "ce", "zz"):                         # magic / ce: tăng hoặc giảm (dưới); zz dừng ở cực trị cuối
+                assert cuoi is not None, (k, id_)
+    assert all(kq[k]["d"]["xuong"][2] is not None or kq[k]["d"]["len"][2] is not None for k in ("magic", "ce"))
+
+
+def test_chi_bao_moi_dung_cong_thuc():
+    x = _nen(260, 11)
+    kq = _js_moi(f"const x = {json.dumps(x)};\n" + """
+      console.log(JSON.stringify({wma: cb_wma(x.c, 10), cci: cb_cci(x.h, x.l, x.c, 20), wr: cb_willr(x.h, x.l, x.c, 14),
+        cmf: cb_cmf(x.h, x.l, x.c, x.v, 20), ar: cb_aroon(x.h, x.l, 25), chop: cb_chop(x.h, x.l, x.c, 14), z: cb_zscore(x.c, 20),
+        hma: cb_hma(x.c, 16), psy: cb_psy(x.c, 12)}));""")
+    c, h_, l_, v = (np.array(x[k]) for k in ("c", "h", "l", "v"))
+    i = 200
+    w = c[i - 9:i + 1]
+    assert kq["wma"][i] == pytest.approx((w * np.arange(1, 11)).sum() / 55)
+    tp = (h_ + l_ + c) / 3; t = tp[i - 19:i + 1]
+    assert kq["cci"][i] == pytest.approx((tp[i] - t.mean()) / (0.015 * np.abs(t - t.mean()).mean()))
+    hh, ll = h_[i - 13:i + 1].max(), l_[i - 13:i + 1].min()
+    assert kq["wr"][i] == pytest.approx(-100 * (hh - c[i]) / (hh - ll))
+    mfv = ((c - l_) - (h_ - c)) / (h_ - l_) * v
+    assert kq["cmf"][i] == pytest.approx(mfv[i - 19:i + 1].sum() / v[i - 19:i + 1].sum())
+    a = h_[i - 25:i + 1]
+    assert kq["ar"]["up"][i] == pytest.approx(100 * (25 - (i - (i - 25 + int(np.flatnonzero(a == a.max())[-1])))) / 25)
+    tr = np.maximum(h_[1:] - l_[1:], np.maximum(abs(h_[1:] - c[:-1]), abs(l_[1:] - c[:-1])))
+    s = tr[i - 14:i].sum()                                                   # tr[k] ứng với nến k+1
+    assert kq["chop"][i] == pytest.approx(100 * np.log10(s / (h_[i - 13:i + 1].max() - l_[i - 13:i + 1].min())) / np.log10(14))
+    w = c[i - 19:i + 1]
+    assert kq["z"][i] == pytest.approx((c[i] - w.mean()) / w.std())
+    assert kq["psy"][i] == pytest.approx(100 * (np.diff(c[i - 12:i + 1]) > 0).sum() / 12)
+    def wma(a, n):
+        return [None if k < n - 1 or any(z is None for z in a[k - n + 1:k + 1]) else sum(a[k - n + 1 + j] * (j + 1) for j in range(n)) / (n * (n + 1) / 2) for k in range(len(a))]
+    a8, a16 = wma(list(c), 8), wma(list(c), 16)
+    raw = [None if a8[k] is None or a16[k] is None else 2 * a8[k] - a16[k] for k in range(len(c))]
+    assert kq["hma"][i] == pytest.approx(wma(raw, 4)[i])
