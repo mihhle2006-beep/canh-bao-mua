@@ -317,7 +317,7 @@ def test_phan_tich_dinh_gia_trung_vi_va_phuong_phap():
     assert "Gánh nặng lãi vay" in kq["html"] and "Tham khảo" in kq["html"]
 
 
-def test_tra_cuu_dn_gon(tmp_path):
+def test_tra_cuu_dn_gon(tmp_path, monkeypatch):
     from thi_truong import tra_cuu_dn as T
     ds = [{"tradingDate": f"2026-11-0{i}T00:00:00", "openPriceAdjusted": 20000 + i, "highestPriceAdjusted": 21000,
            "lowestPriceAdjusted": 19000, "closePriceAdjusted": 20500 + i * 10, "closePrice": 41000, "totalMatchVolume": 1e6,
@@ -334,6 +334,15 @@ def test_tra_cuu_dn_gon(tmp_path):
     sk = T.gon_su_kien([{"exrightDate": "2026-05-19T00:00:00", "eventCode": "DIV", "eventTitleVi": "Cổ tức", "valuePerShare": 700},
                         {"publicDate": "2026-10-01", "eventCode": "ISS", "exerciseRatio": 0.5}, {"eventCode": "X"}])
     assert [x["ngay"] for x in sk] == ["2026-10-01", "2026-05-19"] and sk[1]["gia_tri"] == 700
+    # 14/11/2026: cổ tức / phát hành / đại hội giữ hết từ 2012, loại khác ≤ so mục mới nhất
+    nhieu = [{"exrightDate": f"{2012 + i // 4}-0{1 + i % 4}-15", "eventCode": "DIV", "valuePerShare": 500} for i in range(56)] + \
+        [{"publicDate": f"2026-{1 + i % 12:02d}-{1 + i // 12:02d}", "eventCode": "DDINS"} for i in range(200)] + [{"publicDate": "2013-04-20", "eventCode": "AGME"}]
+    g = T.gon_su_kien(nhieu, so=50)
+    assert sum(x["ma_sk"] == "DIV" for x in g) == 56 and sum(x["ma_sk"] == "DDINS" for x in g) == 50 and any(x["ma_sk"] == "AGME" for x in g)
+    assert [x["ngay"] for x in g] == sorted((x["ngay"] for x in g), reverse=True)
+    trang = []
+    monkeypatch.setattr(T, "iq", lambda duong, so_lan=1: trang.append(duong) or ([{"eventCode": "DIV"}] * (T.SK_TRANG if len(trang) < 3 else 7)))
+    assert len(T.lay_su_kien("AAA")) == 2 * T.SK_TRANG + 7 and len(trang) == 3 and "page=2&size=200" in trang[-1]
     cd = T.gon_co_dong([{"ownerName": "A", "percentage": 0.01, "ownerType": "INDIVIDUAL"}, {"ownerName": "B", "percentage": 0.2,
                                                                                           "ownerType": "CORPORATE"}])
     assert [x["ten"] for x in cd] == ["B", "A"] and cd[0]["pt"] == 20.0 and cd[0]["loai"] == "Tổ chức"
