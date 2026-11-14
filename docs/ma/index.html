@@ -320,6 +320,8 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .nut-tai{border:1px solid var(--nhan);color:var(--nhan);background:var(--the);border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:600}
 .nut-tai:hover{background:var(--nhan-nen)}
 .bd-gia{position:relative;height:480px;margin:0 8px 8px}
+.sk-hop{position:absolute;z-index:6;display:none;max-width:340px;background:#fff;border:1px solid #1f6feb;border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.12);pointer-events:none;color:#1b1f24}
+.sk-hop .sk-dau{display:flex;align-items:center;gap:6px}.sk-hop .sk-dau i{width:9px;height:9px;border-radius:50%;display:inline-block}
 @media (max-width:600px){.bd-gia{height:380px}.chu-bd{font-size:11px;line-height:1.4}}
 .gc-nut{border:1px solid #e3e7ee;background:#fff;border-radius:6px;padding:2px 6px;cursor:pointer}.gc-nut.co{background:#fff3c4;border-color:#e8a400}
 .fs-gc{padding:4px 8px;background:#fffbe6;border-bottom:1px solid #f0e2a8}.fs-gc textarea{width:100%;box-sizing:border-box;font:inherit;font-size:13px;border:1px solid #e3d48f;border-radius:6px;padding:4px 6px;resize:vertical;background:#fff}
@@ -659,67 +661,72 @@ function tk_lenh_he(ds) {                        // lệnh đã đóng → {n, t
   const r = (ds || []).filter(z => !z[4]).map(z => z[3]);
   return r.length ? {n: r.length, thang: r.filter(v => v > 0).length / r.length, r_tb: tb(r), tong: r.reduce((a, b) => a + b, 0)} : null;
 }
-function su_kien_nen(x, n) {                     // sự kiện DN theo nến (dải dưới khối lượng – 14/11/2026: nhãn trên nến che giá): [{i, text, mau, ct [chi tiết]}]
+// SỰ KIỆN DOANH NGHIỆP kiểu FireAnt (14/11/2026): bong bóng tròn xếp chồng đè lên vùng thanh khối lượng; rê chuột /
+// chạm vào bong bóng → hộp chi tiết. M / B mua – bán của người nội bộ & cổ đông lớn (mục Cổ đông) · BC công bố BCTC (kèm
+// DT / LNST so cùng kỳ) · CT cổ tức tiền · CP phát hành / cổ tức cổ phiếu · ĐH đại hội cổ đông · K sự kiện khác.
+const SK_LOAI = {M: ["#0f8a4a", "Cổ đông / nội bộ MUA"], B: ["#d1342b", "Cổ đông / nội bộ BÁN"], BC: ["#1f6feb", "BCTC, kết quả kinh doanh"],
+  CT: ["#c98a00", "Cổ tức tiền mặt"], CP: ["#e0731f", "Phát hành / cổ tức cổ phiếu"], "ĐH": ["#7b3fd1", "Đại hội cổ đông"], K: ["#6b7280", "Sự kiện khác"]};
+const SK_THU_TU = ["BC", "ĐH", "CT", "CP", "M", "B", "K"];
+function su_kien_nen(x, n, r) {                  // sự kiện DN theo nến: [{i, k, mau, ten, so, ct [chi tiết], dk (chỉ đăng ký)}]
   const vt = d => vi_tri_ngay(x, d), gom = new Map();
-  const them_ = (i, k, mau, ct) => { const g = gom.get(i + "|" + k); if (g) { g.so++; g.ct.push(ct); } else gom.set(i + "|" + k, {i, k, mau, so: 1, ct: [ct]}); };
-  for (const e of n.sk || []) {
+  const them_ = (i, k, ct, dk = false) => { const g = gom.get(i + "|" + k);
+    if (g) { g.so++; g.ct.push(ct); g.dk = g.dk && dk; } else gom.set(i + "|" + k, {i, k, mau: SK_LOAI[k][0], ten: SK_LOAI[k][1], so: 1, ct: [ct], dk}); };
+  for (const e of n?.sk || []) {
     const ma = String(e.ma_sk || "").toUpperCase(), t = `${e.loai || ""} ${e.ten || ""}`.toLowerCase(), i = vt(String(e.ngay || "").slice(0, 10));
     if (i < 0) continue;
-    const k = ma === "DIV" || (t.includes("cổ tức") && t.includes("tiền")) ? ["CT", "#b88a00"]
-      : ma === "ISS" || t.includes("phát hành") || (t.includes("cổ tức") && t.includes("cổ phiếu")) ? ["CP", "#9b3fd1"]
-      : /^(AGM|EGM)/.test(ma) || t.includes("đại hội") ? ["ĐH", "#1f6feb"] : null;
-    if (k) them_(i, k[0], k[1], String(e.ten || e.loai || k[0]).replace(/\s+/g, " ").trim());
+    const k = ma === "DIV" || (t.includes("cổ tức") && t.includes("tiền")) ? "CT"
+      : ma === "ISS" || t.includes("phát hành") || (t.includes("cổ tức") && t.includes("cổ phiếu")) ? "CP"
+      : /^(AGM|EGM)/.test(ma) || t.includes("đại hội") ? "ĐH" : "K";
+    them_(i, k, String(e.ten || e.loai || k).replace(/\s+/g, " ").trim());
   }
-  for (const e of n.nb || []) {                  // nội bộ: chỉ giao dịch đã có kết quả (kq > 0) – bỏ đăng ký chưa khớp
-    const i = vt(String(e.ngay || "").slice(0, 10)), mua = /mua/i.test(e.hd || ""), ban = /bán/i.test(e.hd || "");
-    if (e.kq != null && !(e.kq > 0)) continue;
-    if (i >= 0 && (mua || ban)) them_(i, mua ? "M" : "B", mua ? "#0f8a4a" : "#d1342b",
-      `${mua ? "Nội bộ mua" : "Nội bộ bán"}${e.kq > 0 ? " " + so(e.kq, 0) + " cp" : ""}${e.ten ? ` – ${String(e.ten).trim()}` : ""}${e.cv ? ` (${String(e.cv).trim()})` : ""}`);
+  for (const e of n?.nb || []) {                 // mua / bán của người nội bộ & cổ đông lớn: đã thực hiện (kq > 0) → bong bóng đặc,
+    const mua = /mua/i.test(e.hd || ""), ban = /bán/i.test(e.hd || "");      // mới đăng ký (chưa có kết quả) → bong bóng rỗng
+    if (!mua && !ban) continue;
+    const xong = e.kq > 0, i = vt(String((xong ? e.den || e.ngay : e.ngay) || "").slice(0, 10));
+    if (i < 0 || (e.kq != null && !xong)) continue;                       // kết quả 0 cp (huỷ / không thực hiện) → bỏ
+    const ai = `${e.ten ? String(e.ten).trim() : "?"}${e.cv ? ` (${String(e.cv).trim()})` : ""}${e.lien_quan ? ` – liên quan ${String(e.lien_quan).trim()}` : ""}`;
+    them_(i, mua ? "M" : "B", `${ai}: ${xong ? (mua ? "đã mua " : "đã bán ") + so(e.kq, 0) + " cp" : (mua ? "đăng ký mua " : "đăng ký bán ") + (e.dk ? so(e.dk, 0) + " cp" : "")}`
+      + (e.sau_pt ? ` → nắm ${so(e.sau_pt, 2)}%` : "") + (e.tt && !xong ? ` · ${String(e.tt).trim()}` : ""), !xong);
   }
-  return [...gom.values()].map(g => ({...g, text: g.so > 1 ? `${g.k}×${g.so}` : g.k})).sort((a, b) => a.i - b.i);
+  const cot = r?.cot || [];
+  for (const [ky, ngay] of r?.cb || []) {        // công bố BCTC: kèm DT / LNST quý so cùng kỳ (có trong số liệu trang)
+    const i = vt(String(ngay).slice(0, 10)); if (i < 0) continue;
+    const j = cot.indexOf(ky), yoy = (a, k_) => j >= 0 && a?.[j] != null ? `${k_} ${so(a[j], 0)} tỷ${j >= 4 && a[j - 4] > 0 ? ` (${a[j] >= a[j - 4] ? "+" : ""}${so((a[j] / a[j - 4] - 1) * 100, 0)}% cùng kỳ)` : ""}` : "";
+    them_(i, "BC", `${ky} công bố ${ngay_vn(ngay)}` + [yoy(r.dt, "DT"), yoy(r.ln, "LNST")].filter(Boolean).map(z => " · " + z).join(""));
+  }
+  return [...gom.values()].sort((a, b) => a.i - b.i || SK_THU_TU.indexOf(a.k) - SK_THU_TU.indexOf(b.k));
 }
-class SuKienPrim {                               // nhãn sự kiện ở đáy khung giá (dưới thanh khối lượng), 2 hàng; chật quá → chấm màu
-  constructor(ch, ds) { this.ch = ch; this.ds = ds; this.v = [{zOrder: () => "top", renderer: () => ({draw: t => this.ve(t)})}]; }
+class SuKienPrim {                               // bong bóng tròn đè lên vùng thanh khối lượng (đáy khung giá), cùng nến xếp chồng lên; nến sát nhau lệch tầng
+  constructor(ch, ds) { this.ch = ch; this.ds = ds; this.hit = []; this.v = [{zOrder: () => "top", renderer: () => ({draw: t => this.ve(t)})}]; }
   paneViews() { return this.v; }
   ve(t) {
     t.useMediaCoordinateSpace(({context: ctx, mediaSize: M}) => {
-      const ts = this.ch.timeScale(), phai = [-1e9, -1e9];
-      ctx.save(); ctx.font = "600 9.5px Inter,system-ui,sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const ts = this.ch.timeScale(), R = 8, TANG = 5, cuoi = Array(TANG).fill(-1e9), hit = [];
+      let i_truoc = null, tang = 0;
+      ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
       for (const e of this.ds) {
-        const x = ts.logicalToCoordinate(e.i); if (x == null || x < -20 || x > M.width + 20) continue;
-        const w = ctx.measureText(e.text).width + 8, h = 14, hang = phai.findIndex(r => x - w / 2 >= r + 2);
-        if (hang < 0) { ctx.fillStyle = e.mau; ctx.beginPath(); ctx.arc(x, M.height - 4, 2, 0, 2 * Math.PI); ctx.fill(); continue; }
-        phai[hang] = x + w / 2;
-        const y = M.height - 2 - h - hang * (h + 2);
-        ctx.fillStyle = "#ffffff"; ctx.strokeStyle = e.mau; ctx.lineWidth = 1;
-        ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(x - w / 2, y, w, h, 3) : ctx.rect(x - w / 2, y, w, h)); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = e.mau; ctx.fillText(e.text, x, y + h / 2 + 0.5);
+        const x = ts.logicalToCoordinate(e.i); if (x == null || x < -R || x > M.width + R) continue;
+        if (e.i !== i_truoc) { tang = x < 48 ? 2 : 0; i_truoc = e.i; }   // góc trái dưới có logo TradingView (giấy phép) → lên 2 tầng
+        while (tang < TANG && x - cuoi[tang] < 1.15 * R) tang++;           // chồng quá nửa bong bóng bên trái → lên tầng trên
+        if (tang >= TANG) continue;
+        cuoi[tang] = x;
+        const y = M.height - 3 - R - tang * (2 * R - 2);
+        ctx.beginPath(); ctx.arc(x, y, R, 0, 2 * Math.PI);
+        ctx.fillStyle = e.dk ? "#ffffff" : e.mau; ctx.fill(); ctx.lineWidth = e.dk ? 1.5 : 1; ctx.strokeStyle = e.dk ? e.mau : "#ffffff"; ctx.stroke();
+        ctx.font = `700 ${e.k.length > 1 ? 7.5 : 9}px Inter,system-ui,sans-serif`; ctx.fillStyle = e.dk ? e.mau : "#ffffff"; ctx.fillText(e.k, x, y + 0.5);
+        if (e.so > 1) { ctx.font = "700 8px Inter,system-ui,sans-serif"; ctx.fillStyle = "#1b1f24"; ctx.fillText(String(e.so), x + R + 2, y - R + 2); }
+        hit.push({x, y, r: R, e});
+        tang++;
       }
       ctx.restore();
+      this.hit = hit;
     });
   }
-}
-function moc_su_kien(x, n) {                     // (cũ) mốc trên nến: CT cổ tức tiền · CP phát hành / cổ tức CP · ĐH đại hội · M / B nội bộ
-  const vt = d => vi_tri_ngay(x, d);
-  const out = [];
-  for (const e of n.sk || []) {
-    const ma = String(e.ma_sk || "").toUpperCase(), t = `${e.loai || ""} ${e.ten || ""}`.toLowerCase(), i = vt(String(e.ngay || "").slice(0, 10));
-    if (i < 0) continue;
-    const k = ma === "DIV" || (t.includes("cổ tức") && t.includes("tiền")) ? ["CT", "#b88a00", "belowBar", "circle"]
-      : ma === "ISS" || t.includes("phát hành") || (t.includes("cổ tức") && t.includes("cổ phiếu")) ? ["CP", "#9b3fd1", "belowBar", "circle"]
-      : /^(AGM|EGM)/.test(ma) || t.includes("đại hội") ? ["ĐH", "#1f6feb", "aboveBar", "square"] : null;
-    if (k) out.push({time: x.d[i], text: k[0], color: k[1], position: k[2], shape: k[3]});
+  tim(p) {                                       // bong bóng dưới con trỏ / ngón tay (x, y trong khung giá) → sự kiện
+    let tot = null, d0 = 1e9;
+    for (const h of this.hit) { const d = Math.hypot(h.x - p.x, h.y - p.y); if (d <= h.r + 3 && d < d0) { d0 = d; tot = h; } }
+    return tot;
   }
-  for (const e of n.nb || []) {                  // nội bộ: chỉ giao dịch đã có kết quả (kq > 0) – bỏ đăng ký chưa khớp
-    const i = vt(String(e.ngay || "").slice(0, 10)), mua = /mua/i.test(e.hd || ""), ban = /bán/i.test(e.hd || "");
-    if (e.kq != null && !(e.kq > 0)) continue;
-    if (i >= 0 && (mua || ban)) out.push({time: x.d[i], text: mua ? "M" : "B", color: mua ? "#0f8a4a" : "#d1342b", position: mua ? "belowBar" : "aboveBar", shape: mua ? "arrowUp" : "arrowDown"});
-  }
-  // gộp: 1 mốc / nến / loại (VD 12 lệnh bán nội bộ cùng phiên → "B×12") – không chồng thành cột, không kéo giãn trục giá
-  const gom = new Map();
-  for (const m of out) { const k = m.time + "|" + m.text, g = gom.get(k); g ? g.n++ : gom.set(k, {...m, n: 1}); }
-  return [...gom.values()].map(({n: so_lan, ...m}) => ({...m, text: so_lan > 1 ? `${m.text}×${so_lan}` : m.text}))
-    .sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
 }
 function ema(c, n) { const k = 2 / (n + 1); let e = null; return c.map(v => (e = e == null ? v : v * k + e * (1 - k))); }
 function rsi(c, n = 14) {
@@ -1849,9 +1856,10 @@ async function ve_bd_gia(el, x0, them = {}) {
   if (mk_.length) LW.createSeriesMarkers(nen, mk_);
   const LHI = lh ? lenh_nen(x, lh) : null;
   if (LHI?.some(L => L.z[5] != null)) nen.attachPrimitive(new LenhPrim(ch, nen, LHI, x.c));
-  const SK_ = ST.mk && them.n && !PHUT(kh) ? su_kien_nen(x, them.n) : [], SK_I = new Map();     // sự kiện DN: dải dưới thanh khối lượng
+  const SK_ = ST.mk && (them.n || them.r) && !PHUT(kh) ? su_kien_nen(x, them.n, them.r) : [], SK_I = new Map();   // sự kiện DN: bong bóng
   for (const e of SK_) (SK_I.get(e.i) || SK_I.set(e.i, []).get(e.i)).push(e);
-  if (SK_.length) nen.attachPrimitive(new SuKienPrim(ch, SK_));
+  const SKP = SK_.length ? new SuKienPrim(ch, SK_) : null;
+  if (SKP) nen.attachPrimitive(SKP);
   let cw = null;                                          // chứng quyền: từ nến cuối tới ngày đáo hạn (tua lại: bỏ – dữ liệu hôm nay)
   if (CW?.ma?.[them.ma] && !PHUT(kh) && !tua && n && !an_("cw")) {
     const d0 = String(x.d[n - 1]).slice(0, 10), buoc = kh === "W" ? 5 : kh === "M" ? 21 : 1;
@@ -1869,7 +1877,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   }
   // --- khối lượng / khối ngoại: dải dưới khung giá (+ đường TB 20 KL)
   const duoi = S("HistogramSeries", {priceScaleId: "duoi", priceFormat: ST.duoi === "kl" ? {type: "volume"} : {type: "price", precision: 1, minMove: .1}, lastValueVisible: false, priceLineVisible: false});
-  ch.priceScale("duoi").applyOptions({scaleMargins: {top: SK_.length ? .78 : .8, bottom: SK_.length ? .085 : 0}});   // chừa dải sự kiện dưới cùng
+  ch.priceScale("duoi").applyOptions({scaleMargins: {top: .8, bottom: 0}});   // bong bóng sự kiện đè lên vùng thanh khối lượng (như FireAnt)
   duoi.setData(x.d.map((d, i) => { const v = ST.duoi === "kl" ? x.v[i] : x.nn?.[i];
     if (v == null) return null; const tang = ST.duoi === "kl" ? x.c[i] >= x.o[i] : v >= 0;
     return {time: d, value: v, color: tang ? "#0f8a4a66" : "#d1342b66"}; }).filter(Boolean));
@@ -2014,7 +2022,7 @@ async function ve_bd_gia(el, x0, them = {}) {
     });
   }
   x.ts = x.ts || x.d.map(d => Date.parse(String(d) + "T00:00:00Z") / 1000);
-  BD_DK = {ch, nen, LW, n, so_nen, x, ma: them.ma, phai, khung: kh, lai: vung => ve_bd_gia(el, x0, {...them, giu_vung: vung})};
+  BD_DK = {ch, nen, LW, n, so_nen, x, ma: them.ma, phai, khung: kh, skp: SKP, lai: vung => ve_bd_gia(el, x0, {...them, giu_vung: vung})};
   if (fs && !el.querySelector(".fs-goi")) el.appendChild(Object.assign(document.createElement("div"), {className: "fs-goi", style: "display:none"}));
   const B_ = BD_DK; tai_ve().then(V => { if (BD_DK === B_) V.gan(B_, {el, tuong_tac: fs}); }).catch(() => {});
   if (fs) {                                            // tua lại: vùng che phần "tương lai" khi chọn nến + bấm chọn
@@ -2094,6 +2102,24 @@ async function ve_bd_gia(el, x0, them = {}) {
   viet(n - 1); BD_DK.viet = viet;
   const vi = new Map(x.d.map((d, i) => [d, i]));
   ch.subscribeCrosshairMove(e => { if (!e || !e.time) return viet(n - 1); viet(vi.get(t_chuoi(e.time)), true); });
+  if (SKP) {                                              // rê / chạm vào bong bóng sự kiện → hộp chi tiết cạnh bong bóng (như FireAnt)
+    const hop = el.querySelector(".sk-hop") || el.appendChild(Object.assign(document.createElement("div"), {className: "sk-hop"}));
+    hop.style.display = "none";
+    let ghim = false;                                     // điện thoại: chạm bong bóng → giữ hộp tới lần chạm sau
+    const hien = h => {
+      const ev = h.e, ds = ev.ct.slice(0, 8);
+      hop.innerHTML = `<div class="sk-dau"><i style="background:${ev.mau}"></i><b>${esc(ev.ten)}</b>${ev.so > 1 ? ` <span class="cg-g">× ${ev.so}</span>` : ""}</div>` +
+        `<div class="cg-g">${PHUT(kh) ? "" : ngay_vn(x.d[ev.i])}</div>` + ds.map(c => `<div>${esc(c)}</div>`).join("") +
+        (ev.ct.length > ds.length ? `<div class="cg-g">… và ${ev.ct.length - ds.length} mục khác</div>` : "");
+      hop.style.display = "block";
+      const W = el.clientWidth, w = hop.offsetWidth, hh = hop.offsetHeight;
+      hop.style.left = Math.max(4, Math.min(W - w - 4, h.x - w / 2)) + "px";
+      hop.style.top = Math.max(4, h.y - h.r - hh - 8) + "px";
+    };
+    const tim = e => e?.point && !(e.paneIndex > 0) ? SKP.tim(e.point) : null;
+    ch.subscribeCrosshairMove(e => { const h = tim(e); if (h) { ghim = false; hien(h); } else if (!ghim) hop.style.display = "none"; });
+    ch.subscribeClick(e => { const h = tim(e); ghim = !!h; if (h) hien(h); else hop.style.display = "none"; });
+  }
   el._cap = () => { nut_bd(); dat_cp(); };                        // gắn sự kiện 1 lần / khung (vẽ lại không chồng sự kiện)
   if (!el._nghe) { el._nghe = true;
     for (const ev of ["pointerup", "wheel", "touchend", "dblclick"]) el.addEventListener(ev, () => setTimeout(() => el._cap?.(), 60), {passive: true});
@@ -3386,7 +3412,7 @@ function gan_su_kien(ma, k, tab) {
   if ($("#tai-cs")) $("#tai-cs").onclick = () => xlsx_chi_so(ma, k);
   const bb = $("#bang-bctc"); if (bb) bb.scrollLeft = bb.scrollWidth;
   const bd = $("#bd-gia");
-  if (bd) ve_bd_gia(bd, chuoi_gia(k, ma), {gn: gia_nay(ma, k), n: k.n, ma}).catch(() => { bd.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
+  if (bd) ve_bd_gia(bd, chuoi_gia(k, ma), {gn: gia_nay(ma, k), n: k.n, r: k.r, ma}).catch(() => { bd.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
   else if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; BD_DK = null; }
   const bp = $("#bd-pe"), P = bp ? chuoi_pe(k, ma) : null;
   if (bp && P) ve_bd_pe(bp, P).catch(() => { bp.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
@@ -3492,7 +3518,7 @@ async function fs_ve(giu = false) {                    // vẽ (lại) biểu đ
   el.innerHTML = "";
   const x = chuoi_gia(k, FS.ma);
   if (!x && !PHUT(ST.khung)) { el.innerHTML = '<div class="trong">Chưa có lịch sử giá cho mã này.</div>'; return; }
-  await ve_bd_gia(el, x || {d: [], o: [], h: [], l: [], c: [], v: [], nn: []}, {gn: gia_nay(FS.ma, k), n: k.n, ma: FS.ma, fs: true, giu_vung: vung, n_cu: vung ? BD_DK?.n : null});
+  await ve_bd_gia(el, x || {d: [], o: [], h: [], l: [], c: [], v: [], nn: []}, {gn: gia_nay(FS.ma, k), n: k.n, r: k.r, ma: FS.ma, fs: true, giu_vung: vung, n_cu: vung ? BD_DK?.n : null});
 }
 const KHOA_GC = "ghi_chu_ma";
 const gc_doc = () => { try { return JSON.parse(localStorage.getItem(KHOA_GC) || "{}") || {}; } catch (e) { return {}; } };

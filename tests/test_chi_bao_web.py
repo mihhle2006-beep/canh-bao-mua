@@ -349,19 +349,31 @@ def test_su_kien_duoi_khoi_luong_va_lenh_he_co_gia():
     → vị trí nến (lệnh còn mở kéo tới nến cuối), mốc ▲ / ▼ ghi giá; file lệnh bản cũ (5 trường) vẫn chạy."""
     if not shutil.which("node"):
         pytest.skip("không có node")
-    js = "const so = (v, l = 0) => Number(v).toFixed(l);\n" + _ham("vi_tri_ngay", "su_kien_nen", "lenh_nen", "moc_lenh_he") + r"""
+    h0 = open(TRANG, encoding="utf-8").read()
+    hang = "\n".join(re.search(rf"^const {t} = .*?;$", h0, re.M | re.S).group(0) for t in ("SK_LOAI", "SK_THU_TU"))
+    js = ("const so = (v, l = 0) => Number(v).toFixed(l), ngay_vn = d => d;\n" + hang + "\n"
+          + _ham("vi_tri_ngay", "su_kien_nen", "lenh_nen", "moc_lenh_he") + r"""
       const x = {d: ["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09"], c: [10, 11, 12, 13, 14]};
-      const n = {sk: [{ngay: "2026-01-06", ma_sk: "DIV", ten: "Cổ tức  tiền 1.000đ"}, {ngay: "2026-01-06", ma_sk: "AGM", ten: "ĐHCĐ"}, {ngay: "2027-01-01", ma_sk: "DIV", ten: "tương lai"}],
-                 nb: [{ngay: "2026-01-08", hd: "Mua", kq: 1000, ten: "A", cv: "HĐQT"}, {ngay: "2026-01-08", hd: "Mua", kq: 500, ten: "B"}, {ngay: "2026-01-08", hd: "Bán", kq: 0, ten: "C"}]};
-      const sk = su_kien_nen(x, n);
+      const n = {sk: [{ngay: "2026-01-06", ma_sk: "DIV", ten: "Cổ tức  tiền 1.000đ"}, {ngay: "2026-01-06", ma_sk: "AGM", ten: "ĐHCĐ"},
+                      {ngay: "2027-01-01", ma_sk: "DIV", ten: "tương lai"}, {ngay: "2026-01-07", ma_sk: "AIS", ten: "Niêm yết bổ sung"}],
+                 nb: [{ngay: "2026-01-08", hd: "Mua", kq: 1000, ten: "A", cv: "HĐQT"}, {ngay: "2026-01-08", hd: "Mua", kq: 500, ten: "B"},
+                      {ngay: "2026-01-08", hd: "Bán", kq: 0, ten: "C"}, {ngay: "2026-01-09", hd: "Bán", kq: null, dk: 2000, ten: "D", tt: "Đang thực hiện"}]};
+      const r = {cot: ["Q3.25", "Q4.25", "Q1.26", "Q2.26", "Q3.26"], dt: [100, 110, 120, 130, 150], ln: [10, 11, 12, 13, 20],
+                 cb: [["Q2.26", "2025-08-01"], ["Q3.26", "2026-01-07"]]};
+      const sk = su_kien_nen(x, n, r);
       const lh = [["2026-01-05", "2026-01-07", 9.5, 1.2, 0, 10, 11, 9.3, "cắt lỗ", 0], ["2026-01-08", "", 2, 0.3, 1, 13, null, 12, "", 0], ["2026-01-06", "2026-01-07", -3, -1, 0]];
       console.log(JSON.stringify({sk, L: lenh_nen(x, lh).map(L => [L.i, L.j, L.mo]), m: moc_lenh_he(x, lh).map(z => z.text)}));
-    """
+    """)
     kq = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
     assert kq.returncode == 0, kq.stderr
     r = json.loads(kq.stdout)
-    assert [(z["i"], z["text"]) for z in r["sk"]] == [(1, "CT"), (1, "ĐH"), (3, "M×2")]          # tương lai / chưa khớp bỏ
-    assert r["sk"][0]["ct"] == ["Cổ tức tiền 1.000đ"] and r["sk"][2]["ct"][0] == "Nội bộ mua 1000 cp – A (HĐQT)"
+    # bong bóng kiểu FireAnt: tương lai / ngoài chuỗi / kết quả 0 cp bỏ; cùng nến xếp theo SK_THU_TU; đăng ký chưa khớp = rỗng
+    assert [(z["i"], z["k"], z["so"], z["dk"]) for z in r["sk"]] == [(1, "ĐH", 1, False), (1, "CT", 1, False), (2, "BC", 1, False),
+                                                                   (2, "K", 1, False), (3, "M", 2, False), (4, "B", 1, True)]
+    sk = {z["k"]: z for z in r["sk"]}
+    assert sk["CT"]["ct"] == ["Cổ tức tiền 1.000đ"] and sk["M"]["ct"][0] == "A (HĐQT): đã mua 1000 cp"
+    assert sk["BC"]["ct"] == ["Q3.26 công bố 2026-01-07 · DT 150 tỷ (+50% cùng kỳ) · LNST 20 tỷ (+100% cùng kỳ)"]
+    assert sk["B"]["ct"] == ["D: đăng ký bán 2000 cp · Đang thực hiện"] and sk["K"]["ten"] == "Sự kiện khác"
     assert r["L"] == [[0, 2, False], [3, 4, True], [1, 2, False]]
     assert r["m"] == ["Mua 10.00", "Bán 11.00 +1.2R", "Mua (đang giữ) 13.00", "Mua", "-1.0R"]
     h = open(TRANG, encoding="utf-8").read()

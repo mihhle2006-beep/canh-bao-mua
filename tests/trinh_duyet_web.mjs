@@ -45,6 +45,23 @@ for (const t of trang) {
         const [lenh, ...x] = b.split(":"), v = x.join(":");
         if (lenh === "click") await pg.click(v, {timeout: 10000});
         else if (lenh === "cho") await pg.waitForTimeout(+v);
+        else if (lenh === "sk") {                     // rê chuột / chạm vào bong bóng sự kiện đầu tiên → hộp chi tiết phải hiện
+          await pg.waitForTimeout(800);
+          await pg.evaluate(() => document.querySelector(".sk-hop")?.parentElement.scrollIntoView({block: "center"}));
+          await pg.waitForTimeout(400);
+          const p = await pg.evaluate(() => {           // bong bóng đầu tiên không bị phần tử khác che (kiểm cả việc logo / lớp phủ chặn chạm)
+            const hop = document.querySelector(".sk-hop"), hit = typeof BD_DK !== "undefined" ? BD_DK?.skp?.hit || [] : [];
+            if (!hop || !hit.length) return null;
+            const r = hop.parentElement.getBoundingClientRect();
+            for (const h of hit) { const x = r.left + h.x, y = r.top + h.y, e = document.elementFromPoint(x, y);
+              if (e && e.tagName === "CANVAS") return {x, y, k: h.e.k}; }
+            return {x: r.left + hit[0].x, y: r.top + hit[0].y, k: hit[0].e.k, che: true}; });
+          if (!p) throw new Error("không thấy bong bóng sự kiện trên biểu đồ");
+          if (kho === "điện thoại") await pg.touchscreen.tap(p.x, p.y); else await pg.mouse.move(p.x, p.y);
+          await pg.waitForSelector(".sk-hop", {state: "visible", timeout: 4000});
+          const chu = await pg.$eval(".sk-hop", e => e.innerText);
+          if (!chu || chu.length < 10) throw new Error("hộp chi tiết sự kiện trống");
+        }
       }
       await pg.waitForTimeout(1500);
       const chu = (await pg.evaluate(() => document.body.innerText || "")).trim();
