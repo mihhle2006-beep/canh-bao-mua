@@ -475,6 +475,19 @@ dialog#pp::backdrop{background:#1d243066}
 .pp-than h4{margin:16px 0 6px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mo)}
 .pp-than p,.pp-than li{color:var(--chu2);font-size:13.5px}.pp-than p{margin:0}.pp-than ul{margin:0;padding-left:18px}
 .pp-than pre{font-family:inherit;margin:0;background:var(--nhat);border:1px solid var(--luoi);border-radius:8px;padding:10px 12px;white-space:pre-wrap;font-size:12.5px;line-height:1.6}
+.kt-dau{display:flex;justify-content:space-between;align-items:flex-end;gap:6px 14px;flex-wrap:wrap;padding:12px 14px 2px}
+.kt-gia b{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}.kt-gia span{font-weight:650;margin-left:8px}
+.kt-52{display:flex;justify-content:space-between;gap:8px;padding:8px 14px 0;font-size:12.5px;color:var(--mo)}
+.kt-thanh{position:relative;height:6px;margin:8px 14px 14px;background:var(--luoi);border-radius:3px}
+.kt-thanh i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--nhan);border:2px solid #fff;box-shadow:0 0 0 1px var(--vien);transform:translate(-50%,-50%)}
+.kt-dt-nhan{display:block;font-size:24px;font-weight:750}.kt-dt-nhan.t{color:var(--tang)}.kt-dt-nhan.g{color:var(--giam)}.kt-dt-nhan.d{color:var(--dung)}
+.kt-thuoc{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:12px 0 4px}
+.kt-thuoc i{height:9px;border-radius:5px}.kt-thuoc i:nth-child(1){background:#e58b8b}.kt-thuoc i:nth-child(2){background:#f2c4c4}.kt-thuoc i:nth-child(3){background:#f3e4a8}.kt-thuoc i:nth-child(4){background:#b5dcc2}.kt-thuoc i:nth-child(5){background:#6dbb8a}
+.kt-thuoc b{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--chu);transform:translate(-50%,-50%)}
+.kt-thuoc-chu{display:grid;grid-template-columns:repeat(5,1fr);text-align:center;font-size:11px}
+.kt-dem{display:flex;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;margin-top:10px}
+.kt-ct summary{cursor:pointer;padding:8px 14px 12px;color:var(--nhan);font-weight:600;font-size:13.5px}
+.pt-the.kt-tru{cursor:default}.pt-the.kt-tru:hover{transform:none;box-shadow:none}.kt-so{font-size:18px}
 .pp-doc{list-style:none;padding:0!important}.pp-doc li{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:6px 0}.pp-doc li b{grid-column:2}.pp-doc li .cham{grid-row:1}.pp-doc span{grid-column:2;color:var(--mo);font-size:.92em;line-height:1.4}   /* như app: tên mức trên, ngưỡng dưới */
 .pp-dong{position:absolute;right:12px;top:10px;border:0;background:none;font-size:24px;line-height:1;color:var(--mo);cursor:pointer}
 @media (max-width:600px){.pt-luoi{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px}.pt-the{padding:10px}.pt-so{font-size:18px}
@@ -508,7 +521,7 @@ dialog#pp::backdrop{background:#1d243066}
 "use strict";
 const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json";
 const TAB = [["tong-quan", "Tổng quan"], ["tin", "Tin tức"], ["ho-so", "Hồ sơ"], ["lanh-dao", "Lãnh đạo"], ["co-dong", "Cổ đông"],
-  ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["phan-tich", "Phân tích"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
+  ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["phan-tich", "Phân tích"], ["ky-thuat", "Kỹ thuật"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
   ["bao-cao", "Báo cáo CTCK"], ["tai-lieu", "Tài liệu"], ["he-thong", "Hệ thống"]];
 let DS = null, META = {}, NG = null, MKT = null, LIVE = {}, BOT = {}, GIU = new Set(), CT_BCTC = null, TEN_CT = null, TEN_VND = null;
 // danh sách theo dõi CÁ NHÂN – chỉ lưu trong trình duyệt này (localStorage), không gửi đi đâu
@@ -2927,6 +2940,7 @@ function pt_m(S) {
     AQI: aq(i) != null && aq(j) > 0.01 ? Math.max(0, aq(i)) / aq(j) : null, SGI: ty_le(dt[i], dt[j]), DEPI: ty_le(kh_tl(j), kh_tl(i)),
     SGAI: ty_le(chia((bh[i] || 0) + (ql[i] || 0), dt[i]), chia((bh[j] || 0) + (ql[j] || 0), dt[j])),
     TATA: ln[i] != null && cfo[i] != null ? chia(ln[i] - cfo[i], ts[i]) : null, LVGI: ty_le(chia(no[i], ts[i]), chia(no[j], ts[j]))};
+  for (const [k_] of BENEISH) if (k_ !== "TATA" && v[k_] != null && v[k_] > 5) v[k_] = 5;   // kẹp > 5 lần (Beneish winsorize dữ liệu)
   const thieu = BENEISH.filter(([k]) => v[k] == null || !isFinite(v[k])).map(([k]) => k);
   if (thieu.length > 2) return {nam: S.Y[i], thieu};
   const m = -4.84 + BENEISH.reduce((s, [k, he]) => s + he * (v[k] == null || !isFinite(v[k]) ? (k === "TATA" ? 0 : 1) : v[k]), 0);
@@ -3038,8 +3052,8 @@ const PT_PP = {                                             // "Phương pháp" 
   m: {ten: "M-Score của Beneish", ng: "Messod Beneish (1999) ước lượng mô hình xác suất (probit) 8 biến trên các doanh nghiệp bị SEC kết luận thao túng lợi nhuận. Mô hình được biết đến rộng rãi khi một nhóm sinh viên dùng nó cảnh báo Enron từ 1998, trước khi vụ việc vỡ lở.",
     ct: ["M = −4,84 + 0,920·DSRI + 0,528·GMI + 0,404·AQI + 0,892·SGI + 0,115·DEPI − 0,172·SGAI + 4,679·TATA − 0,327·LVGI", "DSRI = (phải thu / doanh thu)t ÷ (…)t−1 · GMI = biên gộp t−1 ÷ biên gộp t", "AQI = [1 − (TSNH + TSCĐ + đầu tư dài hạn) / tổng TS]t ÷ (…)t−1 · SGI = doanh thu t ÷ doanh thu t−1", "DEPI = tỷ lệ khấu hao t−1 ÷ tỷ lệ khấu hao t · SGAI = (CPBH + CPQL) / doanh thu t ÷ (…)t−1", "LVGI = (nợ / tổng TS)t ÷ (…)t−1 · TATA = (LNST − CFO) / tổng TS t", "Xác suất thao túng = Φ(M) (phân phối chuẩn)"],
     doc: [["g", "Có dấu hiệu thao túng", "M > −1,78 (ngưỡng Beneish cho mô hình 8 biến, xác suất Φ(M) > 3,8%)"], ["d", "Cần xem kỹ", "−2,22 ≤ M ≤ −1,78 (vùng thận trọng giới thực hành hay dùng, xác suất 1,3–3,8%; −2,22 là ngưỡng của mô hình 5 biến)"], ["t", "Không có dấu hiệu", "M < −2,22"]],
-    gh: ["Là mô hình xác suất: M cao là cờ đỏ cần đọc kỹ thuyết minh BCTC, không phải kết luận gian lận.", "Cờ đỏ từng biến so với trung bình nhóm doanh nghiệp thao túng trong mẫu của Beneish (1999).", "Doanh nghiệp tăng trưởng nhanh thật (SGI cao) hoặc mới đầu tư lớn (AQI cao) có thể bị cảnh báo giả.", "Không áp dụng cho ngân hàng, chứng khoán, bảo hiểm.", "Thiếu số liệu khấu hao hoặc chi phí bán hàng / quản lý thì biến đó đặt trung tính (1; TATA = 0); thiếu quá 2 biến thì không tính."],
-    tk: ["Beneish, M. (1999). The Detection of Earnings Manipulation. Financial Analysts Journal."]},
+    gh: ["Là mô hình xác suất: M cao là cờ đỏ cần đọc kỹ thuyết minh BCTC, không phải kết luận gian lận.", "Cờ đỏ từng biến so với trung bình nhóm doanh nghiệp thao túng trong mẫu của Beneish (1999).", "Doanh nghiệp tăng trưởng nhanh thật (SGI cao) hoặc mới đầu tư lớn (AQI cao) có thể bị cảnh báo giả.", "Không áp dụng cho ngân hàng, chứng khoán, bảo hiểm.", "Thiếu số liệu khấu hao hoặc chi phí bán hàng / quản lý thì biến đó đặt trung tính (1; TATA = 0); thiếu quá 2 biến thì không tính.", "Biến âm hoặc không xác định (biên gộp âm, doanh thu bằng 0) không có nghĩa trong mô hình nên được thay bằng trung tính; biến vượt 5 lần được kẹp về 5, tương tự cách Beneish xử lý giá trị ngoại lai (winsorize)."],
+    tk: ["Beneish, M. (1999). The Detection of Earnings Manipulation. Financial Analysts Journal.", "Beneish, M., Lee, C., Nichols, D. (2013). Earnings Manipulation and Expected Returns. Financial Analysts Journal."]},
   cl: {ten: "Chất lượng lợi nhuận", ng: "Richard Sloan (1996) cho thấy phần lợi nhuận đến từ dồn tích (không đi kèm tiền) kém bền và báo trước lợi suất cổ phiếu thấp. Bổ sung các thước đo chuyển đổi tiền mặt và vốn lưu động quen thuộc của chuyên viên phân tích.",
     ct: ["CFO / LNST (cộng dồn 3 năm): mỗi đồng lãi thu về bao nhiêu đồng tiền", "Dồn tích = (LNST − CFO) / tổng TS bình quân", "Biên FCF = (CFO − chi mua sắm TSCĐ) / doanh thu", "Chu kỳ tiền mặt = số ngày phải thu + số ngày tồn kho − số ngày phải trả", "Lệch phải thu = tăng trưởng phải thu khách hàng − tăng trưởng doanh thu"],
     doc: [["t", "Đáng tin", "không cờ đỏ, tối đa 1 chỉ tiêu vàng"], ["d", "Cần xem kỹ", "1 cờ đỏ hoặc ≥ 2 chỉ tiêu vàng (gồm M-Score)"], ["g", "Cờ đỏ", "≥ 2 cờ đỏ"]],
@@ -3196,6 +3210,147 @@ function mo_pp(k) {
     d.addEventListener("click", e => { if (e.target === d || e.target.closest(".pp-dong")) d.close(); }); }
   d.innerHTML = `<div class="pp-than"><button class="pp-dong" aria-label="Đóng">×</button>${pp_html(k)}</div>`;
   d.showModal ? d.showModal() : d.setAttribute("open", "");
+}
+// ---------------------------------------------------------------- PHÂN TÍCH KỸ THUẬT – hàm thuần (đồng thuận chỉ báo + 6 trụ, như app Phân tích kỹ thuật)
+const KT_KHUNG = [["D", "Ngày"], ["W", "Tuần"]];
+const kt_v = (a, lui = 0) => { const n = (a?.length ?? 0) - 1 - lui; return n >= 0 && a[n] != null && isFinite(a[n]) ? +a[n] : null; };
+const kt_len = a => { const p = kt_v(a), q = kt_v(a, 1); return p == null || q == null ? null : p - q; };
+function kt_dong_thuan(x) {                              // x = {h, l, c} → phiếu Mua (1) / Trung lập (0) / Bán (−1) của 15 chỉ báo
+  const {h, l, c} = x, g = kt_v(c);
+  const ma = [["SMA 20", cb_sma(c, 20)], ["SMA 50", cb_sma(c, 50)], ["SMA 200", cb_sma(c, 200)], ["EMA 20", cb_ema(c, 20)], ["EMA 50", cb_ema(c, 50)],
+    ["Ichimoku Kijun 26", cb_ichimoku(h, l, c, 9, 26, 52).kijun]].map(([t, a]) => { const v = kt_v(a); return [t, v, v == null || g == null ? null : g > v ? 1 : g < v ? -1 : 0]; });
+  const r = cb_rsi(c, 14), st = cb_stoch(h, l, c, 14, 3, 3), cc = cb_cci(h, l, c, 20), dm = cb_dmi(h, l, c, 14), ao = cb_ao(h, l);
+  const mom = c.map((v, i) => i >= 10 && v != null && c[i - 10] != null ? v - c[i - 10] : null), mc = cb_macd(c, 12, 26, 9), wr = cb_willr(h, l, c, 14), uo = cb_uo(h, l, c, 7, 14, 28);
+  const [rv, kv, dv, cv, av, mv, wv, uv] = [r, st.k, st.d, cc, ao, mom, wr, uo].map(a => kt_v(a)), adx = kt_v(dm.adx), pdi = kt_v(dm.pdi), mdi = kt_v(dm.mdi);
+  const ms = kt_v(mc.m), ss = kt_v(mc.s);
+  const dd = [
+    ["RSI 14", rv, rv == null ? null : rv < 30 && kt_len(r) > 0 ? 1 : rv > 70 && kt_len(r) < 0 ? -1 : 0],
+    ["Stochastic %K 14,3,3", kv, kv == null || dv == null ? null : kv < 20 && kv > dv ? 1 : kv > 80 && kv < dv ? -1 : 0],
+    ["CCI 20", cv, cv == null ? null : cv < -100 && kt_len(cc) > 0 ? 1 : cv > 100 && kt_len(cc) < 0 ? -1 : 0],
+    ["ADX 14", adx, adx == null || pdi == null || mdi == null ? null : adx > 20 && pdi > mdi ? 1 : adx > 20 && mdi > pdi ? -1 : 0],
+    ["Awesome Oscillator", av, av == null || kt_len(ao) == null ? null : av > 0 && kt_len(ao) > 0 ? 1 : av < 0 && kt_len(ao) < 0 ? -1 : 0],
+    ["Momentum 10", mv, kt_len(mom) == null ? null : kt_len(mom) > 0 ? 1 : kt_len(mom) < 0 ? -1 : 0],
+    ["MACD 12,26,9", ms, ms == null || ss == null ? null : ms > ss ? 1 : ms < ss ? -1 : 0],
+    ["Williams %R 14", wv, wv == null ? null : wv < -80 && kt_len(wr) > 0 ? 1 : wv > -20 && kt_len(wr) < 0 ? -1 : 0],
+    ["Ultimate Oscillator 7,14,28", uv, uv == null ? null : uv > 70 ? 1 : uv < 30 ? -1 : 0]];
+  const co = a => a.filter(z => z[2] != null), dem = (a, s) => a.filter(z => z[2] === s).length;
+  const M = co(ma), D = co(dd), all = M.concat(D), diem = all.length ? (dem(all, 1) - dem(all, -1)) / all.length : null;
+  const [muc, nhan] = diem == null ? ["", "Chưa đủ dữ liệu"] : diem >= 0.5 ? ["t", "Mua mạnh"] : diem >= 0.1 ? ["t", "Mua"] : diem > -0.1 ? ["d", "Trung lập"] : diem > -0.5 ? ["g", "Bán"] : ["g", "Bán mạnh"];
+  return {ma: M, dd: D, n: all.length, diem, muc, nhan, ma_dem: [dem(M, 1), dem(M, 0), dem(M, -1)], dd_dem: [dem(D, 1), dem(D, 0), dem(D, -1)]};
+}
+function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi nến x = {d, h, l, c, v}; o: {tien (nến đã đóng), nn (tỷ, khung ngày), rrg [[RS-Ratio, RS-Mom]…], vni [giá theo nến], n3, vung (doc_bd)}
+  const {h, l, c} = x, N = c.length, g = kt_v(c), ok = cb_ok, kq = [];
+  const s20 = kt_v(cb_sma(c, 20)), s50 = kt_v(cb_sma(c, 50)), s200 = kt_v(cb_sma(c, 200)), st = cb_supertrend(h, l, c, 10, 3), adx = kt_v(cb_dmi(h, l, c, 14).adx);
+  const len = st.len[N - 1], dau = [[g, s20], [g, s50], [g, s200], [s20, s50], [s50, s200]].filter(([p, q]) => ok(p) && ok(q)).map(([p, q]) => Math.sign(p - q));
+  if (len != null) dau.push(len ? 1 : -1);
+  const dx = dau.reduce((a, b) => a + b, 0), ma_t = (t, m) => m == null ? "" : `${t} ${so(m, 2)} <span class="${g >= m ? "t" : "g"}">${g >= m ? "▲" : "▼"}</span>`;
+  const xu = !dau.length ? ["", "Chưa đủ dữ liệu"] : dx >= 4 && adx >= 25 ? ["t", "Tăng mạnh"] : dx >= 2 ? ["t", "Tăng"] : dx <= -4 && adx >= 25 ? ["g", "Giảm mạnh"] : dx <= -2 ? ["g", "Giảm"] : ["d", "Đi ngang"];
+  kq.push({id: "xu", ten: "Xu hướng", hoi: "Giá đang đi lên, đi ngang hay đi xuống, mạnh tới đâu?", muc: xu[0], nhan: xu[1], pp: "kt_xu",
+    so: dau.length ? `điểm ${dx > 0 ? "+" : ""}${dx}/${dau.length}` : "", ct: [[ma_t("MA20", s20), ma_t("MA50", s50), ma_t("MA200", s200)].filter(Boolean).join(" · "),
+      `${len == null ? "" : `SuperTrend ${len ? "tăng" : "giảm"} · `}ADX ${adx == null ? "–" : so(adx, 0)}${adx == null ? "" : adx >= 25 ? " (mạnh)" : adx < 20 ? " (yếu)" : ""}`]});
+  const r = cb_rsi(c, 14), mc = cb_macd(c, 12, 26, 9), sk = cb_stoch(h, l, c, 14, 3, 3), rv = kt_v(r), hv = kt_v(mc.h), dh = kt_len(mc.h), kv = kt_v(sk.k);
+  const dl = rv == null || hv == null ? ["", "Chưa đủ dữ liệu"] : rv >= 70 ? ["d", "Quá mua"] : rv <= 30 ? ["d", "Quá bán"] : hv > 0 && dh >= 0 ? ["t", "Mạnh lên"]
+    : hv < 0 && dh <= 0 ? ["g", "Yếu đi"] : hv > 0 ? ["d", "Tăng chậm lại"] : ["d", "Giảm chậm lại"];
+  kq.push({id: "dl", ten: "Động lượng", hoi: "Đà tăng / giảm đang mạnh lên hay yếu đi, quá mua / quá bán chưa?", muc: dl[0], nhan: dl[1], pp: "kt_dl",
+    so: rv == null ? "" : `RSI ${so(rv, 0)}`, ct: [`MACD histogram ${hv == null ? "–" : `<span class="${mau(hv)}">${so(hv, 3)}</span>`}${dh == null ? "" : dh >= 0 ? " ↑" : " ↓"} · Stochastic %K ${kv == null ? "–" : so(kv, 0)}`]});
+  const bb = cb_bb(c, 20, 2), rong = bb.gi.map((m, i) => ok(m) && m && ok(bb.tr[i]) ? (bb.tr[i] - bb.du[i]) / m : null), rv2 = kt_v(rong);
+  const w = rong.slice(-120).filter(ok), pv = rv2 != null && w.length >= 30 ? w.filter(z => z <= rv2).length / w.length : null, atp = kt_v(cb_atr_pt(h, l, c, 14));
+  const bd = pv == null ? ["", "Chưa đủ dữ liệu"] : pv <= 0.2 ? ["d", "Co hẹp"] : pv >= 0.8 ? ["g", "Giãn mạnh"] : ["t", "Bình thường"];
+  kq.push({id: "bd", ten: "Biến động", hoi: "Giá đang co hay giãn, rủi ro biến động thế nào?", muc: bd[0], nhan: bd[1], pp: "kt_bd",
+    so: atp == null ? "" : `ATR ${so(atp, 1)}%`, ct: [`Độ rộng Bollinger ${rv2 == null ? "–" : pt(rv2, 1, false)}${pv == null ? "" : ` · hẹp hơn ${pt(1 - pv, 0, false)} số kỳ trong 120 kỳ`}`]});
+  const T = o.tien || x;                               // dòng tiền: nến đã đóng (phiên đang chạy chưa đủ khối lượng)
+  const mf = kt_v(cb_mfi(T.h, T.l, T.c, T.v, 14)), cm = kt_v(cb_cmf(T.h, T.l, T.c, T.v, 20)), ob = cb_obv(T.c, T.v), obv = kt_v(ob), obm = kt_v(cb_sma(ob, 20)), nn = o.nn;
+  const dt_ = [cm == null ? null : Math.sign(cm), obv == null || obm == null ? null : obv > obm ? 1 : -1, mf == null ? null : mf > 50 ? 1 : -1, nn ? Math.sign(nn) : null].filter(z => z != null);
+  const sd = dt_.reduce((a, b) => a + b, 0), dt = !dt_.length ? ["", "Chưa đủ dữ liệu"] : sd >= 2 ? ["t", "Tiền vào"] : sd <= -2 ? ["g", "Tiền ra"] : ["d", "Trung tính"];
+  kq.push({id: "dt", ten: "Dòng tiền", hoi: "Tiền đang vào hay ra, ai đang mua?", muc: dt[0], nhan: dt[1], pp: "kt_tien", so: mf == null ? "" : `MFI ${so(mf, 0)}`,
+    ct: [`CMF ${cm == null ? "–" : `<span class="${mau(cm)}">${so(cm, 2)}</span>`} · OBV ${obv == null || obm == null ? "–" : obv > obm ? "trên" : "dưới"} TB20${mf >= 80 ? " · dòng tiền quá mua" : mf != null && mf <= 20 ? " · dòng tiền quá bán" : ""}`,
+      nn == null ? "" : `Khối ngoại ròng 20 phiên <span class="${mau(nn)}">${so(nn, 1)}</span> tỷ`].filter(Boolean)});
+  const R = o.rrg, rr = R?.length ? R[R.length - 1] : null, rr0 = R?.length > 1 ? R[R.length - 2] : null;
+  const n3 = o.n3 || 63, vn = o.vni, ret = N > n3 && c[N - 1 - n3] ? c[N - 1] / c[N - 1 - n3] - 1 : null, vr = vn && N > n3 && vn[N - 1 - n3] && vn[N - 1] ? vn[N - 1] / vn[N - 1 - n3] - 1 : null;
+  const ch = ret != null && vr != null ? ret - vr : null;
+  const rs = rr ? (rr[0] >= 100 && rr[1] >= 100 ? ["t", "Dẫn dắt"] : rr[0] < 100 && rr[1] >= 100 ? ["d", "Cải thiện"] : rr[0] >= 100 ? ["d", "Suy yếu"] : ["g", "Tụt hậu"])
+    : ch == null ? ["", "Chưa đủ dữ liệu"] : ch >= 0.05 ? ["t", "Mạnh hơn thị trường"] : ch <= -0.05 ? ["g", "Yếu hơn thị trường"] : ["d", "Ngang thị trường"];
+  kq.push({id: "rs", ten: "Sức mạnh tương đối", hoi: "Mã mạnh hay yếu hơn thị trường?", muc: rs[0], nhan: rs[1], pp: "kt_rs",
+    so: rr ? `RS ${so(rr[0], 1)} · Mom ${so(rr[1], 1)}` : ch == null ? "" : `${ch > 0 ? "+" : ""}${so(ch * 100, 1)} đpt`,
+    ct: [rr && rr0 ? `RRG so VN-Index: RS-Ratio ${rr[0] >= rr0[0] ? "tăng" : "giảm"}, RS-Momentum ${rr[1] >= rr0[1] ? "tăng" : "giảm"} so kỳ trước` : "",
+      ch == null ? "" : `${o.n3_ten || "3 tháng"}: mã ${pt(ret, 1)} · VN-Index ${pt(vr, 1)}`].filter(Boolean)});
+  const vg = o.vung || [], ht = vg.find(z => z.loai === "ho_tro"), kc = vg.find(z => z.loai === "khang_cu"), trong = vg.find(z => z.loai === "trong");
+  const vz = z => `${so(z.lo, 2)}–${so(z.hi, 2)} (${z.loai === "ho_tro" ? "−" : z.loai === "khang_cu" ? "+" : ""}${so(z.cach * 100, 1)}%) · ${z.cham} lần chạm`;
+  const vgia = !vg.length ? ["", "Chưa đủ dữ liệu"] : trong ? ["d", "Trong vùng giá"] : ht && ht.cach <= 0.03 ? ["t", "Gần hỗ trợ"] : kc && kc.cach <= 0.03 ? ["d", "Gần kháng cự"] : ["d", "Giữa vùng"];
+  kq.push({id: "vg", ten: "Vùng giá", hoi: "Hỗ trợ / kháng cự gần nhất ở đâu?", muc: vgia[0], nhan: vgia[1], pp: "kt_vg", so: "",
+    ct: [trong ? `Đang trong vùng ${so(trong.lo, 2)}–${so(trong.hi, 2)}` : "", ht ? `Hỗ trợ ${vz(ht)}` : "Chưa thấy hỗ trợ bên dưới", kc ? `Kháng cự ${vz(kc)}` : "Chưa thấy kháng cự bên trên"].filter(Boolean)});
+  return kq;
+}
+// ---------------------------------------------------------------- hết hàm thuần kỹ thuật
+Object.assign(PT_PP, {
+  kt_dong: {ten: "Đồng thuận chỉ báo kỹ thuật", ng: "Cách tổng hợp kiểu “Technical Ratings” của TradingView: mỗi chỉ báo bỏ một phiếu Mua / Trung lập / Bán theo quy tắc sách giáo khoa, rồi đếm phiếu. Không dự báo giá – chỉ tóm tắt các chỉ báo đang nghiêng về phía nào.",
+    ct: ["Đường trung bình (6): SMA 20 / 50 / 200, EMA 20 / 50, Ichimoku Kijun 26 – giá trên đường: Mua, dưới: Bán", "RSI 14: < 30 và đang lên → Mua · > 70 và đang xuống → Bán", "Stochastic 14,3,3: %K < 20 và %K > %D → Mua · %K > 80 và %K < %D → Bán", "CCI 20: < −100 và đang lên → Mua · > 100 và đang xuống → Bán", "ADX 14: ADX > 20 và +DI > −DI → Mua · ADX > 20 và −DI > +DI → Bán", "Awesome Oscillator: > 0 và đang lên → Mua · < 0 và đang xuống → Bán", "Momentum 10: đang lên → Mua · đang xuống → Bán", "MACD 12,26,9: MACD > Signal → Mua · < Signal → Bán", "Williams %R 14: < −80 và đang lên → Mua · > −20 và đang xuống → Bán", "Ultimate Oscillator 7,14,28: > 70 → Mua · < 30 → Bán", "Điểm = (số Mua − số Bán) / số chỉ báo tính được, từ −1 đến +1"],
+    doc: [["t", "Mua mạnh / Mua", "điểm ≥ 0,5 / từ 0,1 đến 0,5"], ["d", "Trung lập", "−0,1 < điểm < 0,1"], ["g", "Bán / Bán mạnh", "từ −0,5 đến −0,1 / ≤ −0,5"]],
+    gh: ["Các chỉ báo đều tính từ giá (và khối lượng) nên trùng thông tin nhau; đồng thuận cao không có nghĩa là chắc chắn.", "Đường trung bình theo xu hướng, chỉ báo dao động hay bắt đỉnh / đáy – hai nhóm thường mâu thuẫn khi thị trường đi ngang.", "Khung tuần dùng cả tuần đang chạy; SMA 200 tuần cần ≥ 200 tuần dữ liệu nên có mã chỉ có 14 chỉ báo.", "Là công cụ mô tả, không phải tín hiệu mua / bán của hệ thống Quỹ Bứt Phá."],
+    tk: ["TradingView – Technical Ratings.", "Murphy, J. (1999). Technical Analysis of the Financial Markets.", "Wilder, J. W. (1978). New Concepts in Technical Trading Systems."]},
+  kt_xu: {ten: "Xu hướng", ng: "Xu hướng đọc qua vị trí giá so với các đường trung bình và thứ tự các đường (Dow, Granville), chiều SuperTrend và độ mạnh ADX của Welles Wilder (1978).",
+    ct: ["Điểm xu hướng = tổng dấu của: giá vs SMA20 · giá vs SMA50 · giá vs SMA200 · SMA20 vs SMA50 · SMA50 vs SMA200 · chiều SuperTrend 10,3 (mỗi mục +1 / −1, bỏ mục thiếu dữ liệu)", "ADX 14 ≥ 25: xu hướng mạnh · < 20: yếu / đi ngang"],
+    doc: [["t", "Tăng mạnh / Tăng", "điểm ≥ 4 và ADX ≥ 25 / điểm ≥ 2"], ["d", "Đi ngang", "−2 < điểm < 2"], ["g", "Giảm / Giảm mạnh", "điểm ≤ −2 / ≤ −4 và ADX ≥ 25"]],
+    gh: ["Đường trung bình đi sau giá: xác nhận xu hướng muộn, dễ nhiễu khi thị trường đi ngang.", "ADX chỉ đo độ mạnh, không đo chiều.", "Khung tuần cho bức tranh dài hơn, khung ngày nhạy hơn."],
+    tk: ["Wilder, J. W. (1978). New Concepts in Technical Trading Systems.", "Granville, J. (1960). A Strategy of Daily Stock Market Timing for Maximum Profit.", "Murphy, J. (1999). Technical Analysis of the Financial Markets."]},
+  kt_dl: {ten: "Động lượng", ng: "Động lượng đo tốc độ thay đổi của giá: RSI (Welles Wilder, 1978), MACD (Gerald Appel, cuối thập niên 1970) và Stochastic (George Lane, thập niên 1950).",
+    ct: ["RSI 14 = 100 − 100 / (1 + TB tăng / TB giảm), trung bình Wilder", "MACD = EMA12 − EMA26 · Signal = EMA9 của MACD · Histogram = MACD − Signal", "Stochastic %K 14,3 = vị trí đóng cửa trong biên cao – thấp 14 kỳ, làm mượt 3 kỳ"],
+    doc: [["d", "Quá mua / Quá bán", "RSI ≥ 70 / ≤ 30"], ["t", "Mạnh lên", "histogram MACD dương và tăng"], ["g", "Yếu đi", "histogram MACD âm và giảm"], ["d", "Chậm lại", "histogram dương nhưng giảm, hoặc âm nhưng tăng"]],
+    gh: ["Trong xu hướng mạnh RSI có thể ở vùng quá mua rất lâu – quá mua không đồng nghĩa phải bán.", "MACD đi sau giá; phân kỳ đáng chú ý hơn một lần giao cắt đơn lẻ."],
+    tk: ["Wilder, J. W. (1978). New Concepts in Technical Trading Systems.", "Appel, G. (2005). Technical Analysis: Power Tools for Active Investors.", "Lane, G. (1984). Lane's Stochastics. Technical Analysis of Stocks & Commodities."]},
+  kt_bd: {ten: "Biến động", ng: "Biến động đo độ rộng dao động giá: dải Bollinger (John Bollinger, thập niên 1980) và ATR (Wilder, 1978). Giai đoạn biến động co hẹp thường đi trước một nhịp biến động mạnh (Bollinger Squeeze).",
+    ct: ["ATR 14 % = ATR / giá đóng cửa", "Độ rộng Bollinger 20,2 = (dải trên − dải dưới) / đường giữa", "Phân vị độ rộng = vị trí độ rộng hiện tại trong 120 kỳ gần nhất (0% hẹp nhất, 100% rộng nhất)"],
+    doc: [["d", "Co hẹp", "phân vị ≤ 20% – tích luỹ, dễ bứt phá (chưa biết chiều)"], ["t", "Bình thường", "phân vị 20–80%"], ["g", "Giãn mạnh", "phân vị ≥ 80% – biên dao động lớn, rủi ro cao"]],
+    gh: ["Biến động không cho biết chiều đi tiếp theo.", "Mã thanh khoản thấp có thể co / giãn bất thường chỉ vì vài phiên."],
+    tk: ["Bollinger, J. (2001). Bollinger on Bollinger Bands.", "Wilder, J. W. (1978). New Concepts in Technical Trading Systems."]},
+  kt_tien: {ten: "Dòng tiền", ng: "Dòng tiền kết hợp giá và khối lượng: OBV (Joe Granville, 1963), MFI (Gene Quong và Avrum Soudack, 1989), CMF (Marc Chaikin); ở khung ngày thêm giao dịch ròng của khối ngoại.",
+    ct: ["OBV: cộng khối lượng phiên tăng, trừ phiên giảm; so với trung bình 20 kỳ của chính OBV", "MFI 14: RSI có trọng số khối lượng (giá điển hình × khối lượng)", "CMF 20 = Σ(vị trí đóng cửa trong biên phiên × khối lượng) / Σ khối lượng", "Khối ngoại ròng 20 phiên (tỷ đồng, chỉ khung ngày)", "Điểm = dấu CMF + (OBV trên / dưới TB20) + (MFI trên / dưới 50) [+ dấu khối ngoại]"],
+    doc: [["t", "Tiền vào", "điểm ≥ 2"], ["d", "Trung tính", "−2 < điểm < 2 (MFI ≥ 80 / ≤ 20: dòng tiền quá mua / quá bán)"], ["g", "Tiền ra", "điểm ≤ −2"]],
+    gh: ["Phiên thoả thuận lớn có thể làm lệch OBV / CMF.", "Không tách được ai mua (tổ chức hay cá nhân), trừ phần khối ngoại.", "Phiên đang giao dịch chưa có khối lượng đầy đủ nên các chỉ báo dòng tiền tính tới phiên đã đóng."],
+    tk: ["Granville, J. (1963). Granville's New Key to Stock Market Profits.", "Quong, G., Soudack, A. (1989). Volume-Weighted RSI: Money Flow. Technical Analysis of Stocks & Commodities.", "Chaikin, M. – Chaikin Money Flow."]},
+  kt_rs: {ten: "Sức mạnh tương đối", ng: "So mã với VN-Index bằng đồ thị xoay vòng tương đối (RRG) của Julius de Kempenaer (phát triển từ 2004, công bố rộng rãi 2011): RS-Ratio đo mã mạnh hơn hay yếu hơn chuẩn, RS-Momentum đo sức mạnh đó đang tăng hay giảm. Mã chưa có trong RRG thì so lãi 3 tháng với VN-Index.",
+    ct: ["RS-Ratio: sức mạnh tương đối của mã so với VN-Index, chuẩn hoá quanh 100", "RS-Momentum: tốc độ thay đổi của RS-Ratio, chuẩn hoá quanh 100", "Đuôi nối các điểm theo thời gian; mã thường xoay theo chiều kim đồng hồ qua 4 góc", "Dự phòng: chênh lệch = lãi 3 tháng (63 phiên / 13 tuần) của mã − của VN-Index"],
+    doc: [["t", "Dẫn dắt", "RS-Ratio ≥ 100 và RS-Momentum ≥ 100 (dự phòng: hơn VN-Index ≥ 5 đpt)"], ["d", "Cải thiện / Suy yếu", "một trong hai trục dưới 100 (dự phòng: chênh ±5 đpt)"], ["g", "Tụt hậu", "cả hai trục dưới 100 (dự phòng: kém VN-Index ≥ 5 đpt)"]],
+    gh: ["Là so sánh tương đối: cả nhóm có thể cùng giảm giá tuyệt đối.", "Số kỳ tính (10–90) thay đổi hình dạng đuôi đáng kể.", "RRG dựng sẵn hằng ngày cho các mã thanh khoản lớn; mã khác dùng cách dự phòng."],
+    tk: ["de Kempenaer, J. (2011). Relative Rotation Graphs. RRG Research.", "StockCharts ChartSchool – Relative Rotation Graphs."]},
+  kt_vg: {ten: "Vùng giá (hỗ trợ / kháng cự)", ng: "Hỗ trợ / kháng cự là vùng giá từng đảo chiều nhiều lần (Edwards và Magee, 1948). Trang tìm đỉnh / đáy cục bộ trong 250 nến gần nhất rồi gộp thành vùng – cùng cách của mục Đọc biểu đồ.",
+    ct: ["Đỉnh / đáy cục bộ: cao / thấp nhất 5 nến hai bên", "Gộp các đỉnh / đáy cách nhau ≤ 0,6 ATR thành một vùng; vùng cần ≥ 2 lần chạm", "Hỗ trợ: vùng nằm dưới giá · kháng cự: vùng nằm trên giá · khoảng cách tính từ giá tới mép gần nhất của vùng"],
+    doc: [["t", "Gần hỗ trợ", "giá cách hỗ trợ gần nhất ≤ 3%"], ["d", "Gần kháng cự / Giữa vùng", "giá cách kháng cự ≤ 3%, hoặc không sát vùng nào"], ["d", "Trong vùng giá", "giá đang nằm trong một vùng"]],
+    gh: ["Vùng giá là ước lượng từ lịch sử, có thể bị phá vỡ; càng nhiều lần chạm vùng càng có ý nghĩa.", "Vùng bị phá thường đổi vai (hỗ trợ thành kháng cự và ngược lại)."],
+    tk: ["Edwards, R., Magee, J. (1948). Technical Analysis of Stock Trends.", "Murphy, J. (1999). Technical Analysis of the Financial Markets."]},
+});
+async function ky_thuat(ma, k) {
+  const x = chuoi_gia(k, ma);
+  if (!x || x.c.length < 60) return `<div class="the"><div class="trong">Chưa đủ dữ liệu giá để phân tích kỹ thuật.</div></div>`;
+  const tuan = ST.kt === "W", khung = tuan ? "W" : "D", xx = gop_khung(x, khung), N = xx.c.length;
+  const cat = a => x.tam ? a.slice(0, -1) : a, kin = {d: cat(x.d), o: cat(x.o), h: cat(x.h), l: cat(x.l), c: cat(x.c), v: cat(x.v), nn: cat(x.nn || [])};
+  const [vni, cp] = await Promise.all([tai_vni().catch(() => null), tai_cp().catch(() => null)]);
+  if (!RRG) RRG = (await lay(DL + "rrg.json", false).catch(() => null)) || {};
+  let vung = null; try { vung = cp?._thu?.phan_tich ? cp._thu.phan_tich({o: xx.o, h: xx.h, l: xx.l, c: xx.c, v: xx.v})?.vung || null : null; } catch (e) {}
+  const nn = !tuan && kin.nn.some(z => z != null) ? kin.nn.slice(-20).reduce((a, z) => a + (z || 0), 0) : null;
+  const dt = kt_dong_thuan(xx), tru = kt_tru(xx, {tien: tuan ? gop_khung(kin, "W") : kin, nn, rrg: RRG?.[khung]?.ma?.[ma], vni: vni?.size ? vni_theo(xx.d, vni) : null,
+    n3: tuan ? 13 : 63, n3_ten: "3 tháng", vung});
+  const gn = gia_nay(ma, k), gia = gn.gia ?? x.c[x.c.length - 1];
+  const n52 = Math.min(250, x.c.length), hs = x.h.slice(-n52).filter(cb_ok), ls = x.l.slice(-n52).filter(cb_ok);
+  const hi = hs.length ? Math.max(...hs) : null, lo = ls.length ? Math.min(...ls) : null, vt = hi > lo ? Math.min(1, Math.max(0, (gia - lo) / (hi - lo))) : null;
+  let iv = kin.v.length - 1; while (iv >= 0 && !kin.v[iv]) iv--;
+  const kl = iv >= 0 ? kin.v[iv] : null, tb20 = iv >= 19 ? tb(kin.v.slice(iv - 19, iv + 1).map(z => z || 0)) : null;
+  const kl_t = v => v >= 1e6 ? so(v / 1e6, 2) + " triệu" : so(v, 0);
+  const dau = the(`Phân tích kỹ thuật ${esc(ma)}`, `${tuan ? "khung tuần" : "khung ngày"} · nến cuối ${ngay_vn(xx.d[N - 1])}${x.tam ? " (đang giao dịch)" : ""}`,
+    `<div class="kt-dau"><div class="kt-gia"><b class="${mau(gn.pt)}">${so(gia, 2)}</b>${gn.pt != null ? `<span class="${mau(gn.pt)}">${pt(gn.pt, 2)}</span>` : ""}</div>
+      <div class="m nho">${kl != null ? `KL ${kl_t(kl)}${tb20 ? ` · ${pt(kl / tb20, 0, false)} TB20` : ""} · phiên ${ngay_vn(kin.d[iv])}` : ""}</div></div>
+      ${vt != null ? `<div class="kt-52"><span>Đáy 52T ${so(lo, 2)}</span><span>Vị trí ${pt(vt, 0, false)}</span><span>Đỉnh 52T ${so(hi, 2)}</span></div><div class="kt-thanh"><i style="left:${(vt * 100).toFixed(1)}%"></i></div>` : ""}`,
+    nut(KT_KHUNG, khung, "ktk"));
+  const vi = dt.diem == null ? null : (dt.diem + 1) / 2 * 100;
+  const phieu = s_ => s_ === 1 ? `<span class="t">Mua</span>` : s_ === -1 ? `<span class="g">Bán</span>` : `<span class="m">Trung lập</span>`;
+  const dong = (nhom, a) => a.map(([t, v, s_]) => `<tr><td class="trai">${nhom}</td><td class="trai">${esc(t)}</td><td>${v == null ? "–" : so(v, 2)}</td><td>${phieu(s_)}</td></tr>`).join("");
+  const dong_thuan = the_pt(`Đồng thuận ${dt.n} chỉ báo`, "", `<div class="than"><span class="kt-dt-nhan ${dt.muc}">${esc(dt.nhan)}</span>
+      ${vi != null ? `<div class="kt-thuoc"><i></i><i></i><i></i><i></i><i></i><b style="left:${vi.toFixed(1)}%"></b></div><div class="kt-thuoc-chu m"><span>Bán mạnh</span><span>Bán</span><span>Trung lập</span><span>Mua</span><span>Mua mạnh</span></div>` : ""}
+      <div class="kt-dem m nho"><span>Đường TB: <b class="t">${dt.ma_dem[0]} mua</b> · ${dt.ma_dem[1]} trung lập · <b class="g">${dt.ma_dem[2]} bán</b></span><span>Dao động: <b class="t">${dt.dd_dem[0]}</b> · ${dt.dd_dem[1]} · <b class="g">${dt.dd_dem[2]}</b></span></div></div>
+    <details class="kt-ct"><summary>Xem từng chỉ báo</summary><div class="bang-boc"><table><thead><tr><th class="trai">Nhóm</th><th class="trai">Chỉ báo</th><th>Giá trị</th><th>Phiếu</th></tr></thead><tbody>${dong("Đường TB", dt.ma)}${dong("Dao động", dt.dd)}</tbody></table></div></details>`,
+    nut_pp("kt_dong"));
+  const sau = the_pt("Sáu trụ cột", `${tuan ? "khung tuần" : "khung ngày"} · mỗi trụ một nhóm chỉ báo`, `<div class="pt-luoi">${tru.map(t => `<div class="pt-the kt-tru ${t.muc}"><span class="pt-ten">${esc(t.ten)}</span>${nhan_muc(t.muc, t.nhan)}${t.so ? `<span class="pt-so kt-so">${t.so}</span>` : ""}${t.ct.map(z => `<div class="m nho">${z}</div>`).join("")}<span class="pt-hoi">${esc(t.hoi)}</span><span>${nut_pp(t.pp)}</span></div>`).join("")}</div>`);
+  return dau + dong_thuan + sau + `<p class="m nho" style="margin:6px 2px 0">Công cụ mô tả kỹ thuật – không phải khuyến nghị đầu tư, không phải tín hiệu của hệ thống Quỹ Bứt Phá.</p>`;
 }
 // ---------------------------------------------------------------- ĐỒ THỊ RRG – xoay vòng tương đối so VN-Index (rrg.json dựng hằng ngày)
 let RRG = null;
@@ -3916,7 +4071,7 @@ async function hien_ma(ma, tab) {
     return;
   }
   document.title = `${ma} – ${TAB.find(t => t[0] === tab)?.[1] || ""} – Tra cứu mã`;
-  const ve = {"tong-quan": tong_quan, "tin": tin, "ho-so": ho_so, "lanh-dao": lanh_dao, "co-dong": co_dong, "co-tuc": co_tuc, "tai-chinh": tai_chinh, "phan-tich": phan_tich,
+  const ve = {"tong-quan": tong_quan, "tin": tin, "ho-so": ho_so, "lanh-dao": lanh_dao, "co-dong": co_dong, "co-tuc": co_tuc, "tai-chinh": tai_chinh, "phan-tich": phan_tich, "ky-thuat": ky_thuat,
     "chi-so": chi_so, "dinh-gia": dinh_gia, "lich-su": lich_su, "bao-cao": bao_cao, "tai-lieu": tai_lieu, "he-thong": he_thong}[tab] || tong_quan;
   const than = await ve(ma, k);
   nd.innerHTML = dau_ma(ma, k, tab) + than;
@@ -3928,6 +4083,7 @@ function gan_su_kien(ma, k, tab) {
   const ve_lai = () => hien_ma(ma, tab);
   document.querySelectorAll("[data-nen]").forEach(b => b.onclick = () => { ST.nen = +b.dataset.nen; ve_lai(); });
   document.querySelectorAll("[data-ky]").forEach(b => b.onclick = () => { ST.ky = b.dataset.ky; ve_lai(); });
+  document.querySelectorAll("[data-ktk]").forEach(b => b.onclick = () => { ST.kt = b.dataset.ktk; ve_lai(); });
   document.querySelectorAll("[data-bang]").forEach(b => b.onclick = () => { ST.bang = b.dataset.bang; ve_lai(); });
   document.querySelectorAll("[data-ls]").forEach(b => b.onclick = () => { ST.ls = b.dataset.ls; ST.ls_n = 30; ve_lai(); });
   document.querySelectorAll("[data-sk]").forEach(b => b.onclick = () => { ST.sk = b.dataset.sk; ve_lai(); });
