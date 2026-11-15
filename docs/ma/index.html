@@ -119,10 +119,25 @@ a.huy:hover{text-decoration:none;box-shadow:inset 0 0 0 1px currentColor}
 @media (max-width:900px){.hai,.ba{grid-template-columns:minmax(0,1fr)}}
 .bieu{position:relative}
 .bieu svg{display:block;width:100%;height:auto}
-.hieu-suat{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--luoi)}
-.hieu-suat div{padding:8px 6px;text-align:center;box-shadow:inset -1px 0 0 var(--luoi)}
-.hieu-suat .n{color:var(--mo);font-size:12px}.hieu-suat b{font-size:14px}
-@media (max-width:600px){.hieu-suat{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.hieu-suat{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;padding:10px 12px 4px;border-top:1px solid var(--luoi)}
+.hieu-suat button{all:unset;box-sizing:border-box;cursor:pointer;padding:7px 4px;text-align:center;border-radius:10px;background:var(--nhat);border:1.5px solid transparent}
+.hieu-suat button:focus-visible{outline:2px solid var(--nhan);outline-offset:1px}.hieu-suat [aria-pressed=true]{border-color:var(--chu)}
+.hieu-suat .n{display:block;color:var(--chu2);font-size:12px}.hieu-suat b{font-size:14px}
+.hieu-suat .t1{background:color-mix(in srgb,var(--tang) 9%,var(--the))}.hieu-suat .t2{background:color-mix(in srgb,var(--tang) 17%,var(--the))}.hieu-suat .t3{background:color-mix(in srgb,var(--tang) 28%,var(--the))}
+.hieu-suat .g1{background:color-mix(in srgb,var(--giam) 9%,var(--the))}.hieu-suat .g2{background:color-mix(in srgb,var(--giam) 17%,var(--the))}.hieu-suat .g3{background:color-mix(in srgb,var(--giam) 28%,var(--the))}
+.hs-dong{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;padding:6px 14px 0;font-size:13px}.hs-dong span{color:var(--chu2)}
+@media (max-width:600px){.hieu-suat{display:flex;overflow-x:auto;scrollbar-width:none}.hieu-suat button{flex:0 0 74px}}
+.kt-ds{display:flex;flex-direction:column;padding:2px 10px 8px}
+.kt-dong{border-bottom:1px solid var(--luoi)}.kt-dong:last-child{border-bottom:0}
+.kt-dong>summary,a.kt-dong{display:flex;align-items:center;gap:12px;padding:12px 4px;cursor:pointer;list-style:none;color:inherit;text-decoration:none}
+.kt-dong>summary::-webkit-details-marker{display:none}
+.kt-dong>summary::after,a.kt-dong::after{content:"›";flex:none;color:var(--mo);font-size:22px;line-height:1;transition:transform .15s}
+.kt-dong[open]>summary::after{transform:rotate(90deg)}
+.kt-ic{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;font-size:19px;font-weight:700;background:color-mix(in srgb,currentColor 13%,transparent)}
+.kt-ic.xu{color:#1f6feb}.kt-ic.dl{color:#e8710a}.kt-ic.bd{color:#9b3fd1}.kt-ic.dt{color:#0e9fb3}.kt-ic.rs{color:#c2185b}.kt-ic.vg{color:#0f8a4a}
+.kt-hoi{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.kt-hoi b{font-size:15px}.kt-hoi span{color:var(--chu2);font-size:13px}
+.kt-kq{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;max-width:42%}
+.kt-mo{display:flex;flex-direction:column;gap:4px;padding:0 4px 12px 56px}
 /* nến */
 .nen-khung{position:relative;padding:4px 8px 6px}
 .nen-khung canvas{display:block;width:100%;height:360px;touch-action:pan-y}
@@ -487,7 +502,6 @@ dialog#pp::backdrop{background:#1d243066}
 .kt-thuoc-chu{display:grid;grid-template-columns:repeat(5,1fr);text-align:center;font-size:11px}
 .kt-dem{display:flex;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;margin-top:10px}
 .kt-ct summary{cursor:pointer;padding:8px 14px 12px;color:var(--nhan);font-weight:600;font-size:13.5px}
-.pt-the.kt-tru{cursor:default}.pt-the.kt-tru:hover{transform:none;box-shadow:none}.kt-so{font-size:18px}
 .pp-doc{list-style:none;padding:0!important}.pp-doc li{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:6px 0}.pp-doc li b{grid-column:2}.pp-doc li .cham{grid-row:1}.pp-doc span{grid-column:2;color:var(--mo);font-size:.92em;line-height:1.4}   /* như app: tên mức trên, ngưỡng dưới */
 .pp-dong{position:absolute;right:12px;top:10px;border:0;background:none;font-size:24px;line-height:1;color:var(--mo);cursor:pointer}
 @media (max-width:600px){.pt-luoi{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px}.pt-the{padding:10px}.pt-so{font-size:18px}
@@ -543,7 +557,7 @@ function vgm_html(v) {                          // "B A C B" → Giá trị B ·
   return c.map((x, i) => `${i === 3 ? "<b>" : ""}${VGM_TEN[i]} <span class="${lop(x)}">${esc(x)}</span>${i === 3 ? "</b>" : ""}`).join(" · ");
 }
 const KHO = {};                     // mã → {r, g, n, b}
-const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true, ema: [], dc: 0, mk: true, nguon: "vc", tin_n: 20, pel: "pe", pen: 1250, thang: null, ss_x: "roe", ss_y: "pb_h", ss_s: "von", ss_peers: {}, ss_an: {}};
+const ST = {ky: "q", bang: "kd", ls: "gia", ls_n: 30, nen: 130, ma_tb: [20, 50], kl: true, sk: "tat", khung: "D", duoi: "kl", cd: "co-cau", cs: 0, cs_chon: null, tl: "BCTC", pt: "the", dp6: true, ema: [], dc: 0, mk: true, nguon: "vc", tin_n: 20, pel: "pe", pen: 1250, thang: null, ss_x: "roe", ss_y: "pb_h", ss_s: "von", ss_peers: {}, ss_an: {}, hs: 5};
 let CS_NGANH = null;
 const $ = s => document.querySelector(s);
 const BAN = "__BAN__";
@@ -2610,7 +2624,8 @@ function tong_quan(ma, k) {
        <div class="bd-cong"><span class="goi">kéo trục giá / thời gian để co giãn · cuộn để phóng to · bấm đúp trục để đặt lại</span>
          <span class="nut"><button data-bdc="pt" aria-pressed="false" title="Thang % so với nến đầu vùng xem">%</button><button data-bdc="log" aria-pressed="false" title="Thang logarit">log</button><button data-bdc="tu" aria-pressed="true" title="Cột giá tự co giãn theo vùng đang xem + trục thời gian về khoảng đã chọn">tự động</button></span>
          <span class="nut"><button data-bdc="vua" title="Xem toàn bộ lịch sử trong khung">⤢ vừa khung</button><button data-bdc="full" title="Toàn màn hình: công cụ vẽ, chỉ báo, watchlist">⛶ toàn màn hình</button></span></div></div>
-       <div class="hieu-suat">${hs.map(([t, v]) => `<div><div class="n">${t}</div><b class="${mau(v)}">${pt(v, 2)}</b></div>`).join("")}</div>`,
+       <div class="hieu-suat">${hs.map(([t, v], i) => `<button class="${hs_lop(v)}" data-hs="${i}" aria-pressed="${i === ST.hs}"><span class="n">${t}</span><b class="${mau(v)}">${pt(v, 2)}</b></button>`).join("")}</div>
+       <div id="hs-khoang">${hs_khoang(x, ST.hs)}</div>`,
       nut([[22, "1T"], [66, "3T"], [130, "6T"], [250, "1N"], [750, "3N"], [1250, "5N"], [99999, "Tất cả"]], ST.nen, "nen"));
   } else h += the("Biểu đồ giá", `<a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(ma_tv(ma, k))}" target="_blank" rel="noopener">mở trên TradingView</a>`, `<div class="trong">Chưa có lịch sử giá cho mã này (cập nhật xoay vòng mỗi sáng).</div>`);
   // thống kê giá
@@ -3343,6 +3358,18 @@ function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi
     ct: [trong ? `Đang trong vùng ${so(trong.lo, 2)}–${so(trong.hi, 2)}` : "", ht ? `Hỗ trợ ${vz(ht)}` : "Chưa thấy hỗ trợ bên dưới", kc ? `Kháng cự ${vz(kc)}` : "Chưa thấy kháng cự bên trên"].filter(Boolean)});
   return kq;
 }
+const KT_IC = {xu: "↗", dl: "»", bd: "∿", dt: "⇄", rs: "◎", vg: "≡"};
+const HS_TEN = ["1 ngày", "1 tuần", "1 tháng", "3 tháng", "6 tháng", "1 năm", "3 năm", "5 năm", "Từ đầu năm"], HS_N = [1, 5, 21, 63, 126, 250, 750, 1250, 0];
+const hs_lop = v => v == null || !isFinite(v) || !v ? "" : (v > 0 ? "t" : "g") + (Math.abs(v) >= 0.2 ? 3 : Math.abs(v) >= 0.05 ? 2 : 1);
+function hs_khoang(x, i) {                              // ô hiệu suất đang chọn → "N qua · từ ngày · cách đáy / đỉnh" + thanh thấp – cao
+  const L = x.c.length - 1, nam = String(x.d[L]).slice(0, 4), dn = x.d.findIndex(d => String(d).startsWith(nam));
+  const n = HS_N[i] || (dn >= 0 ? L - dn + 1 : 250), a = Math.max(0, L - n + 1);
+  const hs = x.h.slice(a).filter(cb_ok), ls = x.l.slice(a).filter(cb_ok), g = x.c[L];
+  if (!hs.length || !ls.length || !cb_ok(g)) return "";
+  const hi = Math.max(...hs), lo = Math.min(...ls), vt = hi > lo ? Math.min(1, Math.max(0, (g - lo) / (hi - lo))) : 0.5;
+  return `<div class="hs-dong"><b>${HS_TEN[i] === "Từ đầu năm" ? "Từ đầu năm" : HS_TEN[i] + " qua"} · từ ${ngay_vn(x.d[a])}</b><span>Cách đáy <b class="t">${pt(g / lo - 1, 2)}</b> · đỉnh <b class="g">${pt(g / hi - 1, 2)}</b></span></div>` +
+    `<div class="kt-52"><span>THẤP ${so(lo, 2)}</span><span>CAO ${so(hi, 2)}</span></div><div class="kt-thanh"><i style="left:${(vt * 100).toFixed(1)}%"></i></div>`;
+}
 // ---------------------------------------------------------------- hết hàm thuần kỹ thuật
 Object.assign(PT_PP, {
   kt_dong: {ten: "Đồng thuận chỉ báo kỹ thuật", ng: "Cách tổng hợp kiểu “Technical Ratings” của TradingView: mỗi chỉ báo bỏ một phiếu Mua / Trung lập / Bán theo quy tắc sách giáo khoa, rồi đếm phiếu. Không dự báo giá – chỉ tóm tắt các chỉ báo đang nghiêng về phía nào.",
@@ -3461,8 +3488,10 @@ async function ky_thuat(ma, k) {
       <div class="kt-dem m nho"><span>Đường TB: <b class="t">${dt.ma_dem[0]} mua</b> · ${dt.ma_dem[1]} trung lập · <b class="g">${dt.ma_dem[2]} bán</b></span><span>Dao động: <b class="t">${dt.dd_dem[0]}</b> · ${dt.dd_dem[1]} · <b class="g">${dt.dd_dem[2]}</b></span></div></div>
     <details class="kt-ct"><summary>Xem từng chỉ báo</summary><div class="bang-boc"><table><thead><tr><th class="trai">Nhóm</th><th class="trai">Chỉ báo</th><th>Giá trị</th><th>Phiếu</th></tr></thead><tbody>${dong("Đường TB", dt.ma)}${dong("Dao động", dt.dd)}</tbody></table></div></details>`,
     nut_pp("kt_dong"));
-  const sau = the_pt("Sáu trụ cột", `${tuan ? "khung tuần" : "khung ngày"} · mỗi trụ một nhóm chỉ báo`, `<div class="pt-luoi">${tru.map(t => `<div class="pt-the kt-tru ${t.muc}"><span class="pt-ten">${esc(t.ten)}</span>${nhan_muc(t.muc, t.nhan)}${t.so ? `<span class="pt-so kt-so">${t.so}</span>` : ""}${t.ct.map(z => `<div class="m nho">${z}</div>`).join("")}<span class="pt-hoi">${esc(t.hoi)}</span><span>${nut_pp(t.pp)}</span></div>`).join("")}</div>`);
-  return dau + dong_thuan + sau + `<p class="m nho" style="margin:6px 2px 0">Công cụ mô tả kỹ thuật – không phải khuyến nghị đầu tư, không phải tín hiệu của hệ thống Quỹ Bứt Phá.</p>`;
+  const sau = the_pt("Sáu trụ cột", `${tuan ? "khung tuần" : "khung ngày"} · bấm từng dòng để xem chi tiết`, `<div class="kt-ds">${tru.map(t => `<details class="kt-dong"><summary><span class="kt-ic ${t.id}" aria-hidden="true">${KT_IC[t.id] || "•"}</span><span class="kt-hoi"><b>${esc(t.ten)}</b><span>${esc(t.hoi)}</span></span><span class="kt-kq">${nhan_muc(t.muc, t.nhan)}${t.so ? `<span class="m nho">${t.so}</span>` : ""}</span></summary><div class="kt-mo">${t.ct.map(z => `<div class="m nho">${z}</div>`).join("")}<span>${nut_pp(t.pp)}</span></div></details>`).join("")}</div>`);
+  const khac = the_pt("Công cụ khác", "", `<div class="kt-ds"><a class="kt-dong" href="#rrg"><span class="kt-ic rs" aria-hidden="true">◎</span><span class="kt-hoi"><b>Đồ thị RRG nhiều mã</b><span>Nhóm mã nào đang dẫn dắt, cải thiện, suy yếu?</span></span></a>
+    <a class="kt-dong" href="#loc"><span class="kt-ic xu" aria-hidden="true">⌕</span><span class="kt-hoi"><b>Bộ lọc mã</b><span>Lọc toàn thị trường theo KQKD hoặc chỉ báo kỹ thuật</span></span></a></div>`);
+  return dau + dong_thuan + sau + khac + `<p class="m nho" style="margin:6px 2px 0">Công cụ mô tả kỹ thuật – không phải khuyến nghị đầu tư, không phải tín hiệu của hệ thống Quỹ Bứt Phá.</p>`;
 }
 // ---------------------------------------------------------------- ĐỒ THỊ RRG – xoay vòng tương đối so VN-Index (rrg.json dựng hằng ngày)
 let RRG = null;
@@ -4194,6 +4223,8 @@ async function hien_ma(ma, tab) {
 function gan_su_kien(ma, k, tab) {
   const ve_lai = () => hien_ma(ma, tab);
   document.querySelectorAll("[data-nen]").forEach(b => b.onclick = () => { ST.nen = +b.dataset.nen; ve_lai(); });
+  document.querySelectorAll("[data-hs]").forEach(b => b.onclick = () => { ST.hs = +b.dataset.hs; const x = chuoi_gia(k, ma), el = $("#hs-khoang");
+    if (x && el) el.innerHTML = hs_khoang(x, ST.hs); document.querySelectorAll("[data-hs]").forEach(z => z.setAttribute("aria-pressed", String(z === b))); });
   document.querySelectorAll("[data-ky]").forEach(b => b.onclick = () => { ST.ky = b.dataset.ky; ve_lai(); });
   document.querySelectorAll("[data-ktk]").forEach(b => b.onclick = () => { ST.kt = b.dataset.ktk; ve_lai(); });
   document.querySelectorAll("[data-bang]").forEach(b => b.onclick = () => { ST.bang = b.dataset.bang; ve_lai(); });
