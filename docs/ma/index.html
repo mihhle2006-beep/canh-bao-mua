@@ -2095,6 +2095,11 @@ function gop_khung(x, khung) {                          // nến ngày → tuầ
   return o;
 }
 let BD_GIA = null, BD_DK = null;
+function bo_bd_gia() {                                  // xoá biểu đồ giá: gỡ lớp hình vẽ TRƯỚC (xem VE.go – tránh lỗi "Object is disposed")
+  try { window.BD_VE?.go?.(); } catch (e) {}
+  if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} }
+  BD_GIA = null;
+}
 let CG_GON = (() => { try { const v = localStorage.getItem("cg_gon"); return v == null ? CHAM && (innerWidth < 700 || innerHeight < 520) : v === "1"; } catch (e) { return false; } })();   // điện thoại: mặc định thu gọn   // khung chỉ số góc trái: thu gọn còn ▸
 function dat_cg(v) {                                     // chế độ "Thu gọn khung chỉ số" (menu ƒx · mũi tên ▸ / ▾ trên biểu đồ)
   CG_GON = v; try { localStorage.setItem("cg_gon", v ? "1" : "0"); } catch (e) {}
@@ -2254,7 +2259,7 @@ async function ve_bd_gia(el, x0, them = {}) {
   const BG = CB.bg && them.ma && (ST.khung === "D" || PHUT(ST.khung)) ? await lay(DL + "buoc_gia/" + them.ma + ".json", false) : null;
   const CW = CB.cw && them.ma && !CHI_SO_TEN[them.ma] && !PHUT(ST.khung) ? await tai_cw() : null;
   const LH = CB.lh && them.ma ? ((await tai_lenh_he()) || {}) : null, k_ss = MA_OK(CB.ss) && CB.ss !== them.ma ? await tai_ma(CB.ss) : null;
-  if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; }
+  bo_bd_gia();
   el.querySelectorAll(".chu-bd,.chu-pane").forEach(z => z.remove());
   let kh = ST.khung, x = PHUT(kh) ? await chuoi_phut(them.ma, kh) : null, bao = "";
   if (PHUT(kh) && !x) { bao = "Mã này chưa có nến phút (chỉ ~400 mã thanh khoản cao nhất) – đang hiện khung ngày"; kh = "D"; }
@@ -2499,7 +2504,7 @@ async function ve_bd_gia(el, x0, them = {}) {
     const ts_ = ch.timeScale(); let w0 = el.clientWidth, v0 = ts_.getVisibleLogicalRange();
     ts_.subscribeVisibleLogicalRangeChange(r => {
       const w = el.clientWidth;
-      if (w !== w0 && v0) { w0 = w; const v = v0; requestAnimationFrame(() => { try { ts_.setVisibleLogicalRange(v); } catch (e) {} }); return; }
+      if (w !== w0 && v0) { w0 = w; const v = v0; requestAnimationFrame(() => { if (BD_GIA !== ch) return; try { ts_.setVisibleLogicalRange(v); } catch (e) {} }); return; }
       if (r) v0 = {from: r.from, to: r.to};
     });
   }
@@ -4358,7 +4363,7 @@ function gan_su_kien(ma, k, tab) {
   const bb = $("#bang-bctc"); if (bb) bb.scrollLeft = bb.scrollWidth;
   const bd = $("#bd-gia");
   if (bd) ve_bd_gia(bd, chuoi_gia(k, ma), {gn: gia_nay(ma, k), n: k.n, r: k.r, ma}).catch(() => { bd.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
-  else if (BD_GIA) { try { BD_GIA.remove(); } catch (e) {} BD_GIA = null; BD_DK = null; }
+  else if (BD_GIA) { bo_bd_gia(); BD_DK = null; }
   const bp = $("#bd-pe"), P = bp ? chuoi_pe(k, ma) : null;
   if (bp && P) ve_bd_pe(bp, P).catch(() => { bp.innerHTML = '<div class="trong">Không tải được thư viện biểu đồ – thử tải lại trang.</div>'; });
   else if (BD_PE) { try { BD_PE.remove(); } catch (e) {} BD_PE = null; }
@@ -4548,7 +4553,7 @@ function fs_dong(khong_dinh_tuyen = false) {
   document.body.appendChild($("#ds-td")); document.body.appendChild($("#rail"));
   $("#fs")?.remove();
   if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-  BD_GIA = null; BD_DK = null;
+  bo_bd_gia(); BD_DK = null;                            // trước đây chỉ gán null: biểu đồ toàn màn hình không được huỷ (rò bộ nhớ)
   if (!khong_dinh_tuyen) dinh_tuyen(); ds_td_ve();
 }
 document.addEventListener("fullscreenchange", () => { fs_nut(); if (!document.fullscreenElement && FS && !FS.trang) fs_dong(); });
