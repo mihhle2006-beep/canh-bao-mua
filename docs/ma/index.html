@@ -459,7 +459,7 @@ tr.chon td{background:var(--nhan-nen)}
 .cl-ds b{font-variant-numeric:tabular-nums;white-space:nowrap}
 .dg-ds{padding:10px 14px 4px}
 .dg-dong{display:grid;grid-template-columns:minmax(150px,230px) 1fr 64px 58px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--luoi)}
-.dg-dong.tat{opacity:.55}.dg-dong b,.dg-dong>span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.dg-dong.tat{opacity:.55}.dg-dong.loai{opacity:.6}.dg-dong.loai b{text-decoration:line-through}.dg-dong b,.dg-dong>span:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .dg-ten small{display:block;color:var(--mo);font-size:11px}
 .dg-ray{position:relative;height:18px;background:linear-gradient(var(--luoi),var(--luoi)) center/100% 2px no-repeat}
 .dg-ray i{position:absolute;top:3px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--giam);box-shadow:0 0 0 2px #fff}
@@ -877,7 +877,7 @@ function dau_ma(ma, k, tab) {
   return `<div class="ma-dau"><div class="ma-tren"><div class="ma-ten">
     <h2>${esc(ma)}<span class="nhan-san">${esc(r.san || LIVE[ma]?.san || "")}</span>${GIU.has(ma) ? `<span class="huy giu">Đang giữ</span>` : ""}<button class="nut-td" data-td="${esc(ma)}" aria-pressed="${TD.has(ma)}">${TD.has(ma) ? "✓ Đang theo dõi" : "+ Theo dõi"}</button></h2>
     <div class="ten-dd" title="${esc(ten)}">${esc(ten)}${r.nganh ? " · " + esc(r.nganh) : ""}</div>
-    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${pc_html(dong_ds(ma))}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/9</a>` : ""}${sk.z ? `<a class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
+    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${pc_html(dong_ds(ma))}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/9</a>` : ""}${sk.z ? `<a class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">${sk.z.mh === "Z" ? "Z" : "Z''"} ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
     <div class="ma-gia"><span class="lon ${c}">${gn.gia != null ? so(gn.gia, 2) : "–"}</span><span class="pill ${c || "d"} ${c}">${td != null ? (td > 0 ? "+" : "") + so(td, 2) : ""} (${pt(gn.pt, 2)})</span>
     <div class="nho">${gn.live ? (MKT?.dang_gd ? `<span class="cham-song"></span>trong phiên · cập nhật ${esc(String(MKT?.cap_nhat || "").slice(11, 16))}` : "đóng cửa phiên " + esc(ngay_vn(MKT?.phien || gn.ngay))) : gn.ngay ? "phiên " + ngay_vn(gn.ngay) : ""}</div></div></div>
     <nav class="tab" aria-label="Mục">${TAB.map(([id, t]) => `<a href="#${esc(ma)}/${id}"${id === tab ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}</nav></div>`;
@@ -2889,7 +2889,8 @@ function so_nganh(ma, k) {
 // ---------------------------------------------------------------- PHÂN TÍCH TÀI CHÍNH – thẻ điểm 6 trụ (tính tại trình duyệt từ BCTC năm)
 const PT_CC = [["the", "Thẻ điểm"], ["z", "Z-Score"], ["f", "F-Score"], ["dp", "DuPont"], ["m", "M-Score"], ["cl", "Chất lượng LN"], ["dg", "Định giá"], ["tt", "Tăng trưởng"]];
 const BDS_RE = /bất động sản|xây dựng|xây lắp/i;
-const PT_DG = {r: 0.12, g_cuoi: 0.03, nam: 5, y_graham: 5};        // chiết khấu 12% · tăng trưởng cuối 3% · 5 năm · lợi suất tham chiếu Graham 5%
+const PT_DG = {r: 0.12, g_cuoi: 0.03, nam: 5, y_graham: 5};
+const nguong_z = z => z?.mh === "Z" ? [1.81, 2.99] : [1.1, 2.6];   // [nguy hiểm <, an toàn >] theo mô hình Altman        // chiết khấu 12% · tăng trưởng cuối 3% · 5 năm · lợi suất tham chiếu Graham 5%
 const chia = (a, c) => a != null && c != null && c !== 0 && isFinite(a) && isFinite(c) ? a / c : null;
 const kep = (v, a, b) => v == null ? null : Math.max(a, Math.min(b, v));
 const cagr = (dau, cuoi, n) => dau > 0 && cuoi > 0 && n > 0 ? (cuoi / dau) ** (1 / n) - 1 : null;
@@ -2984,6 +2985,7 @@ function pt_dinh_gia(S, r, n, gia_d, so_cp, tt, loai) {    // định giá đa p
   const pp = [];
   const them = (ten, v, ghi) => pp.push({ten, v: v > 0 && isFinite(v) ? v : null, ghi});
   them("Graham Number", eps && bvps ? Math.sqrt(22.5 * eps * bvps) : null, "√(22,5 × EPS × BVPS)");
+  them("Graham (1949)", eps ? eps * (8.5 + 2 * g * 100) : null, `EPS × (8,5 + 2g) · g ${pt(g, 1, false)}`);
   them("Graham (1974)", eps ? eps * (8.5 + 2 * g * 100) * 4.4 / PT_DG.y_graham : null, `g ${pt(g, 1, false)} · Y ${PT_DG.y_graham}%`);
   const nganh = DS.filter(x => x.nganh && x.nganh === r.nganh && x.ma !== r.ma);
   const pe_n = trung_vi(nganh.map(x => { const p = gia_h(x); return x.eps > 0 && p ? p / x.eps : null; }).filter(v => v > 3 && v < 40));
@@ -3008,18 +3010,21 @@ function pt_dinh_gia(S, r, n, gia_d, so_cp, tt, loai) {    // định giá đa p
     them("Chiết khấu cổ tức 2 giai đoạn", dps ? chiet(dps, g2) : null, dps ? `cổ tức tiền ${so(dps, 0)} đ/CP · g ${pt(g2, 1, false)}` : "không trả cổ tức tiền");
   }
   them("Giá trị hợp lý hệ thống", r.gia_tri, esc(r.cach_dg || "").slice(0, 80));
-  const co = pp.filter(x => x.v), tv = trung_vi(co.map(x => x.v));
+  const co0 = pp.filter(x => x.v);                          // loại khỏi dải: lệch > 3 lần trung vị các phương pháp còn lại
+  if (co0.length >= 3) co0.forEach(x => { const tk = trung_vi(co0.filter(y => y !== x).map(y => y.v));
+    if (tk && (x.v > 3 * tk || x.v < tk / 3)) { x.loai = true; x.ghi = (x.ghi ? x.ghi + " · " : "") + `loại – lệch > 3 lần trung vị các cách còn lại (${so(tk / 1000, 2)})`; } });
+  const co = pp.filter(x => x.v && !x.loai), tv = trung_vi(co.map(x => x.v));
   const bien = tv && gia_d ? (tv - gia_d) / tv : null;
   const pe = eps && gia_d ? gia_d / eps : null, peg = pe && tt.cg.ln > 0 ? pe / (tt.cg.ln * 100) : null;
   return {pp, tv, bien, pe, peg, muc: bien == null ? "" : bien >= 0.15 ? "t" : bien <= -0.15 ? "g" : "d"};
 }
 
 const PT_PP = {                                             // "Phương pháp" của từng công cụ
-  z: {ten: "Z-Score của Altman", ng: "Edward Altman (1968) dùng phân tích biệt số trên các doanh nghiệp sản xuất Mỹ để dự báo phá sản trong 2 năm. Bản Z'' (1995) bỏ biến doanh thu / tài sản và giá thị trường để dùng được cho doanh nghiệp ngoài ngành sản xuất và thị trường mới nổi – là bản trang này dùng.",
-    ct: ["Z'' = 6,56·X1 + 3,26·X2 + 6,72·X3 + 1,05·X4", "X1 = (TS ngắn hạn − nợ ngắn hạn) / tổng TS   (vốn lưu động)", "X2 = LN chưa phân phối / tổng TS   (tích luỹ)", "X3 = EBIT / tổng TS   (sinh lời trên tài sản)", "X4 = VCSH / tổng nợ   (đệm vốn)"],
-    doc: [["t", "An toàn", "Z'' > 2,6"], ["d", "Vùng xám", "1,1 ≤ Z'' ≤ 2,6"], ["g", "Nguy hiểm", "Z'' < 1,1"]],
-    gh: ["Không dùng cho ngân hàng, chứng khoán, bảo hiểm (cấu trúc nợ khác hẳn).", "Doanh nghiệp chia cổ tức nhiều có LN chưa phân phối thấp → X2 thấp dù an toàn.", "Là ảnh chụp 1 năm; nên xem cùng xu hướng."],
-    tk: ["Altman, E. (1968). Financial Ratios, Discriminant Analysis and the Prediction of Corporate Bankruptcy. Journal of Finance.", "Altman, E. (2005). An emerging market credit scoring system for corporate bonds. Emerging Markets Review."]},
+  z: {ten: "Z-Score của Altman", ng: "Edward Altman (1968) dùng phân tích biệt số trên 66 doanh nghiệp sản xuất Mỹ để dự báo phá sản trong 2 năm. Bản Z'' (1995) bỏ vốn hoá và doanh thu / tài sản để dùng cho doanh nghiệp ngoài ngành sản xuất và thị trường mới nổi. Trang chọn mô hình theo ngành ICB và kiểm chứng chéo bằng 2 mô hình độc lập: Springate (1978) và Zmijewski (1984).",
+    ct: ["Z = 1,2·X1 + 1,4·X2 + 3,3·X3 + 0,6·X4 + 1,0·X5   (sản xuất)", "Z'' = 6,56·X1 + 3,26·X2 + 6,72·X3 + 1,05·X4   (phi sản xuất, thị trường mới nổi)", "X1 = (TS ngắn hạn − nợ ngắn hạn) / tổng TS   (vốn lưu động)", "X2 = LN chưa phân phối / tổng TS   (tích luỹ)", "X3 = EBIT / tổng TS   (sinh lời trên tài sản)", "X4 = vốn hoá / tổng nợ (Z) · VCSH sổ sách / tổng nợ (Z'')", "X5 = doanh thu / tổng TS   (chỉ Z)", "Mô hình chính theo ngành ICB: sản xuất, hoá chất, thực phẩm – đồ uống, dược, kim loại, cơ khí, năng lượng → Z; còn lại → Z''", "Kiểm chứng chéo: Springate S = 1,03·A + 3,07·B + 0,66·C + 0,4·D   (A vốn lưu động / TS · B EBIT / TS · C LNTT / nợ ngắn hạn · D doanh thu / TS)", "Zmijewski X = −4,3 − 4,5·ROA + 5,7·nợ / TS − 0,004·TSNH / nợ ngắn hạn   (xác suất kiệt quệ = 1 / (1 + e^−X))", "Số BCTC lấy cuối năm gần nhất; vốn hoá lấy theo giá lúc cập nhật dữ liệu"],
+    doc: [["t", "An toàn", "Z > 2,99 (Z'' > 2,6)"], ["d", "Vùng xám", "1,81 ≤ Z ≤ 2,99 (1,1 ≤ Z'' ≤ 2,6)"], ["g", "Nguy hiểm", "Z < 1,81 (Z'' < 1,1)"]],
+    gh: ["Không dùng cho ngân hàng, chứng khoán, bảo hiểm (cấu trúc bảng cân đối khác hẳn).", "Hệ số ước lượng trên dữ liệu Mỹ; dùng như tín hiệu cảnh báo sớm, không phải xác suất phá sản tuyệt đối.", "Doanh nghiệp bất động sản có vốn lưu động lớn bất thường (tồn kho dự án) có thể cho Z cao giả tạo.", "Z'' ở đây dùng VCSH sổ sách đúng theo Altman 1995 – khác Z'' dùng vốn hoá trên một số trang dữ liệu, nên có thể thấp hơn với doanh nghiệp P/B cao.", "Z gốc dùng vốn hoá nên đổi theo giá cổ phiếu; doanh nghiệp chia cổ tức nhiều có LN chưa phân phối thấp → X2 thấp dù an toàn.", "Là ảnh chụp 1 năm; nên xem cùng xu hướng và các trụ khác."],
+    tk: ["Altman, E. (1968). Financial Ratios, Discriminant Analysis and the Prediction of Corporate Bankruptcy. Journal of Finance.", "Altman, E., Hartzell, J., Peck, M. (1995). Emerging Markets Corporate Bonds: A Scoring System. Salomon Brothers.", "Altman, E. (2005). An emerging market credit scoring system for corporate bonds. Emerging Markets Review.", "Springate, G. (1978). Predicting the Possibility of Failure in a Canadian Firm. Simon Fraser University.", "Zmijewski, M. (1984). Methodological Issues Related to the Estimation of Financial Distress Prediction Models. Journal of Accounting Research."]},
   f: {ten: "F-Score của Piotroski", ng: "Joseph Piotroski (2000) chấm 9 tiêu chí nhị phân trên BCTC để tách doanh nghiệp giá trị đang khoẻ lên khỏi doanh nghiệp đang yếu đi; nhóm điểm cao vượt nhóm điểm thấp rõ rệt trong mẫu nghiên cứu.",
     ct: ["Sinh lời (4): ROA > 0 · CFO > 0 · ROA tăng · CFO > LNST", "Đòn bẩy & thanh khoản (3): vay dài hạn / TS giảm · hệ số thanh toán hiện hành tăng · không phát hành thêm cổ phiếu", "Hiệu quả (2): biên gộp tăng · vòng quay tài sản tăng", "Mỗi tiêu chí đạt = 1 điểm, tổng 0–9 (năm kiểm toán gần nhất so năm trước)"],
     doc: [["t", "Khoẻ", "7–9 điểm"], ["d", "Trung bình", "4–6 điểm"], ["g", "Yếu", "0–3 điểm"]],
@@ -3040,11 +3045,11 @@ const PT_PP = {                                             // "Phương pháp" 
     doc: [["t", "Đáng tin", "không cờ đỏ, tối đa 1 chỉ tiêu vàng"], ["d", "Cần xem kỹ", "1 cờ đỏ hoặc ≥ 2 chỉ tiêu vàng (gồm M-Score)"], ["g", "Cờ đỏ", "≥ 2 cờ đỏ"]],
     gh: ["Doanh nghiệp đang mở rộng mạnh có thể bị cảnh báo dù lành mạnh – xem cùng tăng trưởng.", "Bất động sản / xây lắp: tồn kho tính bằng năm nên không chấm chu kỳ tiền mặt.", "Không áp dụng cho ngân hàng / chứng khoán / bảo hiểm (dòng tiền HĐKD chịu chi phối của cho vay, tự doanh)."],
     tk: ["Sloan, R. (1996). Do Stock Prices Fully Reflect Information in Accruals and Cash Flows about Future Earnings? The Accounting Review.", "Dechow, P., Ge, W., Schrand, C. (2010). Understanding earnings quality. Journal of Accounting and Economics."]},
-  dg: {ten: "Định giá đa phương pháp", ng: "Không có cách định giá nào đúng tuyệt đối. Trang tính nhiều cách độc lập rồi lấy trung vị làm giá trị nội tại, so với giá thị trường theo tinh thần “biên an toàn” của Benjamin Graham. Trung vị giúp một phương pháp lệch không kéo cả kết quả.",
-    ct: ["Graham Number = √(22,5 × EPS × BVPS)", "Graham 1974: V = EPS × (8,5 + 2g) × 4,4 / Y   (g = CAGR LNST mẹ thấp hơn giữa 3 năm và 5 năm – tránh năm gốc ở đáy chu kỳ – kẹp 0–15%; Y = 5%)", "P/E ngành × EPS · P/B ngành × BVPS   (trung vị ngành, bỏ bội số bất thường)", "P/E lịch sử × EPS · P/B lịch sử × BVPS   (bình quân 20 quý gần nhất)", `DCF: FCF/CP bình quân 3 năm tăng g trong 5 năm, sau đó ${PT_DG.g_cuoi * 100}%, chiết khấu ${PT_DG.r * 100}%`, `Cổ tức 2 giai đoạn: cổ tức tiền/CP 12 tháng qua (lịch sự kiện; thiếu thì từ LCTT nếu ≥ 0,5% giá) tăng theo SGR (kẹp 0–15%) 5 năm, sau đó ${PT_DG.g_cuoi * 100}%, chiết khấu ${PT_DG.r * 100}%`, "Biên an toàn = (trung vị giá trị − giá) / trung vị · PEG = P/E ÷ (CAGR LNST 3 năm × 100)"],
+  dg: {ten: "Định giá đa phương pháp", ng: "Không có cách định giá nào đúng tuyệt đối. Trang tính tới 10 cách độc lập (9 cách kinh điển + giá trị hợp lý của hệ thống) rồi lấy trung vị làm giá trị nội tại, so với giá thị trường theo tinh thần “biên an toàn” của Benjamin Graham. Trung vị và luật loại phương pháp lệch giúp một cách sai không kéo cả kết quả.",
+    ct: ["Graham Number = √(22,5 × EPS × BVPS)", "Graham 1949: V = EPS × (8,5 + 2g) · Graham 1974: V = EPS × (8,5 + 2g) × 4,4 / Y   (Y = lãi tham chiếu 5%)", "g = CAGR LNST mẹ thấp hơn giữa 3 năm và 5 năm – tránh năm gốc ở đáy chu kỳ – kẹp 0–15%", "P/E ngành × EPS · P/B ngành × BVPS   (trung vị ngành; bội số ngoài 3–40 / 0,3–10 không dùng)", "P/E lịch sử × EPS · P/B lịch sử × BVPS   (bình quân 20 quý gần nhất, cần ≥ 8 quý hợp lệ)", `DCF: FCF/CP bình quân 3 năm tăng g trong 5 năm, sau đó ${PT_DG.g_cuoi * 100}%, chiết khấu ${PT_DG.r * 100}%`, `Cổ tức 2 giai đoạn (Gordon): cổ tức tiền/CP 12 tháng qua (lịch sự kiện; thiếu thì từ LCTT nếu ≥ 0,5% giá) tăng theo SGR (kẹp 0–15%) 5 năm, sau đó ${PT_DG.g_cuoi * 100}%, chiết khấu ${PT_DG.r * 100}%`, "Giá trị hợp lý hệ thống: định giá tổng hợp nhiều phương pháp của hệ thống (như Quỹ Bứt Phá)", "Loại khỏi dải: phương pháp cho giá cao hơn 3 lần hoặc thấp hơn 1/3 trung vị các phương pháp còn lại (cần ≥ 3 phương pháp có số)", "Biên an toàn = (trung vị giá trị − giá) / trung vị · PEG = P/E ÷ (CAGR LNST 3 năm × 100)"],
     doc: [["t", "Chiết khấu", "biên an toàn ≥ 15%"], ["d", "Hợp lý", "−15% < biên an toàn < 15%"], ["g", "Đắt", "biên an toàn ≤ −15%"]],
-    gh: ["EPS 4 quý gần nhất và BVPS hiện tại; DCF / cổ tức dùng BCTC năm.", "EPS các năm ở Việt Nam thường không điều chỉnh cổ tức cổ phiếu nên g lấy theo LNST cổ đông mẹ.", "Doanh nghiệp chu kỳ (thép, phân bón…) đang ở đỉnh lợi nhuận sẽ trông rẻ – xem cùng P/E lịch sử."],
-    tk: ["Graham, B. The Intelligent Investor (bản 1973) và Security Analysis.", "Damodaran, A. Investment Valuation."]},
+    gh: ["Phương pháp cần EPS / BVPS dương, FCF dương hoặc có trả cổ tức tiền – doanh nghiệp lỗ chỉ còn ít phương pháp.", "Suất chiết khấu 12%, tăng trưởng dài hạn 3%, lãi tham chiếu 5% và trần tăng trưởng 15% là giả định chung cho thị trường Việt Nam, không chỉnh theo từng ngành.", "EPS 4 quý gần nhất và BVPS hiện tại; DCF / cổ tức dùng BCTC năm. EPS các năm ở Việt Nam thường không điều chỉnh cổ tức cổ phiếu nên g lấy theo LNST cổ đông mẹ.", "Doanh nghiệp chu kỳ (thép, phân bón…) đang ở đỉnh lợi nhuận sẽ trông rẻ – xem cùng P/E lịch sử.", "Không phải khuyến nghị mua / bán; thị trường có thể trả giá khác giá trị nội tại rất lâu vì kỳ vọng tương lai."],
+    tk: ["Graham, B. (1949). The Intelligent Investor (và bản 1973).", "Graham, B., Dodd, D. (1934). Security Analysis.", "Gordon, M. (1959). Dividends, Earnings, and Stock Prices. Review of Economics and Statistics.", "Damodaran, A. Investment Valuation."]},
   tt: {ten: "Tăng trưởng bền vững", ng: "Robert Higgins (1977) chỉ ra doanh nghiệp chỉ tăng trưởng được tối đa bằng ROE × tỷ lệ lợi nhuận giữ lại nếu không vay thêm hay phát hành thêm. Tăng nhanh hơn mức đó lâu dài thì phải trả bằng đòn bẩy hoặc pha loãng.",
     ct: ["SGR = ROE × (1 − tỷ lệ chi trả cổ tức tiền)", "Tỷ lệ chi trả = cổ tức tiền đã trả năm t / LNST mẹ năm t−1, bình quân 3 năm", "Chênh lệch = tăng trưởng doanh thu − SGR", "CAGR n năm = (cuối / đầu)^(1/n) − 1"],
     doc: [["t", "Tăng trưởng", "CAGR LNST 3 năm ≥ 15%, không cờ đỏ"], ["d", "Chậm", "CAGR 5–15% hoặc có cờ"], ["g", "Suy giảm", "CAGR < 5% hoặc ≥ 2 cờ đỏ"]],
@@ -3083,8 +3088,8 @@ async function phan_tich(ma, k) {
   const do_cl = cl ? cl.c.filter(x => x[2] === "g").length + (m?.muc === "g" ? 1 : 0) : 0, vang_cl = cl ? cl.c.filter(x => x[2] === "d").length + (m?.muc === "d" ? 1 : 0) : 0;
   const muc_cl = !cl ? "" : do_cl >= 2 ? "g" : do_cl === 1 || vang_cl >= 2 ? "d" : "t";
   const TRU = [
-    ["z", "An toàn", "Doanh nghiệp có nguy cơ phá sản không?", z ? (z.vung === "An toàn" ? "t" : z.vung === "Nguy hiểm" ? "g" : "d") : "", z ? z.vung : kad, z ? `Z'' ${so(z.z, 2)}` : "",
-      z ? vung_thanh(z.z, 0, 5, 1.1, 2.6) : ""],
+    ["z", "An toàn", "Doanh nghiệp có nguy cơ phá sản không?", z ? (z.vung === "An toàn" ? "t" : z.vung === "Nguy hiểm" ? "g" : "d") : "", z ? z.vung : kad, z ? `${z.mh === "Z" ? "Z" : "Z''"} ${so(z.z, 2)}` : "",
+      z ? vung_thanh(z.z, 0, 5, ...nguong_z(z)) : ""],
     ["f", "Sức khoẻ & xu hướng", "Nền tảng tài chính đang khoẻ lên hay yếu đi?", f ? (f.diem >= 7 ? "t" : f.diem <= 3 ? "g" : "d") : "", f ? (f.diem >= 7 ? "Khoẻ" : f.diem <= 3 ? "Yếu" : "Trung bình") : kad, f ? `${f.diem}/9` : "",
       f ? `<div class="cham-f">${f.tc.map(x => `<i class="${x[1] ? "co" : ""}"></i>`).join("")}</div>` : ""],
     ["dp", "Hiệu quả sinh lời", "ROE đến từ đâu và có bền không?", muc_dp, roe == null ? "" : muc_dp === "t" ? "Hiệu quả" : muc_dp === "g" ? "Kém" : "Trung bình", roe != null ? `ROE ${pt(roe, 1, false)}` : "",
@@ -3092,7 +3097,7 @@ async function phan_tich(ma, k) {
     ["cl", "Chất lượng lợi nhuận", "Lợi nhuận có thật, có dấu hiệu làm đẹp không?", muc_cl, !cl ? kad : muc_cl === "t" ? "Đáng tin" : muc_cl === "g" ? "Cờ đỏ" : "Cần xem kỹ", cl ? cl.c[0][1] + " CFO/LNST" : "",
       m?.m != null ? `<div class="m nho">M-Score ${so(m.m, 2)} · ${do_cl} cờ đỏ · ${vang_cl} vàng</div>` : ""],
     ["dg", "Định giá", "Giá hiện tại đắt hay rẻ so giá trị nội tại?", dg.muc, dg.muc === "t" ? "Chiết khấu" : dg.muc === "g" ? "Đắt" : dg.muc === "d" ? "Hợp lý" : "", dg.tv ? `nội tại ${so(dg.tv / 1000, 2)}` : "",
-      dg.bien != null ? `<div class="m nho">biên an toàn <b class="${mau(dg.bien)}">${pt(dg.bien)}</b> · ${dg.pp.filter(x => x.v).length} phương pháp</div>` : ""],
+      dg.bien != null ? `<div class="m nho">biên an toàn <b class="${mau(dg.bien)}">${pt(dg.bien)}</b> · ${dg.pp.filter(x => x.v && !x.loai).length} phương pháp</div>` : ""],
     ["tt", "Tăng trưởng bền vững", "Tăng trưởng có tự tài trợ được không?", tt.muc, tt.muc === "t" ? "Tăng trưởng" : tt.muc === "g" ? "Suy giảm" : tt.muc === "d" ? "Chậm" : "", tt.cg.ln != null ? `CAGR LN ${pt(tt.cg.ln, 1)}` : "",
       tt.sgr != null ? `<div class="m nho">SGR ${pt(tt.sgr, 1, false)}${tt.g_dt != null ? ` · doanh thu ${pt(tt.g_dt, 1)}` : ""}</div>` : ""]];
   const dem = m_ => TRU.filter(x => x[3] === m_).length;
@@ -3107,10 +3112,19 @@ async function phan_tich(ma, k) {
   const ko = `<div class="trong">Chỉ tính cho doanh nghiệp thường (không áp dụng ngân hàng / chứng khoán / bảo hiểm) hoặc chưa đủ BCTC năm.</div>`;
   let h = "";
   if (ST.pt === "z") {
-    const x = z?.x || [], w = [6.56, 3.26, 6.72, 1.05], ten = ["Vốn lưu động / TS", "LN chưa phân phối / TS", "EBIT / TS", "VCSH / nợ"];
-    h = the_pt("Z-Score", `Altman Z'' · năm ${esc(z?.nam || nam)}`, z ? `<div class="than"><span class="diem-lon ${TRU[0][3]}">${so(z.z, 2)}</span> ${nhan_muc(TRU[0][3], z.vung)}
-      <div style="margin:12px 0 4px">${vung_thanh(z.z, 0, 5, 1.1, 2.6)}</div><div class="m nho" style="display:flex;justify-content:space-between"><span>Nguy hiểm &lt; 1,1</span><span>Xám</span><span>An toàn &gt; 2,6</span></div></div>
-      ${x.length === 4 ? `<div class="bang-boc"><table><thead><tr><th class="trai">Thành phần</th><th>Giá trị</th><th>Hệ số</th><th>Đóng góp</th></tr></thead><tbody>${x.map((v, i) => `<tr><td class="trai">X${i + 1} · ${ten[i]}</td><td>${so(v, 3)}</td><td>${so(w[i], 2)}</td><td><b>${so(v * w[i], 2)}</b></td></tr>`).join("")}</tbody></table></div>` : ""}` : ko, nut_pp("z"));
+    const x = z?.x || [], goc = z?.mh === "Z", [lo, hi] = nguong_z(z), vn = v => String(v).replace(".", ",");
+    const w = goc ? [1.2, 1.4, 3.3, 0.6, 1.0] : [6.56, 3.26, 6.72, 1.05];
+    const ten = ["Vốn lưu động / TS", "LN chưa phân phối / TS", "EBIT / TS", goc ? "Vốn hoá / nợ" : "VCSH / nợ", "Doanh thu / TS"];
+    const cheo = [];                                         // kiểm chứng chéo: [mô hình, giá trị, mức, kết luận, ngưỡng]
+    if (goc && z.z2 != null) cheo.push(["Altman Z'' (1995)", so(z.z2, 2), z.z2 > 2.6 ? "t" : z.z2 >= 1.1 ? "d" : "g", z.z2 > 2.6 ? "An toàn" : z.z2 >= 1.1 ? "Vùng xám" : "Nguy hiểm", "> 2,6 an toàn · < 1,1 nguy hiểm"]);
+    if (z?.s != null) cheo.push(["Springate S (1978)", so(z.s, 3), z.s >= 0.862 ? "t" : "g", z.s >= 0.862 ? "Ổn" : "Nguy cơ", "< 0,862 nguy cơ"]);
+    if (z?.zm != null) cheo.push(["Zmijewski X (1984)", `${so(z.zm, 2)}<small class="m" style="display:block">xác suất ${pt(1 / (1 + Math.exp(-z.zm)), 0, false)}</small>`, z.zm <= 0 ? "t" : "g", z.zm <= 0 ? "Ổn" : "Nguy cơ", "X > 0 (xác suất > 50%) nguy cơ"]);
+    const on = [TRU[0][3] === "t", ...cheo.map(c => c[2] === "t")].filter(Boolean).length;
+    const bang_cheo = cheo.length ? `<div class="m nho" style="margin:16px 0 6px;padding:0 14px;font-weight:650;letter-spacing:.04em">KIỂM CHỨNG CHÉO · ${on}/${cheo.length + 1} mô hình không báo nguy cơ</div>
+      <div class="bang-boc"><table><thead><tr><th class="trai">Mô hình · ngưỡng</th><th>Giá trị</th><th>Kết luận</th></tr></thead><tbody>${cheo.map(([t, v, m_, kl, ng]) => `<tr><td class="trai" style="white-space:normal">${esc(t)}<small class="m" style="display:block">${esc(ng)}</small></td><td>${v}</td><td>${nhan_muc(m_, kl)}</td></tr>`).join("")}</tbody></table></div>` : "";
+    h = the_pt("Z-Score", `Altman ${goc ? "Z (ngành sản xuất)" : "Z'' (phi sản xuất / thị trường mới nổi)"} · năm ${esc(z?.nam || nam)}`, z ? `<div class="than"><span class="diem-lon ${TRU[0][3]}">${so(z.z, 2)}</span> ${nhan_muc(TRU[0][3], z.vung)}
+      <div style="margin:12px 0 4px">${vung_thanh(z.z, 0, 5, lo, hi)}</div><div class="m nho" style="display:flex;justify-content:space-between"><span>Nguy hiểm &lt; ${vn(lo)}</span><span>Xám</span><span>An toàn &gt; ${vn(hi)}</span></div></div>
+      ${x.length === w.length ? `<div class="bang-boc"><table><thead><tr><th class="trai">Thành phần</th><th>Giá trị</th><th>Hệ số</th><th>Đóng góp</th></tr></thead><tbody>${x.map((v, i) => `<tr><td class="trai">X${i + 1} · ${ten[i]}</td><td>${so(v, 3)}</td><td>${so(w[i], 2)}</td><td><b>${so(v * w[i], 2)}</b></td></tr>`).join("")}</tbody></table></div>` : ""}${bang_cheo}` : ko, nut_pp("z"));
   } else if (ST.pt === "f") {
     h = the_pt("F-Score", `Piotroski · năm ${esc(f?.nam || nam)}`, f ? `<div class="than"><span class="diem-lon ${TRU[1][3]}">${f.diem}</span><span class="m"> / 9</span> ${nhan_muc(TRU[1][3], TRU[1][4])}<div class="cham-f lon">${f.tc.map(x => `<i class="${x[1] ? "co" : ""}"></i>`).join("")}</div></div>
       <ul class="f-ds">${f.tc.map(([t, ok, gc]) => `<li><span class="k ${ok ? "t" : ok === false ? "g" : "m"}">${ok ? "✓" : ok === false ? "✗" : "–"}</span><span>${esc(t)}${gc ? ` <span class="m">(${esc(gc)})</span>` : ""}</span></li>`).join("")}</ul>` : ko, nut_pp("f"));
@@ -3151,8 +3165,8 @@ async function phan_tich(ma, k) {
       cl.nam.map(x => `<tr><td class="trai">${esc(x.nam)}</td><td class="${mau(x.cfo)}">${ty(x.cfo)}</td><td>${ty(x.ln)}</td><td>${x.cfo_ln == null ? "–" : so(x.cfo_ln, 2)}</td><td>${pt(x.don_tich, 1, false)}</td><td class="${mau(x.fcf)}">${pt(x.fcf, 1, false)}</td><td>${so(x.dso, 0)}</td><td>${so(x.dio, 0)}</td><td>${so(x.dpo, 0)}</td><td><b>${so(x.ccc, 0)}</b></td></tr>`).join("") +
       `</tbody></table></div>`, nut_pp("cl")) : the_pt("Chất lượng lợi nhuận", "", ko, nut_pp("cl"));
   } else if (ST.pt === "dg") {
-    const co = dg.pp.filter(x => x.v), max = Math.max(...co.map(x => x.v), gia_d || 0) * 1.08, X = v => v / max * 100;
-    const ray = co.length ? `<div class="dg-ds">${dg.pp.map(x => `<div class="dg-dong${x.v ? "" : " tat"}"><span class="dg-ten">${esc(x.ten)}<small>${x.ghi || ""}</small></span>
+    const co = dg.pp.filter(x => x.v && !x.loai), max = Math.max(...co.map(x => x.v), gia_d || 0) * 1.08, X = v => Math.min(100, v / max * 100);
+    const ray = co.length ? `<div class="dg-ds">${dg.pp.map(x => `<div class="dg-dong${x.v ? "" : " tat"}${x.loai ? " loai" : ""}"><span class="dg-ten">${esc(x.ten)}<small>${x.ghi || ""}</small></span>
       <div class="dg-ray">${gia_d ? `<s style="left:${X(gia_d)}%"></s>` : ""}${dg.tv ? `<u style="left:${X(dg.tv)}%"></u>` : ""}${x.v ? `<i class="${x.v >= gia_d ? "t" : "g"}" style="left:${X(x.v)}%"></i>` : ""}</div>
       <b>${x.v ? so(x.v / 1000, 2) : "–"}</b><span class="${x.v && gia_d ? mau(x.v / gia_d - 1) : "m"}">${x.v && gia_d ? pt(x.v / gia_d - 1) : ""}</span></div>`).join("")}</div>
       <div class="dg-chu m nho"><span><s></s> giá hiện tại ${so((gia_d || 0) / 1000, 2)}</span><span><u></u> trung vị giá trị ${so((dg.tv || 0) / 1000, 2)}</span></div>` : ko;
