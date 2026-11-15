@@ -93,6 +93,11 @@ a.huy:hover{text-decoration:none;box-shadow:inset 0 0 0 1px currentColor}
 .tab a[aria-current=page]{color:var(--nhan);border-bottom-color:var(--nhan);font-weight:650}
 @media (max-width:600px){.dau-trong .gg{flex:1 1 100%;order:3}.dau-chinh{padding:22px 0 18px}.dau-chinh h2{font-size:24px}.ma-dau{top:auto;position:relative}.ma-gia{text-align:left}.ma-gia .lon{font-size:24px}.an-dt{display:none}
   .lien{margin-left:0}}
+/* điện thoại: thanh đầu gọn 2 dòng – tên + liên kết cuộn ngang 1 dòng, ô tìm bên dưới (trước: 3 dòng ~150px dính trên cùng) */
+@media (max-width:600px){.dau-trong{gap:6px 12px;padding:6px 12px}.dau-trong h1{font-size:15px}
+  .dau-trong .lien{flex:1 1 0;min-width:0;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:14px;font-size:13.5px;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  .dau-trong .lien::-webkit-scrollbar{display:none}.dau-trong .gg input{height:36px}}
 /* lưới số */
 .luoi-so{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .luoi-so>div{padding:9px 14px;box-shadow:inset -1px -1px 0 var(--luoi)}
@@ -864,7 +869,7 @@ function dau_ma(ma, k, tab) {
     <div class="ten-dd" title="${esc(ten)}">${esc(ten)}${r.nganh ? " · " + esc(r.nganh) : ""}</div>
     <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${pc_html(dong_ds(ma))}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/9</a>` : ""}${sk.z ? `<a class="huy ${sk.z.vung === "An toàn" ? "re" : sk.z.vung === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">Z ${so(sk.z.z, 2)} · ${esc(sk.z.vung)}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
     <div class="ma-gia"><span class="lon ${c}">${gn.gia != null ? so(gn.gia, 2) : "–"}</span><span class="pill ${c || "d"} ${c}">${td != null ? (td > 0 ? "+" : "") + so(td, 2) : ""} (${pt(gn.pt, 2)})</span>
-    <div class="nho">${gn.live ? `${MKT?.dang_gd ? "<span class=\"cham-song\"></span>trong phiên" : "đóng cửa"} · ${esc(MKT?.cap_nhat || "")}` : gn.ngay ? "phiên " + ngay_vn(gn.ngay) : ""}</div></div></div>
+    <div class="nho">${gn.live ? (MKT?.dang_gd ? `<span class="cham-song"></span>trong phiên · cập nhật ${esc(String(MKT?.cap_nhat || "").slice(11, 16))}` : "đóng cửa phiên " + esc(ngay_vn(MKT?.phien || gn.ngay))) : gn.ngay ? "phiên " + ngay_vn(gn.ngay) : ""}</div></div></div>
     <nav class="tab" aria-label="Mục">${TAB.map(([id, t]) => `<a href="#${esc(ma)}/${id}"${id === tab ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}</nav></div>`;
 }
 const o_so = (n, v, c = "") => `<div><div class="n">${n}</div><div class="v">${v}</div>${c ? `<div class="c">${c}</div>` : ""}</div>`;
