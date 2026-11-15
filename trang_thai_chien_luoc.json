@@ -512,14 +512,13 @@
   "so_chi_bao": 8,
   "vni": 1734.93,
   "cl": 1,
-  "ten_cl": "QUỸ BỨT PHÁ – tối đa 8 mã · 0.75% rủi ro/lệnh × hệ số sụt × nhiệt · ≤ 20%/mã",
+  "ten_cl": "QUỸ BỨT PHÁ",
   "ty_trong": {
    "A0": 0.0,
    "B": 1.0,
    "VNI": 0.0,
    "TIEN": 0.0
   },
-  "dieu_kien_doi": "chuyển CL2 nếu cuối tháng điểm ≥ 5 (cần thêm 5 điểm)",
   "di_ngang": {
    "dang": true,
    "bien": 9.660086162003513,
