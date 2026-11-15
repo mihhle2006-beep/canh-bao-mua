@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Tab Kỹ thuật (docs/ma/index.html): đồng thuận 15 chỉ báo + 6 trụ – chạy hàm thuần trong node với chuỗi giá giả."""
+"""Tab Kỹ thuật (docs/ma/index.html): đồng thuận 15 chỉ báo + 6 trụ (Xu hướng 5 nhóm, Động lượng phiếu dao động + phân kỳ)
+– chạy hàm thuần trong node với chuỗi giá giả."""
 import json
 import re
 import shutil
@@ -53,9 +54,45 @@ const a = kt_tru(len, {nn: 50, vni, n3: 63, vung}), b = kt_tru(xuong, {nn: -20, 
 console.log(JSON.stringify({a, b}));""")
     a, b = ({t["id"]: t for t in kq[k]} for k in ("a", "b"))
     assert list(a) == ["xu", "dl", "bd", "dt", "rs", "vg"] and all(t["pp"] for t in kq["a"])
-    assert a["xu"]["nhan"] in ("Tăng", "Tăng mạnh") and b["xu"]["nhan"] in ("Giảm", "Giảm mạnh")
+    assert a["xu"]["nhan"] == "Tăng" and b["xu"]["nhan"] == "Giảm"           # đa số 5 nhóm: MA khung · trật tự MA · ADX · mây · SAR
+    assert a["xu"]["so"] == "5/5 nhóm tăng" and len(a["xu"]["ct"]) == 5
+    for t in (a["dl"], b["dl"]):                                           # động lượng: 5 chỉ báo dao động
+        m, tl, bn = (int(z) for z in re.findall(r"(\d+) (?:Mua|Trung lập|Bán)", t["ct"][0]))
+        assert m + tl + bn == 5 and t["nhan"] in ("Tích cực", "Trung lập", "Tiêu cực")
     assert a["rs"]["nhan"] == "Mạnh hơn thị trường"                        # không RRG → so lãi 3 tháng với VN-Index
     assert b["rs"]["nhan"] == "Tụt hậu" and "RS 98,0" in b["rs"]["so"]     # RRG: cả 2 trục < 100
     assert a["vg"]["nhan"] == "Gần kháng cự" and "Kháng cự 96,00–97,00" in " ".join(a["vg"]["ct"])
     assert b["vg"]["nhan"] == "Chưa đủ dữ liệu"
     assert "Khối ngoại ròng 20 phiên" in " ".join(a["dt"]["ct"])
+
+
+def test_xu_huong_thieu_du_lieu_va_di_ngang():
+    kq = _chay(CHUOI + """
+const ngan = kt_tru(tao(60, 0.1))[0], it = kt_tru(tao(15, 0.1))[0];
+const x = tao(300, 0.15), c = x.c.slice(), N = c.length;           // giữa xu hướng tăng, 30 phiên cuối rơi về MA → nhóm lệch nhau
+for (let i = N - 30; i < N; i++) { c[i] = c[N - 31] - (i - N + 31) * 0.55; }
+const lech = kt_tru({...x, c, h: c.map(v => v + 0.5), l: c.map(v => v - 0.5)})[0];
+console.log(JSON.stringify({ngan, it, lech}));""")
+    assert kq["ngan"]["nhan"] == "Tăng" and kq["ngan"]["so"] == "4/4 nhóm tăng"          # < 78 nến: bỏ nhóm Ichimoku
+    assert "chưa đủ 78 nến" in kq["ngan"]["ct"][3] and "MA200" not in kq["ngan"]["ct"][1]
+    assert kq["it"]["nhan"] == "Chưa đủ dữ liệu"
+    s = kq["lech"]
+    dau = [z.split("</b>")[0] for z in s["ct"]]                             # phiếu từng nhóm (thẻ <b> đầu dòng)
+    v = [("Tăng" in z) - ("Giảm" in z) for z in dau]
+    tg, gi = v.count(1), v.count(-1)
+    assert s["nhan"] == ("Tăng" if tg * 2 > 5 else "Giảm" if gi * 2 > 5 else "Đi ngang")
+
+
+def test_phan_ky():
+    kq = _chay("""
+const nen = (n, f) => Array.from({length: n}, (_, i) => f(i));
+const dinh = nen(50, i => i === 20 ? 12 : i === 40 ? 13 : 10), day = nen(50, i => i === 20 ? 8 : i === 40 ? 7 : 10);
+const h = nen(50, i => Math.max(dinh[i], 10)), l = nen(50, i => Math.min(day[i], 10));
+const r_giam = nen(50, i => i === 20 ? 80 : i === 40 ? 70 : 50), r_tang = nen(50, i => i === 20 ? 20 : i === 40 ? 30 : 50);
+const a = kt_phan_ky(dinh, l, r_giam), b = kt_phan_ky(h, day, r_tang), c = kt_phan_ky(dinh, l, r_tang);
+const cu = kt_phan_ky(dinh.concat(nen(30, () => 10)), l.concat(nen(30, () => 10)), r_giam.concat(nen(30, () => 50)));
+console.log(JSON.stringify({a, b, c, cu}));""")
+    assert kq["a"]["giam"] and not kq["a"]["tang"] and kq["a"]["dinh"] == [20, 40]   # giá đỉnh cao dần, RSI đỉnh thấp dần
+    assert kq["b"]["tang"] and not kq["b"]["giam"] and kq["b"]["day"] == [20, 40]    # giá đáy thấp dần, RSI đáy cao dần
+    assert not kq["c"]["giam"]                                                     # RSI cùng chiều giá → không phân kỳ
+    assert not kq["cu"]["giam"]                                                    # đỉnh sau đã quá 25 nến → bỏ
