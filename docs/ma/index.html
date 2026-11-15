@@ -514,6 +514,25 @@ dialog#pp::backdrop{background:#1d243066}
 .rrg-bang .cham{vertical-align:middle}
 .rrg-o{display:inline-flex;gap:6px;align-items:center;cursor:pointer}.rrg-o input{margin:0;accent-color:var(--nhan);width:16px;height:16px}
 .rrg-bang tr.tat td{opacity:.55}.rrg-goi{font-size:14px;fill:var(--mo)}
+.ng-noi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 14px}
+.ng-o{border:1px solid var(--vien);border-radius:10px;padding:10px 12px;background:var(--nhat);cursor:pointer;text-align:left;font:inherit;color:inherit;min-width:0}
+.ng-o[aria-pressed=true]{border-color:var(--nhan);background:var(--nhan-nen)}.ng-o b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ng-o .ng-p{display:block;font-weight:650;font-size:16px;margin:2px 0}
+.ng-dem{font-size:12px;color:var(--mo);white-space:nowrap}.ng-dem i{display:inline-block;width:7px;height:7px;border-radius:50%;margin:0 3px 0 6px;vertical-align:1px}.ng-dem i:first-child{margin-left:0}
+.ng-dem .ct{background:var(--tang)}.ng-dem .cg{background:var(--giam)}.ng-dem .cd{background:var(--dung)}
+.ng-cay>details{border-top:1px solid var(--luoi)}.ng-cay summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px}
+.ng-cay summary::-webkit-details-marker{display:none}.ng-cay summary::before{content:"›";color:var(--mo);width:10px;font-size:18px;line-height:1;transition:transform .15s}
+.ng-cay details[open] summary::before{transform:rotate(90deg)}
+.ng-dong{display:flex;align-items:center;gap:10px;padding:9px 14px 9px 34px;border-top:1px dashed var(--luoi)}
+.ng-vach{width:4px;height:30px;border-radius:2px;flex:none}.ng-vach.t{background:var(--tang)}.ng-vach.g{background:var(--giam)}.ng-vach.d{background:var(--dung)}
+.ng-ten{flex:1;min-width:0}.ng-ten small{display:block;color:var(--mo);font-size:11.5px}.ng-ten a{font-weight:650;cursor:pointer}
+.ng-phai{text-align:right;white-space:nowrap}.ng-phai b{display:block}
+.ng-dau{padding:12px 14px 4px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ng-cap{display:inline-block;font-size:11px;font-weight:650;letter-spacing:.4px;color:var(--nhan);background:var(--nhan-nen);border-radius:6px;padding:2px 8px}
+.ng-dau h3{margin:6px 0 0;font-size:20px}.ng-pt{font-size:22px;font-weight:700}
+.ng-ct{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:8px 14px 12px}
+.ng-ct>div{border:1px solid var(--vien);border-radius:10px;padding:8px 10px;min-width:0}.ng-ct .n{font-size:12px;color:var(--mo)}.ng-ct .v{font-size:17px;font-weight:650}
+svg.spark{width:64px;height:20px;display:block;margin-left:auto}
+@media (max-width:600px){.ng-noi,.ng-ct{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -3281,7 +3300,7 @@ function kt_phan_ky(gh, gl, osc, k = 5, tam = 60, gan = 25) {   // phân kỳ os
   const hai = a => a.length >= 2 && a[a.length - 1] >= N - 1 - gan ? [a[a.length - 2], a[a.length - 1]] : null, D = hai(dinh), Y = hai(day);
   return {giam: !!D && gh[D[1]] > gh[D[0]] && osc[D[1]] < osc[D[0]], tang: !!Y && gl[Y[1]] < gl[Y[0]] && osc[Y[1]] > osc[Y[0]], dinh: D, day: Y};
 }
-function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi nến x = {d, h, l, c, v}; o: {dt (kt_dong_thuan), nam (250 | 52), cd {pt mua chủ động, ngay, tam}, tien (nến đã đóng), nn (tỷ, khung ngày), rrg [[RS-Ratio, RS-Mom]…], vni [giá theo nến], n3, vung (doc_bd)}
+function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi nến x = {d, h, l, c, v}; o: {dt (kt_dong_thuan), rs_pt (RS 0–99), cung [[mã, RS]…], hang [thứ, trong], nam (250 | 52), cd {pt mua chủ động, ngay, tam}, tien (nến đã đóng), nn (tỷ, khung ngày), rrg [[RS-Ratio, RS-Mom]…], vni [giá theo nến], n3, vung (doc_bd)}
   const {h, l, c} = x, N = c.length, g = kt_v(c), ok = cb_ok, kq = [];
   // Xu hướng = đa số phiếu của 5 nhóm (như app): giá so MA khung · trật tự MA · ADX ±DI · mây Ichimoku · Parabolic SAR
   const [s5, s20, s50, s200] = [5, 20, 50, 200].map(n => kt_v(cb_sma(c, n))), dm = cb_dmi(h, l, c, 14), adx = kt_v(dm.adx), pdi = kt_v(dm.pdi), mdi = kt_v(dm.mdi);
@@ -3342,15 +3361,22 @@ function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi
     cd?.pt == null ? "" : `${phieu_n(tp[3], VR)} Mua chủ động ${pt(cd.pt, 0, false)}${cd.ngay ? ` phiên ${esc(cd.ngay)}` : ""}${cd.tam ? " (đang giao dịch)" : ""}`,
     nn == null ? "" : `${phieu_n(tp[4], VR)} Khối ngoại ròng 20 phiên <span class="${mau(nn)}">${so(nn, 1)}</span> tỷ`,
     mf >= 80 ? "MFI ≥ 80: dòng tiền quá mua" : mf != null && mf <= 20 ? "MFI ≤ 20: dòng tiền quá bán" : ""].filter(Boolean)});
-  const R = o.rrg, rr = R?.length ? R[R.length - 1] : null, rr0 = R?.length > 1 ? R[R.length - 2] : null;
+  // Sức mạnh tương đối (như app): RS percentile 0–99 · RRG so VN-Index · tỷ số giá / VN-Index 3 tháng · so cùng ngành
+  const R = o.rrg, rr = R?.length ? R[R.length - 1] : null, rr0 = R?.length > 1 ? R[R.length - 2] : null, rp = o.rs_pt ?? null;
   const n3 = o.n3 || 63, vn = o.vni, ret = N > n3 && c[N - 1 - n3] ? c[N - 1] / c[N - 1 - n3] - 1 : null, vr = vn && N > n3 && vn[N - 1 - n3] && vn[N - 1] ? vn[N - 1] / vn[N - 1 - n3] - 1 : null;
-  const ch = ret != null && vr != null ? ret - vr : null;
-  const rs = rr ? (rr[0] >= 100 && rr[1] >= 100 ? ["t", "Dẫn dắt"] : rr[0] < 100 && rr[1] >= 100 ? ["d", "Cải thiện"] : rr[0] >= 100 ? ["d", "Suy yếu"] : ["g", "Tụt hậu"])
-    : ch == null ? ["", "Chưa đủ dữ liệu"] : ch >= 0.05 ? ["t", "Mạnh hơn thị trường"] : ch <= -0.05 ? ["g", "Yếu hơn thị trường"] : ["d", "Ngang thị trường"];
-  kq.push({id: "rs", ten: "Sức mạnh tương đối", hoi: "Mã mạnh hay yếu hơn thị trường?", muc: rs[0], nhan: rs[1], pp: "kt_rs",
-    so: rr ? `RS ${so(rr[0], 1)} · Mom ${so(rr[1], 1)}` : ch == null ? "" : `${ch > 0 ? "+" : ""}${so(ch * 100, 1)} đpt`,
-    ct: [rr && rr0 ? `RRG so VN-Index: RS-Ratio ${rr[0] >= rr0[0] ? "tăng" : "giảm"}, RS-Momentum ${rr[1] >= rr0[1] ? "tăng" : "giảm"} so kỳ trước` : "",
-      ch == null ? "" : `${o.n3_ten || "3 tháng"}: mã ${pt(ret, 1)} · VN-Index ${pt(vr, 1)}`].filter(Boolean)});
+  const ch = ret != null && vr != null ? (1 + ret) / (1 + vr) - 1 : null, goc_ = rr ? (rr[0] >= 100 ? (rr[1] >= 100 ? "dd" : "sy") : (rr[1] >= 100 ? "ct" : "th")) : null, tam = rr ? Math.hypot(rr[0] - 100, rr[1] - 100) < 0.5 : false;
+  const pr = [rp == null ? null : rp >= 70 ? 1 : rp < 30 ? -1 : 0, !rr ? null : tam ? 0 : rr[1] >= 100 ? 1 : -1];
+  if (pr.every(z => z == null)) pr.push(ch == null ? null : ch >= 0.05 ? 1 : ch <= -0.05 ? -1 : 0);   // chưa có RS / RRG → so lãi 3 tháng
+  const pc = pr.filter(z => z != null), sr = pc.reduce((p, q) => p + q, 0), TEN_GOC = {dd: "Dẫn dắt", ct: "Cải thiện", sy: "Suy yếu", th: "Tụt hậu"};
+  const rs = !pc.length ? ["", "Chưa đủ dữ liệu"] : sr > 0 ? ["t", goc_ && !tam && rr[1] >= 100 ? TEN_GOC[goc_] : "Mạnh hơn thị trường"]
+    : sr < 0 ? ["g", goc_ && !tam && rr[1] < 100 ? TEN_GOC[goc_] : "Yếu hơn thị trường"] : ["d", "Trung bình"];
+  const cn = o.cung || [], hg = o.hang;
+  kq.push({id: "rs", ten: "Sức mạnh tương đối", hoi: "Mã mạnh hay yếu hơn thị trường và cùng ngành?", muc: rs[0], nhan: rs[1], pp: "kt_rs",
+    so: rp != null ? `RS ${rp}` : rr ? `RS-Ratio ${so(rr[0], 1)}` : ch == null ? "" : `${ch > 0 ? "+" : ""}${so(ch * 100, 1)} đpt`, ct: [
+      rp == null ? "" : `${phieu_n(pr[0], ["Mạnh", "Yếu"])} RS percentile ${rp}/99: hiệu suất giá 3–12 tháng hơn ${rp}% số mã`,
+      rr ? `${phieu_n(pr[1], ["Mạnh", "Yếu"])} RRG ${tam ? "gần tâm" : TEN_GOC[goc_]}: RS-Ratio ${so(rr[0], 1)}${rr0 ? (rr[0] >= rr0[0] ? " ↑" : " ↓") : ""} · RS-Momentum ${so(rr[1], 1)}${rr0 ? (rr[1] >= rr0[1] ? " ↑" : " ↓") : ""}` : "",
+      ch == null ? "" : `${pr.length > 2 ? phieu_n(pr[2], ["Mạnh", "Yếu"]) + " " : ""}Tỷ số giá / VN-Index ${o.n3_ten || "3 tháng"} <span class="${mau(ch)}">${ch > 0 ? "+" : ""}${so(ch * 100, 1)}%</span> (mã ${pt(ret, 1)} · VN-Index ${pt(vr, 1)})`,
+      cn.length ? `Cùng ngành${hg ? ` (xếp RS ${hg[0]}/${hg[1]})` : ""}: ${cn.map(([m, r]) => `<a href="#${esc(m)}/ky-thuat">${esc(m)}</a> ${r ?? "–"}`).join(" · ")}` : ""].filter(Boolean)});
   const vg = o.vung || [], ht = vg.find(z => z.loai === "ho_tro"), kc = vg.find(z => z.loai === "khang_cu"), trong = vg.find(z => z.loai === "trong");
   const vz = z => `${so(z.lo, 2)}–${so(z.hi, 2)} (${z.loai === "ho_tro" ? "−" : z.loai === "khang_cu" ? "+" : ""}${so(z.cach * 100, 1)}%) · ${z.cham} lần chạm`;
   const vgia = !vg.length ? ["", "Chưa đủ dữ liệu"] : trong ? ["d", "Trong vùng giá"] : ht && ht.cach <= 0.03 ? ["t", "Gần hỗ trợ"] : kc && kc.cach <= 0.03 ? ["d", "Gần kháng cự"] : ["d", "Giữa vùng"];
@@ -3441,17 +3467,30 @@ Object.assign(PT_PP, {
     doc: [["t", "Tiền vào", "KL trên trung bình khi giá tăng, OBV / A/D dốc lên, mua chủ động > 55%, khối ngoại mua ròng"], ["d", "Trung tính", "các thước đo trái chiều hoặc gần trung bình"], ["g", "Tiền ra", "KL tăng khi giá giảm, OBV dốc xuống, bán chủ động áp đảo, khối ngoại bán ròng"]],
     gh: ["Khối lượng đột biến có thể do thỏa thuận, cơ cấu quỹ, ngày đáo hạn phái sinh.", "Khối ngoại chỉ là một nhóm nhà đầu tư; mua ròng không bảo đảm giá tăng.", "Số liệu trong phiên (mua chủ động) thay đổi liên tục; trang chưa có số liệu tự doanh."],
     tk: ["Granville, J. (1963). Granville's New Key to Stock Market Profits.", "Quong, G., Soudack, A. (1989). Volume-Weighted RSI: Money Flow. Technical Analysis of Stocks & Commodities."]},
-  kt_rs: {ten: "Sức mạnh tương đối", ng: "So mã với VN-Index bằng đồ thị xoay vòng tương đối (RRG) của Julius de Kempenaer (phát triển từ 2004, công bố rộng rãi 2011): RS-Ratio đo mã mạnh hơn hay yếu hơn chuẩn, RS-Momentum đo sức mạnh đó đang tăng hay giảm. Mã chưa có trong RRG thì so lãi 3 tháng với VN-Index.",
-    ct: ["RS-Ratio: sức mạnh tương đối của mã so với VN-Index, chuẩn hoá quanh 100", "RS-Momentum: tốc độ thay đổi của RS-Ratio, chuẩn hoá quanh 100", "Đuôi nối các điểm theo thời gian; mã thường xoay theo chiều kim đồng hồ qua 4 góc", "Dự phòng: chênh lệch = lãi 3 tháng (63 phiên / 13 tuần) của mã − của VN-Index"],
-    doc: [["t", "Dẫn dắt", "RS-Ratio ≥ 100 và RS-Momentum ≥ 100 (dự phòng: hơn VN-Index ≥ 5 đpt)"], ["d", "Cải thiện / Suy yếu", "một trong hai trục dưới 100 (dự phòng: chênh ±5 đpt)"], ["g", "Tụt hậu", "cả hai trục dưới 100 (dự phòng: kém VN-Index ≥ 5 đpt)"]],
-    gh: ["Là so sánh tương đối: cả nhóm có thể cùng giảm giá tuyệt đối.", "Số kỳ tính (10–90) thay đổi hình dạng đuôi đáng kể.", "RRG dựng sẵn hằng ngày cho các mã thanh khoản lớn; mã khác dùng cách dự phòng."],
-    tk: ["de Kempenaer, J. (2011). Relative Rotation Graphs. RRG Research.", "StockCharts ChartSchool – Relative Rotation Graphs."]},
+  kt_rs: {ten: "Sức mạnh tương đối & RRG", ng: "Sức mạnh tương đối (so hiệu suất một mã với chỉ số) là nền tảng của Robert Levy (1967) và hệ CANSLIM của William O'Neil; Relative Rotation Graph (RRG) do Julius de Kempenaer phát triển 2004–2011, vẽ RS-Ratio và RS-Momentum trên 4 góc phần tư.",
+    ct: ["RS percentile = thứ hạng hiệu suất giá của mã so với toàn thị trường, 0–99",
+      "  điểm hiệu suất = 40% lãi 3 tháng + 20% lãi 6 tháng + 20% lãi 9 tháng + 20% lãi 12 tháng (kiểu IBD)",
+      "Tỷ số RS = giá mã / VN-Index; xu hướng của tỷ số cho biết mã đang mạnh hay yếu hơn",
+      "RRG: RS-Ratio = tỷ số RS chuẩn hoá quanh 100 · RS-Momentum = tốc độ thay đổi của RS-Ratio chuẩn hoá quanh 100",
+      "Góc: Dẫn dắt (> 100, > 100) · Suy yếu (> 100, < 100) · Tụt hậu (< 100, < 100) · Cải thiện (< 100, > 100)",
+      "Phiếu: RS ≥ 70 → Mạnh, < 30 → Yếu · RRG Dẫn dắt / Cải thiện → Mạnh, Suy yếu / Tụt hậu → Yếu, cách tâm (100, 100) dưới 0,5 → Trung tính",
+      "Kết luận theo tổng phiếu; mã chưa có RS và RRG thì so lãi 3 tháng với VN-Index (chênh từ 5% trở lên)",
+      "Cùng ngành: 5 mã vốn hoá lớn nhất cùng ngành và thứ hạng RS của mã trong ngành"],
+    doc: [["t", "Dẫn dắt / Cải thiện", "RS ≥ 70 hoặc RRG ở góc dẫn dắt / cải thiện, hiệu suất vượt chỉ số"], ["d", "Trung bình", "RS 30–70, RRG gần tâm, hoặc hai thước đo trái chiều"], ["g", "Suy yếu / Tụt hậu", "RS < 30 hoặc RRG ở góc suy yếu / tụt hậu, hiệu suất kém chỉ số"]],
+    gh: ["Sức mạnh tương đối là so sánh: mã “mạnh” vẫn có thể giảm nếu cả thị trường giảm.", "RRG quay theo chu kỳ; vị trí góc phần tư có thể đổi nhanh với mã thanh khoản thấp (RRG chỉ dựng cho mã GTGD trung bình 20 phiên từ 1 tỷ).", "Mã cùng ngành chọn theo vốn hoá lớn nhất, chưa hẳn là đối thủ trực tiếp."],
+    tk: ["Levy, R. (1967). Relative Strength as a Criterion for Investment Selection. Journal of Finance.", "O'Neil, W. (1988). How to Make Money in Stocks.", "de Kempenaer, J. (2011). Relative Rotation Graphs. RRG Research."]},
   kt_vg: {ten: "Vùng giá (hỗ trợ / kháng cự)", ng: "Hỗ trợ / kháng cự là vùng giá từng đảo chiều nhiều lần (Edwards và Magee, 1948). Trang tìm đỉnh / đáy cục bộ trong 250 nến gần nhất rồi gộp thành vùng – cùng cách của mục Đọc biểu đồ.",
     ct: ["Đỉnh / đáy cục bộ: cao / thấp nhất 5 nến hai bên", "Gộp các đỉnh / đáy cách nhau ≤ 0,6 ATR thành một vùng; vùng cần ≥ 2 lần chạm", "Hỗ trợ: vùng nằm dưới giá · kháng cự: vùng nằm trên giá · khoảng cách tính từ giá tới mép gần nhất của vùng"],
     doc: [["t", "Gần hỗ trợ", "giá cách hỗ trợ gần nhất ≤ 3%"], ["d", "Gần kháng cự / Giữa vùng", "giá cách kháng cự ≤ 3%, hoặc không sát vùng nào"], ["d", "Trong vùng giá", "giá đang nằm trong một vùng"]],
     gh: ["Vùng giá là ước lượng từ lịch sử, có thể bị phá vỡ; càng nhiều lần chạm vùng càng có ý nghĩa.", "Vùng bị phá thường đổi vai (hỗ trợ thành kháng cự và ngược lại)."],
     tk: ["Edwards, R., Magee, J. (1948). Technical Analysis of Stock Trends.", "Murphy, J. (1999). Technical Analysis of the Financial Markets."]},
 });
+function kt_cung_nganh(ma) {                           // RS percentile của mã + 5 mã vốn hoá lớn nhất cùng ngành (DS xếp vốn hoá giảm dần) + thứ hạng RS trong ngành
+  const r = (DS || []).find(z => z.ma === ma); if (!r) return {};
+  const ng = r.nganh ? DS.filter(z => z.nganh === r.nganh && z.rs != null) : [], xep = ng.map(z => z.rs).sort((p, q) => q - p);
+  return {rs_pt: r.rs ?? null, cung: ng.filter(z => z.ma !== ma).slice(0, 5).map(z => [z.ma, z.rs]),
+    hang: r.rs != null && ng.length > 1 ? [xep.indexOf(r.rs) + 1, ng.length] : null};
+}
 async function ky_thuat(ma, k) {
   const x = chuoi_gia(k, ma);
   if (!x || x.c.length < 60) return `<div class="the"><div class="trong">Chưa đủ dữ liệu giá để phân tích kỹ thuật.</div></div>`;
@@ -3468,7 +3507,7 @@ async function ky_thuat(ma, k) {
   const bg_ok = bg?.b?.length && bg.phien === String(x.d[x.d.length - 1]).slice(0, 10), bg_t = bg_ok ? bg.b.reduce((a, z) => a + (z[2] || 0) + (z[3] || 0), 0) : 0;
   const cd = bg_t ? {pt: bg.b.reduce((a, z) => a + (z[2] || 0), 0) / bg_t, ngay: ngay_vn(bg.phien), tam: !!x.tam} : null;
   const dt = kt_dong_thuan(xx), tru = kt_tru(xx, {dt, nam: tuan ? 52 : 250, cd, tien: tuan ? gop_khung(kin, "W") : kin, nn, rrg: RRG?.[khung]?.ma?.[ma], vni: vni?.size ? vni_theo(xx.d, vni) : null,
-    n3: tuan ? 13 : 63, n3_ten: "3 tháng", vung});
+    n3: tuan ? 13 : 63, n3_ten: "3 tháng", vung, ...kt_cung_nganh(ma)});
   const gn = gia_nay(ma, k), gia = gn.gia ?? x.c[x.c.length - 1];
   const n52 = Math.min(250, x.c.length), hs = x.h.slice(-n52).filter(cb_ok), ls = x.l.slice(-n52).filter(cb_ok);
   const hi = hs.length ? Math.max(...hs) : null, lo = ls.length ? Math.min(...ls) : null, vt = hi > lo ? Math.min(1, Math.max(0, (gia - lo) / (hi - lo))) : null;
@@ -4090,10 +4129,71 @@ function ve_loc() {
     + (ds.length > 400 ? `<tr><td class="trai m" colspan="${COT.length}">… còn ${ds.length - 400} mã – lọc hẹp hơn để xem</td></tr>` : "");
   $("#bang-loc tbody").onclick = e => { const tr = e.target.closest("tr[data-ma]"); if (tr && !e.target.closest("a")) location.hash = tr.dataset.ma; };
 }
+// ---------------------------------------------------------------- NGÀNH HÔM NAY (như màn Chứng khoán › Ngành của app): cây ICB cấp 1 → cấp 2,
+// % hôm nay gia quyền vốn hoá, số mã tăng / giảm / đứng, GTGD, P/E gia quyền (bỏ mã lỗ), danh sách mã
+const ICB1 = [["Công nghệ", ["Công nghệ"]], ["Viễn thông", ["Viễn thông"]], ["Chăm sóc sức khỏe", ["Y tế"]], ["Tài chính", ["Ngân hàng", "Bảo hiểm", "DV tài chính"]],
+  ["Bất động sản", ["Bất động sản"]], ["Hàng tiêu dùng không thiết yếu", ["Ô tô & phụ tùng", "Hàng cá nhân & gia dụng", "Truyền thông", "Bán lẻ", "Du lịch & giải trí"]],
+  ["Hàng tiêu dùng thiết yếu", ["Thực phẩm & đồ uống"]], ["Công nghiệp", ["Xây dựng & VLXD", "Hàng & DV công nghiệp"]], ["Nguyên vật liệu", ["Hóa chất", "Tài nguyên cơ bản"]],
+  ["Năng lượng", ["Dầu khí"]], ["Tiện ích", ["Điện, nước & khí đốt"]]];
+function ng_tinh(mkt, ds) {                              // Bảng thị trường (loc: mã thanh khoản, ngành cấp 2) + ds.json (vốn hoá, P/E, RS) → {l1, l2}
+  const ten2 = mkt?.nganh || [], cot = mkt?.loc?.cot || [], R = new Map((ds || []).map(r => [r.ma, r])), vh = new Map((mkt?.ban_do?.dong || []).map(z => [z[0], z[2]]));
+  const L2 = new Map();
+  for (const z of mkt?.loc?.dong || []) {
+    const o = {}; cot.forEach((k, i) => o[k] = z[i]);
+    const ten = ten2[o.nganh]; if (!ten || !(o.gia > 0)) continue;
+    const r = R.get(o.ma) || {};
+    if (!L2.has(ten)) L2.set(ten, []);
+    L2.get(ten).push({ma: o.ma, san: o.san, ten: r.ten || mkt.ten?.[o.ma] || "", gia: o.gia, pt: o.pt, gt: o.gt, p5: o.p5, p10: o.p10, p20: o.p20, rs: r.rs ?? null, pe: r.pe, von: r.von || vh.get(o.ma) || 0});
+  }
+  const gop = (ten, cap, ma) => {
+    let pv = 0, v = 0, gt = 0, t = 0, g = 0, d = 0, vp = 0, ln = 0;
+    for (const x of ma) {
+      if (x.pt != null && x.von > 0) { pv += x.pt * x.von; v += x.von; }
+      gt += x.gt || 0; if (x.pt > 0) t++; else if (x.pt < 0) g++; else d++;
+      if (x.pe > 0 && x.von > 0) { vp += x.von; ln += x.von / x.pe; }
+    }
+    return {ten, cap, ma: ma.slice().sort((p, q) => q.von - p.von), pt: v ? pv / v / 100 : null, gt, t, g, d, pe: ln ? vp / ln : null};
+  };
+  const l2 = [...L2].map(([ten, ma]) => gop(ten, 2, ma)), co = new Set(), l1 = [];
+  for (const [ten, con] of ICB1) {
+    const c = con.map(t => l2.find(x => x.ten === t)).filter(Boolean); c.forEach(x => co.add(x.ten));
+    if (c.length) l1.push({...gop(ten, 1, c.flatMap(x => x.ma)), con: c});
+  }
+  const khac = l2.filter(x => !co.has(x.ten)); if (khac.length) l1.push({...gop("Khác", 1, khac.flatMap(x => x.ma)), con: khac});
+  return {l1, l2};
+}
+const ng_spark = x => {                                 // đường 20 phiên từ % thay đổi 20 / 10 / 5 phiên → hôm nay (vạch đứt: giá 20 phiên trước)
+  const v = [x.p20, x.p10, x.p5].map(p => p == null ? null : x.gia / (1 + p / 100)).concat(x.gia);
+  if (v.some(z => z == null || !isFinite(z))) return "";
+  const lo = Math.min(...v), hi = Math.max(...v), y = z => (hi > lo ? 18 - (z - lo) / (hi - lo) * 16 : 10).toFixed(1), xs = [1, 31, 46, 63], m = x.gia >= v[0] ? "var(--tang)" : "var(--giam)";
+  return `<svg class="spark" viewBox="0 0 64 20" aria-hidden="true"><line x1="0" x2="64" y1="${y(v[0])}" y2="${y(v[0])}" stroke="#9aa5b4" stroke-dasharray="2 2" stroke-width=".8"/>
+    <polyline fill="none" stroke="${m}" stroke-width="1.5" points="${v.map((z, i) => `${xs[i]},${y(z)}`).join(" ")}"/><circle cx="63" cy="${y(x.gia)}" r="1.8" fill="${m}"/></svg>`;
+};
+const ng_dem = x => `<span class="ng-dem"><i class="ct"></i>${x.t}<i class="cg"></i>${x.g}<i class="cd"></i>${x.d}</span>`;
 async function hien_nganh() {
   document.title = "Ngành – Tra cứu mã";
   if (!NG) NG = (await lay(DL + "nganh.json", false)) || {ds: []};
-  $("#noi-dung").innerHTML = the("Bội số ngành", `năm kiểm toán gần nhất · P/E, P/B gia quyền vốn hoá · ROE, tăng LNST trung vị · cập nhật ${esc(NG.cap_nhat || "")}`,
+  const T = ng_tinh(MKT, DS), tat = [...T.l1, ...T.l2], noi = T.l2.slice().sort((p, q) => q.gt - p.gt).slice(0, 4);
+  const khoa = x => `${x.cap}:${x.ten}`, chon = tat.find(x => khoa(x) === ST.ng) || noi[0];
+  const mo = ST.ng_mo || (ST.ng_mo = new Set());
+  const phien = MKT?.phien ? `phiên ${ngay_vn(MKT.phien)} · ${MKT.dang_gd ? `trong phiên, cập nhật ${esc(String(MKT.cap_nhat || "").slice(11, 16))}` : "đóng cửa"}` : "";
+  const o_ng = x => `<button class="ng-o" data-ngc="${esc(khoa(x))}" aria-pressed="${x === chon}"><b>${esc(x.ten)}</b><span class="ng-p ${mau(x.pt)}">${pt(x.pt, 2)}</span>${ng_dem(x)}</button>`;
+  const dong = x => `<div class="ng-dong"><span class="ng-vach ${mau(x.pt)}"></span><div class="ng-ten"><a data-ngc="${esc(khoa(x))}">${esc(x.ten)}</a><small>Cấp 2 · ${x.ma.length} mã · GTGD ${so(x.gt, 0)} tỷ</small></div>
+    <div class="ng-phai"><b class="${mau(x.pt)}">${pt(x.pt, 2)}</b>${ng_dem(x)}</div></div>`;
+  const cay = T.l1.map(x => `<details data-ng1="${esc(x.ten)}"${mo.has(x.ten) ? " open" : ""}><summary><span class="ng-vach ${mau(x.pt)}"></span><div class="ng-ten"><a data-ngc="${esc(khoa(x))}">${esc(x.ten)}</a><small>Cấp 1 · ${x.ma.length} mã</small></div>
+    <div class="ng-phai"><b class="${mau(x.pt)}">${pt(x.pt, 2)}</b>${ng_dem(x)}</div></summary>${x.con.map(dong).join("")}</details>`).join("");
+  const chi_tiet = chon ? `<div class="the" id="ng-chon"><div class="ng-dau"><div><span class="ng-cap">ICB CẤP ${chon.cap}</span><h3>${esc(chon.ten)}</h3><div class="m nho">% hôm nay gia quyền vốn hoá</div></div>
+      <div class="ng-pt ${mau(chon.pt)}">${pt(chon.pt, 2)}</div></div>
+    <div class="ng-ct"><div><div class="n">Số mã</div><div class="v">${chon.ma.length}</div></div><div><div class="n">GTGD (tỷ)</div><div class="v">${so(chon.gt, 0)}</div></div>
+      <div><div class="n">P/E</div><div class="v">${chon.pe ? so(chon.pe, 1) : "–"}</div></div><div><div class="n">Tăng / giảm / đứng</div><div class="v">${ng_dem(chon)}</div></div></div>
+    <div class="bang-boc"><table><thead><tr><th class="trai">Mã</th><th class="trai an-dt">Tên</th><th>20 phiên</th><th>Giá</th><th>±%</th><th class="an-dt">GTGD (tỷ)</th><th class="an-dt">RS</th><th class="an-dt">P/E</th></tr></thead><tbody>${chon.ma.map(x =>
+      `<tr><td class="trai"><a href="#${esc(x.ma)}"><b>${esc(x.ma)}</b></a> <span class="m nho">${esc(x.san || "")}</span></td><td class="trai an-dt">${esc(x.ten)}</td><td>${ng_spark(x)}</td>
+      <td><b>${so(x.gia, 2)}</b></td><td class="${mau(x.pt)}">${pt(x.pt / 100, 2)}</td><td class="an-dt">${so(x.gt, 1)}</td><td class="an-dt">${x.rs ?? "–"}</td><td class="an-dt">${x.pe > 0 ? so(x.pe, 1) : "–"}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+  const hom_nay = T.l2.length ? the("Ngành hôm nay", `${phien} · ${T.l2.reduce((a, x) => a + x.ma.length, 0)} mã thanh khoản trên Bảng thị trường`,
+      `<div class="m nho" style="padding:10px 14px 0">NGÀNH NỔI BẬT (GTGD lớn nhất)</div><div class="ng-noi">${noi.map(o_ng).join("")}</div>`)
+      + the("Tất cả ngành ICB", "cấp 1 → cấp 2 · bấm tên ngành để xem danh sách mã", `<div class="ng-cay">${cay}</div>`) + chi_tiet
+    : the("Ngành hôm nay", "", `<div class="trong">Chưa có dữ liệu Bảng thị trường.</div>`);
+  $("#noi-dung").innerHTML = hom_nay + the("Bội số ngành", `năm kiểm toán gần nhất · P/E, P/B gia quyền vốn hoá · ROE, tăng LNST trung vị · cập nhật ${esc(NG.cap_nhat || "")}`,
     `<div class="bang-boc"><table><thead><tr><th class="trai">Ngành</th><th>Số mã</th><th>P/E</th><th>P/B</th><th>ROE</th><th>Tăng LNST</th><th>Vốn hoá (tỷ)</th><th class="trai">Mã lớn nhất</th></tr></thead><tbody>` +
     (NG.ds || []).map(x => `<tr><td class="trai"><a href="#loc" data-loc-nganh="${esc(x.nganh)}"><b>${esc(x.nganh)}</b></a></td><td>${x.so_ma}</td><td>${x.pe ? so(x.pe, 1) : "–"}</td><td>${x.pb ? so(x.pb, 2) : "–"}</td><td>${x.roe != null ? so(x.roe, 1) + "%" : "–"}</td><td class="${mau(x.tang)}">${x.tang != null ? so(x.tang, 1) + "%" : "–"}</td><td>${so(x.von_hoa, 0)}</td><td class="trai">${(x.ma || []).slice(0, 6).map(m => `<a href="#${esc(m)}">${esc(m)}</a>`).join(" ")}</td></tr>`).join("") + `</tbody></table></div>`);
   $("#cuoi").textContent = "";
@@ -4592,6 +4692,9 @@ function gan_tim(o, di) {
   return inp;
 }
 gan_tim($("#tim-dau"));
+document.addEventListener("click", e => { const n = e.target.closest("[data-ngc]"); if (!n) return; e.preventDefault(); ST.ng = n.dataset.ngc; hien_nganh();
+  requestAnimationFrame(() => { const c = $("#ng-chon"); if (c) scrollTo({top: c.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dau")) || 56) - 8, behavior: "smooth"}); }); });
+document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.ng1 == null) return; const mo = ST.ng_mo || (ST.ng_mo = new Set()); d.open ? mo.add(d.dataset.ng1) : mo.delete(d.dataset.ng1); }, true);
 document.addEventListener("click", e => { const n = e.target.closest("[data-loc-nganh]"); if (n) { LOC.nganh = n.dataset.locNganh; LOC.tim = ""; } });
 document.addEventListener("click", e => { const b = e.target.closest("[data-td]"); if (!b) return;
   doi_td(b.dataset.td); const co = TD.has(b.dataset.td); b.setAttribute("aria-pressed", co); b.textContent = co ? "✓ Đang theo dõi" : "+ Theo dõi"; ds_td_ve(); });
@@ -4618,6 +4721,7 @@ addEventListener("hashchange", () => {
     if (FS) return fs_ve(true);                          // toàn màn hình: vẽ lại nến hôm nay, giữ vùng đang xem
     const [a, b] = decodeURIComponent(location.hash.slice(1)).split("/");
     if (MA_OK((a || "").toUpperCase()) && (!b || ["tong-quan", "dinh-gia"].includes(b))) dinh_tuyen();
+    else if ((a || "").toUpperCase() === "NGANH") hien_nganh();
   }, 30000);                                                 // dữ liệu trong phiên ~30 giây / lượt (vòng bảng thị trường)
 })();
 // ---------------------------------------------------------------- TỰ CẬP NHẬT BẢN MỚI (ứng dụng ở màn hình chính iPhone giữ trang chạy nền;
