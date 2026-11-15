@@ -19,8 +19,10 @@ def _tlv(m, t):
 
 TIEU_CHI = {
     # --- chiến lược theo thị trường (bo_loc/chien_luoc_tt.py – cùng logic bot canh-bao-mua / ptcp)
+    # chưa có kết quả chiến lược (mã < 260 phiên, phần chiến lược lỗi) = KHÔNG đạt – không phải "thiếu dữ liệu": thiếu dữ
+    # liệu ở chế độ thường bị bỏ qua (◐) rồi mã được xếp MUA theo điểm cũ, lọt danh sách "Quỹ Bứt Phá" sai luật (15/11/2026)
     "cl_tt_mua": ("Chiến lược thị trường: nhóm MUA (mới / như lệnh mới / ½)",
-                  lambda m, t: (m["cl_tt"]["nhom"] in ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")) if m.get("cl_tt") else None),
+                  lambda m, t: bool(m.get("cl_tt")) and m["cl_tt"]["nhom"] in ("MUA_MOI", "VAO_NHU_MOI", "VAO_NUA")),
     "cl_tt_khong_ban": ("Chiến lược thị trường: hệ thống không lỗ / không sắp bán",
                         lambda m, t: (m["cl_tt"]["nhom"] not in ("DUOI_VON", "BAN")) if m.get("cl_tt") else None),
     "gtgd_min": ("GTGD TB20 ≥ {} tỷ", lambda m, t: m["gtgd20"] >= t),
