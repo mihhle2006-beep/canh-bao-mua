@@ -16,6 +16,7 @@
 #           tuần × lệnh trước lên tầng tuần / mọi lệnh × lọc VN-Index). Chỉ đo, luật đặt trước C1 + C2 + C3.
 #   tui_tran – (chạy tay, 15/11/2026) túi tràn: tín hiệu B bị gạt vì hết chỗ → túi riêng bằng tiền để không, B giữ
 #           nguyên. Chỉ đo, luật đặt trước C1 + C2 + C3.
+#   gop – (chạy tay, 15/11/2026) ghép 3 ứng viên gần đạt + đối chứng ngẫu nhiên. Chỉ đo.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -64,7 +65,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, xu_huong, cb_luoi, xu_huong2, vao_lai, tui_tran]
+        phan: [chuan, cham1r, xu_huong, cb_luoi, xu_huong2, vao_lai, tui_tran, gop]
     runs-on: ubuntu-24.04
     defaults:
       run:
