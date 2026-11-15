@@ -60,7 +60,7 @@ console.log(JSON.stringify({a, b}));""")
         m, tl, bn = (int(z) for z in re.findall(r"(\d+) (?:Mua|Trung lập|Bán)", t["ct"][0]))
         assert m + tl + bn == 5 and t["nhan"] in ("Tích cực", "Trung lập", "Tiêu cực")
     assert a["rs"]["nhan"] == "Mạnh hơn thị trường"                        # không RRG → so lãi 3 tháng với VN-Index
-    assert b["rs"]["nhan"] == "Tụt hậu" and "RS 98,0" in b["rs"]["so"]     # RRG: cả 2 trục < 100
+    assert b["rs"]["nhan"] == "Tụt hậu" and "RS-Ratio 98,0" in b["rs"]["so"]   # RRG: cả 2 trục < 100
     assert a["vg"]["nhan"] == "Gần kháng cự" and "Kháng cự 96,00–97,00" in " ".join(a["vg"]["ct"])
     assert b["vg"]["nhan"] == "Chưa đủ dữ liệu"
     assert "Khối ngoại ròng 20 phiên" in " ".join(a["dt"]["ct"])
@@ -138,3 +138,19 @@ console.log(JSON.stringify({ra, vao, tuan}));""")
     assert "Mua chủ động 30%" in " ".join(ra["ct"]) and "Khối ngoại ròng 20 phiên" in " ".join(ra["ct"])
     assert vao["nhan"] == "Tiền vào" and "(đang giao dịch)" in " ".join(vao["ct"])
     assert not any("Mua chủ động" in z or "Khối ngoại" in z for z in tuan["ct"])   # không có số liệu → không bỏ phiếu
+
+
+def test_suc_manh_tuong_doi_rs_rrg_cung_nganh():
+    kq = _chay(CHUOI + """
+const f = o => kt_tru(len, o)[4];
+console.log(JSON.stringify({
+  manh: f({rs_pt: 85, rrg: [[99, 101], [99.5, 102]], cung: [["AAA", 90], ["BBB", 40]], hang: [2, 7]}),
+  trai: f({rs_pt: 80, rrg: [[101, 99], [101, 98]]}),
+  yeu: f({rs_pt: 12}),
+  tam: f({rs_pt: 50, rrg: [[100.1, 100.2]]})}));""")
+    m = kq["manh"]
+    assert m["nhan"] == "Cải thiện" and m["muc"] == "t" and m["so"] == "RS 85"           # RS ≥ 70 + RRG cải thiện
+    assert "xếp RS 2/7" in m["ct"][-1] and 'href="#AAA/ky-thuat"' in m["ct"][-1]
+    assert kq["trai"]["nhan"] == "Trung bình"                                          # RS mạnh nhưng RRG suy yếu
+    assert kq["yeu"]["nhan"] == "Yếu hơn thị trường" and kq["yeu"]["muc"] == "g"       # RS < 30, chưa có RRG
+    assert kq["tam"]["nhan"] == "Trung bình" and "gần tâm" in " ".join(kq["tam"]["ct"])
