@@ -4,19 +4,12 @@
 # BACKTEST QUỸ BỨT PHÁ – đúng luật QUY_* (chay_backtest_quy_b.py), rổ HOSE + HNX (RO_BT=hose_hnx, luôn kèm mã đã huỷ
 # niêm yết; hạng GTGD / RS / biến động tính trong rổ). Các phần thử nghiệm đã có kết luận đã xoá: von3–von54 (kết luận
 # ở danh-muc ptcp/cau_hinh.py), von55–von84 (28–29/10/2026), von85 + von87–von99 (01/11/2026 – "không cải thiện được gì
-# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026), nganh_nn / gian_luoc (05/11/2026), tv2 (07/11/2026), bctn / non / mc_von / khang_cu / cai_thien / thanh_khoan / cl_dong / mua_lai / lay_lai (12/11/2026), rs_nong / bo_lon / nong_dk (13/11/2026), uu_nong / xep_dg / dg_cai / dat_nguong (14/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
+# nữa"), von86 / von100 / von101 / het_han / gia_cao / lenh_vao (02/11/2026), nganh_nn / gian_luoc (05/11/2026), tv2 (07/11/2026), bctn / non / mc_von / khang_cu / cai_thien / thanh_khoan / cl_dong / mua_lai / lay_lai (12/11/2026), rs_nong / bo_lon / nong_dk (13/11/2026), uu_nong / xep_dg / dg_cai / dat_nguong (14/11/2026), xu_huong / cb_luoi / xu_huong2 / vao_lai / tui_tran / gop (15/11/2026) – kết luận ở danh-muc KET_LUAN_BACKTEST_CU.md; code xem lịch
 # sử git. Còn:
 #   chuan – mốc luật đang áp dụng (khớp như live – nền v2; B, B + Trứng, + hệ bắt đáy) + ★ ngẫu nhiên + đối chiếu giả lập
 #           (lịch hằng tháng)
 #   cham1r – (đầu tháng + chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
-#   xu_huong / cb_luoi – (chạy tay, 15/11/2026) SuperTrend / Magic Trend dò ATR – hệ số – CCI ở 5 vai trò (lọc, ½ KL, thoát
-#           thêm, thêm lệnh) · mọi chỉ báo khác trên web dò tham số (lọc, ½ KL). Chỉ đo, luật đặt trước C1 + C2 + C3.
-#   vao_lai – (chạy tay, 15/11/2026) vào lại mã vừa bán khi còn tăng mạnh (MACD ngày bỏ lọc tuần / vượt đỉnh / đỉnh 52
-#           tuần × lệnh trước lên tầng tuần / mọi lệnh × lọc VN-Index). Chỉ đo, luật đặt trước C1 + C2 + C3.
-#   tui_tran – (chạy tay, 15/11/2026) túi tràn: tín hiệu B bị gạt vì hết chỗ → túi riêng bằng tiền để không, B giữ
-#           nguyên. Chỉ đo, luật đặt trước C1 + C2 + C3.
-#   gop – (chạy tay, 15/11/2026) ghép 3 ứng viên gần đạt + đối chứng ngẫu nhiên. Chỉ đo.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -65,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, xu_huong, cb_luoi, xu_huong2, vao_lai, tui_tran, gop]
+        phan: [chuan, cham1r]
     runs-on: ubuntu-24.04
     defaults:
       run:
