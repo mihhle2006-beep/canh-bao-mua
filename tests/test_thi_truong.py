@@ -310,8 +310,15 @@ def test_phan_tich_dinh_gia_trung_vi_va_phuong_phap():
     dg = kq["dg"]
     gn = next(x for x in dg["pp"] if x["ten"] == "Graham Number")
     assert gn["v"] == pytest.approx((22.5 * 4000 * 20000) ** 0.5)
-    co = sorted(x["v"] for x in dg["pp"] if x["v"])
-    tv = co[len(co) // 2] if len(co) % 2 else (co[len(co) // 2 - 1] + co[len(co) // 2]) / 2
+    g49, g74 = (next(x for x in dg["pp"] if x["ten"] == t) for t in ("Graham (1949)", "Graham (1974)"))
+    assert g74["v"] == pytest.approx(g49["v"] * 4.4 / 5)                                 # 1974 = 1949 × 4,4 / Y (Y 5%)
+    trung = lambda v: v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2   # noqa: E731
+    co_so = [x for x in dg["pp"] if x["v"]]
+    for x in co_so:                                     # loại khỏi dải ⇔ lệch > 3 lần trung vị các phương pháp còn lại
+        tk = trung(sorted(y["v"] for y in co_so if y is not x))
+        assert bool(x.get("loai")) == (x["v"] > 3 * tk or x["v"] < tk / 3), x["ten"]
+    co = sorted(x["v"] for x in co_so if not x.get("loai"))
+    tv = trung(co)
     assert dg["tv"] == pytest.approx(tv) and dg["bien"] == pytest.approx((tv - 40000) / tv)
     assert set(kq["pp"]) == {"z", "f", "dp", "m", "cl", "dg", "tt"}
     assert "Gánh nặng lãi vay" in kq["html"] and "Tham khảo" in kq["html"]
