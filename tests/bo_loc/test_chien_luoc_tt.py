@@ -101,3 +101,9 @@ def test_tham_so_dong_bo_quy_b():
     from bo_loc import cau_hinh as ch
     assert ch.RUI_RO_MOI_LENH == P.QUY_RUI_RO_LENH_PCT and ch.TY_TRONG_MAX == P.QUY_TRAN_MA_PCT
     assert ch.GTGD_MIN == P.QUY_GTGD_TOI_THIEU
+
+
+def test_dong_thi_truong_khong_lo_tham_so_luat():
+    s = T.dong_thi_truong({"diem": 0, "so_chi_bao": 8, "nguon": "x", "ten_cl": "QUỸ BỨT PHÁ – tối đa 8 mã",
+                           "di_ngang": True, "phien_bien": 60, "bien": 9.7, "nguong_bien": 12.0})
+    assert "tối đa" not in s and "12%" not in s and "ĐI NGANG" in s and "QUỸ BỨT PHÁ" in s

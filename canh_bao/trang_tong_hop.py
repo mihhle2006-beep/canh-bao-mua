@@ -76,6 +76,12 @@ def _sach(v):
 
 
 # ------------------------------------------------------------------ lưu dữ liệu thị trường (gọi lúc tổng kết)
+def ten_cong_khai(ten):
+    """Tên chiến lược cho chỗ CÔNG KHAI (trang, JSON, log): bỏ phần tham số luật sau " – " (số mã tối đa, % rủi ro/lệnh,
+    trần %/mã – chủ quỹ 11/2026: không đưa ngưỡng luật ra công khai); tin Telegram / Excel riêng vẫn ghi đủ."""
+    return str(ten or "").split(" – ")[0].strip()
+
+
 def luu_thi_truong(ra, bay_gio, ds=None, path=None):
     """Ghi điểm thị trường & toàn bộ khuyến nghị (đều CÔNG KHAI – đã có trong tin) vào trang_thai_chien_luoc.json."""
     path = path or C.FILE_TRANG_THAI_CL
@@ -84,8 +90,8 @@ def luu_thi_truong(ra, bay_gio, ds=None, path=None):
     bang = d.get("bang")
     cu["thi_truong"] = {
         "ngay": f"{pd.Timestamp(d['ngay']):%Y-%m-%d}", "diem": int(d["diem"]), "so_chi_bao": int(d["so_chi_bao"]),
-        "vni": _sach(ra.get("vni")), "cl": int(ra["cl"]), "ten_cl": str(ra["ten_cl"][ra["cl"]]),
-        "ty_trong": {k: _sach(v) for k, v in ra["ty_trong"].items()}, "dieu_kien_doi": d.get("dieu_kien_doi", ""),
+        "vni": _sach(ra.get("vni")), "cl": int(ra["cl"]), "ten_cl": ten_cong_khai(ra["ten_cl"][ra["cl"]]),
+        "ty_trong": {k: _sach(v) for k, v in ra["ty_trong"].items()},   # điều kiện đổi CL (ngưỡng điểm) chỉ ở tin riêng
         "di_ngang": {k: _sach(v) for k, v in (ra.get("di_ngang") or {}).items()} or None,
         "nhiet": ra.get("nhiet"),
         "chi_bao": [{"ten": str(r["Chỉ báo"]), "dat": bool(r["Đạt"]), "chi_tiet": str(r.get("Chi tiết") or "")}
@@ -161,8 +167,7 @@ def _khoi_thi_truong(tt):
     ds = "".join(f'<li class="{"dat" if c["dat"] else "truot"}"><b>{"✔" if c["dat"] else "✘"}</b> {_e(c["ten"])}'
                  + (f' <span class="mo">– {_e(c["chi_tiet"])}</span>' if c.get("chi_tiet") else "") + "</li>"
                  for c in tt.get("chi_bao", []))
-    return (f'<div class="luoi-the">{the}</div><p><b>{_e(tt.get("ten_cl"))}</b>'
-            + (f' · <span class="mo">{_e(tt["dieu_kien_doi"])}</span>' if tt.get("dieu_kien_doi") else "")
+    return (f'<div class="luoi-the">{the}</div><p><b>{_e(ten_cong_khai(tt.get("ten_cl")))}</b>'
             + f'</p><ul class="chi-bao">{ds}</ul>')
 
 

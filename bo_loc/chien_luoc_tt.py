@@ -93,8 +93,8 @@ def thi_truong(vni, gia=None, file_cache=None):
 def dong_thi_truong(tt):
     if not tt:
         return "Thị trường: không có VN-Index – bỏ phần chiến lược"
-    s = f"Thị trường: {tt['diem']}/{tt['so_chi_bao']} điểm ({tt['nguon']}) · {tt['ten_cl']}"
-    s += (f" · VN-Index ĐI NGANG (biên {tt['phien_bien']} phiên {tt['bien']:.1f}% < {tt['nguong_bien']:g}%) → tín hiệu "
+    s = f"Thị trường: {tt['diem']}/{tt['so_chi_bao']} điểm ({tt['nguon']}) · {str(tt['ten_cl']).split(' – ')[0]}"
+    s += (f" · VN-Index ĐI NGANG (biên {tt['phien_bien']} phiên {tt['bien']:.1f}%) → tín hiệu "   # log công khai: không in ngưỡng
           f"mới chỉ lấy khi MACD tuần > Signal" if tt["di_ngang"] else
           f" · có xu hướng (biên {tt['phien_bien']} phiên {tt['bien']:.1f}%)")
     return s

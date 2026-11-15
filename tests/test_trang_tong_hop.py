@@ -58,3 +58,16 @@ def test_luu_thi_truong(tmp_path):
     assert d["cl"] == 1 and "ds_mua" in d                              # giữ khoá cũ
     assert d["thi_truong"]["chi_bao"][0] == {"ten": "A", "dat": True, "chi_tiet": "x"}
     assert d["khuyen_nghi"] == [{"ma": "AAA", "nhom": "CHO", "gia": 1.5, "hieu_luc": "2026-10-08"}]
+
+
+def test_cong_khai_khong_lo_tham_so_luat(tmp_path):
+    path = str(tmp_path / "cl.json")
+    ra = {"doc": {"ngay": pd.Timestamp("2026-11-13"), "diem": 0, "so_chi_bao": 8,
+                  "dieu_kien_doi": "chuyển CL2 nếu cuối tháng điểm ≥ 5", "bang": None},
+          "vni": 1734.9, "cl": 1, "ten_cl": {1: "QUỸ BỨT PHÁ – tối đa 8 mã · 0.75% rủi ro/lệnh · ≤ 20%/mã"},
+          "ty_trong": {"B": 1.0}, "di_ngang": None}
+    TH.luu_thi_truong(ra, "2026-11-13 15:20", None, path)
+    t = json.load(open(path, encoding="utf-8"))["thi_truong"]
+    assert t["ten_cl"] == "QUỸ BỨT PHÁ" and "dieu_kien_doi" not in t
+    html = TH._khoi_thi_truong({**t, "ten_cl": "QUỸ BỨT PHÁ – tối đa 8 mã", "dieu_kien_doi": "≥ 5"})   # JSON cũ
+    assert "QUỸ BỨT PHÁ" in html and "tối đa" not in html and "≥ 5" not in html
