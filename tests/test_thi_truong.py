@@ -321,7 +321,7 @@ def test_phan_tich_dinh_gia_trung_vi_va_phuong_phap():
     tv = trung(co)
     assert dg["tv"] == pytest.approx(tv) and dg["bien"] == pytest.approx((tv - 40000) / tv)
     assert set(kq["pp"]) == {"z", "f", "dp", "m", "cl", "dg", "tt"}
-    assert "Gánh nặng lãi vay" in kq["html"] and "Tham khảo" in kq["html"]
+    assert "Gánh nặng lãi vay" in kq["html"] and "Tài liệu tham khảo" in kq["html"] and "Giới hạn cần lưu ý" in kq["html"]
 
 
 def test_tra_cuu_dn_gon(tmp_path, monkeypatch):
