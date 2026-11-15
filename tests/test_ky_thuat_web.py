@@ -12,7 +12,7 @@ def _chay(ma_js):
     if not shutil.which("node"):
         pytest.skip("không có node")
     h = open("docs/ma/index.html", encoding="utf-8").read()
-    tro = "\n".join(re.search(rf"^const {t} = .*$", h, re.M).group(0) for t in ("esc", "so", "pt", "mau", "tb"))
+    tro = "\n".join(re.search(rf"^const {t} = .*$", h, re.M).group(0) for t in ("esc", "so", "pt", "mau", "tb", "ngay_vn"))
     a = h[h.index("// ---------------------------------------------------------------- CHỈ BÁO KỸ THUẬT (hàm thuần"):
           h.index("// ---------------------------------------------------------------- hết chỉ báo kỹ thuật")]
     b = h[h.index("// ---------------------------------------------------------------- PHÂN TÍCH KỸ THUẬT – hàm thuần"):
@@ -59,3 +59,14 @@ console.log(JSON.stringify({a, b}));""")
     assert a["vg"]["nhan"] == "Gần kháng cự" and "Kháng cự 96,00–97,00" in " ".join(a["vg"]["ct"])
     assert b["vg"]["nhan"] == "Chưa đủ dữ liệu"
     assert "Khối ngoại ròng 20 phiên" in " ".join(a["dt"]["ct"])
+
+
+def test_o_hieu_suat_va_khoang_thap_cao():
+    kq = _chay(CHUOI + """
+const k1 = hs_khoang(len, 5), k0 = hs_khoang(len, 0), kd = hs_khoang({d: ["2025-12-30", "2026-01-02"], h: [10, 12], l: [9, 11], c: [9.5, 11.5]}, 8);
+console.log(JSON.stringify({lop: [hs_lop(0.3), hs_lop(-0.07), hs_lop(0.01), hs_lop(0), hs_lop(null)], k1, k0, kd, ic: Object.keys(KT_IC).sort()}));""")
+    assert kq["lop"] == ["t3", "g2", "t1", "", ""]
+    assert "1 năm qua · từ" in kq["k1"] and "THẤP" in kq["k1"] and "Cách đáy" in kq["k1"]
+    assert "1 ngày qua" in kq["k0"] and 'left:' in kq["k0"]
+    assert "Từ đầu năm · từ 02/01/2026" in kq["kd"] and "THẤP 11,00" in kq["kd"]   # chỉ phiên của năm nay
+    assert kq["ic"] == sorted(["xu", "dl", "bd", "dt", "rs", "vg"])               # mỗi trụ (kt_tru id) có biểu tượng
