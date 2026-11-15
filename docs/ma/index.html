@@ -71,7 +71,7 @@ main{max-width:1200px;margin:0 auto;padding:14px 16px 40px}
 .nut button{border:0;background:none;padding:4px 10px;border-radius:6px;font-size:12.5px;color:var(--chu2);white-space:nowrap}
 .nut button[aria-pressed=true]{background:var(--the);color:var(--chu);font-weight:600;box-shadow:0 1px 2px #0001}
 /* đầu mã */
-.ma-dau{position:sticky;top:53px;z-index:20;background:var(--the);border:1px solid var(--vien);border-radius:12px;margin-bottom:12px}
+.ma-dau{position:sticky;top:var(--dau,56px);z-index:20;background:var(--the);border:1px solid var(--vien);border-radius:12px;margin-bottom:12px}
 .ma-tren{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 14px 8px}
 .ma-ten{flex:1 1 280px;min-width:0}
 .ma-ten h2{margin:0;font-size:22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -98,6 +98,16 @@ a.huy:hover{text-decoration:none;box-shadow:inset 0 0 0 1px currentColor}
   .dau-trong .lien{flex:1 1 0;min-width:0;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:14px;font-size:13.5px;
     scrollbar-width:none;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(90deg,#000 88%,transparent)}
   .dau-trong .lien::-webkit-scrollbar{display:none}.dau-trong .gg input{height:36px}}
+/* điện thoại: HÀNG ĐÓNG BĂNG (như freeze row) – cuộn qua khối mã thì tên mã · giá · % · tab dính ngay dưới thanh đầu */
+.ma-dinh{display:none}
+@media (max-width:600px){.ma-dinh{position:fixed;left:0;right:0;top:var(--dau,56px);z-index:21;display:flex;align-items:center;
+    gap:8px;padding-left:12px;background:var(--the);border-bottom:1px solid var(--vien);box-shadow:0 2px 6px rgba(0,0,0,.08);
+    transform:translateY(-110%);visibility:hidden;transition:transform .15s,visibility .15s}
+  .ma-dinh.hien{transform:none;visibility:visible}
+  .ma-dinh .md-ma{font-weight:700;font-size:15px;white-space:nowrap}.ma-dinh .md-gia{font-weight:650;font-size:14px;white-space:nowrap}
+  .ma-dinh .md-pt{font-size:12.5px;white-space:nowrap}
+  .ma-dinh .tab{flex:1 1 0;min-width:0;border-top:0;padding:0 4px;mask-image:linear-gradient(90deg,transparent,#000 6px,#000 88%,transparent)}
+  .ma-dinh .tab a{padding:10px 8px;font-size:14px}}
 /* lưới số */
 .luoi-so{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .luoi-so>div{padding:9px 14px;box-shadow:inset -1px -1px 0 var(--luoi)}
@@ -3896,6 +3906,7 @@ async function hien_ma(ma, tab) {
     "chi-so": chi_so, "dinh-gia": dinh_gia, "lich-su": lich_su, "bao-cao": bao_cao, "tai-lieu": tai_lieu, "he-thong": he_thong}[tab] || tong_quan;
   const than = await ve(ma, k);
   nd.innerHTML = dau_ma(ma, k, tab) + than;
+  dinh_ma(ma);
   gan_su_kien(ma, k, tab);
   $("#cuoi").textContent = `BCTC cập nhật ${k.r?.cap_nhat || "–"} · giá & doanh nghiệp ${k.g?.cap_nhat || k.n?.cap_nhat || "–"} · giá trong phiên từ Bảng thị trường · không phải khuyến nghị đầu tư.`;
 }
@@ -3999,6 +4010,34 @@ document.addEventListener("keydown", e => {
 });
 function dat_dau() { const h = $("header.dau"); if (h) document.documentElement.style.setProperty("--dau", h.offsetHeight + "px"); }
 addEventListener("resize", dat_dau); dat_dau();
+
+// ---------------------------------------------------------------- HÀNG ĐÓNG BĂNG (điện thoại): tên mã · giá · % · tab
+function dinh_ma(ma) {                               // dựng lại theo khối .ma-dau vừa vẽ (chép chữ, không chép HTML dữ liệu)
+  let b = $(".ma-dinh");
+  if (!b) { b = document.createElement("div"); b.className = "ma-dinh"; b.setAttribute("aria-hidden", "true"); document.body.appendChild(b); }
+  const d = $(".ma-dau"), lon = d?.querySelector(".ma-gia .lon"), pill = d?.querySelector(".ma-gia .pill"), tab = d?.querySelector("nav.tab");
+  b.textContent = "";
+  if (!d) { b.classList.remove("hien"); return; }
+  const o = (lop, chu) => { const x = document.createElement("span"); x.className = lop; x.textContent = chu; b.appendChild(x); return x; };
+  o("md-ma", ma);
+  if (lon) o("md-gia " + [...lon.classList].filter(c => c !== "lon").join(" "), lon.textContent);
+  if (pill) o("md-pt " + [...pill.classList].filter(c => ["t", "g", "d", "tr", "sa"].includes(c)).join(" "), pill.textContent.trim());
+  if (tab) {
+    const t = tab.cloneNode(true); t.removeAttribute("aria-label"); t.querySelectorAll("a").forEach(a => a.tabIndex = -1); b.appendChild(t);
+    const a = t.querySelector("[aria-current]"); if (a) requestAnimationFrame(() => { t.scrollLeft = a.offsetLeft - t.offsetLeft; });   // tab đang xem nằm sát mép trái thanh tab
+  }
+  dinh_cuon();
+}
+function dinh_cuon() {                               // hiện khi khối mã đã cuộn khuất dưới thanh đầu
+  const b = $(".ma-dinh"), d = $(".ma-dau");
+  if (!b) return;
+  const day = $("header.dau")?.getBoundingClientRect().bottom || 0;
+  const fs = $(".fs"), phu = !!fs && getComputedStyle(fs).display !== "none";   // biểu đồ toàn trang đang phủ
+  const thay = !!d && d.offsetParent !== null && !phu;   // khối mã đang hiển thị (trang khác / biểu đồ phủ → không hiện)
+  b.classList.toggle("hien", thay && matchMedia("(max-width:600px)").matches && d.getBoundingClientRect().bottom <= day + 2);
+}
+addEventListener("scroll", dinh_cuon, {passive: true}); addEventListener("resize", dinh_cuon);
+addEventListener("hashchange", () => setTimeout(dinh_cuon, 50));
 
 // ---------------------------------------------------------------- TOÀN MÀN HÌNH (biểu đồ + công cụ vẽ + watchlist)
 let FS = null;
