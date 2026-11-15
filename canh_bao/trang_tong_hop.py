@@ -134,7 +134,9 @@ def _bang(cot, dong, lop=""):
 
 
 def _the(nhan, gia, phu="", lop=""):
-    return (f'<div class="the {lop}"><div class="nhan">{_e(nhan)}</div><div class="gia">{gia}</div>'
+    import re
+    dai = " dai" if len(re.sub(r"<[^>]+>|&\w+;", "x", str(gia))) > 12 else ""     # chữ dài (VD nhiệt thị trường) → cỡ nhỏ hơn
+    return (f'<div class="the {lop}"><div class="nhan">{_e(nhan)}</div><div class="gia{dai}">{gia}</div>'
             f'<div class="phu">{phu}</div></div>')
 
 
@@ -316,7 +318,13 @@ tbody tr:hover td{background:var(--nen-nhan)}
 .chu-giai{font-size:12px;color:var(--mo)}.chu-giai span{display:inline-block;width:14px;height:3px;
 margin:0 4px 3px 10px;vertical-align:middle}.k-nav{background:var(--nhan)}.k-vni{background:var(--vni)}
 section.rieng{border-color:var(--vang)}footer{color:var(--mo);font-size:12px;text-align:center}
-@media (max-width:560px){.the .gia{font-size:19px}th,td{padding:5px 6px}}
+.the .gia.dai{font-size:16px;line-height:1.35}
+@media (max-width:560px){.the .gia{font-size:19px}.the .gia.dai{font-size:15px}th,td{padding:5px 6px}
+main{padding:12px 12px 40px}header{padding:12px 14px;border-radius:12px}header h1{font-size:18px}
+nav{position:sticky;top:0;z-index:5;background:var(--nen);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+-webkit-overflow-scrolling:touch;margin:4px -12px;padding:8px 12px}   /* điện thoại: 1 hàng cuộn ngang, dính trên cùng */
+nav::-webkit-scrollbar{display:none}nav a{white-space:nowrap;flex:none}
+section{padding:12px;margin:12px 0}.luoi-the{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
 """
 
 
