@@ -12,6 +12,8 @@
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
 #   xu_huong / cb_luoi – (chạy tay, 15/11/2026) SuperTrend / Magic Trend dò ATR – hệ số – CCI ở 5 vai trò (lọc, ½ KL, thoát
 #           thêm, thêm lệnh) · mọi chỉ báo khác trên web dò tham số (lọc, ½ KL). Chỉ đo, luật đặt trước C1 + C2 + C3.
+#   vao_lai – (chạy tay, 15/11/2026) vào lại mã vừa bán khi còn tăng mạnh (MACD ngày bỏ lọc tuần / vượt đỉnh / đỉnh 52
+#           tuần × lệnh trước lên tầng tuần / mọi lệnh × lọc VN-Index). Chỉ đo, luật đặt trước C1 + C2 + C3.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -60,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, xu_huong, cb_luoi, xu_huong2]
+        phan: [chuan, cham1r, xu_huong, cb_luoi, xu_huong2, vao_lai]
     runs-on: ubuntu-24.04
     defaults:
       run:
