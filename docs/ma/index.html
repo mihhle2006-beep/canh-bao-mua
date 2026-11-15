@@ -3238,6 +3238,19 @@ function kt_dong_thuan(x) {                              // x = {h, l, c} → ph
   const [muc, nhan] = diem == null ? ["", "Chưa đủ dữ liệu"] : diem >= 0.5 ? ["t", "Mua mạnh"] : diem >= 0.1 ? ["t", "Mua"] : diem > -0.1 ? ["d", "Trung lập"] : diem > -0.5 ? ["g", "Bán"] : ["g", "Bán mạnh"];
   return {ma: M, dd: D, n: all.length, diem, muc, nhan, ma_dem: [dem(M, 1), dem(M, 0), dem(M, -1)], dd_dem: [dem(D, 1), dem(D, 0), dem(D, -1)]};
 }
+function kt_hv(c, n = 20, nam = 250) {                 // độ biến động lịch sử: độ lệch chuẩn log-return n kỳ × √nam (tỷ lệ / năm)
+  const r = c.map((v, i) => i && cb_ok(v) && cb_ok(c[i - 1]) && v > 0 && c[i - 1] > 0 ? Math.log(v / c[i - 1]) : null);
+  return r.map((_, i) => { if (i < n) return null; const z = r.slice(i - n + 1, i + 1); if (z.some(q => q == null)) return null;
+    const m = z.reduce((a, b) => a + b, 0) / n; return Math.sqrt(z.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1) * nam); });
+}
+function kt_beta(c, v, n = 250) {                       // beta so chỉ số: cov(lãi mã, lãi chỉ số) / var(lãi chỉ số), n kỳ cuối (v: giá chỉ số theo nến)
+  if (!v) return null; const N = c.length, x = [], y = [];
+  for (let i = Math.max(1, N - n); i < N; i++) if ([c[i], c[i - 1], v[i], v[i - 1]].every(z => cb_ok(z) && z > 0)) { y.push(c[i] / c[i - 1] - 1); x.push(v[i] / v[i - 1] - 1); }
+  if (x.length < 0.8 * Math.min(n, 120)) return null;
+  const mx = x.reduce((a, b) => a + b, 0) / x.length, my = y.reduce((a, b) => a + b, 0) / y.length;
+  let sxy = 0, sxx = 0; x.forEach((q, i) => { sxy += (q - mx) * (y[i] - my); sxx += (q - mx) ** 2; });
+  return sxx > 0 ? sxy / sxx : null;
+}
 function kt_phan_ky(gh, gl, osc, k = 5, tam = 60, gan = 25) {   // phân kỳ osc so giá: 2 đỉnh / đáy xác nhận gần nhất (k nến mỗi bên) trong tam nến cuối, đỉnh / đáy sau cách hiện tại ≤ gan nến
   const N = gh.length, dinh = [], day = [], ok = cb_ok;
   for (let i = Math.max(k, N - tam); i <= N - 1 - k; i++) {
@@ -3253,7 +3266,7 @@ function kt_phan_ky(gh, gl, osc, k = 5, tam = 60, gan = 25) {   // phân kỳ os
   const hai = a => a.length >= 2 && a[a.length - 1] >= N - 1 - gan ? [a[a.length - 2], a[a.length - 1]] : null, D = hai(dinh), Y = hai(day);
   return {giam: !!D && gh[D[1]] > gh[D[0]] && osc[D[1]] < osc[D[0]], tang: !!Y && gl[Y[1]] < gl[Y[0]] && osc[Y[1]] > osc[Y[0]], dinh: D, day: Y};
 }
-function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi nến x = {d, h, l, c, v}; o: {dt (kt_dong_thuan), tien (nến đã đóng), nn (tỷ, khung ngày), rrg [[RS-Ratio, RS-Mom]…], vni [giá theo nến], n3, vung (doc_bd)}
+function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi nến x = {d, h, l, c, v}; o: {dt (kt_dong_thuan), nam (250 | 52), cd {pt mua chủ động, ngay, tam}, tien (nến đã đóng), nn (tỷ, khung ngày), rrg [[RS-Ratio, RS-Mom]…], vni [giá theo nến], n3, vung (doc_bd)}
   const {h, l, c} = x, N = c.length, g = kt_v(c), ok = cb_ok, kq = [];
   // Xu hướng = đa số phiếu của 5 nhóm (như app): giá so MA khung · trật tự MA · ADX ±DI · mây Ichimoku · Parabolic SAR
   const [s5, s20, s50, s200] = [5, 20, 50, 200].map(n => kt_v(cb_sma(c, n))), dm = cb_dmi(h, l, c, 14), adx = kt_v(dm.adx), pdi = kt_v(dm.pdi), mdi = kt_v(dm.mdi);
@@ -3266,7 +3279,7 @@ function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi
     sl == null ? null : sl ? 1 : -1];
   const nc = nh.filter(z => z != null), tg = nc.filter(z => z > 0).length, gi = nc.filter(z => z < 0).length;
   const ma_t = (t, m) => m == null ? "" : `${t} ${so(m, 2)} <span class="${g >= m ? "t" : "g"}">${g >= m ? "▲" : "▼"}</span>`;
-  const phieu_n = s_ => s_ == null ? `<span class="m">–</span>` : s_ > 0 ? `<b class="t">Tăng</b>` : s_ < 0 ? `<b class="g">Giảm</b>` : `<b class="m">Trung tính</b>`;
+  const phieu_n = (s_, t = ["Tăng", "Giảm"]) => s_ == null ? `<span class="m">–</span>` : s_ > 0 ? `<b class="t">${t[0]}</b>` : s_ < 0 ? `<b class="g">${t[1]}</b>` : `<b class="m">Trung tính</b>`;
   const xu = nc.length < 3 ? ["", "Chưa đủ dữ liệu"] : tg * 2 > nc.length ? ["t", "Tăng"] : gi * 2 > nc.length ? ["g", "Giảm"] : ["d", "Đi ngang"];
   kq.push({id: "xu", ten: "Xu hướng", hoi: "Giá đang đi lên, đi ngang hay đi xuống?", muc: xu[0], nhan: xu[1], pp: "kt_xu",
     so: !nc.length ? "" : tg > gi ? `${tg}/${nc.length} nhóm tăng` : gi > tg ? `${gi}/${nc.length} nhóm giảm` : `${tg} tăng · ${gi} giảm`, ct: [
@@ -3284,18 +3297,36 @@ function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi
     so: rv == null ? "" : `RSI ${so(rv, 0)}`, ct: [dd5.length ? `Phiếu: <b class="t">${mua} Mua</b> · ${dd5.length - mua - ban} Trung lập · <b class="g">${ban} Bán</b> (RSI · Stochastic · CCI · MACD · Williams %R)` : "",
       `${rv >= 70 ? "RSI quá mua · " : rv != null && rv <= 30 ? "RSI quá bán · " : ""}Stochastic %K ${kv == null ? "–" : so(kv, 0)} · MACD histogram ${hv == null ? "–" : `<span class="${mau(hv)}">${so(hv, 3)}</span>${dh == null ? "" : dh >= 0 ? " ↑" : " ↓"}`}`,
       pk.giam ? `<b class="g">Phân kỳ giảm</b>: giá lập đỉnh cao hơn, RSI đỉnh thấp hơn` : pk.tang ? `<b class="t">Phân kỳ tăng</b>: giá lập đáy thấp hơn, RSI đáy cao hơn` : "Chưa thấy phân kỳ RSI"].filter(Boolean)});
-  const bb = cb_bb(c, 20, 2), rong = bb.gi.map((m, i) => ok(m) && m && ok(bb.tr[i]) ? (bb.tr[i] - bb.du[i]) / m : null), rv2 = kt_v(rong);
-  const w = rong.slice(-120).filter(ok), pv = rv2 != null && w.length >= 30 ? w.filter(z => z <= rv2).length / w.length : null, atp = kt_v(cb_atr_pt(h, l, c, 14));
-  const bd = pv == null ? ["", "Chưa đủ dữ liệu"] : pv <= 0.2 ? ["d", "Co hẹp"] : pv >= 0.8 ? ["g", "Giãn mạnh"] : ["t", "Bình thường"];
-  kq.push({id: "bd", ten: "Biến động", hoi: "Giá đang co hay giãn, rủi ro biến động thế nào?", muc: bd[0], nhan: bd[1], pp: "kt_bd",
-    so: atp == null ? "" : `ATR ${so(atp, 1)}%`, ct: [`Độ rộng Bollinger ${rv2 == null ? "–" : pt(rv2, 1, false)}${pv == null ? "" : ` · hẹp hơn ${pt(1 - pv, 0, false)} số kỳ trong 120 kỳ`}`]});
-  const T = o.tien || x;                               // dòng tiền: nến đã đóng (phiên đang chạy chưa đủ khối lượng)
-  const mf = kt_v(cb_mfi(T.h, T.l, T.c, T.v, 14)), cm = kt_v(cb_cmf(T.h, T.l, T.c, T.v, 20)), ob = cb_obv(T.c, T.v), obv = kt_v(ob), obm = kt_v(cb_sma(ob, 20)), nn = o.nn;
-  const dt_ = [cm == null ? null : Math.sign(cm), obv == null || obm == null ? null : obv > obm ? 1 : -1, mf == null ? null : mf > 50 ? 1 : -1, nn ? Math.sign(nn) : null].filter(z => z != null);
-  const sd = dt_.reduce((a, b) => a + b, 0), dt = !dt_.length ? ["", "Chưa đủ dữ liệu"] : sd >= 2 ? ["t", "Tiền vào"] : sd <= -2 ? ["g", "Tiền ra"] : ["d", "Trung tính"];
-  kq.push({id: "dt", ten: "Dòng tiền", hoi: "Tiền đang vào hay ra, ai đang mua?", muc: dt[0], nhan: dt[1], pp: "kt_tien", so: mf == null ? "" : `MFI ${so(mf, 0)}`,
-    ct: [`CMF ${cm == null ? "–" : `<span class="${mau(cm)}">${so(cm, 2)}</span>`} · OBV ${obv == null || obm == null ? "–" : obv > obm ? "trên" : "dưới"} TB20${mf >= 80 ? " · dòng tiền quá mua" : mf != null && mf <= 20 ? " · dòng tiền quá bán" : ""}`,
-      nn == null ? "" : `Khối ngoại ròng 20 phiên <span class="${mau(nn)}">${so(nn, 1)}</span> tỷ`].filter(Boolean)});
+  // Biến động (như app): Bollinger %B / độ rộng · Keltner (siết) · ATR% · độ biến động lịch sử · beta
+  const bb = cb_bb(c, 20, 2), ke = cb_keltner(h, l, c, 20, 1.5, 10), nam = o.nam || 250, i_ = N - 1;
+  const rong = bb.gi.map((m, i) => ok(m) && m && ok(bb.tr[i]) ? (bb.tr[i] - bb.du[i]) / m : null), bw = kt_v(rong), w = rong.slice(-120).filter(ok);
+  const pb = g != null && ok(bb.tr[i_]) && bb.tr[i_] > bb.du[i_] ? (g - bb.du[i_]) / (bb.tr[i_] - bb.du[i_]) : null;
+  const ap = cb_atr_pt(h, l, c, 14), atp = kt_v(ap), hl_ = kt_hv(c, 20, nam), hl = kt_v(hl_);
+  const tb120 = a => { const z = a.slice(-120).filter(ok); return z.length >= 30 ? tb(z) : null; }, atb = tb120(ap), htb = tb120(hl_);
+  const thap = bw != null && w.length >= 30 && bw <= Math.min(...w), trong_kc = ok(bb.tr[i_]) && ok(ke.tr[i_]) && bb.tr[i_] < ke.tr[i_] && bb.du[i_] > ke.du[i_];
+  const cao = pb != null && (pb > 1 || pb < 0) || atp != null && atb && hl != null && htb && atp >= 1.5 * atb && hl >= 1.5 * htb, be = kt_beta(c, o.vni, nam);
+  const bd = pb == null || bw == null ? ["", "Chưa đủ dữ liệu"] : cao ? ["g", "Biến động cao"] : thap || trong_kc ? ["d", "Đang siết"] : ["t", "Ổn định"];
+  kq.push({id: "bd", ten: "Biến động", hoi: "Giá đang siết hay biến động mạnh, rủi ro thế nào?", muc: bd[0], nhan: bd[1], pp: "kt_bd",
+    so: atp == null ? "" : `ATR ${so(atp, 1)}%`, ct: [
+      `%B ${pb == null ? "–" : so(pb, 2)}${pb > 1 ? " (trên dải trên)" : pb != null && pb < 0 ? " (dưới dải dưới)" : ""} · độ rộng Bollinger ${bw == null ? "–" : pt(bw, 1, false)}${thap ? " – thấp nhất 120 kỳ" : ""}`,
+      `Bollinger ${trong_kc ? "<b>nằm trong</b>" : "không nằm trong"} Keltner (20; 1,5 × ATR10)`,
+      hl == null ? "" : `Độ biến động lịch sử ${pt(hl, 0, false)}/năm${htb ? ` · TB 120 kỳ ${pt(htb, 0, false)}` : ""}${atb ? ` · ATR TB 120 kỳ ${so(atb, 1)}%` : ""}`,
+      be == null ? "" : `Beta ${so(be, 2)} so VN-Index (${nam === 52 ? "52 tuần" : "250 phiên"} gần nhất)`].filter(Boolean)});
+  // Dòng tiền (như app): KL so TB20 theo chiều giá · OBV / A/D dốc · mua chủ động · khối ngoại – nến đã đóng (phiên đang chạy chưa đủ KL)
+  const T = o.tien || x, NT = T.c.length, Tv = T.v.map(z => z ?? 0), nn = o.nn, cd = o.cd;
+  const mf = kt_v(cb_mfi(T.h, T.l, T.c, T.v, 14)), ob = cb_obv(T.c, Tv), ad = cb_ad(T.h, T.l, T.c, Tv);
+  const kv20 = kt_v(cb_sma(Tv, 20)), klr = kv20 ? Tv[NT - 1] / kv20 : null, dg = NT > 1 && ok(T.c[NT - 1]) && ok(T.c[NT - 2]) ? Math.sign(T.c[NT - 1] - T.c[NT - 2]) : null;
+  const doc_ = a => a.length > 10 && ok(a[a.length - 1]) && ok(a[a.length - 11]) ? Math.sign(a[a.length - 1] - a[a.length - 11]) : null;
+  const tp = [klr == null || dg == null ? null : klr > 1 ? dg : 0, doc_(ob), doc_(ad), cd?.pt == null ? null : cd.pt > 0.55 ? 1 : cd.pt < 0.45 ? -1 : 0, nn == null ? null : Math.sign(nn)];
+  const tc = tp.filter(z => z != null), tv_ = tc.filter(z => z > 0).length, tr_ = tc.filter(z => z < 0).length, VR = ["Vào", "Ra"];
+  const huong_ = s_ => s_ == null ? "–" : s_ > 0 ? "dốc lên" : s_ < 0 ? "dốc xuống" : "đi ngang";
+  const dt = tc.length < 2 ? ["", "Chưa đủ dữ liệu"] : tv_ * 2 > tc.length ? ["t", "Tiền vào"] : tr_ * 2 > tc.length ? ["g", "Tiền ra"] : ["d", "Trung tính"];
+  kq.push({id: "dt", ten: "Dòng tiền", hoi: "Tiền đang vào hay ra, ai đang mua?", muc: dt[0], nhan: dt[1], pp: "kt_tien", so: mf == null ? "" : `MFI ${so(mf, 0)}`, ct: [
+    `${phieu_n(tp[0], VR)} KL ${klr == null ? "–" : pt(klr, 0, false)} TB20${klr > 1.5 ? " (đột biến)" : ""}${dg == null ? "" : dg > 0 ? " · giá tăng" : dg < 0 ? " · giá giảm" : " · giá đứng"}`,
+    `${phieu_n(tp[1], VR)} OBV ${huong_(tp[1])} · ${phieu_n(tp[2], VR)} A/D ${huong_(tp[2])} (so 10 kỳ trước)`,
+    cd?.pt == null ? "" : `${phieu_n(tp[3], VR)} Mua chủ động ${pt(cd.pt, 0, false)}${cd.ngay ? ` phiên ${esc(cd.ngay)}` : ""}${cd.tam ? " (đang giao dịch)" : ""}`,
+    nn == null ? "" : `${phieu_n(tp[4], VR)} Khối ngoại ròng 20 phiên <span class="${mau(nn)}">${so(nn, 1)}</span> tỷ`,
+    mf >= 80 ? "MFI ≥ 80: dòng tiền quá mua" : mf != null && mf <= 20 ? "MFI ≤ 20: dòng tiền quá bán" : ""].filter(Boolean)});
   const R = o.rrg, rr = R?.length ? R[R.length - 1] : null, rr0 = R?.length > 1 ? R[R.length - 2] : null;
   const n3 = o.n3 || 63, vn = o.vni, ret = N > n3 && c[N - 1 - n3] ? c[N - 1] / c[N - 1 - n3] - 1 : null, vr = vn && N > n3 && vn[N - 1 - n3] && vn[N - 1] ? vn[N - 1] / vn[N - 1 - n3] - 1 : null;
   const ch = ret != null && vr != null ? ret - vr : null;
@@ -3354,16 +3385,35 @@ Object.assign(PT_PP, {
     doc: [["t", "Tích cực", "đa số phiếu Mua, không có phân kỳ giảm"], ["d", "Trung lập", "phiếu chia đều, hoặc có phân kỳ ngược chiều phiếu"], ["g", "Tiêu cực", "đa số phiếu Bán, không có phân kỳ tăng"]],
     gh: ["Trong xu hướng mạnh, RSI / Stochastic có thể ở vùng quá mua (quá bán) rất lâu – quá mua không đồng nghĩa phải bán.", "Các chỉ báo dao động đều tính từ cùng chuỗi giá nên trùng thông tin; số phiếu không phải xác suất.", "Phân kỳ chỉ có ý nghĩa khi giá xác nhận (gãy hỗ trợ / vượt kháng cự) và có thể kéo dài nhiều nhịp."],
     tk: ["Wilder, J. W. (1978). New Concepts in Technical Trading Systems.", "Appel, G. (2005). Technical Analysis: Power Tools for Active Investors.", "Lane, G. (1984). Lane's Stochastics. Technical Analysis of Stocks & Commodities.", "Lambert, D. (1980). Commodity Channel Index: Tools for Trading Cyclic Trends. Commodities."]},
-  kt_bd: {ten: "Biến động", ng: "Biến động đo độ rộng dao động giá: dải Bollinger (John Bollinger, thập niên 1980) và ATR (Wilder, 1978). Giai đoạn biến động co hẹp thường đi trước một nhịp biến động mạnh (Bollinger Squeeze).",
-    ct: ["ATR 14 % = ATR / giá đóng cửa", "Độ rộng Bollinger 20,2 = (dải trên − dải dưới) / đường giữa", "Phân vị độ rộng = vị trí độ rộng hiện tại trong 120 kỳ gần nhất (0% hẹp nhất, 100% rộng nhất)"],
-    doc: [["d", "Co hẹp", "phân vị ≤ 20% – tích luỹ, dễ bứt phá (chưa biết chiều)"], ["t", "Bình thường", "phân vị 20–80%"], ["g", "Giãn mạnh", "phân vị ≥ 80% – biên dao động lớn, rủi ro cao"]],
-    gh: ["Biến động không cho biết chiều đi tiếp theo.", "Mã thanh khoản thấp có thể co / giãn bất thường chỉ vì vài phiên."],
-    tk: ["Bollinger, J. (2001). Bollinger on Bollinger Bands.", "Wilder, J. W. (1978). New Concepts in Technical Trading Systems."]},
-  kt_tien: {ten: "Dòng tiền", ng: "Dòng tiền kết hợp giá và khối lượng: OBV (Joe Granville, 1963), MFI (Gene Quong và Avrum Soudack, 1989), CMF (Marc Chaikin); ở khung ngày thêm giao dịch ròng của khối ngoại.",
-    ct: ["OBV: cộng khối lượng phiên tăng, trừ phiên giảm; so với trung bình 20 kỳ của chính OBV", "MFI 14: RSI có trọng số khối lượng (giá điển hình × khối lượng)", "CMF 20 = Σ(vị trí đóng cửa trong biên phiên × khối lượng) / Σ khối lượng", "Khối ngoại ròng 20 phiên (tỷ đồng, chỉ khung ngày)", "Điểm = dấu CMF + (OBV trên / dưới TB20) + (MFI trên / dưới 50) [+ dấu khối ngoại]"],
-    doc: [["t", "Tiền vào", "điểm ≥ 2"], ["d", "Trung tính", "−2 < điểm < 2 (MFI ≥ 80 / ≤ 20: dòng tiền quá mua / quá bán)"], ["g", "Tiền ra", "điểm ≤ −2"]],
-    gh: ["Phiên thoả thuận lớn có thể làm lệch OBV / CMF.", "Không tách được ai mua (tổ chức hay cá nhân), trừ phần khối ngoại.", "Phiên đang giao dịch chưa có khối lượng đầy đủ nên các chỉ báo dòng tiền tính tới phiên đã đóng."],
-    tk: ["Granville, J. (1963). Granville's New Key to Stock Market Profits.", "Quong, G., Soudack, A. (1989). Volume-Weighted RSI: Money Flow. Technical Analysis of Stocks & Commodities.", "Chaikin, M. – Chaikin Money Flow."]},
+  kt_bd: {ten: "Biến động & dải giá", ng: "Bollinger Bands do John Bollinger giới thiệu đầu thập niên 1980; Keltner Channels của Chester Keltner (1960), bản dùng ATR phổ biến về sau (Linda Raschke); ATR của J. Welles Wilder (1978); “TTM Squeeze” của John Carter dùng Bollinger nằm trong Keltner để nhận biết giai đoạn siết.",
+    ct: ["Bollinger 20,2: giữa = SMA20 · trên / dưới = SMA20 ± 2 × độ lệch chuẩn 20 kỳ",
+      "%B = (giá − dải dưới) / (dải trên − dải dưới) · độ rộng (bandwidth) = (dải trên − dải dưới) / dải giữa",
+      "Keltner 20; 1,5 × ATR10: giữa = EMA20 · trên / dưới = EMA20 ± 1,5 × ATR10",
+      "ATR 14 = trung bình Wilder của biên độ thực · ATR% = ATR / giá đóng cửa",
+      "Độ biến động lịch sử = độ lệch chuẩn log-return 20 kỳ × √250 (khung tuần × √52)",
+      "Beta = hiệp phương sai(lãi mã, lãi VN-Index) / phương sai(lãi VN-Index), 250 phiên (52 tuần) gần nhất",
+      "Đang siết: độ rộng Bollinger thấp nhất 120 kỳ, hoặc Bollinger nằm trong Keltner",
+      "Biến động cao: %B > 1 hoặc < 0, hoặc ATR% và độ biến động lịch sử cùng ≥ 1,5 lần trung bình 120 kỳ"],
+    doc: [["t", "Ổn định", "giá trong dải Bollinger, biên độ quanh mức trung bình"], ["d", "Đang siết", "độ rộng thấp nhất 120 kỳ hoặc Bollinger trong Keltner; thường đi trước biến động lớn"], ["g", "Biến động cao", "%B > 1 hoặc < 0, ATR% và độ biến động cao hơn hẳn trung bình"]],
+    gh: ["Siết cho biết “sắp có biến động” nhưng không cho biết hướng.", "Giá vượt dải trên không tự động là tín hiệu bán: trong xu hướng mạnh giá có thể “đi dọc” dải.", "Beta tính trên 1 năm gần nhất so VN-Index; không phản ánh biến động ngắn hạn và thay đổi theo giai đoạn."],
+    tk: ["Bollinger, J. (2001). Bollinger on Bollinger Bands.", "Carter, J. (2005). Mastering the Trade.", "Wilder, J. W. (1978). New Concepts in Technical Trading Systems."]},
+  kt_tien: {ten: "Khối lượng & dòng tiền", ng: "On-Balance Volume do Joseph Granville đưa ra năm 1963; đường Tích lũy / Phân phối (A/D line) của Marc Chaikin; Money Flow Index của Gene Quong và Avrum Soudack (1989). Khối ngoại ròng và mua chủ động lấy từ dữ liệu giao dịch của trang (mua chủ động chỉ có ở khung ngày, cho các mã thanh khoản cao và mã trong danh sách theo dõi).",
+    ct: ["KL so với TB = KL kỳ / trung bình 20 kỳ · đột biến khi > 150%",
+      "MFI 14 = 100 − 100 / (1 + dòng tiền dương / dòng tiền âm) · dòng tiền = giá tiêu biểu × KL, giá tiêu biểu = (cao + thấp + đóng) / 3",
+      "OBV: cộng KL khi giá tăng, trừ khi giá giảm",
+      "A/D line: cộng dồn KL × [(đóng − thấp) − (cao − đóng)] / (cao − thấp)",
+      "Mua chủ động % = KL khớp bên mua chủ động / tổng KL khớp",
+      "Khối ngoại ròng = giá trị mua − giá trị bán của nhà đầu tư nước ngoài, cộng 20 phiên",
+      "Phiếu (mỗi thước đo Vào / Trung tính / Ra):",
+      "  KL > TB20 khi giá tăng → Vào · KL > TB20 khi giá giảm → Ra",
+      "  OBV, A/D so với 10 kỳ trước: dốc lên → Vào · dốc xuống → Ra",
+      "  Mua chủ động > 55% → Vào · < 45% → Ra",
+      "  Khối ngoại ròng 20 phiên > 0 → Vào · < 0 → Ra",
+      "Tiền vào / Tiền ra khi quá nửa số thước đo có số liệu cùng chiều, còn lại là Trung tính",
+      "KL, OBV, A/D, MFI tính tới nến đã đóng (phiên đang chạy chưa đủ khối lượng)"],
+    doc: [["t", "Tiền vào", "KL trên trung bình khi giá tăng, OBV / A/D dốc lên, mua chủ động > 55%, khối ngoại mua ròng"], ["d", "Trung tính", "các thước đo trái chiều hoặc gần trung bình"], ["g", "Tiền ra", "KL tăng khi giá giảm, OBV dốc xuống, bán chủ động áp đảo, khối ngoại bán ròng"]],
+    gh: ["Khối lượng đột biến có thể do thỏa thuận, cơ cấu quỹ, ngày đáo hạn phái sinh.", "Khối ngoại chỉ là một nhóm nhà đầu tư; mua ròng không bảo đảm giá tăng.", "Số liệu trong phiên (mua chủ động) thay đổi liên tục; trang chưa có số liệu tự doanh."],
+    tk: ["Granville, J. (1963). Granville's New Key to Stock Market Profits.", "Quong, G., Soudack, A. (1989). Volume-Weighted RSI: Money Flow. Technical Analysis of Stocks & Commodities."]},
   kt_rs: {ten: "Sức mạnh tương đối", ng: "So mã với VN-Index bằng đồ thị xoay vòng tương đối (RRG) của Julius de Kempenaer (phát triển từ 2004, công bố rộng rãi 2011): RS-Ratio đo mã mạnh hơn hay yếu hơn chuẩn, RS-Momentum đo sức mạnh đó đang tăng hay giảm. Mã chưa có trong RRG thì so lãi 3 tháng với VN-Index.",
     ct: ["RS-Ratio: sức mạnh tương đối của mã so với VN-Index, chuẩn hoá quanh 100", "RS-Momentum: tốc độ thay đổi của RS-Ratio, chuẩn hoá quanh 100", "Đuôi nối các điểm theo thời gian; mã thường xoay theo chiều kim đồng hồ qua 4 góc", "Dự phòng: chênh lệch = lãi 3 tháng (63 phiên / 13 tuần) của mã − của VN-Index"],
     doc: [["t", "Dẫn dắt", "RS-Ratio ≥ 100 và RS-Momentum ≥ 100 (dự phòng: hơn VN-Index ≥ 5 đpt)"], ["d", "Cải thiện / Suy yếu", "một trong hai trục dưới 100 (dự phòng: chênh ±5 đpt)"], ["g", "Tụt hậu", "cả hai trục dưới 100 (dự phòng: kém VN-Index ≥ 5 đpt)"]],
@@ -3380,11 +3430,17 @@ async function ky_thuat(ma, k) {
   if (!x || x.c.length < 60) return `<div class="the"><div class="trong">Chưa đủ dữ liệu giá để phân tích kỹ thuật.</div></div>`;
   const tuan = ST.kt === "W", khung = tuan ? "W" : "D", xx = gop_khung(x, khung), N = xx.c.length;
   const cat = a => x.tam ? a.slice(0, -1) : a, kin = {d: cat(x.d), o: cat(x.o), h: cat(x.h), l: cat(x.l), c: cat(x.c), v: cat(x.v), nn: cat(x.nn || [])};
-  const [vni, cp] = await Promise.all([tai_vni().catch(() => null), tai_cp().catch(() => null)]);
+  const lay_bg = async () => {                          // khớp theo bước giá (mua chủ động): chỉ có trong giờ giao dịch, mã thuộc buoc_gia/ds.json
+    const v_ = new Date(Date.now() + 7 * 3600e3), p_ = v_.getUTCHours() * 60 + v_.getUTCMinutes(), th_ = v_.getUTCDay();
+    if (tuan || th_ < 1 || th_ > 5 || p_ < 555 || p_ > 930) return null;
+    const ds = await lay(DL + "buoc_gia/ds.json", false); return ds?.ma?.includes(ma) ? lay(DL + "buoc_gia/" + ma + ".json", false) : null; };
+  const [vni, cp, bg] = await Promise.all([tai_vni().catch(() => null), tai_cp().catch(() => null), lay_bg().catch(() => null)]);
   if (!RRG) RRG = (await lay(DL + "rrg.json", false).catch(() => null)) || {};
   let vung = null; try { vung = cp?._thu?.phan_tich ? cp._thu.phan_tich({o: xx.o, h: xx.h, l: xx.l, c: xx.c, v: xx.v})?.vung || null : null; } catch (e) {}
   const nn = !tuan && kin.nn.some(z => z != null) ? kin.nn.slice(-20).reduce((a, z) => a + (z || 0), 0) : null;
-  const dt = kt_dong_thuan(xx), tru = kt_tru(xx, {dt, tien: tuan ? gop_khung(kin, "W") : kin, nn, rrg: RRG?.[khung]?.ma?.[ma], vni: vni?.size ? vni_theo(xx.d, vni) : null,
+  const bg_ok = bg?.b?.length && bg.phien === String(x.d[x.d.length - 1]).slice(0, 10), bg_t = bg_ok ? bg.b.reduce((a, z) => a + (z[2] || 0) + (z[3] || 0), 0) : 0;
+  const cd = bg_t ? {pt: bg.b.reduce((a, z) => a + (z[2] || 0), 0) / bg_t, ngay: ngay_vn(bg.phien), tam: !!x.tam} : null;
+  const dt = kt_dong_thuan(xx), tru = kt_tru(xx, {dt, nam: tuan ? 52 : 250, cd, tien: tuan ? gop_khung(kin, "W") : kin, nn, rrg: RRG?.[khung]?.ma?.[ma], vni: vni?.size ? vni_theo(xx.d, vni) : null,
     n3: tuan ? 13 : 63, n3_ten: "3 tháng", vung});
   const gn = gia_nay(ma, k), gia = gn.gia ?? x.c[x.c.length - 1];
   const n52 = Math.min(250, x.c.length), hs = x.h.slice(-n52).filter(cb_ok), ls = x.l.slice(-n52).filter(cb_ok);

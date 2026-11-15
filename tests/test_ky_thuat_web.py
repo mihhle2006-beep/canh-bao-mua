@@ -96,3 +96,34 @@ console.log(JSON.stringify({a, b, c, cu}));""")
     assert kq["b"]["tang"] and not kq["b"]["giam"] and kq["b"]["day"] == [20, 40]    # giá đáy thấp dần, RSI đáy cao dần
     assert not kq["c"]["giam"]                                                     # RSI cùng chiều giá → không phân kỳ
     assert not kq["cu"]["giam"]                                                    # đỉnh sau đã quá 25 nến → bỏ
+
+
+def test_bien_dong_siet_cao_va_beta():
+    kq = _chay(CHUOI + """
+const mk = c => ({d: c.map((_, i) => String(i)), o: c, h: c.map(v => v * 1.004), l: c.map(v => v * 0.996), c, v: c.map(() => 1e6)});
+const on = Array.from({length: 260}, (_, i) => 50 + 3 * Math.sin(i / 2) * (i < 230 ? 1 : 0.6 ** (i - 229)));   // biên co dần
+const vot = on.slice(0, 259).concat([on[258] * 1.15]);
+const v = Array.from({length: 300}, (_, i) => 1000 * (1 + 0.01 * Math.sin(i * 1.7)));
+const c2 = [50]; for (let i = 1; i < 300; i++) c2.push(c2[i - 1] * (1 + 2 * (v[i] / v[i - 1] - 1)));
+const hv0 = kt_hv(Array.from({length: 60}, (_, i) => 10 * 1.01 ** i));
+console.log(JSON.stringify({siet: kt_tru(mk(on))[2], cao: kt_tru(mk(vot))[2], on: kt_tru(len)[2],
+  beta: kt_beta(c2, v), beta_ngan: kt_beta(c2.slice(0, 50), v.slice(0, 50)), hv0: hv0.at(-1), hv_dau: hv0[19]}));""")
+    assert kq["siet"]["nhan"] == "Đang siết" and "thấp nhất 120 kỳ" in kq["siet"]["ct"][0]
+    assert kq["cao"]["nhan"] == "Biến động cao" and "trên dải trên" in kq["cao"]["ct"][0]
+    assert kq["on"]["nhan"] == "Ổn định"
+    assert abs(kq["beta"] - 2) < 1e-6 and kq["beta_ngan"] is None              # lãi mã = 2 × lãi chỉ số · thiếu dữ liệu → bỏ
+    assert abs(kq["hv0"]) < 1e-9 and kq["hv_dau"] is None                       # tăng đều → độ biến động 0 · chưa đủ 20 kỳ
+
+
+def test_dong_tien_phieu():
+    kq = _chay(CHUOI + """
+const x = tao(300, -0.1), v = x.v.slice(), c = x.c.slice(); v[299] = 5e6; c[299] = c[298] - 1;   // phiên cuối giảm, KL đột biến
+const ra = kt_tru({...x, v, c, h: c.map(z => z + 0.5), l: c.map(z => z - 0.5)}, {nn: -30, cd: {pt: 0.3, ngay: "13/11/2026"}})[3];
+const vao = kt_tru(len, {nn: 12, cd: {pt: 0.62, ngay: "13/11/2026", tam: true}})[3];
+const tuan = kt_tru(len)[3];
+console.log(JSON.stringify({ra, vao, tuan}));""")
+    ra, vao, tuan = kq["ra"], kq["vao"], kq["tuan"]
+    assert ra["nhan"] == "Tiền ra" and "(đột biến)" in ra["ct"][0] and "giá giảm" in ra["ct"][0]
+    assert "Mua chủ động 30%" in " ".join(ra["ct"]) and "Khối ngoại ròng 20 phiên" in " ".join(ra["ct"])
+    assert vao["nhan"] == "Tiền vào" and "(đang giao dịch)" in " ".join(vao["ct"])
+    assert not any("Mua chủ động" in z or "Khối ngoại" in z for z in tuan["ct"])   # không có số liệu → không bỏ phiếu
