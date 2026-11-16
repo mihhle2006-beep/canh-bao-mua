@@ -28,7 +28,11 @@ def test_chi_ghi_dat_chua_dat_khong_ghi_nguong_va_so_lieu(tmp_path):
            "dinh_gia": {"AAA": -3.3, "BBB": -12.3}, "cach_dinh_52t": {"AAA": -1.1}, "tk_tang": {"AAA": 1.2}, "rs_nganh": {"AAA": 4.4}}
     d = H.he_thong(loc, ng, {"phien": "2026-11-06", "ma": {"AAA": ["quy_b"]}})
     r = {m: dict(zip(d["cot"], v)) for m, v in d["ma"].items()}
-    assert r["AAA"] == {"ro": 1, "rs": 1, "bien_dong": 1, "dat": 0, "m_dinh": 1, "m_rs": 1, "m_tk": 0, "m_nganh": 1, "manh": 1}
+    assert r["AAA"] == {"ro": 1, "rs": 1, "bien_dong": 1, "dat": 0, "m_dinh": 1, "m_rs": 1, "m_tk": 0, "m_nganh": 1, "manh": 1,
+                        "beneish": None}                                       # cau_hinh mẫu không có ngưỡng Beneish
+    ng2 = {**ng, "QUY_BENEISH_NGUONG": -1.78}
+    b = {m: dict(zip(d["cot"], v)) for m, v in H.he_thong({**loc, "beneish": {"AAA": -2.5, "BBB": -1.0}}, ng2)["ma"].items()}
+    assert b["AAA"]["beneish"] == 0 and b["BBB"]["beneish"] == 1 and b["CCC"]["beneish"] is None
     assert r["BBB"]["rs"] == 0 and r["BBB"]["bien_dong"] == 0 and r["BBB"]["dat"] == 1 and r["BBB"]["m_tk"] is None
     assert r["CCC"]["ro"] == 0 and r["CCC"]["rs"] is None
     txt = json.dumps({k: v for k, v in d.items() if k != "cap_nhat"})        # giờ cập nhật (VD 14:45) không phải số liệu
