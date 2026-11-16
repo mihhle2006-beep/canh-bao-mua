@@ -56,9 +56,9 @@ console.log(JSON.stringify({a, b}));""")
     assert list(a) == ["xu", "dl", "bd", "dt", "rs", "vg"] and all(t["pp"] for t in kq["a"])
     assert a["xu"]["nhan"] == "Tăng" and b["xu"]["nhan"] == "Giảm"           # đa số 5 nhóm: MA khung · trật tự MA · ADX · mây · SAR
     assert a["xu"]["so"] == "5/5 nhóm tăng" and len(a["xu"]["ct"]) == 5
-    for t in (a["dl"], b["dl"]):                                           # động lượng: 5 chỉ báo dao động
-        m, tl, bn = (int(z) for z in re.findall(r"(\d+) (?:Mua|Trung lập|Bán)", t["ct"][0]))
-        assert m + tl + bn == 5 and t["nhan"] in ("Tích cực", "Trung lập", "Tiêu cực")
+    for t, nhan in ((a["dl"], "Tích cực"), (b["dl"], "Tiêu cực")):           # động lượng theo đà (VN): RSI ≥ 55 / ≤ 45
+        rsi = int(re.search(r"RSI (\d+)", t["so"]).group(1))
+        assert t["nhan"] == nhan and (rsi >= 55 if nhan == "Tích cực" else rsi <= 45)
     assert a["rs"]["nhan"] == "Mạnh hơn thị trường"                        # không RRG → so lãi 3 tháng với VN-Index
     assert b["rs"]["nhan"] == "Tụt hậu" and "RS-Ratio 98,0" in b["rs"]["so"]   # RRG: cả 2 trục < 100
     assert a["vg"]["nhan"] == "Gần kháng cự" and "Kháng cự 96,00–97,00" in " ".join(a["vg"]["ct"])
