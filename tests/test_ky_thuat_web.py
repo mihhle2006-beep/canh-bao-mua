@@ -109,6 +109,21 @@ console.log(JSON.stringify({a, b, c, cu}));""")
     assert not kq["cu"]["giam"]                                                    # đỉnh sau đã quá 25 nến → bỏ
 
 
+def test_bieu_do_tung_tru():
+    kq = _chay(CHUOI + """
+const vni = len.c.map((z, i) => 1000 + i), vg = [{loai: "ho_tro", lo: 1, hi: 2}];
+const r = Object.fromEntries(["xu", "dl", "bd", "dt", "rs", "vg"].map(id => [id, kt_bd_du(len, id, {vni, vung: vg})]));
+const tom = z => ({tren: z.tren.map(a => [a[0], a[2].length]), khung: z.khung.map(k => k.ds.map(a => [a[0], a[2].length, !!a[3]])), ng: z.khung.map(k => k.ng), vung: (z.vung || []).length});
+const rs = r.rs.khung[0].ds[0][2];
+console.log(JSON.stringify({...Object.fromEntries(Object.entries(r).map(([k, z]) => [k, tom(z)])), rs_dau: rs[300 - 120], rs_cuoi: rs[299], rs_khong: kt_bd_du(len, "rs", {}).khung.length}));""")
+    assert [a[0] for a in kq["xu"]["tren"]] == ["MA20", "MA50", "MA200"] and kq["xu"]["ng"] == [[25]]
+    assert kq["dl"]["ng"] == [[30, 70], [0]] and kq["dl"]["khung"][1][0][2] is True        # RSI + MACD (histogram cột)
+    assert len(kq["bd"]["tren"]) == 3 and kq["dt"]["khung"][0][0][0] == "Khối lượng"
+    assert all(n == 300 for z in kq.values() if isinstance(z, dict) for k in z["khung"] for _, n, _c in k)   # đủ độ dài chuỗi nến
+    assert abs(kq["rs_dau"] - 100) < 1e-9 and kq["rs_cuoi"] > 100 and kq["rs_khong"] == 0  # chuẩn 100 đầu 120 nến, không VN-Index → bỏ khung
+    assert kq["vg"]["vung"] == 1 and kq["xu"]["vung"] == 0
+
+
 def test_bien_dong_siet_cao_va_beta():
     kq = _chay(CHUOI + """
 const mk = c => ({d: c.map((_, i) => String(i)), o: c, h: c.map(v => v * 1.004), l: c.map(v => v * 0.996), c, v: c.map(() => 1e6)});
