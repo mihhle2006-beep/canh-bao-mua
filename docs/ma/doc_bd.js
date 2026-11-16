@@ -294,6 +294,8 @@ function dieu_kien(ht, ma) {                            // điều kiện chọn
   const manh = [[o.m_dinh, "sát đỉnh 52 tuần"], [o.m_rs, "RS 3 tháng cao"], [o.m_tk, "thanh khoản tăng"], [o.m_nganh, "ngành mạnh"]];
   out.push({ten: "Tín hiệu MẠNH (đủ thì được dùng suất dự phòng)", dat: o.manh ? true : null,
     chu: (o.manh ? "đủ · " : o.manh === false ? "chưa đủ · " : "") + manh.map(([v, t]) => (v ? "✓ " : v === false ? "✗ " : "? ") + t).join(" · ")});
+  out.push({ten: "Chất lượng lợi nhuận (Beneish M)", dat: o.beneish == null ? null : o.beneish ? null : true,
+    chu: o.beneish == null ? "chưa có M (ngân hàng / CK / bảo hiểm hoặc thiếu BCTC)" : o.beneish ? "M > −1,78 – vẫn chọn nhưng giảm ½ khối lượng (cộng dồn với ĐẮT)" : "bình thường"});
   const bl = (ht.bo_loc || {})[ma]; if (bl) out.push({ten: `Bộ lọc phiên ${ngay_vn(ht.bo_loc_phien)}`, dat: true, chu: "có trong danh sách mua · " + bl.join(", ")});
   return out;
 }

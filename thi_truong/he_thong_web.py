@@ -17,8 +17,8 @@ from datetime import datetime, timedelta, timezone
 
 VN = timezone(timedelta(hours=7))
 KHOA = ("QUY_RS3T_NONG", "QUY_BO_BIEN_DONG_PCT", "QUY_DAT_NGUONG_PCT", "QUY_MANH_DINH_PCT", "QUY_MANH_RS3T", "QUY_MANH_TK",
-        "QUY_MANH_SO_DAU_HIEU")
-COT = ("ro", "rs", "bien_dong", "dat", "m_dinh", "m_rs", "m_tk", "m_nganh", "manh")
+        "QUY_MANH_SO_DAU_HIEU", "QUY_BENEISH_NGUONG")
+COT = ("ro", "rs", "bien_dong", "dat", "m_dinh", "m_rs", "m_tk", "m_nganh", "manh", "beneish")
 COT_TH = ("ngay", "loai", "khuyen_nghi", "nhom", "gia", "cat_lo", "muc_tieu", "ket_qua", "ket_qua_pct", "giai_thich",
           "ngay_ket_thuc", "gia_ket_thuc", "so_phien", "vung_tu", "vung_den")
 
@@ -43,7 +43,7 @@ def _so(f, v, n):
 
 
 def danh_gia(loc, ng, m):
-    """Một mã → [trong rổ, RS chưa nóng, không biến động mạnh nhất, ĐẮT, 4 dấu hiệu MẠNH…, đủ MẠNH] (1 / 0 / None)."""
+    """Một mã → [trong rổ, RS chưa nóng, không biến động mạnh nhất, ĐẮT, 4 dấu hiệu MẠNH…, đủ MẠNH, cờ Beneish M] (1 / 0 / None)."""
     g = lambda k: (loc.get(k) or {}).get(m)                                            # noqa: E731
     ro = (loc.get("ro_tuan") or {}).get("ma")
     bd = ng["QUY_BO_BIEN_DONG_PCT"]
@@ -54,7 +54,8 @@ def danh_gia(loc, ng, m):
     k = ng["QUY_MANH_SO_DAU_HIEU"]
     return [None if ro is None else int(m in ro), _so(lambda v, n: v < n, g("hang_rs3t"), ng["QUY_RS3T_NONG"]),
             _so(lambda v, n: v > n / 100, g("bien_dong_hang"), bd), _so(lambda v, n: v <= n, g("dinh_gia"), ng["QUY_DAT_NGUONG_PCT"]),
-            *manh, None if k is None else int(sum(1 for x in manh if x) >= k)]
+            *manh, None if k is None else int(sum(1 for x in manh if x) >= k),
+            _so(lambda v, n: v > n, g("beneish"), ng["QUY_BENEISH_NGUONG"])]
 
 
 def he_thong(loc, ng, bo_loc=None):
