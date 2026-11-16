@@ -3330,15 +3330,16 @@ function kt_tru(x, o = {}) {                            // 6 trụ trên chuỗi
       `${phieu_n(nh[2])} ADX ${adx == null ? "–" : so(adx, 0)}${pdi == null || mdi == null ? "" : ` · +DI ${so(pdi, 0)} ${pdi >= mdi ? "&gt;" : "&lt;"} −DI ${so(mdi, 0)}`}${adx != null && adx < 20 ? " (yếu, &lt; 20)" : ""}`,
       `${phieu_n(nh[3])} Ichimoku: ${nh[3] == null ? "chưa đủ 78 nến" : nh[3] > 0 ? "giá trên mây" : nh[3] < 0 ? "giá dưới mây" : "giá trong mây"}`,
       `${phieu_n(nh[4])} Parabolic SAR ${sv == null ? "–" : `${so(sv, 2)} ${sl ? "dưới" : "trên"} giá`}`]});
-  // Động lượng = đa số phiếu 5 chỉ báo dao động (RSI · Stochastic · CCI · MACD · Williams %R) + phân kỳ RSI
-  const dd5 = (o.dt || kt_dong_thuan(x)).dd.filter(z => /^(RSI|Stochastic|CCI|MACD|Williams)/.test(z[0]));
-  const mua = dd5.filter(z => z[2] === 1).length, ban = dd5.filter(z => z[2] === -1).length, r = cb_rsi(c, 14), rv = kt_v(r), pk = kt_phan_ky(h, l, r);
+  // Động lượng THEO ĐÀ (hiệu chỉnh VN 16/11/2026): RSI 14 ≥ 55 Tích cực · ≤ 45 Tiêu cực – ở VN RSI cao là đà mạnh, không phải tín
+  // hiệu bán (phiếu bắt đỉnh / đáy kiểu cổ điển cho kết quả ngược); phân kỳ RSI chỉ để tham khảo
+  const r = cb_rsi(c, 14), rv = kt_v(r), pk = kt_phan_ky(h, l, r), drv = kt_len(r);
   const mc = cb_macd(c, 12, 26, 9), hv = kt_v(mc.h), dh = kt_len(mc.h), kv = kt_v(cb_stoch(h, l, c, 14, 3, 3).k);
-  const dl = dd5.length < 3 ? ["", "Chưa đủ dữ liệu"] : mua > ban && !pk.giam ? ["t", "Tích cực"] : ban > mua && !pk.tang ? ["g", "Tiêu cực"] : ["d", "Trung lập"];
-  kq.push({id: "dl", ten: "Động lượng", hoi: "Các chỉ báo dao động nghiêng về mua hay bán, có phân kỳ không?", muc: dl[0], nhan: dl[1], pp: "kt_dl",
-    so: rv == null ? "" : `RSI ${so(rv, 0)}`, ct: [dd5.length ? `Phiếu: <b class="t">${mua} Mua</b> · ${dd5.length - mua - ban} Trung lập · <b class="g">${ban} Bán</b> (RSI · Stochastic · CCI · MACD · Williams %R)` : "",
-      `${rv >= 70 ? "RSI quá mua · " : rv != null && rv <= 30 ? "RSI quá bán · " : ""}Stochastic %K ${kv == null ? "–" : so(kv, 0)} · MACD histogram ${hv == null ? "–" : `<span class="${mau(hv)}">${so(hv, 3)}</span>${dh == null ? "" : dh >= 0 ? " ↑" : " ↓"}`}`,
-      pk.giam ? `<b class="g">Phân kỳ giảm</b>: giá lập đỉnh cao hơn, RSI đỉnh thấp hơn` : pk.tang ? `<b class="t">Phân kỳ tăng</b>: giá lập đáy thấp hơn, RSI đáy cao hơn` : "Chưa thấy phân kỳ RSI"].filter(Boolean)});
+  const dl = rv == null ? ["", "Chưa đủ dữ liệu"] : rv >= 55 ? ["t", "Tích cực"] : rv <= 45 ? ["g", "Tiêu cực"] : ["d", "Trung lập"];
+  kq.push({id: "dl", ten: "Động lượng", hoi: "Đà tăng / giảm đang mạnh hay yếu?", muc: dl[0], nhan: dl[1], pp: "kt_dl",
+    so: rv == null ? "" : `RSI ${so(rv, 0)}`, ct: [
+      rv == null ? "" : `RSI 14 ${so(rv, 0)}${drv == null ? "" : drv >= 0 ? " ↑" : " ↓"}${rv >= 70 ? " – đà rất mạnh (ở VN thường còn tăng tiếp)" : rv <= 30 ? " – đà rất yếu" : ""}`,
+      `MACD histogram ${hv == null ? "–" : `<span class="${mau(hv)}">${so(hv, 3)}</span>${dh == null ? "" : dh >= 0 ? " ↑" : " ↓"}`} · Stochastic %K ${kv == null ? "–" : so(kv, 0)}`,
+      pk.giam ? `<b class="d">Phân kỳ giảm</b> (tham khảo): giá lập đỉnh cao hơn, RSI đỉnh thấp hơn` : pk.tang ? `<b class="d">Phân kỳ tăng</b> (tham khảo): giá lập đáy thấp hơn, RSI đáy cao hơn` : "Chưa thấy phân kỳ RSI"].filter(Boolean)});
   // Biến động (như app): Bollinger %B / độ rộng · Keltner (siết) · ATR% · độ biến động lịch sử · beta
   const bb = cb_bb(c, 20, 2), ke = cb_keltner(h, l, c, 20, 1.5, 10), nam = o.nam || 250, i_ = N - 1;
   const rong = bb.gi.map((m, i) => ok(m) && m && ok(bb.tr[i]) ? (bb.tr[i] - bb.du[i]) / m : null), bw = kt_v(rong), w = rong.slice(-120).filter(ok);
@@ -3426,26 +3427,20 @@ Object.assign(PT_PP, {
       "  5. Parabolic SAR dưới giá → Tăng · trên giá → Giảm",
       "Tăng / Giảm khi quá nửa số nhóm tính được cùng chiều, còn lại là Đi ngang"],
     doc: [["t", "Tăng", "giá trên MA khung, MA xếp tăng, ADX ≥ 20 với +DI dẫn, giá trên mây"], ["d", "Đi ngang", "các nhóm không đồng thuận, ADX < 20"], ["g", "Giảm", "ngược lại: giá dưới MA, MA xếp giảm, −DI dẫn, giá dưới mây"]],
-    gh: ["MA là chỉ báo trễ: xác nhận xu hướng khi giá đã đi được một đoạn.", "Khi thị trường đi ngang, giá cắt MA liên tục (whipsaw) – kết hợp ADX để lọc.", "MA200 cần ít nhất 200 nến, Ichimoku cần ít nhất 78 nến (52 + 26); thiếu dữ liệu thì nhóm đó không tính.", "Khung tuần cho bức tranh dài hơn, khung ngày nhạy hơn."],
+    gh: ["Kiểm trên dữ liệu VN (336 mã, 2014–2026, vượt TB cùng ngày 60 phiên, 2014–19 / 2020+): Tăng +2,2% / +0,8% · Đi ngang −0,9% / −0,5% · Giảm −2,0% / −0,8% – theo xu hướng có ích ở VN.", "MA là chỉ báo trễ: xác nhận xu hướng khi giá đã đi được một đoạn.", "Khi thị trường đi ngang, giá cắt MA liên tục (whipsaw) – kết hợp ADX để lọc.", "MA200 cần ít nhất 200 nến, Ichimoku cần ít nhất 78 nến (52 + 26); thiếu dữ liệu thì nhóm đó không tính.", "Khung tuần cho bức tranh dài hơn, khung ngày nhạy hơn."],
     tk: ["Wilder, J. W. (1978). New Concepts in Technical Trading Systems.", "Hosoda, G. (1968). Ichimoku Kinko Hyo.", "Murphy, J. (1999). Technical Analysis of the Financial Markets."]},
-  kt_dl: {ten: "Dao động & động lượng", ng: "Các chỉ báo dao động đo tốc độ và vị trí của giá trong biên độ gần đây: RSI (J. Welles Wilder, 1978), MACD (Gerald Appel, 1979), Stochastic (George Lane), CCI (Donald Lambert, 1980) và Williams %R (Larry Williams).",
+  kt_dl: {ten: "Dao động & động lượng", ng: "Các chỉ báo dao động đo tốc độ và vị trí của giá trong biên độ gần đây: RSI (J. Welles Wilder, 1978), MACD (Gerald Appel, 1979), Stochastic (George Lane). Sách giáo khoa đọc RSI theo kiểu bắt đỉnh / đáy (quá mua > 70 → bán, quá bán < 30 → mua); trên dữ liệu Việt Nam cách đọc đó cho kết quả NGƯỢC – trang đọc RSI theo đà (hiệu chỉnh VN 16/11/2026).",
     ct: ["RSI 14 = 100 − 100 / (1 + TB tăng / TB giảm), trung bình Wilder",
       "MACD = EMA12 − EMA26 · Signal = EMA9 của MACD · Histogram = MACD − Signal",
-      "Stochastic %K 14 = 100 × (đóng − thấp 14) / (cao 14 − thấp 14), làm mượt 3 · %D = SMA3 của %K",
-      "CCI 20 = (TP − SMA20 của TP) / (0,015 × MD) · TP = (cao + thấp + đóng) / 3, MD = độ lệch tuyệt đối trung bình",
-      "Williams %R 14 = −100 × (cao 14 − đóng) / (cao 14 − thấp 14)",
-      "Phiếu (còn lại là Trung lập):",
-      "  RSI < 30 và đang lên → Mua · > 70 và đang xuống → Bán",
-      "  Stochastic %K < 20 và %K > %D → Mua · %K > 80 và %K < %D → Bán",
-      "  CCI < −100 và đang lên → Mua · > 100 và đang xuống → Bán",
-      "  MACD > Signal → Mua · < Signal → Bán",
-      "  Williams %R < −80 và đang lên → Mua · > −20 và đang xuống → Bán",
-      "Phân kỳ RSI (60 nến gần nhất, đỉnh / đáy xác nhận 5 nến mỗi bên):",
-      "  hai đỉnh giá cao dần nhưng đỉnh RSI thấp dần → phân kỳ giảm",
-      "  hai đáy giá thấp dần nhưng đáy RSI cao dần → phân kỳ tăng"],
-    doc: [["t", "Tích cực", "đa số phiếu Mua, không có phân kỳ giảm"], ["d", "Trung lập", "phiếu chia đều, hoặc có phân kỳ ngược chiều phiếu"], ["g", "Tiêu cực", "đa số phiếu Bán, không có phân kỳ tăng"]],
-    gh: ["Trong xu hướng mạnh, RSI / Stochastic có thể ở vùng quá mua (quá bán) rất lâu – quá mua không đồng nghĩa phải bán.", "Các chỉ báo dao động đều tính từ cùng chuỗi giá nên trùng thông tin; số phiếu không phải xác suất.", "Phân kỳ chỉ có ý nghĩa khi giá xác nhận (gãy hỗ trợ / vượt kháng cự) và có thể kéo dài nhiều nhịp."],
-    tk: ["Wilder, J. W. (1978). New Concepts in Technical Trading Systems.", "Appel, G. (2005). Technical Analysis: Power Tools for Active Investors.", "Lane, G. (1984). Lane's Stochastics. Technical Analysis of Stocks & Commodities.", "Lambert, D. (1980). Commodity Channel Index: Tools for Trading Cyclic Trends. Commodities."]},
+      "Stochastic %K 14 = 100 × (đóng − thấp 14) / (cao 14 − thấp 14), làm mượt 3",
+      "Kết luận: RSI 14 ≥ 55 → Tích cực · ≤ 45 → Tiêu cực · còn lại Trung lập",
+      "Kiểm trên dữ liệu VN: 105.546 quan sát, 336 mã thanh khoản ≥ 1 tỷ / phiên, mỗi 5 phiên 2014–2026; lợi nhuận vượt TB các mã cùng ngày sau 60 phiên (2014–19 / 2020+):",
+      "  RSI > 70: +5,0% / +2,1% · 60–70: +2,0% / +0,8% · 30–40: −2,2% / −1,1% · < 30: −1,7% / −0,2%",
+      "  Tích cực − Tiêu cực (RSI 55 / 45): +4,1% / +1,7%; cách phiếu bắt đỉnh / đáy kiểu cổ điển: −1,35% / −0,11% (ngược)",
+      "Phân kỳ RSI (60 nến, đỉnh / đáy xác nhận 5 nến mỗi bên) – chỉ hiển thị tham khảo, không vào kết luận"],
+    doc: [["t", "Tích cực", "RSI ≥ 55: đà tăng – ở VN mã RSI cao thường còn vượt thị trường"], ["d", "Trung lập", "RSI 45–55"], ["g", "Tiêu cực", "RSI ≤ 45: đà yếu – ở VN mã RSI thấp thường còn kém thị trường"]],
+    gh: ["Ở VN “quá mua” (RSI ≥ 70) là đà rất mạnh, trung bình còn vượt thị trường; không tự động là tín hiệu bán.", "Thống kê bình quân nhiều mã – từng mã có thể khác; độ chênh 2020+ nhỏ hơn 2014–19.", "Phân kỳ chỉ có ý nghĩa khi giá xác nhận (gãy hỗ trợ / vượt kháng cự)."],
+    tk: ["Wilder, J. W. (1978). New Concepts in Technical Trading Systems.", "Appel, G. (2005). Technical Analysis: Power Tools for Active Investors.", "Jegadeesh, N., Titman, S. (1993). Returns to Buying Winners and Selling Losers. Journal of Finance."]},
   kt_bd: {ten: "Biến động & dải giá", ng: "Bollinger Bands do John Bollinger giới thiệu đầu thập niên 1980; Keltner Channels của Chester Keltner (1960), bản dùng ATR phổ biến về sau (Linda Raschke); ATR của J. Welles Wilder (1978); “TTM Squeeze” của John Carter dùng Bollinger nằm trong Keltner để nhận biết giai đoạn siết.",
     ct: ["Bollinger 20,2: giữa = SMA20 · trên / dưới = SMA20 ± 2 × độ lệch chuẩn 20 kỳ",
       "%B = (giá − dải dưới) / (dải trên − dải dưới) · độ rộng (bandwidth) = (dải trên − dải dưới) / dải giữa",
@@ -3456,7 +3451,7 @@ Object.assign(PT_PP, {
       "Đang siết: độ rộng Bollinger thấp nhất 120 kỳ, hoặc Bollinger nằm trong Keltner",
       "Biến động cao: %B > 1 hoặc < 0, hoặc ATR% và độ biến động lịch sử cùng ≥ 1,5 lần trung bình 120 kỳ"],
     doc: [["t", "Ổn định", "giá trong dải Bollinger, biên độ quanh mức trung bình"], ["d", "Đang siết", "độ rộng thấp nhất 120 kỳ hoặc Bollinger trong Keltner; thường đi trước biến động lớn"], ["g", "Biến động cao", "%B > 1 hoặc < 0, ATR% và độ biến động cao hơn hẳn trung bình"]],
-    gh: ["Siết cho biết “sắp có biến động” nhưng không cho biết hướng.", "Giá vượt dải trên không tự động là tín hiệu bán: trong xu hướng mạnh giá có thể “đi dọc” dải.", "Beta tính trên 1 năm gần nhất so VN-Index; không phản ánh biến động ngắn hạn và thay đổi theo giai đoạn."],
+    gh: ["Kiểm trên dữ liệu VN: giai đoạn ĐANG SIẾT trung bình kém thị trường −0,9% (cả 2014–19 lẫn 2020+) trong 60 phiên sau – siết ở VN nghiêng về bung xuống; Ổn định / Biến động cao ≈ 0.", "Siết cho biết “sắp có biến động” nhưng không cho biết hướng.", "Giá vượt dải trên không tự động là tín hiệu bán: trong xu hướng mạnh giá có thể “đi dọc” dải.", "Beta tính trên 1 năm gần nhất so VN-Index; không phản ánh biến động ngắn hạn và thay đổi theo giai đoạn."],
     tk: ["Bollinger, J. (2001). Bollinger on Bollinger Bands.", "Carter, J. (2005). Mastering the Trade.", "Wilder, J. W. (1978). New Concepts in Technical Trading Systems."]},
   kt_tien: {ten: "Khối lượng & dòng tiền", ng: "On-Balance Volume do Joseph Granville đưa ra năm 1963; đường Tích lũy / Phân phối (A/D line) của Marc Chaikin; Money Flow Index của Gene Quong và Avrum Soudack (1989). Khối ngoại ròng và mua chủ động lấy từ dữ liệu giao dịch của trang (mua chủ động chỉ có ở khung ngày, cho các mã thanh khoản cao và mã trong danh sách theo dõi).",
     ct: ["KL so với TB = KL kỳ / trung bình 20 kỳ · đột biến khi > 150%",
@@ -3473,7 +3468,7 @@ Object.assign(PT_PP, {
       "Tiền vào / Tiền ra khi quá nửa số thước đo có số liệu cùng chiều, còn lại là Trung tính",
       "KL, OBV, A/D, MFI tính tới nến đã đóng (phiên đang chạy chưa đủ khối lượng)"],
     doc: [["t", "Tiền vào", "KL trên trung bình khi giá tăng, OBV / A/D dốc lên, mua chủ động > 55%, khối ngoại mua ròng"], ["d", "Trung tính", "các thước đo trái chiều hoặc gần trung bình"], ["g", "Tiền ra", "KL tăng khi giá giảm, OBV dốc xuống, bán chủ động áp đảo, khối ngoại bán ròng"]],
-    gh: ["Khối lượng đột biến có thể do thỏa thuận, cơ cấu quỹ, ngày đáo hạn phái sinh.", "Khối ngoại chỉ là một nhóm nhà đầu tư; mua ròng không bảo đảm giá tăng.", "Số liệu trong phiên (mua chủ động) thay đổi liên tục; trang chưa có số liệu tự doanh."],
+    gh: ["Kiểm trên dữ liệu VN (khung ngày, chưa gồm khối ngoại / mua chủ động): Tiền vào +1,0% / +0,2% · Tiền ra −0,9% / −0,2% vượt TB 60 phiên (2014–19 / 2020+) – đúng chiều nhưng yếu dần.", "Khối lượng đột biến có thể do thỏa thuận, cơ cấu quỹ, ngày đáo hạn phái sinh.", "Khối ngoại chỉ là một nhóm nhà đầu tư; mua ròng không bảo đảm giá tăng.", "Số liệu trong phiên (mua chủ động) thay đổi liên tục; trang chưa có số liệu tự doanh."],
     tk: ["Granville, J. (1963). Granville's New Key to Stock Market Profits.", "Quong, G., Soudack, A. (1989). Volume-Weighted RSI: Money Flow. Technical Analysis of Stocks & Commodities."]},
   kt_rs: {ten: "Sức mạnh tương đối & RRG", ng: "Sức mạnh tương đối (so hiệu suất một mã với chỉ số) là nền tảng của Robert Levy (1967) và hệ CANSLIM của William O'Neil; Relative Rotation Graph (RRG) do Julius de Kempenaer phát triển 2004–2011, vẽ RS-Ratio và RS-Momentum trên 4 góc phần tư.",
     ct: ["RS percentile = thứ hạng hiệu suất giá của mã so với toàn thị trường, 0–99",
@@ -3485,7 +3480,7 @@ Object.assign(PT_PP, {
       "Kết luận theo tổng phiếu; mã chưa có RS và RRG thì so lãi 3 tháng với VN-Index (chênh từ 5% trở lên)",
       "Cùng ngành: 5 mã vốn hoá lớn nhất cùng ngành và thứ hạng RS của mã trong ngành"],
     doc: [["t", "Dẫn dắt / Cải thiện", "RS ≥ 70 hoặc RRG ở góc dẫn dắt / cải thiện, hiệu suất vượt chỉ số"], ["d", "Trung bình", "RS 30–70, RRG gần tâm, hoặc hai thước đo trái chiều"], ["g", "Suy yếu / Tụt hậu", "RS < 30 hoặc RRG ở góc suy yếu / tụt hậu, hiệu suất kém chỉ số"]],
-    gh: ["Sức mạnh tương đối là so sánh: mã “mạnh” vẫn có thể giảm nếu cả thị trường giảm.", "RRG quay theo chu kỳ; vị trí góc phần tư có thể đổi nhanh với mã thanh khoản thấp (RRG chỉ dựng cho mã GTGD trung bình 20 phiên từ 1 tỷ).", "Mã cùng ngành chọn theo vốn hoá lớn nhất, chưa hẳn là đối thủ trực tiếp."],
+    gh: ["Kiểm trên dữ liệu VN (cách so lãi 3 tháng với VN-Index): Mạnh hơn thị trường +1,7% / +0,7% · Yếu hơn −2,5% / −0,9% vượt TB 60 phiên (2014–19 / 2020+) – sức mạnh tương đối có quán tính ở VN.", "Sức mạnh tương đối là so sánh: mã “mạnh” vẫn có thể giảm nếu cả thị trường giảm.", "RRG quay theo chu kỳ; vị trí góc phần tư có thể đổi nhanh với mã thanh khoản thấp (RRG chỉ dựng cho mã GTGD trung bình 20 phiên từ 1 tỷ).", "Mã cùng ngành chọn theo vốn hoá lớn nhất, chưa hẳn là đối thủ trực tiếp."],
     tk: ["Levy, R. (1967). Relative Strength as a Criterion for Investment Selection. Journal of Finance.", "O'Neil, W. (1988). How to Make Money in Stocks.", "de Kempenaer, J. (2011). Relative Rotation Graphs. RRG Research."]},
   kt_vg: {ten: "Vùng giá (hỗ trợ / kháng cự)", ng: "Hỗ trợ / kháng cự là vùng giá từng đảo chiều nhiều lần (Edwards và Magee, 1948). Trang tìm đỉnh / đáy cục bộ trong 250 nến gần nhất rồi gộp thành vùng – cùng cách của mục Đọc biểu đồ.",
     ct: ["Đỉnh / đáy cục bộ: cao / thấp nhất 5 nến hai bên", "Gộp các đỉnh / đáy cách nhau ≤ 0,6 ATR thành một vùng; vùng cần ≥ 2 lần chạm", "Hỗ trợ: vùng nằm dưới giá · kháng cự: vùng nằm trên giá · khoảng cách tính từ giá tới mép gần nhất của vùng"],
