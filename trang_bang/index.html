@@ -75,7 +75,10 @@ main{max-width:1440px;margin:0 auto;padding:16px}
   .an-dt{display:none}
   .tt-phien{margin-left:0;width:100%;padding-bottom:6px}
   .dau{gap:10px}.tab button,.tab a{padding:0 8px}
-  header{position:static}                                          /* điện thoại: thanh đầu cao 4 dòng → cuộn đi, không che thẻ */
+  /* điện thoại: tên + trạng thái phiên cuộn đi, TAB + Ô TÌM dính trên cùng (~90px, như Tra cứu mã) – thanh xanh dính ở mép trên
+     để Safari iOS tô xanh vùng thanh trạng thái (trước: thanh đầu cuộn hết → nội dung trôi dưới thanh trạng thái, bị làm mờ) */
+  header{position:sticky;top:calc(-1 * var(--an, 0px))}
+  .tt-phien{order:1}.dau .tab{order:2;flex:1 1 100%;overflow-x:auto;scrollbar-width:none}.dau .tab::-webkit-scrollbar{display:none}
 }
 .luoi2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;margin-bottom:16px}
 .luoi3{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);gap:16px}
@@ -961,7 +964,8 @@ function doi_tab(t) {
   $("#tq").hidden = t !== "tq"; $("#loc").hidden = t !== "loc"; $("#quy").hidden = t !== "quy";
   ve_tat();
 }
-document.querySelectorAll(".tab button").forEach(b => b.onclick = () => doi_tab(b.dataset.tab));
+document.querySelectorAll(".tab button").forEach(b => b.onclick = () => { doi_tab(b.dataset.tab);   // đang cuộn giữa trang (tab dính trên cùng) → về đầu nội dung tab mới
+  const an = parseFloat(getComputedStyle(document.querySelector("header")).getPropertyValue("--an")) || 0; if (scrollY > an) scrollTo(0, an); });
 document.querySelectorAll("#nd-kich button").forEach(b => b.onclick = () => {
   ST.kich = b.dataset.k; luu_st();
   document.querySelectorAll("#nd-kich button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); ve_ban_do(); });
@@ -1038,6 +1042,12 @@ setInterval(() => { if (!document.hidden) tai().then(ve_trang_thai); }, 10000); 
                                                                              // (dòng trạng thái vẽ lại cả khi không có lượt mới → thấy bảng đứng)
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") tai(); });
 let hen; addEventListener("resize", () => { clearTimeout(hen); hen = setTimeout(ve_tat, 150); });
+(() => {                                                // điện thoại: độ cao phần thanh đầu cuộn đi (tên + trạng thái phiên) → --an
+  const hd = document.querySelector("header"), tab = hd.querySelector(".tab");
+  const dat = () => { const an = matchMedia("(max-width:600px)").matches ? tab.getBoundingClientRect().top - hd.getBoundingClientRect().top : 0;
+    hd.style.setProperty("--an", Math.max(0, Math.round(an)) + "px"); };
+  dat(); addEventListener("resize", dat); try { new ResizeObserver(dat).observe(hd); } catch (e) {}
+})();
 // ---------------------------------------------------------------- TỰ CẬP NHẬT BẢN MỚI (ứng dụng ở màn hình chính iPhone giữ trang chạy nền;
 // GitHub Pages cho trình duyệt giữ trang 10 phút): quay lại trang / 3 giây sau khi mở → hỏi bản đang triển khai (mã BAN do bước
 // "Gói trang" của workflow Bang thi truong ghi = băm code trang); khác bản đang chạy → tải lại đúng bản mới.

@@ -571,13 +571,13 @@ class VePrim {
   paneViews() { return this.v; }
   updateAllViews() {}
 }
-let PRIM = null;
+let PRIM = null, MA_GO = null;
 const cap_nhat = () => { try { PRIM?.req?.(); } catch (e) {} ve_thanh_chon(); };
 
 // ---------------------------------------------------------------- GẮN VÀO BIỂU ĐỒ
 VE.gan = (B, o = {}) => {                              // B = BD_DK của trang; o.tuong_tac: cho vẽ / sửa (trang Biểu đồ, toàn màn hình)
   const x = B.x, n = B.n, khung = B.khung || ST.khung;
-  const ts = x.ts || x.d.map(t_so), cung_ma = C?.ma === (B.ma || "");
+  const ts = x.ts || x.d.map(t_so), cung_ma = (C ? C.ma : MA_GO) === (B.ma || "");
   C = {ch: B.ch, nen: B.nen, x, n, ma: B.ma || "", khung, el: o.el, tuong_tac: !!o.tuong_tac};
   const du = n > 1 ? Math.max(60, (() => { const d = []; for (let i = Math.max(1, n - 40); i < n; i++) d.push(ts[i] - ts[i - 1]); d.sort((a, b) => a - b); return d[d.length >> 1]; })()) : 86400;
   C.du = du; C.T = n ? ts.concat(tg_sau(ts[n - 1], 400)) : [];
@@ -585,6 +585,10 @@ VE.gan = (B, o = {}) => {                              // B = BD_DK của trang;
   if (!cung_ma) { CHON = null; TAM = null; } KEO = null;                // vẽ lại cùng mã (làm mới giá): giữ hình đang chọn / đang vẽ
   if (C.tuong_tac) gan_su_kien(o.el, B);
   ve_thanh_chon();
+};
+VE.go = () => {                                        // GỌI TRƯỚC khi xoá biểu đồ: gỡ lớp hình vẽ – lớp còn gắn giữ requestUpdate của biểu đồ đã huỷ,
+  try { if (PRIM && C?.nen) C.nen.detachPrimitive(PRIM); } catch (e) {}   // lần cập nhật sau (vd. mở thanh công cụ) làm thư viện vẽ lại biểu đồ đã huỷ → "Object is disposed"
+  if (C) MA_GO = C.ma; PRIM = null; C = null;
 };
 VE.so_hinh = ma => (KHO[ma] || []).length;
 VE.t_cua = l => l2t(l);                                // chỉ số nến → thời gian (cho mục Đọc biểu đồ: "Giữ thành hình vẽ")
