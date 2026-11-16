@@ -23,8 +23,8 @@ import sys
 import pandas as pd
 
 from canh_bao import cau_hinh as C
-from canh_bao import (bieu_do_moc, chien_luoc_bot, diem_vao, du_lieu, ma_bo_loc, nhat_ky, ro_vn30, theo_doi_kn, tong_ket_cl,
-                      trang_tong_hop, vi_the)
+from canh_bao import (bieu_do_moc, chien_luoc_bot, diem_vao, du_lieu, kl_goi_y, ma_bo_loc, nhat_ky, ro_vn30, theo_doi_kn,
+                      tong_ket_cl, trang_tong_hop, vi_the)
 from canh_bao.nganh import ma_cung_nganh
 from canh_bao.du_lieu import bo_nen_chua_dong, gio_viet_nam, hom_nay_co_giao_dich, tai, trong_phien
 from canh_bao.thong_bao import doc_trang_thai, ghi_trang_thai, gui, gui_anh, gui_file
@@ -246,6 +246,8 @@ def tong_ket(bay_gio, vt, them=(), khong_gui=False):
         _in(tin, rieng_tu=bool(giu))
     else:
         gui(tin, rieng_tu=bool(giu))
+        _an_toan("Lưu gợi ý khối lượng", lambda: kl_goi_y.ghi(      # tỷ trọng ≤ x % NAV mã nhóm mua → danh-muc
+            [kl_goi_y.dong_tong_ket(k, bay_gio) for k in ds_kn if k["nhom"] in tong_ket_cl.NHOM_MUA], bay_gio))
     _an_toan("Biểu đồ mốc", _anh_tong_ket, ra, bay_gio, khong_gui)
     if C.GUI_EXCEL and (C.GUI_EXCEL is True or pd.Timestamp(bay_gio).weekday() == 4):
         try:
@@ -446,6 +448,8 @@ def trong_phien_15p(bay_gio, vt, khong_gui=False):
     if th:                                                  # mã dự phòng: nút mua (bấm → hỏi xác nhận ✅)
         gui(th, rieng_tu=True, nut=diem_vao.nut_du_phong([k for k in moi_mua if k not in rieng])) if not khong_gui \
             else _in(th, rieng_tu=True)
+    if moi_mua and not khong_gui:                           # số CP tin MUA vừa gửi → danh-muc (dmuc/tuan_thu so lệnh thật)
+        _an_toan("Lưu gợi ý khối lượng", lambda: kl_goi_y.ghi([kl_goi_y.dong_mua(k, bay_gio) for k in moi_mua], bay_gio))
     tt["_15p_hom_nay"] = {"ngay": f"{bay_gio:%Y-%m-%d}", "cach_vao": bien_the,
                           "ds": [{k: (None if isinstance(v, float) and v != v else v) for k, v in r.items()}
                                  for r in bang]}
