@@ -28,6 +28,8 @@ jobs:
           C_NC: ${{ !contains(secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU, ':') && secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || '' }}
           CHAT_NC_SECRET: ${{ secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU }}
           CO_T_NC: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU != '' && '1' || '' }}
+          CO_T_DM: ${{ secrets.TELEGRAM_TOKEN_DANH_MUC != '' && '1' || '' }}
+          CO_T_HT: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP != '' && '1' || '' }}
           T_HT: ${{ secrets.TELEGRAM_TOKEN_GIA_LAP || secrets.TELEGRAM_TOKEN }}
           C_HT: ${{ secrets.TELEGRAM_CHAT_ID_GIA_LAP || secrets.TELEGRAM_CHAT_ID }}
         run: |
@@ -42,8 +44,34 @@ jobs:
               python3 -c "import json; print('   Telegram:', json.load(open('/tmp/r.json')).get('description', ''))" || true
             fi
           }
-          gui "🔔 Giao dịch" "$T_CHINH" "$C_CHINH" "🔔 Kênh GIAO DỊCH (thử) – tín hiệu MUA / BÁN, cắt lỗ, nhắc ATO, tổng kết 15:20, máy Mac chưa nhận việc. Bật thông báo kênh này."
-          gui "💼 Danh mục" "$T_DM" "$C_DM" "💼 Kênh DANH MỤC (thử) – danh mục, lệnh, nút 🛒 / 🛑, kết quả khớp."
+          # KIỂM TOKEN từng kênh (getMe – không in token / tên bot): hợp lệ? ký tự thừa? secret riêng? trùng bot kênh khác?
+          python3 - <<'PY' || loi=1
+          import json, os, urllib.request
+          kenh = [("🔔 Giao dịch", "TELEGRAM_TOKEN", "T_CHINH", "1"), ("💼 Danh mục", "TELEGRAM_TOKEN_DANH_MUC", "T_DM", os.environ.get("CO_T_DM")),
+                  ("📊 Nghiên cứu", "TELEGRAM_TOKEN_NGHIEN_CUU", "T_NC", os.environ.get("CO_T_NC")),
+                  ("⚙ Hệ thống & giả lập", "TELEGRAM_TOKEN_GIA_LAP", "T_HT", os.environ.get("CO_T_HT"))]
+          so, sai = {}, 0
+          print("Kiểm token:")
+          for ten, sec, bien, rieng in kenh:
+              t = os.environ.get(bien, "")
+              ghi = [] if rieng else ["chưa đặt secret riêng → dùng bot chính"]
+              sec = sec if rieng else "TELEGRAM_TOKEN"
+              if t != t.strip() or any(c.isspace() for c in t):
+                  ghi.append(f"secret {sec} CÓ khoảng trắng / xuống dòng thừa – sửa lại"); sai = 1
+              try:
+                  with urllib.request.urlopen(f"https://api.telegram.org/bot{t.strip()}/getMe", timeout=15) as r:
+                      bot = json.load(r)["result"]["id"]
+                  so.setdefault(bot, len(so) + 1)
+                  ghi.insert(0, f"hợp lệ · bot #{so[bot]}")
+              except Exception as e:                           # noqa: BLE001
+                  ghi.insert(0, f"token {sec} SAI / đã thu hồi ({getattr(e, 'code', type(e).__name__)})"); sai = 1
+              print(f"   {ten}: " + " · ".join(ghi))
+          if len(so):
+              print(f"   → {len(so)} bot khác nhau cho 4 kênh (cùng số # = cùng 1 bot)")
+          raise SystemExit(sai)
+          PY
+          gui "🔔 Giao dịch" "$T_CHINH" "$C_CHINH" "🔔 Kênh GIAO DỊCH (thử) – tín hiệu MUA / BÁN, cắt lỗ, nhắc ATO, tổng kết 15:20, nút 🛒 / 🛑 đặt lệnh, máy Mac chưa nhận việc. Bật thông báo kênh này."
+          gui "💼 Danh mục" "$T_DM" "$C_DM" "💼 Kênh DANH MỤC (thử) – báo cáo danh mục, kết quả khớp lệnh. Nhắn lệnh nhập tay cho bot này, mỗi dòng 1 lệnh (VD: BAN MWG 21 74,5 · NAP 5); /help → cú pháp."
           gui "📊 Nghiên cứu" "$T_NC" "$C_NC" "📊 Kênh NGHIÊN CỨU (thử) – bộ lọc định kỳ, KQKD, BCTC mới / bất thường, báo cáo CTCK, BCTN, tổ chức phát hành, tra cứu mã. Có thể tắt thông báo."
           gui "⚙ Hệ thống & giả lập" "$T_HT" "$C_HT" "⚙ Kênh HỆ THỐNG & GIẢ LẬP (thử) – workflow lỗi, token sắp hết hạn, kiểm thử hỏng, 🩺 sức khoẻ, giả lập, lệch backtest. Có thể tắt thông báo."
           # bot nghiên cứu: đã đặt TELEGRAM_TOKEN_NGHIEN_CUU chưa · token hợp lệ không (getMe → tên bot, công khai)
