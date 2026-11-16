@@ -42,6 +42,10 @@ jobs:
           REPO_DM: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
         run: |
           if [ "${{ github.event.schedule || inputs.lich }}" = "50 7 * * 1-5" ]; then      # DỰ PHÒNG cho lượt vòng quét chiều gọi lúc 15:02:
+            if [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt 1445 ]; then   # lịch GitHub trễ qua nửa đêm VN (16/11: tới 00:29, chờ 15:03 →
+              echo "chay=false" >> "$GITHUB_OUTPUT"                       # hết giờ, huỷ) – lượt dự phòng của phiên hôm trước đã quá hạn
+              echo "Lượt dự phòng 14:50 tới trễ sang ngày sau – bỏ"; exit 0
+            fi
             while [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt 1503 ]; do sleep 30; done   # chờ giá đóng cửa + lượt 15:02
             da=$(gh api "repos/${{ github.repository }}/actions/workflows/danh_muc.yml/runs?per_page=10" --jq \
                  "[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.created_at >= \"$(date -u +%F)T07:55:00Z\")] | length" \
