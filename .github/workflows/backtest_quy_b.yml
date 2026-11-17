@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, cl_atc]
+        phan: [chuan, cham1r, cl15]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -128,7 +128,7 @@ jobs:
             gia-san-
             gia-ngay-
       - name: Nến 15' (Release nen-15p) – phần cl_atc
-        if: steps.chon.outputs.chay && matrix.phan == 'cl_atc'
+        if: steps.chon.outputs.chay && (matrix.phan == 'cl_atc' || matrix.phan == 'cl15')
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
