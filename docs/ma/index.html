@@ -543,7 +543,7 @@ svg.spark{width:64px;height:20px;display:block;margin-left:auto}
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../../bang-thi-truong/">Thị trường</a><a href="../">Tổng hợp</a></div>
+  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../../bang-thi-truong/">Thị trường</a><a href="../">Tổng hợp</a><a id="nut-otp" hidden href="https://github.com/mihhle2006-beep/danh-muc/actions/workflows/dat_lenh.yml" target="_blank" rel="noopener" title="Mở trang chạy workflow trên GitHub → bấm Run workflow → app DNSE hiện Smart OTP để duyệt (đã có mã hôm nay thì không hỏi lại)">🔑 Lấy mã DNSE</a></div>
 </div></header>
 <main>
   <div id="noi-dung"><div class="trong">Đang tải dữ liệu…</div></div>
@@ -4747,6 +4747,9 @@ function gan_tim(o, di) {
   return inp;
 }
 gan_tim($("#tim-dau"));
+// nút "Lấy mã DNSE" chỉ hiện trên máy chủ quỹ: mở web 1 lần với ?chu=1 (tắt: ?chu=0) – trang công khai, không chứa token
+try { const q = new URLSearchParams(location.search).get("chu"); if (q != null) localStorage.setItem("chu_quy", q);
+  $("#nut-otp").hidden = localStorage.getItem("chu_quy") !== "1"; } catch (e) {}
 document.addEventListener("click", e => { const n = e.target.closest("[data-ngc]"); if (!n) return; e.preventDefault(); ST.ng = n.dataset.ngc; hien_nganh();
   requestAnimationFrame(() => { const c = $("#ng-chon"); if (c) scrollTo({top: c.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dau")) || 56) - 8, behavior: "smooth"}); }); });
 document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.ng1 == null) return; const mo = ST.ng_mo || (ST.ng_mo = new Set()); d.open ? mo.add(d.dataset.ng1) : mo.delete(d.dataset.ng1); }, true);
