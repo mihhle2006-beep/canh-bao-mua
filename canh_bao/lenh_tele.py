@@ -209,7 +209,7 @@ def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None, kiem=None, nguoi=None):
                 if e.code != 400:
                     raise
         if str((m.get("chat") or {}).get("id")) != str(chat) or str((cq.get("from") or {}).get("id")) != nguoi \
-                or not (NUT.fullmatch(data) or data in ("dh", "dt")):
+                or not (NUT.fullmatch(data) or data in ("dh", "dt", "otp")):
             tra_loi(text="Không nhận nút này")
             continue
         tuoi = bay - int(m.get("date") or 0)
@@ -219,6 +219,19 @@ def xu_ly_nut(api, cqs, chat, gh, repo, bay_gio=None, kiem=None, nguoi=None):
         het = kiem(data.split("|")[2]) if "|M|" in data and data[:2] in ("dl", "dx") else None
         if het and data.startswith("dl"):
             tra_loi(text=f"Không mua – hết suất: {het}", show_alert=True)
+            continue
+        if data == "otp":       # 🔑 (tin lệnh hỏng vì chưa duyệt Smart OTP): máy Mac xin mã → app DNSE hiện Smart OTP,
+            if tuoi > 6 * 3600:                     # duyệt xong tự bán lệnh bán đang chờ trong ngày (dnse_lenh.ban_cho)
+                tra_loi(text="Tin quá 6 giờ – bấm nút Lấy mã DNSE trên web")
+                continue
+            try:
+                gui_may_mac({"id": f"otp:{chat}:{tin}", "lay_ma": True, "luc": int(bay), "chat": str(chat)}, gh, repo)
+            except urllib.error.HTTPError as e:
+                tra_loi(text=f"Không gửi được (GitHub HTTP {e.code})", show_alert=True)
+                continue
+            tra_loi(text="📲 Mở app DNSE, bấm DUYỆT Smart OTP (≤ 5 phút)", show_alert=True)
+            _goi(f"{api}/editMessageReplyMarkup", {"chat_id": chat, "message_id": tin, "reply_markup": {"inline_keyboard": []}})
+            gui += 1
             continue
         tra_loi()
         if data == "dh":
