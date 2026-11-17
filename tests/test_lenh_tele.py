@@ -233,3 +233,20 @@ def test_nut_mua_het_suat_khong_dat(monkeypatch):
     assert len(canh) == 1 and "hết suất: đủ 8 mã" in canh[0]["text"]
     assert [g[1]["text"][:11] for g in goi if g[0] == "editMessageText"] == ["⛔ Không đặt"]
     assert [g[1]["reply_to_message_id"] for g in goi if g[0] == "sendMessage"] == [8]      # nút BÁN không kiểm suất
+
+
+def test_nut_duyet_otp_goi_may_mac_xin_ma(monkeypatch):
+    goi, ups = [], [_nut(1, "otp", mid=20), _nut(2, "otp", mid=21, date=NGAY - 7 * 3600), _nut(3, "otp", mid=22, tu=555)]
+
+    def gia(url, data=None, headers=None, method=None, cho=0):
+        goi.append((url.split("?")[0].rsplit("/", 1)[-1], data))
+        return {"result": ups} if "getUpdates" in url and "offset" not in url else None
+
+    monkeypatch.setattr(T, "_goi", gia)
+    monkeypatch.setattr(T.time, "time", lambda: NGAY + 60)
+    assert T.chay({"TELEGRAM_TOKEN": "t", "TELEGRAM_CHAT_ID": "111", "DANH_MUC_TOKEN_GHI": "g"}) == 1
+    gd = [g[1] for g in goi if g[0] == "dispatches"]
+    assert len(gd) == 1 and gd[0]["client_payload"] == {"id": "otp:111:20", "lay_ma": True, "luc": NGAY + 60, "chat": "111"}
+    assert [g[1]["message_id"] for g in goi if g[0] == "editMessageReplyMarkup"] == [20]      # bỏ nút sau khi gửi
+    tl = [g[1].get("text") for g in goi if g[0] == "answerCallbackQuery"]
+    assert "Tin quá 6 giờ – bấm nút Lấy mã DNSE trên web" in tl and "Không nhận nút này" in tl   # tin cũ · người lạ
