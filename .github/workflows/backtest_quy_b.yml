@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, dg_bt]
+        phan: [chuan, cham1r, thoat_tt]
     runs-on: ubuntu-24.04
     defaults:
       run:
