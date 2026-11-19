@@ -345,6 +345,13 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 @media (max-width:600px){.loc-dau{gap:6px}.loc-dau .bat{padding:4px 10px;font-size:12.5px}td.bo{min-width:170px}}
 .bat[aria-pressed=true]{background:var(--nhan-nen);border-color:var(--nhan);color:var(--nhan);font-weight:600}
 .loc-dau .dem{margin-left:auto;color:var(--mo);font-size:12.5px}
+.loc-bo{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px 16px;margin:-2px 0 14px;padding:12px 14px;border:1px solid var(--vien);border-radius:12px;background:var(--the)}
+.nhom-bat{display:flex;flex-direction:column;gap:6px;min-width:0}
+.nhan-bat{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mo)}
+.ds-bat{display:flex;flex-wrap:wrap;gap:6px}
+.xoa-loc{color:var(--mo)}
+.xem-het{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600}
+@media (max-width:600px){.loc-bo{grid-template-columns:1fr 1fr;padding:10px;gap:8px}}
 .cuoi{color:var(--mo);font-size:12px;margin:18px 0}
 .sub{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
 .sub button{border:1px solid var(--vien);background:var(--the);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--chu2)}
@@ -4090,8 +4097,10 @@ function hien_dau() {
   const re = DS.filter(r => HH(r) && r.re_dat === "RẺ" && r.von >= 1000).sort((a, b) => b.dinh_gia - a.dinh_gia).slice(0, 20).map(r => r.ma);
   const f = DS.filter(r => HH(r) && r.f >= 8 && r.von >= 1000).slice(0, 20).map(r => r.ma);
   const cs = DS.filter(r => HH(r) && r.cs >= 4 && r.von >= 500).sort((a, b) => b.cs - a.cs || (b.rs ?? 0) - (a.rs ?? 0)).slice(0, 20).map(r => r.ma);
-  const vA = DS.filter(r => HH(r) && (r.vgm || "").endsWith("A") && r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 20).map(r => r.ma);
-  const sieu = DS.filter(r => HH(r) && r.pc === "sieu" && r.von >= 1000).sort((a, b) => (b.vgm_d ?? 0) - (a.vgm_d ?? 0)).slice(0, 20).map(r => r.ma);
+  const vA_tat = DS.filter(r => HH(r) && (r.vgm || "").endsWith("A")), sieu_tat = DS.filter(r => HH(r) && r.pc === "sieu");
+  const vA = vA_tat.filter(r => r.von >= 500).sort((a, b) => b.vgm_d - a.vgm_d).slice(0, 20).map(r => r.ma);
+  const sieu = sieu_tat.filter(r => r.von >= 1000).sort((a, b) => (b.vgm_d ?? 0) - (a.vgm_d ?? 0)).slice(0, 20).map(r => r.ma);
+  const xem_het = (xh, n) => `<a class="xem-het" href="#loc" data-loc-xh="${xh}">Xem tất cả ${so(n, 0)} mã HOSE + HNX →</a>`;
   const chip_pt = m => { const l = LIVE[m], p = l?.pt != null ? l.pt / 100 : null;
     return `<a class="chip" href="#${esc(m)}">${esc(m)}${p != null ? `<span class="pt ${mau(p)}">${pt(p, 1)}</span>` : ""}</a>`; };
   const du_tk = MKT?.loc?.du_tk ?? 2, lv = Object.values(LIVE).filter(l => MA_OK(l.ma) && (l.gt20 ?? l.gt ?? 0) >= du_tk);
@@ -4115,8 +4124,8 @@ function hien_dau() {
   if (tk.length) h += `<section class="the o-dau o-rong"><div class="o-tieu"><h3>Tín hiệu kỹ thuật trong phiên</h3><span class="so-o">${tk.reduce((a, x) => a + x[1].length, 0)}</span></div>
     <p class="o-phu">${esc(MKT?.cap_nhat || "")} · GTGD ≥ ${so(du_tk, 0)} tỷ</p>` + tk.map(([t, ds]) => `<div class="o-nhom">${esc(t)}</div><div class="nhom-chip">${ds.map(chip_pt).join("")}</div>`).join("") + `</section>`;
   h += o("Vốn hoá lớn nhất", "", DS.slice(0, 20).map(r => r.ma));
-  h += o("Xếp hạng A (VGM)", "giá trị · tăng trưởng · động lượng · vốn hoá ≥ 500 tỷ", vA);
-  h += o("Siêu cổ phiếu", "chất lượng · giá trị · động lượng đều trên trung bình (kiểu Stockopedia) · vốn hoá ≥ 1.000 tỷ", sieu);
+  h += o("Xếp hạng A (VGM)", "20 mã điểm cao nhất · giá trị · tăng trưởng · động lượng · vốn hoá ≥ 500 tỷ", vA, xem_het("A", vA_tat.length));
+  h += o("Siêu cổ phiếu", "20 mã điểm VGM cao nhất · chất lượng · giá trị · động lượng đều trên trung bình (kiểu Stockopedia) · vốn hoá ≥ 1.000 tỷ", sieu, xem_het("sieu", sieu_tat.length));
   h += o("CANSLIM ≥ 4/5", `C·A·N·S·L · xếp theo RS${m ? ` · thị trường (M) <span class="${m === "tăng" ? "t" : m === "giảm" ? "g" : ""}">${esc(m)}</span>` : ""}`, cs);
   h += o("LNST quý tăng mạnh", "≥ 2 quý liền · quý ≥ 50 tỷ", tang);
   h += o("Rẻ so giá trị hợp lý", "vốn hoá ≥ 1.000 tỷ", re);
@@ -4130,20 +4139,35 @@ const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["pe_h
   ["ln_yoy", "LN quý YoY"], ["ln4_yoy", "LN 4Q YoY"], ["dt_yoy", "DT YoY"], ["bien", "Biên gộp"], ["lien", "Quý tăng liền"], ["f", "F-Score"],
   ["dg_h", "So giá trị HL"], ["vgm_d", "VGM"], ["cs", "CANSLIM"], ["rs", "RS"], ["von", "Vốn hoá"], ["rui_ro_bctc", "Rủi ro BCTC"]];
 const HH = r => r.san !== "UPCoM";                     // quỹ chỉ mua HOSE + HNX: lọc / gợi ý mặc định bỏ UPCoM (09/11/2026 thêm ~800 mã)
-const LOC = {tim: "", san: "hh", nganh: "", sx: "von", tang: false, bat: new Set(), kt: false};
+const LOC = {tim: "", san: "hh", nganh: "", sx: "von", tang: false, bat: new Set(), kt: false, xh: ""};
 // chế độ KỸ THUẬT (thi_truong/ky_thuat_web.py + canslim_web.py ghi vào ds.json, giá đóng cửa phiên gần nhất)
 const COT_KT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia_h", "Giá"], ["p1t", "1 tháng"], ["p3t", "3 tháng"], ["p6t", "6 tháng"], ["p1n", "1 năm"],
   ["tr50", "So MA50"], ["tr200", "So MA200"], ["rsi", "RSI 14"], ["kl_d", "KL / TB20"], ["atr", "Biến động ngày"], ["cach52", "Cách đỉnh 52T"], ["rs", "RS"], ["nen", "Nền tích lũy"], ["von", "Vốn hoá"]];
-const BAT_KT = {vuot: ["Vừa vượt nền", r => r.vuot], nen: ["Đang trong nền", r => r.nen > 0], vcp: ["VCP", r => r.vcp], d52: ["Đỉnh 52 tuần", r => r.d52],
-  tren: ["Trên MA50 & MA200", r => r.tr50 > 0 && r.tr200 > 0], rs: ["RS ≥ 80", r => r.rs >= 80], kl: ["KL đột biến ≥ 2×", r => r.kl_d >= 2],
-  qb: ["Quá bán (RSI < 30)", r => r.rsi < 30], qm: ["Quá mua (RSI > 70)", r => r.rsi > 70], lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000], td: ["Đang theo dõi", r => TD.has(r.ma)]};
-const cot_loc = () => LOC.kt ? COT_KT : COT, bat_loc = () => LOC.kt ? BAT_KT : BAT;
-const BAT = {tang: ["LN quý tăng > 20%", r => r.ln_yoy > .2], toc: ["Tăng tốc", r => r.tang_toc === "Có"], re: ["Rẻ", r => r.dg_h >= .2],
-  pe: ["P/E < 12", r => r.pe_h > 0 && r.pe_h < 12], roe: ["ROE > 15%", r => r.roe > .15], f: ["F-Score ≥ 7", r => r.f >= 7],
-  sach: ["Không rủi ro BCTC", r => !r.rui_ro_bctc], lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000],
-  cs: ["CANSLIM ≥ 4", r => r.cs >= 4], rs: ["RS ≥ 80", r => r.rs >= 80], vgm: ["Hạng A (VGM)", r => (r.vgm || "").endsWith("A")],
-  sieu: ["Siêu cổ phiếu", r => r.pc === "sieu"], ko_bay: ["Không phải bẫy", r => !!r.pc && !["bay_dl", "bay_gt", "kem"].includes(r.pc)],
-  td: ["Đang theo dõi", r => TD.has(r.ma)]};
+const BAT_KT = {vuot: ["Vừa vượt nền", r => r.vuot, "Giá vừa đóng cửa vượt đỉnh nền tích lũy"], nen: ["Đang trong nền", r => r.nen > 0, "Nền ≥ 15 phiên, biên độ ≤ 15%, đỉnh nền ≥ 85% đỉnh 52 tuần"],
+  vcp: ["VCP", r => r.vcp, "Nền co hẹp dần biên độ (Volatility Contraction Pattern)"], d52: ["Đỉnh 52 tuần", r => r.d52, "Giá đóng cửa cao nhất 52 tuần"],
+  tren: ["Trên MA50 & MA200", r => r.tr50 > 0 && r.tr200 > 0, "Giá nằm trên cả MA50 và MA200"], rs: ["RS ≥ 80", r => r.rs >= 80, "Sức mạnh giá thuộc 20% mạnh nhất thị trường"],
+  kl: ["KL đột biến ≥ 2×", r => r.kl_d >= 2, "Khối lượng phiên cuối ≥ 2 lần trung bình 20 phiên"],
+  qb: ["Quá bán (RSI < 30)", r => r.rsi < 30, "RSI 14 phiên dưới 30"], qm: ["Quá mua (RSI > 70)", r => r.rsi > 70, "RSI 14 phiên trên 70"],
+  lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000, "Bỏ mã vốn hoá nhỏ"], td: ["Đang theo dõi", r => TD.has(r.ma), "Mã đã bấm + Theo dõi (lưu trong trình duyệt)"]};
+const cot_loc = () => LOC.kt ? COT_KT : COT, bat_loc = () => LOC.kt ? BAT_KT : BAT, nhom_bat = () => LOC.kt ? NHOM_BAT_KT : NHOM_BAT;
+const BAT = {tang: ["LN quý > +20%", r => r.ln_yoy > .2, "LNST quý gần nhất cao hơn cùng quý năm trước trên 20%"],
+  toc: ["Tăng tốc", r => r.tang_toc === "Có" && r.ln_yoy > 0, "LNST quý đang tăng so cùng kỳ VÀ tăng nhanh hơn quý trước"],
+  re: ["Rẻ ≥ 20%", r => r.dg_h >= .2, "Giá trị hợp lý cao hơn giá hiện tại từ 20% trở lên (định giá hệ thống hoặc EPS × P/E ngành)"],
+  pe: ["P/E < ngành", r => r.pe_h > 0 && r.pe_nganh > 0 && r.pe_h < r.pe_nganh, "P/E dương và thấp hơn P/E trung vị cùng ngành"],
+  roe: ["ROE > 15%", r => r.roe > .15, "Lợi nhuận 4 quý ÷ vốn chủ sở hữu trên 15%"],
+  f: ["F-Score ≥ 7", r => r.f >= 7, "Điểm sức khoẻ tài chính Piotroski từ 7/9"],
+  sach: ["Không rủi ro BCTC", r => !r.rui_ro_bctc, "Không có mục bất thường BCTC nào xếp mức RỦI RO"],
+  rs: ["RS ≥ 80", r => r.rs >= 80, "Sức mạnh giá thuộc 20% mạnh nhất thị trường (40% lãi 3 tháng + 20% mỗi mức 6, 9, 12 tháng)"],
+  cs: ["CANSLIM ≥ 4", r => r.cs >= 4, "Đạt ít nhất 4/5 chữ C · A · N · S · L"],
+  lon: ["Vốn hoá ≥ 1.000 tỷ", r => r.von >= 1000, "Bỏ mã vốn hoá nhỏ"], td: ["Đang theo dõi", r => TD.has(r.ma), "Mã đã bấm + Theo dõi (lưu trong trình duyệt)"]};
+const NHOM_BAT = [["Tăng trưởng", ["tang", "toc"]], ["Định giá", ["re", "pe"]], ["Chất lượng", ["roe", "f", "sach"]], ["Động lượng", ["rs", "cs"]],
+  ["Khác", ["lon", "td"]]];
+const NHOM_BAT_KT = [["Nền giá", ["vuot", "nen", "vcp", "d52"]], ["Xu hướng", ["tren", "rs", "kl"]], ["RSI", ["qb", "qm"]], ["Khác", ["lon", "td"]]];
+// XẾP HẠNG (thi_truong/xep_hang_web.py): hạng VGM + phong cách kiểu Stockopedia – 1 ô chọn thay 3 nút lồng nhau (20/11/2026)
+const XH = [["", "Mọi xếp hạng", null], ["A", "Hạng A (VGM)", r => (r.vgm || "").endsWith("A")], ["AB", "Hạng A – B (VGM)", r => /[AB]$/.test(r.vgm || "")],
+  ["sieu", "Siêu cổ phiếu", r => r.pc === "sieu"], ["ko_bay", "Không phải bẫy", r => !!r.pc && !["bay_dl", "bay_gt", "kem"].includes(r.pc)],
+  ...["bay_cao", "nguoc", "hoi_phuc", "sao_roi", "bay_dl", "bay_gt", "kem"].map(k => [k, `Phong cách: ${TEN_PC[k][0]}`, r => r.pc === k])];
+const XH_F = Object.fromEntries(XH.map(([k, , f]) => [k, f]));
 function o_loc(r, k) {
   switch (k) {
     case "ma": return `<td class="trai ma"><a href="#${esc(r.ma)}"><b>${esc(r.ma)}</b></a>${GIU.has(r.ma) ? '<span class="the-chu giu">giữ</span>' : ""}${BOT[r.ma] ? '<span class="the-chu bot">bot</span>' : ""}</td>`;
@@ -4175,13 +4199,18 @@ function hien_loc() {
   $("#noi-dung").innerHTML = `<div class="loc-dau"><span class="nut">${nut([["0", "Cơ bản (KQKD)"], ["1", "Kỹ thuật"]], LOC.kt ? "1" : "0", "lkt")}</span><input id="l-tim" placeholder="Lọc mã / ngành…" value="${esc(LOC.tim)}">
     <select id="l-san"><option value="hh"${LOC.san === "hh" ? " selected" : ""}>HOSE + HNX</option><option value=""${LOC.san ? "" : " selected"}>Mọi sàn</option>${san.map(s => `<option${s === LOC.san ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
     <select id="l-nganh"><option value="">Mọi ngành</option>${ng.map(s => `<option${s === LOC.nganh ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
-    ${Object.entries(BAT).map(([k, [t]]) => `<button class="bat" data-bat="${k}" aria-pressed="${LOC.bat.has(k)}">${esc(t)}</button>`).join("")}<span class="dem" id="l-dem"></span></div>
+    <select id="l-xh" aria-label="Xếp hạng">${XH.map(([k, t]) => `<option value="${k}"${k === LOC.xh ? " selected" : ""}>${esc(t)}</option>`).join("")}</select>
+    <button class="bat xoa-loc" id="l-xoa" hidden>Xoá lọc</button><span class="dem" id="l-dem"></span></div>
+    <div class="loc-bo">${nhom_bat().map(([ten, ks]) => `<div class="nhom-bat"><span class="nhan-bat">${esc(ten)}</span><div class="ds-bat">${ks.filter(k => BAT[k]).map(k =>
+      `<button class="bat" data-bat="${k}" aria-pressed="${LOC.bat.has(k)}" title="${esc(BAT[k][2] || "")}">${esc(BAT[k][0])}</button>`).join("")}</div></div>`).join("")}</div>
     <div class="the"><div class="bang-boc"><table id="bang-loc" class="sort"><thead><tr>${COT.map(([k, t, tr]) => `<th data-k="${k}" class="${tr ? "trai" : ""}${k === "nganh" ? " an-dt" : ""}">${esc(t)}</th>`).join("")}</tr></thead><tbody></tbody></table></div></div>
     <p class="m" style="font-size:12px">${LOC.kt ? "Kỹ thuật tính theo giá đóng cửa phiên gần nhất (giá điều chỉnh): lãi 1 / 3 / 6 tháng, 1 năm · % trên / dưới MA50, MA200 · RSI 14 · KL phiên cuối ÷ TB 20 phiên · ATR 14 ÷ giá · RS: hạng sức mạnh giá 0–99 · nền tích lũy ≥ 15 phiên, biên độ ≤ 15%, đỉnh nền ≥ 85% đỉnh 52 tuần (như mục Tự vẽ của Biểu đồ)." : "Giá, P/E, P/B, so giá trị hợp lý theo giá trong phiên. LNST quý tỷ đồng."} Bấm tiêu đề cột để sắp xếp, bấm dòng để xem chi tiết.</p>`;
   document.querySelectorAll("[data-lkt]").forEach(b => b.onclick = () => { const v = b.dataset.lkt === "1"; if (v === LOC.kt) return; LOC.kt = v; LOC.bat.clear(); LOC.sx = v ? "rs" : "von"; LOC.tang = false; hien_loc(); });
   $("#l-tim").oninput = e => { LOC.tim = e.target.value.trim().toUpperCase(); ve_loc(); };
   $("#l-san").onchange = e => { LOC.san = e.target.value; ve_loc(); };
   $("#l-nganh").onchange = e => { LOC.nganh = e.target.value; ve_loc(); };
+  $("#l-xh").onchange = e => { LOC.xh = e.target.value; ve_loc(); };
+  $("#l-xoa").onclick = () => { LOC.bat.clear(); LOC.xh = ""; LOC.tim = ""; LOC.nganh = ""; hien_loc(); };
   document.querySelectorAll("[data-bat]").forEach(b => b.onclick = () => { const k = b.dataset.bat; LOC.bat.has(k) ? LOC.bat.delete(k) : LOC.bat.add(k); b.setAttribute("aria-pressed", LOC.bat.has(k)); ve_loc(); });
   document.querySelectorAll("#bang-loc th").forEach(th => th.onclick = () => { const k = th.dataset.k; LOC.tang = LOC.sx === k ? !LOC.tang : ["ma", "nganh", "pe_h", "pb_h"].includes(k); LOC.sx = k; ve_loc(); });
   ve_loc();
@@ -4189,7 +4218,9 @@ function hien_loc() {
 }
 function ve_loc() {
   const ds = DS.filter(r => (!LOC.san || (LOC.san === "hh" ? HH(r) : r.san === LOC.san)) && (!LOC.nganh || r.nganh === LOC.nganh)
-    && (!LOC.tim || r.ma.includes(LOC.tim) || (r.nganh || "").toUpperCase().includes(LOC.tim) || (r.ten || "").toUpperCase().includes(LOC.tim)) && [...LOC.bat].every(k => bat_loc()[k]?.[1](r)));
+    && (!LOC.tim || r.ma.includes(LOC.tim) || (r.nganh || "").toUpperCase().includes(LOC.tim) || (r.ten || "").toUpperCase().includes(LOC.tim))
+    && (!LOC.xh || !XH_F[LOC.xh] || XH_F[LOC.xh](r)) && [...LOC.bat].every(k => bat_loc()[k]?.[1](r)));
+  const xoa = $("#l-xoa"); if (xoa) xoa.hidden = !(LOC.bat.size || LOC.xh || LOC.tim || LOC.nganh);
   const COT = cot_loc();
   const k = LOC.sx, d = LOC.tang ? 1 : -1;
   ds.sort((a, b) => { const x = a[k], y = b[k]; if (x == null || x === "") return 1; if (y == null || y === "") return -1; return (typeof x === "string" ? x.localeCompare(y, "vi") : x - y) * d; });
@@ -4775,6 +4806,7 @@ document.addEventListener("click", e => { const n = e.target.closest("[data-ngc]
   requestAnimationFrame(() => { const c = $("#ng-chon"); if (c) scrollTo({top: c.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dau")) || 56) - 8, behavior: "smooth"}); }); });
 document.addEventListener("toggle", e => { const d = e.target; if (d.dataset?.ng1 == null) return; const mo = ST.ng_mo || (ST.ng_mo = new Set()); d.open ? mo.add(d.dataset.ng1) : mo.delete(d.dataset.ng1); }, true);
 document.addEventListener("click", e => { const n = e.target.closest("[data-loc-nganh]"); if (n) { LOC.nganh = n.dataset.locNganh; LOC.tim = ""; } });
+document.addEventListener("click", e => { const n = e.target.closest("[data-loc-xh]"); if (n) { LOC.xh = n.dataset.locXh; LOC.kt = false; LOC.bat.clear(); LOC.tim = ""; LOC.nganh = ""; LOC.san = "hh"; } });
 document.addEventListener("click", e => { const b = e.target.closest("[data-td]"); if (!b) return;
   doi_td(b.dataset.td); const co = TD.has(b.dataset.td); b.setAttribute("aria-pressed", co); b.textContent = co ? "✓ Đang theo dõi" : "+ Theo dõi"; ds_td_ve(); });
 let MA_TRUOC = "";
