@@ -11,6 +11,10 @@
 # truong" lấy cache khi gói trang → gọi triển khai ngay.
 #   • 06:41 giờ VN T2–T7: sau "BCTC moi hang dem" (04:15) – BCTC / bất thường / định giá mới nhất
 #   • bấm tay khi cần
+# SAO LƯU (19/11/2026): cache Actions không vĩnh viễn (7 ngày không dùng / repo > 10 GB → xoá) – mất thì phải tải lại mọi
+# mã vài giờ, Vietcap IQ dễ chặn. Lượt thứ Bảy (hoặc bấm tay sao_luu) nén docs/ma/du_lieu (dữ liệu CÔNG KHAI, đã đăng
+# trên Pages) → tài sản du_lieu.tar.zst của bản phát hành "sao-luu-tra-cuu" (ghi đè, không phình lịch sử git); lượt nào
+# không lấy được cache thì khôi phục từ bản sao lưu trước khi chạy.
 name: Du lieu tra cuu
 
 on:
@@ -26,6 +30,10 @@ on:
         default: "40"
       lam_moi:
         description: "Làm cả mã đã cập nhật hôm nay (VD sau khi đổi định dạng dữ liệu)"
+        type: boolean
+        default: false
+      sao_luu:
+        description: "Sao lưu dữ liệu lên bản phát hành sao-luu-tra-cuu ngay (thường tự làm lượt thứ Bảy)"
         type: boolean
         default: false
 
@@ -53,6 +61,9 @@ jobs:
     defaults:
       run:
         working-directory: danh-muc
+    permissions:
+      contents: write              # tạo / ghi đè tài sản bản phát hành sao-luu-tra-cuu (sao lưu tuần)
+      actions: write               # gọi bang_thi_truong.yml triển khai trang
     env:
       CONG_KHAI: "1"
     timeout-minutes: 90                         # + nến phút mọi mã ~10–20 phút (lần đầu dài hơn)
@@ -86,11 +97,25 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Lấy dữ liệu lần trước (mã chưa tới lượt giữ file cũ)
+        id: kho
         uses: actions/cache/restore@v5
         with:
           path: docs/ma/du_lieu
           key: tra-cuu-${{ github.run_id }}
           restore-keys: tra-cuu-
+
+      - name: Mất cache → khôi phục từ bản sao lưu tuần (bản phát hành sao-luu-tra-cuu)
+        if: steps.kho.outputs.cache-matched-key == ''
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release download sao-luu-tra-cuu -p du_lieu.tar.zst -D "$RUNNER_TEMP" -R "$GITHUB_REPOSITORY"; then
+            mkdir -p docs/ma && tar --zstd -xf "$RUNNER_TEMP/du_lieu.tar.zst" -C docs/ma
+            echo "::warning::Không có cache tra-cuu – đã khôi phục bản sao lưu tuần ($(du -sh docs/ma/du_lieu | cut -f1))"
+          else
+            echo "::warning::Không có cache tra-cuu và chưa có bản sao lưu – tải lại từ đầu"
+          fi
 
       - name: Dựng dữ liệu tra cứu (BCTC, định giá, kế hoạch, bất thường, chiến lược)
         run: |
@@ -152,6 +177,23 @@ jobs:
         with:
           path: docs/ma/du_lieu
           key: tra-cuu-${{ github.run_id }}
+
+      - name: Sao lưu tuần (thứ Bảy / bấm tay) → bản phát hành sao-luu-tra-cuu
+        if: github.ref == 'refs/heads/main'
+        working-directory: .
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SAO_LUU: ${{ inputs.sao_luu }}
+        run: |
+          [ "$(TZ=Asia/Ho_Chi_Minh date +%u)" = 6 ] || [ "$SAO_LUU" = true ] || { echo "Không phải lượt sao lưu"; exit 0; }
+          [ -d docs/ma/du_lieu ] && [ -f docs/ma/du_lieu/ds.json ] || { echo "::warning::Thiếu dữ liệu – không sao lưu"; exit 0; }
+          tar --zstd -cf "$RUNNER_TEMP/du_lieu.tar.zst" -C docs/ma du_lieu
+          gh release view sao-luu-tra-cuu -R "$GITHUB_REPOSITORY" > /dev/null 2>&1 || gh release create sao-luu-tra-cuu \
+            -R "$GITHUB_REPOSITORY" --latest=false --title "Sao lưu dữ liệu Tra cứu mã" \
+            --notes "Bản nén docs/ma/du_lieu (dữ liệu công khai của trang Tra cứu mã) – workflow Du lieu tra cuu ghi đè mỗi thứ Bảy; dùng khi mất cache Actions."
+          gh release upload sao-luu-tra-cuu "$RUNNER_TEMP/du_lieu.tar.zst" --clobber -R "$GITHUB_REPOSITORY"
+          echo "Đã sao lưu $(du -h "$RUNNER_TEMP/du_lieu.tar.zst" | cut -f1) ($(find docs/ma/du_lieu -type f | wc -l) tệp)"
 
       - name: Triển khai trang (gọi Bang thi truong)
         if: github.ref == 'refs/heads/main'
