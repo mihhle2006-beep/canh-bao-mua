@@ -645,11 +645,14 @@ async function tai_thi_truong() {
   for (const r of m.tin_hieu?.ma || []) BOT[r[0]] = r;
   GIU = new Set((m.danh_muc || []).filter(MA_OK));
 }
+// dự phóng LNST của CTCK (đọc PDF báo cáo 120 ngày) · hệ thống · kết hợp ½–½ – du_phong.json (danh-muc ptcp/du_phong_ctck.py)
+let DP = null, DP_P = null;
+const tai_dp = () => DP ? Promise.resolve(DP) : (DP_P = DP_P || lay(DL + "du_phong.json", false).catch(() => null).then(j => (DP = j || {ma: {}})));
 async function tai_ma(ma) {
   const k = KHO[ma] || (KHO[ma] = {});
   if (!k.p && CHI_SO_TEN[ma]) k.p = lay(DL + "chi_so/" + ma + ".json", false).then(gd => { k.gd = gd; k.n = {ct: {viOrganName: CHI_SO_TEN[ma]}}; });   // chỉ số: chỉ có nến
   if (!k.p) k.p = Promise.all([lay(DL + "ma/" + ma + ".json", false), lay(DL + "gia/" + ma + ".json", false),
-    lay(DL + "dn/" + ma + ".json", false), lay(DL + "gia_dai/" + ma + ".json", false)]).then(([r, g, n, gd]) => { k.r = r; k.g = g; k.n = n; k.gd = gd; });
+    lay(DL + "dn/" + ma + ".json", false), lay(DL + "gia_dai/" + ma + ".json", false), tai_dp()]).then(([r, g, n, gd]) => { k.r = r; k.g = g; k.n = n; k.gd = gd; });
   await k.p; return k;
 }
 async function tai_bctc(ma) {
@@ -3705,6 +3708,7 @@ function dinh_gia(ma, k) {
     o_so("P/E hiện tại", pe ? so(pe, 1) : "–", r.pe_nganh ? "ngành " + so(r.pe_nganh, 1) : "") + o_so("P/B hiện tại", pb ? so(pb, 2) : "–") +
     o_so("LNST năm dự phóng", r.lnst_f ? so(r.lnst_f, 0) + " tỷ" : "–", esc(r.ghi_f || "")) + o_so("P/E dự phóng", pe_f ? so(pe_f, 1) : "–") +
     o_so("PEG", r.peg ? so(r.peg, 2) : "–", r.cagr != null ? "LNST CAGR 3 năm " + pt(r.cagr) : "") + `</div><p class="nhan-xet">${esc(r.nhan_xet || "")}</p>`);
+  h += the_du_phong(ma, k, g);
   // P/E, P/B lịch sử THEO NGÀY (biểu đồ vẽ sau – gan_su_kien) · không đủ số → bản theo quý như cũ
   const cs = n.cs, P = chuoi_pe(k, ma);
   if (P) h += the("P/E · P/B lịch sử theo ngày", `dải trung bình ± 1σ của khoảng đang xem · ${P.vc ? `từ ${ngay_vn(P.vc)}: P/E quý Vietcap` : ""}${P.uoc ? ` · trước đó ước tính từ LNST cổ đông mẹ 4 quý (VNDirect), quy đổi số CP theo quý Vietcap đầu tiên` : ""}`,
@@ -3734,6 +3738,23 @@ function dinh_gia(ma, k) {
     kh.map(x => `<tr><td class="trai">${esc(x.nam)}</td><td>${ty(x.dt)}${ht(x, "dt")}</td><td>${ty(x.lntt)}${ht(x, "lntt")}</td><td>${ty(x.lnst)}${ht(x, "lnst")}</td><td class="trai">${url(x.link) ? `<a href="${url(x.link)}" target="_blank" rel="noopener">${esc(x.nguon || "tài liệu")}</a>` : esc(x.nguon)}</td></tr>`).join("") + `</tbody></table></div>`
     : `<div class="trong">Chưa có kế hoạch ĐHCĐ đã đọc cho mã này.</div>`);
   return h;
+}
+
+function the_du_phong(ma, k, g) {               // dự phóng LNST mẹ: đồng thuận CTCK · hệ thống · kết hợp ½–½ (du_phong.json)
+  if (!DP || !DP.cap_nhat) return "";
+  const d = DP.ma?.[ma], n_lui = DP.ngay_lui || 120, tieu = "Dự phóng LNST cổ đông mẹ – CTCK & hệ thống";
+  if (!d) return the(tieu, "", `<div class="trong">Chưa có báo cáo CTCK ${n_lui} ngày gần nhất có bảng dự phóng đọc được.</div>`);
+  const r = k.r || {}, vh = r.von && r.gia && g ? r.von * g / r.gia : null, nam = Object.keys(d.nam || {}).sort();
+  const dong = nam.map(y => { const x = d.nam[y] || {}, so4 = x.tron != null && d.ltm > 0 ? x.tron / d.ltm - 1 : null, pe = vh && x.tron > 0 ? vh / x.tron : null;
+    return `<tr><td class="trai"><b>${esc(y)}</b></td><td>${x.ctck != null ? `${ty(x.ctck)}<br><span class="m">${x.n} báo cáo</span>` : "–"}</td>` +
+      `<td>${ty(x.ht)}</td><td><b>${ty(x.tron)}</b></td><td class="${mau(so4)}">${pt(so4)}</td><td>${pe ? so(pe, 1) : "–"}</td></tr>`; }).join("");
+  const bc = (d.bc || []).map(b => `<tr><td class="trai">${ngay_vn(b[0])}</td><td class="trai">${esc(b[1])}</td>${nam.map(y => `<td>${ty(b[2]?.[y])}</td>`).join("")}` +
+    `<td class="trai">${url(b[3]) ? `<a href="${url(b[3])}" target="_blank" rel="noopener">PDF</a>` : ""}</td></tr>`).join("");
+  return the(tieu, `tỷ đồng · báo cáo CTCK ${n_lui} ngày tới ${ngay_vn(DP.cap_nhat)} · 4 quý gần nhất ${ty(d.ltm)}`,
+    `<div class="bang-boc" id="dp-ctck"><table><thead><tr><th class="trai">Năm</th><th>Đồng thuận CTCK</th><th>Hệ thống</th><th>Kết hợp ½–½</th><th>So 4 quý gần nhất</th><th>P/E dự phóng</th></tr></thead><tbody>${dong}</tbody></table></div>` +
+    `<p class="nhan-xet">Đồng thuận = trung vị dự phóng các CTCK · Hệ thống = lũy kế đã công bố (${esc(d.k)} quý) + các quý còn lại lấy cùng kỳ năm trước, năm sau = 4 quý gần nhất · ` +
+    `Kết hợp = ½ đồng thuận + ½ hệ thống (sát thực tế hơn từng bên) · P/E dự phóng = vốn hoá ÷ LNST kết hợp. Số đọc tự động từ PDF – bấm PDF xem bản gốc. Chỉ để tham khảo, không dùng cho cờ rẻ / đắt.</p>` +
+    (bc ? `<div class="bang-boc"><table><thead><tr><th class="trai">Ngày</th><th class="trai">CTCK</th>${nam.map(y => `<th>${esc(y)}</th>`).join("")}<th class="trai">Báo cáo</th></tr></thead><tbody>${bc}</tbody></table></div>` : ""));
 }
 
 function chuoi_pe(k, ma) {                     // P/E, P/B theo ngày = giá điều chỉnh ÷ EPS / BVPS (theo giá điều chỉnh) của quý gần nhất
