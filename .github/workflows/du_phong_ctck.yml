@@ -15,8 +15,8 @@ on:
         description: "Báo cáo từ ngày"
         default: "2021-01-01"
       toi_da:
-        description: "Tối đa báo cáo / mã (mỗi CTCK × nửa năm giữ 1)"
-        default: "14"
+        description: "Tối đa báo cáo / mã (mỗi CTCK × nửa năm giữ 1, rải đều các nửa năm tới 10/2025)"
+        default: "20"
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc (trống = main)"
         default: ""
@@ -72,7 +72,7 @@ jobs:
           MA: ${{ inputs.ma }}
           TU: ${{ inputs.tu }}
           TOI_DA: ${{ inputs.toi_da }}
-        run: python -m ptcp.du_phong_ctck ${MA:+--ma "$MA"} --tu "${TU:-2021-01-01}" --toi_da "${TOI_DA:-14}" --ra du_phong_ctck.csv
+        run: python -m ptcp.du_phong_ctck ${MA:+--ma "$MA"} --tu "${TU:-2021-01-01}" --toi_da "${TOI_DA:-20}" --ra du_phong_ctck.csv
       - uses: actions/upload-artifact@v6
         if: always()
         with:
