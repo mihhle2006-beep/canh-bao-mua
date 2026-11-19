@@ -1,6 +1,6 @@
 # 📈 Cảnh báo mua cổ phiếu
 
-> **Cái gì ở đâu, chạy thế nào:** xem [CAU_TRUC.md](CAU_TRUC.md) (42 workflow, lịch, cách bấm chạy, code nằm ở repo nào).
+> **Cái gì ở đâu, chạy thế nào:** xem [CAU_TRUC.md](CAU_TRUC.md) (43 workflow, lịch, cách bấm chạy, code nằm ở repo nào).
 
 Bot Telegram chạy trên GitHub Actions. Mỗi ngày bot chọn mã nên mua, báo lúc nào mua trong phiên,
 nhắc bán mã đang giữ và gửi tổng kết cuối ngày.
