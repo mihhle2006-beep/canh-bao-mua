@@ -17,6 +17,9 @@ on:
       toi_da:
         description: "Tối đa báo cáo / mã (mỗi CTCK × nửa năm giữ 1, rải đều các nửa năm tới 10/2025)"
         default: "20"
+      chan_doan:
+        description: "Chẩn đoán bộ đọc PDF: số mẫu in ra mỗi loại lỗi (trống = đo như thường)"
+        default: ""
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc (trống = main)"
         default: ""
@@ -72,7 +75,8 @@ jobs:
           MA: ${{ inputs.ma }}
           TU: ${{ inputs.tu }}
           TOI_DA: ${{ inputs.toi_da }}
-        run: python -m ptcp.du_phong_ctck ${MA:+--ma "$MA"} --tu "${TU:-2021-01-01}" --toi_da "${TOI_DA:-20}" --ra du_phong_ctck.csv
+          CHAN_DOAN: ${{ inputs.chan_doan }}
+        run: python -m ptcp.du_phong_ctck ${MA:+--ma "$MA"} --tu "${TU:-2021-01-01}" --toi_da "${TOI_DA:-20}" --ra du_phong_ctck.csv ${CHAN_DOAN:+--chan_doan "$CHAN_DOAN"}
       - uses: actions/upload-artifact@v6
         if: always()
         with:
