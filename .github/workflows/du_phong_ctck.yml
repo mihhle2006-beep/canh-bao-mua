@@ -20,6 +20,11 @@ on:
       chan_doan:
         description: "Chẩn đoán bộ đọc PDF: số mẫu in ra mỗi loại lỗi (trống = đo như thường)"
         default: ""
+      bo:
+        description: "Bộ báo cáo khi chẩn đoán: do = bộ đo 60 mã · web = bộ web Tra cứu (mọi mã, ≤ 120 ngày, theo ngành)"
+        type: choice
+        options: [do, web]
+        default: do
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc (trống = main)"
         default: ""
@@ -76,7 +81,8 @@ jobs:
           TU: ${{ inputs.tu }}
           TOI_DA: ${{ inputs.toi_da }}
           CHAN_DOAN: ${{ inputs.chan_doan }}
-        run: python -m ptcp.du_phong_ctck ${MA:+--ma "$MA"} --tu "${TU:-2021-01-01}" --toi_da "${TOI_DA:-20}" --ra du_phong_ctck.csv ${CHAN_DOAN:+--chan_doan "$CHAN_DOAN"}
+          BO: ${{ inputs.bo }}
+        run: python -m ptcp.du_phong_ctck ${MA:+--ma "$MA"} --tu "${TU:-2021-01-01}" --toi_da "${TOI_DA:-20}" --ra du_phong_ctck.csv ${CHAN_DOAN:+--chan_doan "$CHAN_DOAN" --bo "${BO:-do}"}
       - uses: actions/upload-artifact@v6
         if: always()
         with:

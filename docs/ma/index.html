@@ -3748,12 +3748,12 @@ function the_du_phong(ma, k, g) {               // dự phóng LNST mẹ: đồn
   const dong = nam.map(y => { const x = d.nam[y] || {}, so4 = x.tron != null && d.ltm > 0 ? x.tron / d.ltm - 1 : null, pe = vh && x.tron > 0 ? vh / x.tron : null;
     return `<tr><td class="trai"><b>${esc(y)}</b></td><td>${x.ctck != null ? `${ty(x.ctck)}<br><span class="m">${x.n} báo cáo</span>` : "–"}</td>` +
       `<td>${ty(x.ht)}</td><td><b>${ty(x.tron)}</b></td><td class="${mau(so4)}">${pt(so4)}</td><td>${pe ? so(pe, 1) : "–"}</td></tr>`; }).join("");
-  const bc = (d.bc || []).map(b => `<tr><td class="trai">${ngay_vn(b[0])}</td><td class="trai">${esc(b[1])}</td>${nam.map(y => `<td>${ty(b[2]?.[y])}</td>`).join("")}` +
+  const bc = (d.bc || []).map(b => `<tr><td class="trai">${ngay_vn(b[0])}</td><td class="trai">${esc(b[1])}${b[4] === "lntt" ? ' <span class="m" title="Báo cáo chỉ có lợi nhuận trước thuế – LNST ước = LNTT × 0,8">LNTT×0,8</span>' : ""}</td>${nam.map(y => `<td>${ty(b[2]?.[y])}</td>`).join("")}` +
     `<td class="trai">${url(b[3]) ? `<a href="${url(b[3])}" target="_blank" rel="noopener">PDF</a>` : ""}</td></tr>`).join("");
   return the(tieu, `tỷ đồng · báo cáo CTCK ${n_lui} ngày tới ${ngay_vn(DP.cap_nhat)} · 4 quý gần nhất ${ty(d.ltm)}`,
     `<div class="bang-boc" id="dp-ctck"><table><thead><tr><th class="trai">Năm</th><th>Đồng thuận CTCK</th><th>Hệ thống</th><th>Kết hợp ½–½</th><th>So 4 quý gần nhất</th><th>P/E dự phóng</th></tr></thead><tbody>${dong}</tbody></table></div>` +
     `<p class="nhan-xet">Đồng thuận = trung vị dự phóng các CTCK · Hệ thống = lũy kế đã công bố (${esc(d.k)} quý) + các quý còn lại lấy cùng kỳ năm trước, năm sau = 4 quý gần nhất · ` +
-    `Kết hợp = ½ đồng thuận + ½ hệ thống (sát thực tế hơn từng bên) · P/E dự phóng = vốn hoá ÷ LNST kết hợp. Số đọc tự động từ PDF – bấm PDF xem bản gốc. Chỉ để tham khảo, không dùng cho cờ rẻ / đắt.</p>` +
+    `Kết hợp = ½ đồng thuận + ½ hệ thống (sát thực tế hơn từng bên) · P/E dự phóng = vốn hoá ÷ LNST kết hợp. Ngân hàng / CTCK / bảo hiểm: báo cáo chỉ có LNTT → LNST ước = LNTT × 0,8 (ghi "LNTT×0,8"). Số đọc tự động từ PDF – bấm PDF xem bản gốc. Chỉ để tham khảo, không dùng cho cờ rẻ / đắt.</p>` +
     (bc ? `<div class="bang-boc"><table><thead><tr><th class="trai">Ngày</th><th class="trai">CTCK</th>${nam.map(y => `<th>${esc(y)}</th>`).join("")}<th class="trai">Báo cáo</th></tr></thead><tbody>${bc}</tbody></table></div>` : ""));
 }
 
