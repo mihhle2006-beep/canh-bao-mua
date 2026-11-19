@@ -2,6 +2,8 @@
 # liệu ở repo riêng tư danh-muc: checkout vào thư mục danh-muc/ bằng secret DANH_MUC_TOKEN_GHI. CONG_KHAI=1: không đọc / in danh mục
 # thật (ptcp.cau_hinh.CONG_KHAI).
 # SIÊU CỔ PHIẾU – đặc điểm các mã tăng ≥ 100% / 12 tháng TRƯỚC khi tăng (phan_tich_sieu_cp.py). Kết quả: log + Artifacts.
+# che_do = loc_ma: backtest CHIẾN LƯỢC LỌC MÃ độc lập (bt_loc_ma.py – top 15 mã theo bộ lọc / điểm, cân lại mỗi quý,
+# so VN-Index · rổ đều · 1.000 rổ ngẫu nhiên; luật đạt đặt trước trong docstring).
 name: Sieu co phieu
 
 on:
@@ -13,6 +15,14 @@ on:
       tu:
         description: "Từ năm"
         default: "2013"
+      che_do:
+        description: "sieu = đặc điểm siêu cổ phiếu · loc_ma = backtest chiến lược lọc mã (bt_loc_ma.py)"
+        type: choice
+        options: [sieu, loc_ma]
+        default: sieu
+      nhanh_danh_muc:
+        description: "Nhánh repo danh-muc để chạy (trống = main) – thử code chưa gộp"
+        default: ""
 
 permissions:
   contents: read
@@ -25,11 +35,12 @@ jobs:
         working-directory: danh-muc
     env:
       CONG_KHAI: "1"
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
+          ref: ${{ inputs.nhanh_danh_muc || '' }}
           token: ${{ secrets.DANH_MUC_TOKEN_GHI }}
           persist-credentials: false
           path: danh-muc
@@ -60,11 +71,16 @@ jobs:
         env:
           MA: ${{ inputs.ma }}
           TU: ${{ inputs.tu }}
-        run: python phan_tich_sieu_cp.py --ma "$MA" --tu "$TU"
+          CHE_DO: ${{ inputs.che_do }}
+        run: |
+          if [ "$CHE_DO" = loc_ma ]; then python bt_loc_ma.py --ma "$MA" --tu "$TU"
+          else python phan_tich_sieu_cp.py --ma "$MA" --tu "$TU"; fi
       - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: sieu-co-phieu-${{ github.run_id }}
-          path: danh-muc/sieu_co_phieu.xlsx
+          path: |
+            danh-muc/sieu_co_phieu.xlsx
+            danh-muc/bt_loc_ma.xlsx
           retention-days: 30
           if-no-files-found: ignore
