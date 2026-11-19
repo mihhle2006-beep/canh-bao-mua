@@ -416,6 +416,10 @@ def test_may_mac_khong_nhan_viec_bao_ngay_1_lan_va_bao_khi_nhan_lai():
     gh.jobs = {4: [{"id": 41, "status": "queued", "labels": ["self-hosted", "vn"], "created_at": iso(T - timedelta(hours=3))}]}
     assert mac.buoc(T.replace(hour=16)) is None and mac.buoc(T + timedelta(days=1)) is None and len(gui) == 3
     assert mac.buoc(T.replace(hour=8, minute=29)) is None and mac.buoc(T.replace(hour=8, minute=30)) and len(gui) == 4
+    # nghỉ trưa 11:40–12:45 (Mac ngủ trưa, vòng DNSE sáng đã dừng 11:45) → không nhắn; 12:45 còn chờ máy → nhắn
+    mac.dot = None
+    assert mac.buoc(T.replace(hour=11, minute=40)) is None and mac.buoc(T.replace(hour=12, minute=44)) is None
+    assert mac.buoc(T.replace(hour=12, minute=45)) and len(gui) == 5
     assert not any("http" in x or "DNSE" in x or "Dat lenh" in x for x in log)   # log công khai: không tên việc / link
 
 
