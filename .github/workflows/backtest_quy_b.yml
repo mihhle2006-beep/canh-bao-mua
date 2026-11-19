@@ -10,6 +10,8 @@
 #           (lịch hằng tháng)
 #   cham1r – (đầu tháng + chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
+#   td – (19/11/2026, thử) tự doanh CTCK từng mã (Vietcap IQ, lưu cache_du_lieu/tu_doanh) ×1,5 / ½ KL / bỏ lệnh + đối chứng ngẫu nhiên
+#   ml – (19/11/2026, thử) học máy học từng năm (scikit-learn, chỉ cài cho phần này): thứ tự tranh suất / KL theo điểm
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -25,7 +27,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / cham1r (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / cham1r / td / ml (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -58,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r]
+        phan: [chuan, cham1r, td, ml]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -145,6 +147,7 @@ jobs:
           case "$PHAN" in
             chuan) export CHI_CHUAN=1                          # mốc luật hiện tại + ★ ngẫu nhiên 50 lần
                    if [ -d ../gia_lap ]; then export GIA_LAP_DIR=../gia_lap; fi ;;   # + đối chiếu giả lập
+            ml) export CHI_ML=1; pip install -q scikit-learn==1.5.2 ;;   # học máy – chỉ phần này cần
             *) export "CHI_$(echo "$PHAN" | tr '[:lower:]' '[:upper:]')=1" ;;   # phần thử: CHI_<PHẦN>=1
           esac
           # BCTC mã mới (chưa có trong kho repo) tải ở lần trước → nạp lại, khỏi tải lại (~40 phút với toàn sàn HNX);
