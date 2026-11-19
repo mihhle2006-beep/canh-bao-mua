@@ -336,3 +336,18 @@ def test_tcbs_phan_loi_ghi_nhat_ky_nguon(monkeypatch):
     assert len(b) == 5 and set(b["Kết quả"]) == {"Lỗi"} and b["Nguồn"].str.startswith("TCBS · ").all()
     assert "TCBS · lưu chuyển tiền (FCF)" in set(b["Nguồn"]) and b["Chi tiết"].str.contains("ValueError").all()
     NHAT_KY.xoa()
+
+
+def test_yahoo_bo_qua_ma_hnx_khong_tinh_loi(tmp_path, monkeypatch):
+    """Yahoo không có mã HNX ('.HN' → 404 – Quét định kỳ 16–18/11/2026) → không gọi Yahoo cho mã HNX, không tính lỗi
+    nguồn (6 mã HNX đầu lượt không được ngắt Yahoo cho mã HOSE); mã HOSE vẫn gọi Yahoo như cũ."""
+    from bo_loc.nguon.http import CAU_DAO_CO_BAN
+    CAU_DAO_CO_BAN.xoa()
+    goi = []
+    monkeypatch.setattr(co_ban, "_ma_yahoo", lambda ma: f"{ma}.HN" if ma.startswith("H") else f"{ma}.VN")
+    monkeypatch.setattr(co_ban, "NGUON_CO_BAN", {"Yahoo": lambda ma: goi.append(ma) or {"pe": 9.0}})
+    for ma in ("HAA", "HBB", "HCC", "HDD", "HEE", "HFF", "AAA"):
+        co_ban.lay_online(ma, False, str(tmp_path), ["Yahoo"])
+    assert goi == ["AAA"] and CAU_DAO_CO_BAN.da_ngat() == []
+    assert co_ban.yahoo_khong_co("Yahoo", "HAA") and not co_ban.yahoo_khong_co("VNDirect", "HAA")
+    CAU_DAO_CO_BAN.xoa()

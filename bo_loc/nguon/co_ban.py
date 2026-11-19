@@ -315,6 +315,12 @@ def _ma_yahoo(ma):
         return f"{ma}.VN"
 
 
+def yahoo_khong_co(ten, ma):
+    """Yahoo không có dữ liệu cơ bản mã HNX ('.HN' → 404 "Quote not found" – log Quét định kỳ 16–18/11/2026: SHS, PVS,
+    CEO, MBS…) → bỏ qua nguồn Yahoo cho mã đó, KHÔNG tính lỗi nguồn (5 mã HNX liền đầu lượt sẽ ngắt Yahoo cho cả mã HOSE)."""
+    return ten == "Yahoo" and _ma_yahoo(ma).endswith(".HN")
+
+
 def tu_yahoo(ma):
     try:
         import yfinance as yf
@@ -393,7 +399,8 @@ def bo_sung_lnst(ma, du_lieu, thu_tu=NGUON_LNST):
     da_thu = False
     for ten in thu_tu:
         ham = NGUON_CO_BAN.get(ten)
-        if ten not in ch.THU_TU_NGUON_CO_BAN or not ham or _thieu_thu_vien(ham) or CAU_DAO_CO_BAN.bo_qua(ten):
+        if (ten not in ch.THU_TU_NGUON_CO_BAN or not ham or _thieu_thu_vien(ham) or yahoo_khong_co(ten, ma)
+                or CAU_DAO_CO_BAN.bo_qua(ten)):
             continue
         da_thu = True
         try:
@@ -425,7 +432,7 @@ def lay_online(ma, dung_cache=True, thu_muc_cache=None, thu_tu=None):
     kq = {}
     for ten in (thu_tu or ch.THU_TU_NGUON_CO_BAN):
         ham = NGUON_CO_BAN.get(ten)
-        if not ham or _thieu_thu_vien(ham) or CAU_DAO_CO_BAN.bo_qua(ten):
+        if not ham or _thieu_thu_vien(ham) or yahoo_khong_co(ten, ma) or CAU_DAO_CO_BAN.bo_qua(ten):
             continue
         try:
             d = ham(ma)
