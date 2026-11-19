@@ -86,6 +86,7 @@ CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_b
             "bang.yml"}                                         # repo bang-thi-truong: vòng bảng chết giữa buổi → chạy lại
 KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu tự nhắn khi lỗi
              "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml",     # công cụ bấm tay – người bấm tự xem
+             "du_phong_ctck.yml",
              "thu_kenh_tele.yml",
              "trien_khai.yml",                                      # bang-thi-truong Pages (chập chờn – BangTre theo dõi bảng đứng)
              "dat_lenh_thu.yml"}                                    # danh-muc: thử đặt lệnh bấm tay
