@@ -103,7 +103,7 @@ TRANG = [
     "ma/index.html#AAA/co-tuc|.ct-luoi",                        # trang Cổ tức (thẻ tóm tắt, theo năm, điểm nhấn, lịch sử)
     "ma/index.html#AAA/co-dong|#noi-dung",
     "ma/index.html#AAA/tai-chinh|#noi-dung",
-    "ma/index.html#AAA/dinh-gia|#noi-dung",
+    "ma/index.html#AAA/dinh-gia|#dp-ctck",                     # tab Định giá: khối dự phóng CTCK · hệ thống · kết hợp
     "ma/index.html#AAA/lich-su|#noi-dung",
     "ma/index.html#bieu-do/AAA||cho:800",                       # biểu đồ toàn màn hình
     "ma/index.html#loc||cho:500",
