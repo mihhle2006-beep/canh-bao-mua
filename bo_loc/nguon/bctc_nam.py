@@ -15,6 +15,7 @@ import time
 
 from .. import cau_hinh as ch
 from .._ptcp import nap_ptcp
+from .co_ban import yahoo_khong_co
 from .http import CAU_DAO_CO_BAN, NHAT_KY
 
 nap_ptcp()
@@ -54,7 +55,7 @@ def lay_bctc_nam(ma, dung_cache=True, thu_muc_cache=None, thu_tu=None):
         if ten == "vnstock" and "vnstock" not in ch.THU_TU_NGUON_CO_BAN:      # đã tắt bằng --khong_vnstock
             continue
         khoa_cd = f"BCTC năm {ten}"
-        if not ham or CAU_DAO_CO_BAN.bo_qua(khoa_cd):
+        if not ham or yahoo_khong_co(ten, ma) or CAU_DAO_CO_BAN.bo_qua(khoa_cd):
             continue
         try:
             kq = ham(ma)

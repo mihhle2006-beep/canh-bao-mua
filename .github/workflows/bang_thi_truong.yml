@@ -285,7 +285,7 @@ jobs:
     needs: dung
     if: ${{ !cancelled() && needs.dung.result == 'success' && needs.dung.outputs.pages == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 25                # 05/11/2026: Pages chậm / kẹt > 10' (3 lần liền) – chờ tới 20' trước khi huỷ
+    timeout-minutes: 15                # deploy-pages chờ tối đa 10' (giới hạn của action) + tải bản dựng
     concurrency:
       group: bang-thi-truong-trien-khai
       cancel-in-progress: false
@@ -299,4 +299,5 @@ jobs:
       - id: dp
         uses: actions/deploy-pages@v5
         with:
-          timeout: 1200000             # 20 phút (mặc định 10) – kẹt hẳn thì đồng hồ chạy lại / commit sau triển khai
+          timeout: 600000              # 10 phút = mức tối đa action cho phép (đặt cao hơn → bị hạ về 10' + cảnh báo
+                                       # mỗi lượt) – kẹt hẳn thì đồng hồ chạy lại / commit sau triển khai
