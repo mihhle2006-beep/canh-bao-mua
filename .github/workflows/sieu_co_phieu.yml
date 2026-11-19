@@ -20,6 +20,9 @@ on:
         type: choice
         options: [sieu, loc_ma]
         default: sieu
+      xem:
+        description: "loc_ma: mã cần soi, cách nhau dấu phẩy – bộ lọc nào chọn được mã trước khi tăng (trống = không)"
+        default: ""
       nhanh_danh_muc:
         description: "Nhánh repo danh-muc để chạy (trống = main) – thử code chưa gộp"
         default: ""
@@ -72,8 +75,9 @@ jobs:
           MA: ${{ inputs.ma }}
           TU: ${{ inputs.tu }}
           CHE_DO: ${{ inputs.che_do }}
+          XEM: ${{ inputs.xem }}
         run: |
-          if [ "$CHE_DO" = loc_ma ]; then python bt_loc_ma.py --ma "$MA" --tu "$TU"
+          if [ "$CHE_DO" = loc_ma ]; then python bt_loc_ma.py --ma "$MA" --tu "$TU" --xem "$XEM"
           else python phan_tich_sieu_cp.py --ma "$MA" --tu "$TU"; fi
       - uses: actions/upload-artifact@v6
         if: always()

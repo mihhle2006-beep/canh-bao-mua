@@ -69,7 +69,7 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Tra cứu sở hữu | mã, từ, đến | cơ cấu cổ đông / sở hữu nước ngoài | repo này `cong_cu/so_huu` |
 | Bat thuong BCTC | mã, làm mới | dò bất thường BCTC + đọc thuyết minh giải thích (cũng tự chạy sau BCTC mới) | danh-muc |
 | To chuc phat hanh trai phieu | mã | DN phát hành trái phiếu tin cậy / sự cố | danh-muc |
-| Sieu co phieu | mã, từ, che_do, nhanh_danh_muc | đặc điểm các siêu cổ phiếu · che_do = loc_ma: backtest chiến lược lọc mã độc lập (top 15, cân lại mỗi quý) | danh-muc `phan_tich_sieu_cp.py` · `bt_loc_ma.py` |
+| Sieu co phieu | mã, từ, che_do, xem, nhanh_danh_muc | đặc điểm các siêu cổ phiếu · che_do = loc_ma: backtest chiến lược lọc mã độc lập (top 15, cân lại mỗi quý) | danh-muc `phan_tich_sieu_cp.py` · `bt_loc_ma.py` |
 | Kiem dinh dinh gia | số mã, từ | kiểm định độ chính xác định giá | danh-muc |
 | Kiem du lieu thi truong moi noi | thị trường, … | đủ dữ liệu để thử luật ở thị trường khác không | danh-muc |
 | Chan doan nguon | nhiều ô | in mẫu dữ liệu các nguồn giá / BCTC khi nghi lỗi nguồn | danh-muc |
