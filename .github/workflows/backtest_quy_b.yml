@@ -10,6 +10,8 @@
 #           (lịch hằng tháng)
 #   cham1r – (đầu tháng + chạy tay, 11/2026) chạm +1R trước hay cắt lỗ trước theo thước bot chấm: tín hiệu mới / vào trễ, theo chế độ
 #           VN-Index, theo năm, cùng kỳ bot chấm thật – so số live (lich_su_danh_gia.csv). Chỉ đo, không mô phỏng quỹ.
+#   ctck_th – (19/11/2026, thử) tín hiệu dự phóng CTCK cho lệnh B: bất ngờ (hệ thống ÷ đồng thuận) + CTCK nâng / hạ dự phóng
+#           (đọc PDF báo cáo CTCK – cần pdftotext + tesseract; chữ PDF dùng chung cache với workflow Du phong CTCK)
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -25,7 +27,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / cham1r (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / cham1r / ctck_th (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -58,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r]
+        phan: [chuan, cham1r, ctck_th]
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -127,6 +129,16 @@ jobs:
           restore-keys: |
             gia-san-
             gia-ngay-
+      - name: Cài pdftotext + OCR tiếng Việt (phần ctck_th đọc PDF báo cáo CTCK)
+        if: steps.chon.outputs.chay && matrix.phan == 'ctck_th'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils tesseract-ocr tesseract-ocr-vie
+      - name: Lấy chữ PDF báo cáo CTCK đã đọc (chung với workflow Du phong CTCK)
+        if: steps.chon.outputs.chay && matrix.phan == 'ctck_th'
+        uses: actions/cache@v5
+        with:
+          path: danh-muc/cache_du_lieu/du_phong_ctck
+          key: du-phong-ctck-${{ github.run_id }}
+          restore-keys: du-phong-ctck-
       - name: Backtest (${{ matrix.phan }})
         if: steps.chon.outputs.chay
         env:
