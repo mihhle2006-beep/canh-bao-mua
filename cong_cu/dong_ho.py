@@ -92,7 +92,8 @@ KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu t�
 LOI = ("failure", "timed_out", "startup_failure")
 GIAM_SAT_GIAY = 300
 MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
-MAC_GIO = ("08:30", "15:10")                                        # T2–T6 giờ VN: vòng DNSE 08:35, lệnh, đo trong phiên
+MAC_GIO = (("08:30", "11:40"), ("12:45", "15:10"))                 # T2–T6 giờ VN: vòng DNSE 08:35, lệnh, đo trong phiên –
+                                                                    # nghỉ trưa không báo (Mac ngủ trưa; vòng DNSE sáng dừng 11:45)
 BANG_TRE_PHUT = 4                                                   # bảng thị trường không có lượt mới quá ngần này → nhắn
 BANG_GIO = (("09:20", "11:30"), ("13:05", "15:03"))                 # T2–T6 giờ VN: vòng bảng phải đang đẩy lượt 30 giây
 KIEM_TOKEN = "5 20 * * *"                                           # giờ VN kiểm hạn token
@@ -346,7 +347,7 @@ class MayMac:
     @staticmethod
     def trong_gio(bay_gio):
         t = bay_gio.astimezone(VN)
-        return t.isoweekday() <= 5 and MAC_GIO[0] <= f"{t:%H:%M}" < MAC_GIO[1]
+        return t.isoweekday() <= 5 and any(a <= f"{t:%H:%M}" < b for a, b in MAC_GIO)
 
     def _dang_cho(self, bay_gio):
         """[(job, tên việc, phút chờ)] – mọi job self-hosted đang chờ máy (mọi độ dài)."""
