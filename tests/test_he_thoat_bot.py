@@ -226,3 +226,48 @@ def test_ngay_gdkhq_quy_doi_vi_the(monkeypatch):
     assert thung["muc"] == "CAT_LO" and thung["gdkhq"]           # thủng thật (thang mới) vẫn báo
     monkeypatch.setattr(diem_vao, "_he_so_lich", lambda ma, g, t: None)
     assert vi_the.quy_doi_gdkhq(vt, bg, dn) == (vt, None)         # không có sự kiện → giữ nguyên
+
+
+def test_cham_cat_lo_khi_cp_chua_ve_khong_bao_cat_lo(monkeypatch):
+    """20/11/2026: mua hôm trước, hôm nay (T+1) chạm cắt lỗ → KHÔNG báo 🔴 CẮT LỖ / nút / tự bán (DNSE từ chối – CP chưa
+    về); báo CHẠM CẮT LỖ – CP CHƯA VỀ + phiên đầu bán được."""
+    dn = _nen(sau=[0.0] * 3)
+    vt = _vt(dn, -2)                                            # mua 01/10, hôm nay 02/10 trong phiên
+    vt["cat_lo_goc"] = vt["cat_lo"] = vt["gia_von"] * 0.95
+    bg = pd.Timestamp("2026-10-02 10:30")
+    kb = vi_the.danh_gia_ban(vt, {"gia": vt["gia_von"] * 0.94}, dn, bg)
+    assert kb["muc"] == "CHAM_CHUA_VE" and kb["muc"] not in vi_the.BAN_ATO
+    assert f"{kb['ngay_ban_duoc']:%d/%m}" == "05/10"            # T+2 = thứ Hai
+    nd = vi_the.tin_ban(vt, kb, {"gia": kb["gia"]}, bg)
+    assert "CHƯA VỀ" in nd and "CHƯA bán được" in nd and "05/10" in nd and "🔴" not in nd
+    goi, tin = [], []
+    monkeypatch.setattr(chay, "tai", lambda *a, **k: dn)
+    monkeypatch.setattr(chay, "hom_nay_co_giao_dich", lambda *a: True)
+    dp = pd.DataFrame({"close": [kb["gia"]]}, index=[pd.Timestamp("2026-10-02 10:15")])
+    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda *a: dp)
+    monkeypatch.setattr(chay, "_tu_dat", lambda *a: goi.append(a) or True)
+    monkeypatch.setattr(chay, "gui", lambda nd, **k: tin.append((nd, k.get("nut"))))
+    monkeypatch.setattr(chay.bieu_do_moc, "ve_an_toan", lambda *a, **k: None)
+    monkeypatch.setattr(vi_the, "doc_trang_thai_ban", dict)
+    monkeypatch.setattr(vi_the, "ghi_trang_thai_ban", lambda *a, **k: None)
+    monkeypatch.setattr(C, "QUET_DANH_MUC_CU", False, raising=False)
+    monkeypatch.setattr(C, "GHI_NHAT_KY", False, raising=False)
+    chay._canh_bao_ban(bg, {"AAA": vt}, False)
+    assert goi == [] and len(tin) == 1 and tin[0][1] is None and "CHƯA VỀ" in tin[0][0]
+
+
+def test_cham_luc_chua_ve_phien_dau_ban_duoc_van_cat_lo():
+    """Như backtest (mo_phong): chạm cắt lỗ lúc CP chưa về → bán phiên đầu bán được, kể cả khi giá đã hồi."""
+    dn = _nen(sau=[0.0] * 4)
+    vt = _vt(dn, -3)                                            # mua 30/09, T+1 01/10 chạm, T+2 02/10
+    vt["cat_lo_goc"] = vt["cat_lo"] = vt["gia_von"] * 0.95
+    dn.iloc[-2, dn.columns.get_loc("low")] = vt["gia_von"] * 0.94
+    gia = vt["gia_von"] * 1.0
+    sang = pd.Timestamp("2026-10-02 08:30")                    # nhắc ATO: phiên 01/10 đã đóng, hôm nay bán được
+    kb = vi_the.danh_gia_ban(vt, {"gia": gia}, dn.iloc[:-1], sang)
+    assert kb["muc"] == "CAT_LO" and "01/10" in kb["ly_do"][0] and kb["muc"] in vi_the.BAN_ATO
+    kb0 = vi_the.danh_gia_ban(vt, {"gia": gia}, dn.iloc[:-2], pd.Timestamp("2026-10-01 10:30"))
+    assert kb0["muc"] != "CAT_LO"                               # T+1 trong phiên, giá trên cắt lỗ: chưa có gì
+    dn2 = dn.copy()
+    dn2.iloc[-2, dn2.columns.get_loc("low")] = vt["gia_von"] * 0.99   # không chạm → giữ
+    assert vi_the.danh_gia_ban(vt, {"gia": gia}, dn2.iloc[:-1], sang)["muc"] != "CAT_LO"

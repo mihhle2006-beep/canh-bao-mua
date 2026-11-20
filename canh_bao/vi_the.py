@@ -39,6 +39,7 @@ from .chi_bao import supertrend
 
 NHAN = {"CAT_LO": "🔴 CẮT LỖ", "BAN_TUAN": "🔴 BÁN – GÃY XU HƯỚNG TUẦN", "HET_HAN": "🟠 BÁN – LỆNH KHÔNG CHẠY",
         "CHOT_LOI": "🟢 CHỐT LỜI", "CAN_NHAC_BAN": "🟠 CÂN NHẮC BÁN", "GAN_CAT_LO": "🟠 SÁT CẮT LỖ",
+        "CHAM_CHUA_VE": "🟠 CHẠM CẮT LỖ – CP CHƯA VỀ (T+2)",
         "DOI_CAT_LO": "🟡 DỜI CẮT LỖ", "GIU": "⚪ GIỮ", "BD_BAN": "🔻 BÁN – HỆ BẮT ĐÁY",
         "BAN_YEU_CAU": "🔴 BÁN – THEO YÊU CẦU"}
 TEN_TANG = {0: "tầng 0 (< 1R)", 1: "tầng 1 (≥ 1R – cắt lỗ động)",
@@ -390,9 +391,21 @@ def _danh_gia_ban(vt, kq, dn=None, bay_gio=None, f_gdkhq=None):
     theo = ht["nguon_cat_lo"] if not lo_dat or cl_he >= lo_dat else "cắt lỗ đã đặt"
     lai = (gia / gv - 1) * 100
     ly_do, ghi_chu, muc = [], [], "GIU"
-    if gia <= lo:
+    # 20/11/2026: mua hôm trước, hôm nay chạm cắt lỗ → trước báo CẮT LỖ + nút + tự gửi lệnh bán → DNSE từ chối (CP chưa
+    # về). Như mo_phong: chạm lúc chưa về → CHAM_CHUA_VE (không nút, không tự bán); phiên đầu bán được → CAT_LO kể cả khi
+    # giá đã hồi (ptcp he_thoat.cham_chua_ve – phiên đã đóng). Không có ngày mua → không biết T+2 → coi như bán được.
+    chua_ve = not ht["ban_duoc"] and _ngay(vt.get("ngay_mua")) is not None
+    cham = ht.get("cham_chua_ve")
+    if gia <= lo and chua_ve:
+        muc = "CHAM_CHUA_VE"
+        ly_do.append(f"giá {gia:,.2f} ≤ cắt lỗ {lo:,.2f} ({theo}) nhưng CP chưa về tài khoản (T+2) – chưa bán được")
+    elif gia <= lo:
         muc = "CAT_LO"
         ly_do.append(f"giá {gia:,.2f} ≤ cắt lỗ {lo:,.2f} ({theo})")
+    elif cham is not None and not chua_ve:
+        muc = "CAT_LO"
+        ly_do.append(f"đã chạm cắt lỗ phiên {pd.Timestamp(cham):%d/%m} lúc CP chưa về (T+2) → bán ở phiên đầu bán "
+                     "được, kể cả khi giá đã hồi (như backtest)")
     elif ht["ban_tuan"]:
         muc = "BAN_TUAN"
         ly_do.append(f"đóng cửa tuần {ht['ngay_ban_tuan']:%d/%m} < MA10 tuần ({ht['ma10_tuan']:,.2f}) khi đã lãi "
@@ -407,7 +420,7 @@ def _danh_gia_ban(vt, kq, dn=None, bay_gio=None, f_gdkhq=None):
         muc = "DOI_CAT_LO"
         ly_do.append(f"{TEN_TANG[ht['tang']]}: nâng cắt lỗ lên {cl_he:,.2f} ({ht['nguon_cat_lo']})"
                      + (f" – đang đặt {lo_dat:,.2f}" if lo_dat else " – chưa đặt cắt lỗ"))
-    if not ht["ban_duoc"] and _ngay(vt.get("ngay_mua")) is not None:      # không có ngày mua → không biết T+2
+    if chua_ve and muc != "CHAM_CHUA_VE":
         ghi_chu.append("CP chưa về tài khoản (T+2) – chưa bán được")
     if ht["moc_tiep_R"] and ht["gia_moc_tiep"]:
         ghi_chu.append(f"mốc kế tiếp {ht['moc_tiep_R']:g}R = {ht['gia_moc_tiep']:,.2f} "
@@ -426,6 +439,7 @@ def _danh_gia_ban(vt, kq, dn=None, bay_gio=None, f_gdkhq=None):
     return {"muc": muc, "ly_do": ly_do, "ghi_chu": ghi_chu, "gia": gia, "lai_lo_pct": lai, "cat_lo": lo,
             "ma10_tuan": ht.get("ma10_tuan"), "nguong_ma10": nguong, "so_phien": ht.get("so_phien"),
             "cat_lo_he_thong": cl_he, "cat_lo_dat": lo_dat, "muc_tieu": ht["gia_moc_tiep"], "tang": ht["tang"],
+            "ngay_ban_duoc": ht.get("ngay_ban_duoc"),
             "lai_R": (gia - ht.get("gia_tham_chieu", gv)) / ht["R"], "R": ht["R"], "he_thoat": True,
             "cach_cat_lo_pct": (lo / gia - 1) * 100,
             "cach_muc_tieu_pct": (ht["gia_moc_tiep"] / gia - 1) * 100 if ht["gia_moc_tiep"] else np.nan}
@@ -536,6 +550,8 @@ def tin_ban(vt, kb, kq, bay_gio, so=None):
                  "CHOT_LOI": f"Chốt lời (toàn bộ hoặc ½ = {vt['so_cp'] / 2:,.0f} CP), phần còn lại dời cắt lỗ lên",
                  "CAN_NHAC_BAN": "Xem xét giảm tỷ trọng / siết cắt lỗ – xu hướng đang yếu đi",
                  "GAN_CAT_LO": f"Chuẩn bị lệnh bán {vt['so_cp']:,.0f} CP: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ",
+                 "CHAM_CHUA_VE": f"CHƯA bán được – bán {vt['so_cp']:,.0f} CP lệnh ATO phiên {_ngay_ve(kb)} (phiên đầu "
+                                 "bán được), kể cả khi giá đã hồi lên trên cắt lỗ – bot không tự đặt lệnh trước",
                  "DOI_CAT_LO": f"Đặt lệnh cắt lỗ mới {_f(kb.get('cat_lo_he_thong'))} & cập nhật cat_lo_dat trong "
                                f"danh_muc.csv (repo danh-muc)",
                  "BD_BAN": f"Bán {vt['so_cp']:,.0f} CP lệnh ATO phiên "
@@ -550,6 +566,12 @@ def tin_ban(vt, kb, kq, bay_gio, so=None):
          + _dong_he_thoat(kb),
          "Lý do: " + "; ".join(kb["ly_do"] + kb.get("ghi_chu", []))]
     return "\n".join(d)
+
+
+def _ngay_ve(kb):
+    """Phiên đầu bán được (CP về tài khoản) dạng dd/mm – thiếu → "đầu bán được"."""
+    nb = kb.get("ngay_ban_duoc")
+    return f"{pd.Timestamp(nb):%d/%m}" if nb is not None and pd.notna(nb) else "đầu bán được"
 
 
 BAN_ATO = ("CAT_LO", "BAN_TUAN", "HET_HAN", "BD_BAN", "BAN_YEU_CAU")   # mức → bán đầu phiên (lệnh ATO)
