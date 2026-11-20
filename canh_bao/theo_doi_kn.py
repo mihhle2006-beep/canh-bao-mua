@@ -24,7 +24,7 @@ FILE = "theo_doi_kn.json"
 SO_NGAY = getattr(C, "THEO_DOI_KN_NGAY", 150)          # chỉ xét khuyến nghị trong N ngày gần nhất
 TOI_DA = getattr(C, "THEO_DOI_KN_TOI_DA", 15)          # tối đa số dòng trong tin
 DONG = ("ĐÚNG", "SAI")
-THU_TU = {"CAT_LO": 0, "BAN_TUAN": 0, "HET_HAN": 0, "DOI": 1, "GAN_CAT_LO": 2, "GIU": 3}
+THU_TU = {"CAT_LO": 0, "BAN_TUAN": 0, "HET_HAN": 0, "CHAM_CHUA_VE": 0, "DOI": 1, "GAN_CAT_LO": 2, "GIU": 3}
 
 
 def doc_tt(path=FILE):
@@ -117,6 +117,8 @@ def danh_gia(mo, gia_ngay, tai, bay_gio, tt):
             cl = kb["cat_lo_he_thong"]
             dong, muc = f"⬆ {dau} | GIỮ, DỜI cắt lỗ {_f(cl_bao)} → {_f(cl)}{vao}", "DOI"
             da_bao[khoa] = round(float(cl), 2)
+        elif muc == "CHAM_CHUA_VE":
+            dong = f"🟠 {dau} | chạm cắt lỗ {_f(cl)} lúc CP chưa về (T+2) – BÁN ATO phiên đầu bán được{vao}"
         elif muc == "GAN_CAT_LO":
             dong = f"⚠ {dau} | GIỮ, sát cắt lỗ {_f(cl)} – thủng là bán{vao}"
         else:

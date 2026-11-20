@@ -418,6 +418,9 @@ def dong_giu(vt, kb, mt):
             "HET_HAN": "🟠 BÁN – lệnh không chạy", "DOI_CAT_LO": "GIỮ · dời cắt lỗ lên",
             "GAN_CAT_LO": "🟠 GIỮ – sát cắt lỗ, chuẩn bị bán", "GIU": "GIỮ",
             "BD_BAN": "🔻 BÁN ATO phiên tới – hệ bắt đáy"}.get(kb["muc"], NHAN.get(kb["muc"], ""))
+    if kb["muc"] == "CHAM_CHUA_VE":               # chạm cắt lỗ lúc CP chưa về (T+2)
+        from .vi_the import _ngay_ve
+        hanh = f"🟠 GIỮ – chạm cắt lỗ, CP chưa về (T+2) → BÁN ATO phiên {_ngay_ve(kb)}"
     if kb["muc"] == "BAN_YEU_CAU":                # cột ban_ato của danh_muc.csv
         hanh = f"🔴 BÁN ATO phiên {pd.Timestamp(kb['ngay_lenh']):%d/%m} – theo yêu cầu"
     g, lo = _so(kb.get("gia")), _so(kb.get("cat_lo"))
