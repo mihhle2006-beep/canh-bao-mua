@@ -69,7 +69,10 @@ jobs:
         with:
           path: danh-muc/cache_du_lieu
           key: gia-ngay-sieu-${{ github.run_id }}
-          restore-keys: gia-ngay-
+          # gia-san-: đệm Backtest quy But Pha (giá HOSE + HNX + số CP đã tra) – lượt loc_ma 19/11 không có nó mất 150 phút tải
+          restore-keys: |
+            gia-san-
+            gia-ngay-
       - name: Phân tích
         env:
           MA: ${{ inputs.ma }}
