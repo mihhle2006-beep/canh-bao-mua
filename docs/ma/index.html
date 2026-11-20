@@ -289,6 +289,8 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .nen-dk label{font-size:12.5px;color:var(--chu2);display:inline-flex;gap:4px;align-items:center}
 .goi-y{position:absolute;pointer-events:none;background:#1d2430;color:#fff;font-size:12px;line-height:1.45;
   padding:6px 9px;border-radius:6px;z-index:5;display:none;white-space:nowrap;box-shadow:0 4px 14px #0003}
+.kh-o{cursor:crosshair}.kh-o:hover{fill:rgba(46,125,50,.07)}
+.goi-y .o{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
 .chu-giai{display:flex;gap:12px;font-size:11.5px;color:var(--mo);padding:4px 14px 10px;flex-wrap:wrap}
 .chu-giai i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .chu-giai i.o{height:9px}
@@ -512,6 +514,7 @@ dialog#pp::backdrop{background:#1d243066}
 .kt-dem{display:flex;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;margin-top:10px}
 .kt-ct summary{cursor:pointer;padding:8px 14px 12px;color:var(--nhan);font-weight:600;font-size:13.5px}
 .pp-doc{list-style:none;padding:0!important}.pp-doc li{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:6px 0}.pp-doc li b{grid-column:2}.pp-doc li .cham{grid-row:1}.pp-doc span{grid-column:2;color:var(--mo);font-size:.92em;line-height:1.4}   /* như app: tên mức trên, ngưỡng dưới */
+[data-cung]{cursor:pointer}[data-cung]:hover,[data-cung]:focus-visible{box-shadow:inset 0 0 0 1px currentColor;outline:0}
 .pp-dong{position:absolute;right:12px;top:10px;border:0;background:none;font-size:24px;line-height:1;color:var(--mo);cursor:pointer}
 @media (max-width:600px){.pt-luoi{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px}.pt-the{padding:10px}.pt-so{font-size:18px}
   .dg-dong{grid-template-columns:minmax(0,1fr) 54px 50px}.dg-ray{grid-column:1/-1;order:5}.dp-o{min-width:0;flex:1 1 40%}.dp-x{display:none}}
@@ -578,7 +581,7 @@ const TEN_PC = {sieu: ["Siêu cổ phiếu", "re", "chất lượng, rẻ và gi
   nguoc: ["Ngược dòng", "hl", "chất lượng, rẻ nhưng giá còn yếu"], hoi_phuc: ["Hồi phục", "hl", "rẻ, giá mạnh nhưng chất lượng thấp"],
   bay_dl: ["Bẫy động lượng", "dat", "chỉ giá mạnh – chất lượng thấp, đắt"], bay_gt: ["Bẫy giá trị", "dat", "chỉ rẻ – chất lượng thấp, giá yếu"],
   sao_roi: ["Sao rơi", "dat", "chất lượng nhưng đắt và giá yếu"], kem: ["Kém cả 3", "dat", "chất lượng thấp, đắt, giá yếu"]};
-const pc_html = r => r?.pc && TEN_PC[r.pc] ? `<span class="huy ${TEN_PC[r.pc][1]}" title="Phong cách: ${esc(TEN_PC[r.pc][2])}${r.q ? ` · Chất lượng ${esc(r.q)}` : ""}">${esc(TEN_PC[r.pc][0])}</span>` : "";
+const pc_html = (r, ma) => r?.pc && TEN_PC[r.pc] ? `<span class="huy ${TEN_PC[r.pc][1]}"${ma ? ` data-cung="pc" data-ma="${esc(ma)}" role="button" tabindex="0"` : ""} title="Phong cách: ${esc(TEN_PC[r.pc][2])}${r.q ? ` · Chất lượng ${esc(r.q)}` : ""}${ma ? " – bấm để xem mã cùng phong cách" : ""}">${esc(TEN_PC[r.pc][0])}</span>` : "";
 function vgm_html(v) {                          // "B A C B" → Giá trị B · Tăng trưởng A · Động lượng C · Tổng B
   if (!v) return "";
   const c = v.split(" "), lop = x => x === "A" ? "t" : x === "F" ? "g" : x === "–" ? "m" : "";
@@ -890,8 +893,25 @@ function ve_ket_hop(nhan, cot, duong, o = {}) {      // cột (≤ 3 chuỗi, tr
       duong.v.forEach((x, i) => { if (x == null || !isFinite(x)) return; s += `<circle cx="${L + i * gw + gw / 2}" cy="${Y2(x)}" r="3" fill="${duong.mau}"><title>${esc(duong.ten)} ${esc(nhan[i])}: ${duong.fmt ? duong.fmt(x) : pt(x)}</title></circle>`; });
       for (const z of [a, b]) s += `<text x="${W - R + 4}" y="${Y2(z) + 4}" font-size="10.5" fill="${duong.mau}">${duong.fmt ? duong.fmt(z) : pt(z)}</text>`; }
   }
+  // rê / chạm vào 1 kỳ → khung số mọi chuỗi của kỳ đó (o.dong(i) → [[tên, chữ số | null, màu]] thay mặc định)
+  const so_cot = (ser, v) => v == null || !isFinite(v) ? null : ser.fmt ? ser.fmt(v) : ty(v);
+  nhan.forEach((t, i) => {
+    const dong = (o.dong ? o.dong(i) : [...cot.map(ser => [ser.ten, so_cot(ser, ser.v[i]), ser.v[i] < 0 && ser.am ? ser.am : ser.mau]),
+      ...(duong ? [[duong.ten, duong.v[i] == null || !isFinite(duong.v[i]) ? null : duong.fmt ? duong.fmt(duong.v[i]) : pt(duong.v[i]), duong.mau]] : [])])
+      .filter(r => r[1] != null);
+    if (!dong.length) return;
+    const html = `<b>${esc(t)}</b>` + dong.map(([n, v, c]) => `<br><i class="o" style="background:${c || "transparent"}"></i>${esc(n)}: <b>${esc(v)}</b>`).join("");
+    s += `<rect class="kh-o" x="${L + i * gw}" y="${T}" width="${gw}" height="${H - T - B}" fill="transparent" data-gy="${esc(html)}"/>`;
+  });
   return s + "</svg>";
 }
+const dong_cdkt = (ts, vc, no) => i => [["Tổng tài sản", ts[i] == null ? null : ty(ts[i]), "#A5D6A7"],
+  ["Vốn chủ sở hữu", vc[i] == null ? null : ty(vc[i]), "#2E7D32"], ["Nợ phải trả", no[i] == null ? null : ty(no[i]), "#c62828"],
+  ["Nợ / VCSH", no[i] != null && vc[i] ? so(no[i] / vc[i], 2) + "×" : null, "#e8a400"],
+  ["VCSH / Nợ", vc[i] != null && no[i] ? so(vc[i] / no[i], 2) + "×" : null, null]];
+// khung số biểu đồ (data-gy): máy tính rê chuột · điện thoại chạm vào cột, chạm chỗ khác để tắt
+document.addEventListener("mousemove", e => { const o = e.target.closest?.("[data-gy]"); if (o) hien_gy(e, o.dataset.gy); else if (gy.style.display === "block") an_gy(); });
+document.addEventListener("click", e => { const o = e.target.closest?.("[data-gy]"); if (o) hien_gy(e, o.dataset.gy); else if (gy.style.display === "block") an_gy(); });
 function chu_giai(ds) { return `<div class="chu-giai">${ds.map(([t, c, o]) => `<span><i class="${o ? "o" : ""}" style="background:${c}"></i>${esc(t)}</span>`).join("")}</div>`; }
 function ve_duong(nhan, chuoi, o = {}) {              // nhiều đường; o.dai = {tb, sd} → dải trung bình ± 1σ
   const W = o.w || (innerWidth < 700 ? 400 : 640), H = o.h || 200, L = 46, R = 10, T = 12, B = 24, n = nhan.length;
@@ -935,7 +955,7 @@ function dau_ma(ma, k, tab) {
   return `<div class="ma-dau"><div class="ma-tren"><div class="ma-ten">
     <h2>${esc(ma)}<span class="nhan-san">${esc(r.san || LIVE[ma]?.san || "")}</span>${GIU.has(ma) ? `<span class="huy giu">Đang giữ</span>` : ""}<button class="nut-td" data-td="${esc(ma)}" aria-pressed="${TD.has(ma)}">${TD.has(ma) ? "✓ Đang theo dõi" : "+ Theo dõi"}</button></h2>
     <div class="ten-dd" title="${esc(ten)}">${esc(ten)}${r.nganh ? " · " + esc(r.nganh) : ""}</div>
-    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))}">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${pc_html(dong_ds(ma))}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/${sk.f.du || 9}</a>` : ""}${sk.z ? `<a class="huy ${vung_z(sk.z) === "An toàn" ? "re" : vung_z(sk.z) === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">${sk.z.mh === "Z" ? "Z" : "Z''"} ${so(sk.z.z, 2)} · ${esc(vung_z(sk.z))}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
+    <div>${b ? `<span class="huy bot" title="${esc(b[7])}">Bot: ${esc(b[1])} ${so(b[2], 2)}–${so(b[3], 2)}</span>` : ""}${re ? `<span class="huy ${re === "RẺ" ? "re" : re === "ĐẮT" ? "dat" : "hl"}">${re} ${pt(dg)}</span>` : ""}${dong_ds(ma).vgm ? `<span class="huy hl" data-cung="vgm" data-ma="${esc(ma)}" role="button" tabindex="0" title="${esc(vgm_html(dong_ds(ma).vgm).replace(/<[^>]+>/g, ""))} – bấm để xem mã cùng hạng VGM">VGM ${esc(dong_ds(ma).vgm.split(" ")[3])}</span>` : ""}${pc_html(dong_ds(ma), ma)}${sk.f ? `<a class="huy hl" href="#${esc(ma)}/phan-tich" data-ptc-di="f">F-Score ${sk.f.diem}/${sk.f.du || 9}</a>` : ""}${sk.z ? `<a class="huy ${vung_z(sk.z) === "An toàn" ? "re" : vung_z(sk.z) === "Nguy hiểm" ? "dat" : "hl"}" href="#${esc(ma)}/phan-tich" data-ptc-di="z">${sk.z.mh === "Z" ? "Z" : "Z''"} ${so(sk.z.z, 2)} · ${esc(vung_z(sk.z))}</a>` : ""}${ct.rating ? `<span class="huy hl">Vietcap: ${esc(ct.rating)}${ct.muc_tieu ? " · MT " + so(ct.muc_tieu, 2) : ""}</span>` : ""}</div></div>
     <div class="ma-gia"><span class="lon ${c}">${gn.gia != null ? so(gn.gia, 2) : "–"}</span><span class="pill ${c || "d"} ${c}">${td != null ? (td > 0 ? "+" : "") + so(td, 2) : ""} (${pt(gn.pt, 2)})</span>
     <div class="nho">${gn.live ? (MKT?.dang_gd ? `<span class="cham-song"></span>trong phiên · cập nhật ${esc(String(MKT?.cap_nhat || "").slice(11, 16))}` : "đóng cửa phiên " + esc(ngay_vn(MKT?.phien || gn.ngay))) : gn.ngay ? "phiên " + ngay_vn(gn.ngay) : ""}</div></div></div>
     <nav class="tab" aria-label="Mục">${TAB.map(([id, t]) => `<a href="#${esc(ma)}/${id}"${id === tab ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}</nav></div>`;
@@ -2826,9 +2846,11 @@ async function tai_chinh_vnd(ma, k, b) {          // BCTC VNDirect (tên / mã c
       {ten: "Tăng trưởng LNST", v: yoy(vln), mau: "#e8a400"}, {ten: "KQKD", w: W_RONG()});
     cg = [[T[dt] || "Doanh thu", "#A5D6A7", 1], ["LNST cổ đông mẹ", "#2E7D32", 1], ["Tăng trưởng LNST (YoY)", "#e8a400"]];
   } else if (ST.bang === "cd") {
-    const ts = lay_v("cd", tim("cd", /^tổng cộng tài sản/i)), vc = lay_v("cd", tim("cd", /^vốn chủ sở hữu$/i)), no = lay_v("cd", tim("cd", /^nợ phải trả$/i));
+    const ts = lay_v("cd", tim("cd", /^tổng cộng tài sản/i)), vc = lay_v("cd", tim("cd", /^vốn chủ sở hữu$/i)),
+      no = lay_v("cd", tim("cd", /^nợ phải trả$/i)).map((v, i) => v ?? (ts[i] != null && vc[i] != null ? ts[i] - vc[i] : null));
     chart = ve_ket_hop(nhan, [{ten: "Tổng tài sản", v: ts, mau: "#A5D6A7"}, {ten: "Vốn chủ sở hữu", v: vc, mau: "#2E7D32"}],
-      {ten: "Nợ / VCSH", v: no.map((v, i) => v != null && vc[i] ? v / vc[i] : null), mau: "#e8a400", fmt: v => so(v, 2) + "×"}, {ten: "CĐKT", w: W_RONG()});
+      {ten: "Nợ / VCSH", v: no.map((v, i) => v != null && vc[i] ? v / vc[i] : null), mau: "#e8a400", fmt: v => so(v, 2) + "×"},
+      {ten: "CĐKT", w: W_RONG(), dong: dong_cdkt(ts, vc, no)});
     cg = [["Tổng tài sản", "#A5D6A7", 1], ["Vốn chủ sở hữu", "#2E7D32", 1], ["Nợ / VCSH (lần)", "#e8a400"]];
   } else {
     const kd = tim("lc", /thuần từ (các )?hoạt động (sản xuất )?kinh doanh/i), dt = tim("lc", /thuần từ hoạt động đầu tư/i),
@@ -2861,9 +2883,11 @@ async function tai_chinh(ma, k) {
       {ten: "Tăng trưởng LNST", v: yoy(vln), mau: "#e8a400"}, {ten: "KQKD", w: W_RONG()});
     cg = [[dt ? ten_ct(b, "kd", dt) : "Doanh thu", "#A5D6A7", 1], ["LNST cổ đông mẹ", "#2E7D32", 1], ["Tăng trưởng LNST (YoY)", "#e8a400"]];
   } else if (ST.bang === "cd") {
-    const ts = lay_v("cd", "bsa53"), vc = lay_v("cd", "bsa78"), no = lay_v("cd", "bsa54");
+    const ts = lay_v("cd", "bsa53"), vc = lay_v("cd", "bsa78"),
+      no = lay_v("cd", "bsa54").map((v, i) => v ?? (ts[i] != null && vc[i] != null ? ts[i] - vc[i] : null));
     chart = ve_ket_hop(nhan, [{ten: "Tổng tài sản", v: ts, mau: "#A5D6A7"}, {ten: "Vốn chủ sở hữu", v: vc, mau: "#2E7D32"}],
-      {ten: "Nợ / VCSH", v: no.map((v, i) => v != null && vc[i] ? v / vc[i] : null), mau: "#e8a400", fmt: v => so(v, 2) + "×"}, {ten: "CĐKT", w: W_RONG()});
+      {ten: "Nợ / VCSH", v: no.map((v, i) => v != null && vc[i] ? v / vc[i] : null), mau: "#e8a400", fmt: v => so(v, 2) + "×"},
+      {ten: "CĐKT", w: W_RONG(), dong: dong_cdkt(ts, vc, no)});
     cg = [["Tổng tài sản", "#A5D6A7", 1], ["Vốn chủ sở hữu", "#2E7D32", 1], ["Nợ / VCSH (lần)", "#e8a400"]];
   } else {
     const kd = tim_ma_ten(b, "lc", /thuần từ (các )?hoạt động (sản xuất )?kinh doanh/i), dt = tim_ma_ten(b, "lc", /thuần từ hoạt động đầu tư/i),
@@ -3258,13 +3282,32 @@ function phi(x) {                                           // hàm phân phối
   const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
   return x > 0 ? 1 - p : p;
 }
-function mo_pp(k) {
+function mo_hop_pp(html) {
   let d = $("#pp");
   if (!d) { d = document.createElement("dialog"); d.id = "pp"; document.body.appendChild(d);
-    d.addEventListener("click", e => { if (e.target === d || e.target.closest(".pp-dong")) d.close(); }); }
-  d.innerHTML = `<div class="pp-than"><button class="pp-dong" aria-label="Đóng">×</button>${pp_html(k)}</div>`;
-  d.showModal ? d.showModal() : d.setAttribute("open", "");
+    d.addEventListener("click", e => { if (e.target === d || e.target.closest(".pp-dong, a[href^='#']")) d.close(); }); }
+  d.innerHTML = `<div class="pp-than"><button class="pp-dong" aria-label="Đóng">×</button>${html}</div>`;
+  d.open || (d.showModal ? d.showModal() : d.setAttribute("open", ""));
 }
+function mo_pp(k) { mo_hop_pp(pp_html(k)); }
+// nhãn đầu mã (VGM / phong cách) → bấm: mọi mã cùng nhãn, cùng ngành xếp trước rồi theo điểm VGM (chủ quỹ 20/11/2026)
+function cung_nhan_html(loai, ma) {
+  const r0 = dong_ds(ma), nganh = r0.nganh || "", hang = x => (x.vgm || "").split(" ")[3];
+  const khoa = loai === "vgm" ? hang(r0) : r0.pc;
+  if (!khoa || (loai === "pc" && !TEN_PC[khoa])) return `<h2>Mã cùng nhãn</h2><div class="trong">Mã ${esc(ma)} chưa có nhãn này.</div>`;
+  const ds = (DS || []).filter(x => x.ma !== ma && (loai === "vgm" ? hang(x) === khoa : x.pc === khoa))
+    .sort((a, b) => (b.nganh === nganh) - (a.nganh === nganh) || (b.vgm_d ?? -1) - (a.vgm_d ?? -1) || (b.von || 0) - (a.von || 0));
+  const cn = nganh ? ds.filter(x => x.nganh === nganh).length : 0;
+  const tieu = loai === "vgm" ? `VGM ${khoa}` : TEN_PC[khoa][0];
+  const mo_ta = loai === "vgm" ? "cùng hạng VGM tổng (Giá trị · Tăng trưởng · Động lượng)" : `phong cách: ${TEN_PC[khoa][2]}`;
+  return `<h2>${esc(tieu)} – ${ds.length} mã khác</h2><p class="m nho" style="margin:0 0 10px">${esc(mo_ta)}${nganh ? ` · cùng ngành ${esc(nganh)} (${cn} mã) xếp trước` : ""}, rồi theo điểm VGM · bấm mã để mở</p>` +
+    (ds.length ? `<div class="bang-boc"><table><thead><tr><th class="trai">Mã</th><th class="trai">Ngành</th><th title="Giá trị · Tăng trưởng · Động lượng · Tổng">VGM</th><th>Điểm VGM</th><th>Phong cách</th><th>Vốn hoá (tỷ)</th></tr></thead><tbody>` +
+      ds.map(x => `<tr${nganh && x.nganh === nganh ? ' class="c1"' : ""}><td class="trai"><a href="#${esc(x.ma)}"><b>${esc(x.ma)}</b></a></td><td class="trai">${esc(x.nganh || "–")}</td>` +
+        `<td>${esc(x.vgm || "–")}</td><td>${x.vgm_d != null ? so(x.vgm_d, 0) : "–"}</td><td>${x.pc && TEN_PC[x.pc] ? esc(TEN_PC[x.pc][0]) : "–"}</td><td>${x.von ? so(x.von, 0) : "–"}</td></tr>`).join("") +
+      `</tbody></table></div>` : `<div class="trong">Không có mã nào khác cùng nhãn.</div>`);
+}
+document.addEventListener("click", e => { const c = e.target.closest?.("[data-cung]"); if (c) mo_hop_pp(cung_nhan_html(c.dataset.cung, c.dataset.ma)); });
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches?.("[data-cung]")) e.target.click(); });
 // ---------------------------------------------------------------- PHÂN TÍCH KỸ THUẬT – hàm thuần (đồng thuận chỉ báo + 6 trụ, như app Phân tích kỹ thuật)
 const KT_KHUNG = [["D", "Ngày"], ["W", "Tuần"]];
 const kt_v = (a, lui = 0) => { const n = (a?.length ?? 0) - 1 - lui; return n >= 0 && a[n] != null && isFinite(a[n]) ? +a[n] : null; };
