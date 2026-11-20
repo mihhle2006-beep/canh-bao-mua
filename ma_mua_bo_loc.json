@@ -1,7 +1,7 @@
 {
- "ngay_quet": "2026-11-19",
- "luc": "2026-11-19 15:04",
- "phien": "2026-11-19",
+ "ngay_quet": "2026-11-20",
+ "luc": "2026-11-20 15:03",
+ "phien": "2026-11-20",
  "chien_luoc": [
   "quy_b",
   "xu_huong"
@@ -13,10 +13,10 @@
   "DIG": [
    "quy_b"
   ],
-  "HDG": [
+  "DXG": [
    "quy_b"
   ],
-  "HHV": [
+  "HDG": [
    "quy_b"
   ],
   "HUT": [
@@ -25,19 +25,10 @@
   "IDC": [
    "quy_b"
   ],
+  "KDH": [
+   "quy_b"
+  ],
   "KHG": [
-   "quy_b"
-  ],
-  "NAB": [
-   "quy_b"
-  ],
-  "PDR": [
-   "quy_b"
-  ],
-  "SSI": [
-   "quy_b"
-  ],
-  "TPB": [
    "quy_b"
   ],
   "VIX": [
