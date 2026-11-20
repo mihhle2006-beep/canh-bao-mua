@@ -194,3 +194,13 @@ def test_doi_ma_khi_toan_man_hinh_tren_dien_thoai():
     assert 'document.documentElement.style.setProperty("--vv-tren", vv.offsetTop + "px")' in h
     assert "ul.onpointerdown = e =>" in h and 'enterkeyhint="go"' in h and 'autocapitalize="characters"' in h
     assert '$("#fs-tim")?.remove();' in h
+
+
+def test_khung_so_bieu_do_va_ma_cung_nhan():
+    """20/11/2026: rê / chạm cột biểu đồ tài chính → khung số mọi chuỗi của kỳ (CĐKT: tổng TS, VCSH, nợ, nợ/VCSH, VCSH/nợ);
+    bấm nhãn VGM / phong cách ở đầu mã → hộp các mã cùng nhãn (cùng ngành trước)."""
+    h = open(TRANG, encoding="utf-8").read()
+    assert 'class="kh-o"' in h and "data-gy=" in h and h.count("dong: dong_cdkt(ts, vc, no)") == 2
+    for t in ("Tổng tài sản", "Vốn chủ sở hữu", "Nợ phải trả", "Nợ / VCSH", "VCSH / Nợ"):
+        assert f'["{t}"' in h.split("const dong_cdkt")[1][:600]
+    assert 'data-cung="vgm"' in h and "pc_html(dong_ds(ma), ma)" in h and "function cung_nhan_html" in h
