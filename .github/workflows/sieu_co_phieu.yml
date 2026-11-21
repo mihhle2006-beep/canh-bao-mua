@@ -3,10 +3,14 @@
 # thật (ptcp.cau_hinh.CONG_KHAI).
 # SIÊU CỔ PHIẾU – đặc điểm các mã tăng ≥ 100% / 12 tháng TRƯỚC khi tăng (phan_tich_sieu_cp.py). Kết quả: log + Artifacts.
 # che_do = loc_ma: backtest CHIẾN LƯỢC LỌC MÃ độc lập (bt_loc_ma.py – top 15 mã theo bộ lọc / điểm, cân lại mỗi quý,
-# so VN-Index · rổ đều · 1.000 rổ ngẫu nhiên; luật đạt đặt trước trong docstring).
+# so VN-Index · rổ đều · 1.000 rổ ngẫu nhiên; luật đạt đặt trước trong docstring). Lượt loc_ma (lịch 16/2 · 5 · 8 · 11 hoặc
+# bấm tay, code danh-muc main) ghi danh sách FT CANSLIM kỳ gần nhất vào thi_truong/chien_luoc.json → tab Lọc mã của Bảng thị
+# trường (nhóm CHIẾN LƯỢC) đọc ở lượt dựng trang kế tiếp.
 name: Sieu co phieu
 
 on:
+  schedule:
+    - cron: "23 3 16 2,5,8,11 *"     # 10:23 giờ VN ngày 16 tháng cân (kỳ 15/2 · 5 · 8 · 11): loc_ma → danh sách FT CANSLIM mới
   workflow_dispatch:
     inputs:
       ma:
@@ -28,7 +32,7 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  contents: write                   # loc_ma: commit thi_truong/chien_luoc.json (danh sách FT CANSLIM cho tab Lọc mã)
 
 jobs:
   phan_tich:
@@ -75,13 +79,28 @@ jobs:
             gia-ngay-
       - name: Phân tích
         env:
-          MA: ${{ inputs.ma }}
-          TU: ${{ inputs.tu }}
-          CHE_DO: ${{ inputs.che_do }}
+          MA: ${{ inputs.ma || 'all' }}
+          TU: ${{ inputs.tu || '2013' }}
+          CHE_DO: ${{ inputs.che_do || 'loc_ma' }}            # lịch quý → loc_ma
           XEM: ${{ inputs.xem }}
         run: |
           if [ "$CHE_DO" = loc_ma ]; then python bt_loc_ma.py --ma "$MA" --tu "$TU" --xem "$XEM"
           else python phan_tich_sieu_cp.py --ma "$MA" --tu "$TU"; fi
+      - uses: actions/checkout@v5                 # loc_ma: danh sách FT CANSLIM kỳ gần nhất → trang (chỉ code danh-muc main)
+        if: (inputs.che_do || 'loc_ma') == 'loc_ma' && !inputs.nhanh_danh_muc && hashFiles('danh-muc/chien_luoc_ky.json') != ''
+        with:
+          path: cbm
+      - name: Lưu danh sách FT CANSLIM lên trang (thi_truong/chien_luoc.json)
+        if: (inputs.che_do || 'loc_ma') == 'loc_ma' && !inputs.nhanh_danh_muc && hashFiles('danh-muc/chien_luoc_ky.json') != ''
+        working-directory: cbm
+        run: |
+          cp ../danh-muc/chien_luoc_ky.json thi_truong/chien_luoc.json
+          git add thi_truong/chien_luoc.json
+          if git diff --cached --quiet; then echo "Danh sách FT CANSLIM không đổi"; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898283+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "FT CANSLIM kỳ $(jq -r .ngay_can thi_truong/chien_luoc.json) – danh sách tab Lọc mã"
+          for i in 1 2 3 4; do git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin HEAD:"$GITHUB_REF_NAME" && exit 0; sleep $((i * 5)); done
+          exit 1
       - uses: actions/upload-artifact@v6
         if: always()
         with:

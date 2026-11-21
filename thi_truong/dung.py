@@ -135,7 +135,7 @@ def dung_lai_trang(goc, ra=FILE_RA, in_tien_do=print):
         out = json.load(r)
     if not isinstance(out, dict) or not out.get("phien"):
         raise ValueError("du_lieu.json trên trang không hợp lệ")
-    out["tin_hieu"], out["danh_muc"] = tin_hieu_bot(), ma_dang_giu()
+    out["tin_hieu"], out["danh_muc"], out["chien_luoc"] = tin_hieu_bot(), ma_dang_giu(), chien_luoc()
     _ghi(out, ra)
     try:
         with urllib.request.urlopen(goc + "quy_ls.json", timeout=60) as r:
@@ -143,7 +143,7 @@ def dung_lai_trang(goc, ra=FILE_RA, in_tien_do=print):
     except (OSError, ValueError):
         pass
     in_tien_do(f"Ngoài giờ giao dịch – dữ liệu thị trường phiên {out['phien']} lấy từ trang (không gọi nguồn), làm mới "
-               "tín hiệu bot + mã đang giữ")
+               "tín hiệu bot + mã đang giữ + chiến lược lọc mã")
     return out
 
 
@@ -225,6 +225,31 @@ def tin_hieu_bot(duong=None):
     ma = [[x.get("ma"), TEN_NHOM_BOT.get(x.get("nhom"), x.get("nhom") or ""), _r(x.get("tu")), _r(x.get("den")),
            _r(x.get("cl")), _r(x.get("mt1")), _r(x.get("mt3")), x.get("ly_do") or ""] for x in ds.get("ma") or [] if x.get("ma")]
     return {"hieu_luc": ds.get("hieu_luc"), "ma": ma} if ma else None
+
+
+FILE_CL = os.path.join("thi_truong", "chien_luoc.json")   # chiến lược lọc mã kỳ gần nhất – workflow Sieu co phieu ghi mỗi quý
+
+
+def chien_luoc(duong=None):
+    """Chiến lược lọc mã (danh-muc bt_loc_ma, top 15, cân lại 15/2 · 5 · 8 · 11) kỳ gần nhất → {"ngay_can", "ky_sau",
+    "chien_luoc": [{ten, dat, de_xuat, cagr, sut, ma: […]}…], "ft_canslim": [{ma, diem, C, A, N, S, L}…]} cho tab Lọc mã
+    (nhóm CHIẾN LƯỢC). Không có / hỏng file / không chiến lược nào có mã → None."""
+    try:
+        with open(duong or FILE_CL, encoding="utf-8") as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(d, dict) or not d.get("ngay_can"):
+        return None
+    so = lambda v: v if isinstance(v, (int, float)) and v == v else None            # noqa: E731
+    cl = [{"ten": str(c["ten"]), "dat": bool(c.get("dat")), "de_xuat": bool(c.get("de_xuat")), "cagr": so(c.get("cagr")),
+           "sut": so(c.get("sut")), "ma": [str(m).upper() for m in (c.get("ma") or []) if m]}
+          for c in (d.get("chien_luoc") or []) if isinstance(c, dict) and c.get("ten")]
+    ft = [{"ma": str(x["ma"]).upper(), "diem": int(x.get("diem") or 0), **{k: int(bool(x.get(k))) for k in "CANSL"}}
+          for x in (d.get("ft_canslim") or []) if isinstance(x, dict) and x.get("ma")]
+    if not any(c["ma"] for c in cl) and not ft:
+        return None
+    return {"ngay_can": d["ngay_can"], "ky_sau": d.get("ky_sau"), "chien_luoc": cl, "ft_canslim": ft}
 
 
 SO_PHIEN_DT = (5, 10, 20)                     # dòng tiền / tác động nhiều phiên (kiểu FiinTrade 1 · 5 · 10 · 20 ngày)
@@ -361,7 +386,7 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
                    "bit": BIT, "du_tk": GT_DU_THANH_KHOAN},
            "ten": {m: cb.get("ten", {}).get(m, "") for m in cp.index},
            "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot(), "danh_muc": ma_dang_giu(),
-           "quy": {k: v for k, v in (cb.get("quy") or {}).items() if k != "ls"} or None}
+           "chien_luoc": chien_luoc(), "quy": {k: v for k, v in (cb.get("quy") or {}).items() if k != "ls"} or None}
     _ghi(out, ra)
     if (cb.get("quy") or {}).get("ls"):                              # lịch sử danh mục quỹ: file riêng (trang không tải)
         _ghi(cb["quy"]["ls"], os.path.join(os.path.dirname(ra), "quy_ls.json"))
