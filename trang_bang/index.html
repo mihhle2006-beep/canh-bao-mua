@@ -811,11 +811,12 @@ const ky_cl = () => { const c = D.chien_luoc; return c ? ` – kỳ ${ngay_du(c.
 function mo_ta_cl(c) {
   return `${c.ten} · ${c.de_xuat ? "đạt kiểm định, đề xuất cho người làm tay" : "đạt kiểm định"} (thắng VN-Index và rổ ngẫu nhiên cả 2013–19 lẫn 2020→nay) · backtest `
     + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`
-    + " · top 15, mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11 (không dính bot). Dưới mỗi mã: các chiến lược khác (chưa đạt) cũng chọn mã đó";
+    + " · top 15, mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11 (không dính bot). Dưới mỗi mã: các chiến lược khác (chưa đạt) cũng chọn mã đó"
+    + (/CANSLIM/.test(c.ten) ? " · 5 tiêu chí CANSLIM: C lãi quý tăng mạnh, A lãi năm tăng, N gần đỉnh 52 tuần, S thanh khoản tăng, L giá mạnh hơn thị trường" : "");
 }
 function dung_cl() {
   const C = D.chien_luoc || {}; DS_CL = C.chien_luoc || [];
-  CS = Object.fromEntries((C.ft_canslim || []).map(x => [x.ma, x]));
+  CS = Object.fromEntries((C.canslim || C.ft_canslim || []).map(x => [x.ma, x]));
   CLM = {}; DS_CL.forEach((c, i) => c.ma.forEach((m, j) => (CLM[m] = CLM[m] || []).push({i, hang: j + 1})));
   const nhom = NHOM.find(x => x[0] === "CHIẾN LƯỢC");     // chỉ chiến lược ĐẠT kiểm định (chủ quỹ 21/11: "gọn lại"); các chiến lược
   nhom[1] = DS_CL.map((c, i) => [c, i]).filter(([c]) => c.dat).map(([c, i]) =>   // khác chỉ dùng để ghi "cũng có trong …" dưới mỗi mã
@@ -898,7 +899,7 @@ function dong_cl(r, k) {
   const x = CLM[r.ma] || [], i = +k.slice(3), cua = x.find(y => y.i === i), khac = x.filter(y => y.i !== i), c = CS[r.ma];
   if (!cua) return "";
   const ds_ten = a => a.map(y => `${esc(ten_gon(DS_CL[y.i].ten))} #${y.hang}`).join(" · ");
-  const cs = c && DS_CL[i].ten.startsWith("FT CANSLIM") ? ` · CANSLIM <b class="so">${c.diem}/5</b> · `
+  const cs = c && /CANSLIM/.test(DS_CL[i].ten) ? ` · CANSLIM <b class="so">${c.diem}/5</b> · `
     + TC_CS.map(([q, t]) => `<span class="${c[q] ? "t" : "d"}" title="${t}">${q} ${c[q] ? "đạt" : "–"}</span>`).join(" · ") : "";
   return `<tr style="background:#fafbfd"><td></td><td class="trai" colspan="${COT.length - 1}" style="white-space:normal;color:var(--chu2);font-size:12.5px">
     <b>Hạng ${cua.hang}</b>${cs}${khac.length ? `<br>Cũng có trong ${khac.length}/${DS_CL.length - 1} chiến lược khác: ${ds_ten(khac)}` : ""}</td></tr>`;
