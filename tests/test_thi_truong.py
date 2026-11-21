@@ -147,6 +147,22 @@ def test_chup_dung_du_lieu_mau(tmp_path, monkeypatch):
     assert d["danh_muc"] == []                                         # không có MA_GIU_FILE → không có mã đang giữ
 
 
+def test_chien_luoc_doc_file(tmp_path):
+    import json
+    f = tmp_path / "cl.json"
+    f.write_text(json.dumps({"ngay_can": "2026-11-15", "ky_sau": "2027-02-15", "tao_luc": "x", "khac": 1,
+                             "ft_canslim": [{"ma": "dhc", "diem": 5, "C": 1, "A": 1, "N": 1, "S": 1, "L": 1},
+                                            {"ma": "TCH", "diem": 3, "C": 0, "A": True, "N": 1, "S": 0, "L": 1}, {"diem": 2}]}))
+    cl = dung.chien_luoc(str(f))
+    assert cl == {"ngay_can": "2026-11-15", "ky_sau": "2027-02-15",
+                  "ft_canslim": [{"ma": "DHC", "diem": 5, "C": 1, "A": 1, "N": 1, "S": 1, "L": 1},
+                                 {"ma": "TCH", "diem": 3, "C": 0, "A": 1, "N": 1, "S": 0, "L": 1}]}
+    f.write_text("{hỏng")
+    assert dung.chien_luoc(str(f)) is None and dung.chien_luoc(str(tmp_path / "khong.json")) is None
+    f.write_text(json.dumps({"ngay_can": "2026-11-15", "ft_canslim": []}))
+    assert dung.chien_luoc(str(f)) is None
+
+
 def test_workflow_bang_thi_truong_chi_lay_ma_dang_giu():
     """Không checkout repo kín; bước duy nhất chạm danh-muc chỉ đọc cột mã danh_muc.csv ra file tạm, chỉ trên main, log
     chỉ in số mã."""
