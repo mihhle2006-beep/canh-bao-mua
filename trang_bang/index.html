@@ -780,7 +780,7 @@ function ve_tac() {
 // ---------- lọc mã ----------
 const NHOM = [
   ["TÍN HIỆU BOT", [["bot", "Danh sách mua của bot", "Danh sách mua công khai của canh-bao-mua cho phiên hiệu lực – vùng mua, cắt lỗ, mục tiêu; ✔ = giá đang trong vùng mua", r => BOT[r.ma], "pt", -1]]],
-  ["CHIẾN LƯỢC", [["ft_cs", "FT CANSLIM", "15 mã điểm CANSLIM cao nhất trong 150 mã thanh khoản lớn nhất (hoà điểm → vốn hoá lớn trước) – mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11. Chiến lược cho người làm tay, không dính bot", r => CS[r.ma], "cs", 1]]],
+  ["CHIẾN LƯỢC", []],                                  // dựng theo dữ liệu (D.chien_luoc) trong dung_loc
   ["THEO DÕI", [["theo_doi", "★ Danh mục & theo dõi", "💼 mã đang giữ (tự cập nhật theo danh mục) + ★ mã bạn đánh dấu thêm (lưu trong trình duyệt) – luôn hiện đủ, không theo bộ lọc sàn / ngành / thanh khoản", r => TDX().includes(r.ma), "gt", -1]]],
   ["BIẾN ĐỘNG", [["tang", "Tăng giá", "Giá cao hơn tham chiếu", r => r.co_gd && r.pt > 0, "pt", -1],
     ["giam", "Giảm giá", "Giá thấp hơn tham chiếu", r => r.co_gd && r.pt < 0, "pt", 1],
@@ -803,15 +803,33 @@ const NHOM_MAP = Object.fromEntries(NHOM.flatMap(([, ds]) => ds.map(d => [d[0], 
 const COT = [["ma", "Mã", 1], ["nganh", "Ngành", 1], ["gia", "Giá"], ["pt", "±%"], ["gt", "GTGD"], ["kl_x", "KL/TB"], ["mcd", "Mua CĐ"],
   ["chuoi", "Chuỗi NN"], ["nn5", "NN 5P"], ["nn20", "NN 20P"], ["nn", "NN ròng"], ["rsi", "RSI"], ["bien", "Biên độ phiên", 1]];
 
-let BOT = {}, CS = {};
-const DEM_RIENG = k => k === "theo_doi" ? TDX().length : k === "bot" ? Object.keys(BOT).length : k === "ft_cs" ? Object.keys(CS).length : null;
+let BOT = {}, CS = {}, CLM = {}, DS_CL = [];
+const DEM_RIENG = k => k === "theo_doi" ? TDX().length : k === "bot" ? Object.keys(BOT).length : k === "cl_gop" ? Object.keys(CLM).length
+  : k.startsWith("cl_") ? ((DS_CL[+k.slice(3)] || {}).ma || []).length : null;
+const ten_gon = t => t.replace(/\s*\(.*\)$/, "");
+const ky_cl = () => { const c = D.chien_luoc; return c ? ` – kỳ ${ngay_du(c.ngay_can)}${c.ky_sau ? " · kỳ sau " + ngay_du(c.ky_sau) : ""}` : ""; };
+function mo_ta_cl(c) {
+  return `${c.ten} · ${c.de_xuat ? "ĐẠT kiểm định, đề xuất cho người làm tay" : c.dat ? "đạt kiểm định" : "chưa đạt kiểm định"} · backtest 2013→nay `
+    + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`
+    + " · top 15, mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11 (không dính bot)";
+}
+function dung_cl() {
+  const C = D.chien_luoc || {}; DS_CL = C.chien_luoc || [];
+  CS = Object.fromEntries((C.ft_canslim || []).map(x => [x.ma, x]));
+  CLM = {}; DS_CL.forEach((c, i) => c.ma.forEach((m, j) => (CLM[m] = CLM[m] || []).push({i, hang: j + 1})));
+  const nhom = NHOM.find(x => x[0] === "CHIẾN LƯỢC");
+  nhom[1] = [["cl_gop", "Tổng hợp các chiến lược", `Gộp ${DS_CL.length} chiến lược lọc mã: mã được nhiều chiến lược chọn xếp trước, dưới mỗi mã là tên các chiến lược chọn nó (#hạng). Chiến lược ✔ = đạt kiểm định (thắng VN-Index và rổ ngẫu nhiên cả 2013–19 lẫn 2020→nay); còn lại để tham khảo`, r => CLM[r.ma], "cl_n", -1],
+    ...DS_CL.map((c, i) => [`cl_${i}`, ten_gon(c.ten) + (c.dat ? " ✔" : ""), mo_ta_cl(c), r => (CLM[r.ma] || []).some(x => x.i === i), `cl_h${i}`, 1])];
+  for (const d of nhom[1]) NHOM_MAP[d[0]] = d;
+}
 function dung_loc() {
   GIU = (D.danh_muc || []).filter(m => /^[A-Z0-9]{3,8}$/.test(m));
   BOT = Object.fromEntries(((D.tin_hieu || {}).ma || []).map(x => [x[0], {nhom: x[1], tu: x[2], den: x[3], cl: x[4], mt1: x[5], mt3: x[6], ly_do: x[7]}]));
   const c = D.loc.cot;
   L = D.loc.dong.map(r => Object.fromEntries(c.map((k, i) => [k, r[i]])));
-  CS = Object.fromEntries(((D.chien_luoc || {}).ft_canslim || []).map((x, i) => [x.ma, {...x, hang: i + 1}]));
-  for (const r of L) { r.ten = (D.ten || {})[r.ma] || ""; r.tim = bo_dau(r.ma + " " + r.ten); r.cs = CS[r.ma] ? CS[r.ma].hang : null; }
+  dung_cl();
+  for (const r of L) { r.ten = (D.ten || {})[r.ma] || ""; r.tim = bo_dau(r.ma + " " + r.ten);
+    r.cl_n = CLM[r.ma] ? CLM[r.ma].length : null; for (const x of CLM[r.ma] || []) r["cl_h" + x.i] = x.hang; }
   const sel = $("#loc-nganh"), cu = ST.nganh;
   sel.innerHTML = `<option value="">Mọi ngành</option>` + D.nganh.map((n, i) => `<option value="${i}">${esc(n)}</option>`).join("");
   sel.value = cu;
@@ -842,24 +860,24 @@ function ve_loc() {
     `<option value="${k}" ${k === ST.nhom ? "selected" : ""}>${esc(nhan)}${DEM_RIENG(k) != null ? " (" + DEM_RIENG(k) + ")" : f ? " (" + nen.filter(f).length + ")" : ""}</option>`).join("") + "</optgroup>").join("");
   chon.onchange = e => { ST.nhom = e.target.value; ST.sap = null; ST.so_dong = 100; luu_st(); ve_loc(); };
   const [k, nhan, mo_ta, f, sap0, chieu0] = NHOM_MAP[ST.nhom] || NHOM_MAP.gt_lon;
-  const la_td = k === "theo_doi", la_bot = k === "bot", la_cs = k === "ft_cs", CL = D.chien_luoc;
+  const la_td = k === "theo_doi", la_bot = k === "bot", la_cl = k.startsWith("cl_");
   let ds = la_td ? L.filter(r => TDX().includes(r.ma) && (!ST.tim.trim() || r.tim.includes(bo_dau(ST.tim.trim()))))
-    : la_bot ? L.filter(r => BOT[r.ma]) : la_cs ? L.filter(r => CS[r.ma]) : f ? nen.filter(f) : nen.slice();
+    : la_bot ? L.filter(r => BOT[r.ma]) : la_cl ? L.filter(f) : f ? nen.filter(f) : nen.slice();
   $("#td-cong-cu").hidden = !la_td || !TD.length;
   const sap = ST.sap || sap0, chieu = ST.sap ? ST.chieu : chieu0;
   ds.sort((a, b) => { const x = a[sap], y = b[sap]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
     return (typeof x === "string" ? x.localeCompare(y) : x - y) * (chieu > 0 ? 1 : -1) || b.gt - a.gt; });
   if (!f) ds = ds.slice(0, 50);
   $("#loc-ten").textContent = nhan + (la_bot && D.tin_hieu ? ` – phiên ${ngay_vn(D.tin_hieu.hieu_luc)}` : "")
-    + (la_cs && CL ? ` – kỳ ${ngay_du(CL.ngay_can)}${CL.ky_sau ? " · kỳ sau " + ngay_du(CL.ky_sau) : ""}` : "");
-  $("#loc-mo-ta").textContent = la_bot && !D.tin_hieu ? "Chưa có danh sách mua" : la_cs && !CL ? "Chưa có danh sách (tính lại mỗi quý)" : mo_ta; $("#loc-so").textContent = `${la_td ? TDX().length : ds.length} mã`;
+    + (la_cl ? ky_cl() : "");
+  $("#loc-mo-ta").textContent = la_bot && !D.tin_hieu ? "Chưa có danh sách mua" : la_cl && !DS_CL.length ? "Chưa có danh sách chiến lược (tính lại mỗi quý)" : mo_ta; $("#loc-so").textContent = `${la_td ? TDX().length : ds.length} mã`;
   $("#loc-dau-bang").innerHTML = "<tr>" + COT.map(([c, t, trai]) => `<th data-c="${c}" class="${trai ? "trai" : ""}${c === "nganh" ? " cot-nganh" : ""}" ${c === sap ? `aria-sort="${chieu > 0 ? "ascending" : "descending"}"` : ""}>${t}</th>`).join("") + "</tr>";
   for (const th of document.querySelectorAll("#loc-dau-bang th")) th.onclick = () => { const c = th.dataset.c; if (c === "bien" || c === "nganh") return;
     if (ST.sap === c) ST.chieu = -ST.chieu; else { ST.sap = c; ST.chieu = c === "ma" ? 1 : -1; } ve_loc(); };
   const than = $("#loc-than");
-  if (!ds.length && !(la_td && TDX().length)) { than.innerHTML = `<tr><td colspan="${COT.length}" class="trong">${la_td ? "Chưa có mã nào – bấm ☆ cạnh mã ở các nhóm khác (hoặc tìm mã rồi bấm ☆) để thêm" : la_bot ? "Bot chưa có danh sách mua cho phiên này" : la_cs ? "Chưa có danh sách FT CANSLIM" : "Không có mã nào khớp bộ lọc"}</td></tr>`; $("#loc-them").hidden = true; return; }
+  if (!ds.length && !(la_td && TDX().length)) { than.innerHTML = `<tr><td colspan="${COT.length}" class="trong">${la_td ? "Chưa có mã nào – bấm ☆ cạnh mã ở các nhóm khác (hoặc tìm mã rồi bấm ☆) để thêm" : la_bot ? "Bot chưa có danh sách mua cho phiên này" : la_cl ? "Chưa có danh sách chiến lược" : "Không có mã nào khớp bộ lọc"}</td></tr>`; $("#loc-them").hidden = true; return; }
   const thieu = la_td ? TDX().filter(m => !L.some(r => r.ma === m)) : [];
-  than.innerHTML = ds.slice(0, ST.so_dong).map(r => dong_html(r) + (la_bot ? dong_bot(r) : la_cs ? dong_cs(r) : "")).join("") + thieu.map(m =>
+  than.innerHTML = ds.slice(0, ST.so_dong).map(r => dong_html(r) + (la_bot ? dong_bot(r) : la_cl ? dong_cl(r, k) : "")).join("") + thieu.map(m =>
     `<tr><td class="ma trai">${GIU.includes(m) ? `<span class="sao">💼</span>` : `<button class="sao" aria-pressed="true" data-ma="${esc(m)}" aria-label="Bỏ theo dõi ${esc(m)}">★</button>`}${esc(m)}</td>
      <td class="trai" colspan="${COT.length - 1}" style="color:var(--mo)">Không có trong dữ liệu (mã không giao dịch / thanh khoản quá thấp)</td></tr>`).join("");
   than.querySelectorAll(".sao").forEach(b => b.onclick = e => { e.stopPropagation(); doi_td(b.dataset.ma); });
@@ -875,10 +893,15 @@ function dong_bot(r) {
 }
 const ngay_du = s => s ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : "";
 const TC_CS = [["C", "lãi quý tăng mạnh"], ["A", "lãi năm tăng"], ["N", "gần đỉnh 52 tuần"], ["S", "thanh khoản tăng"], ["L", "giá mạnh hơn thị trường"]];
-function dong_cs(r) {
-  const c = CS[r.ma]; if (!c) return "";
-  return `<tr style="background:#fafbfd"><td></td><td class="trai" colspan="${COT.length - 1}" style="white-space:normal;color:var(--chu2);font-size:12.5px">
-    <b>Hạng ${c.hang}</b> · CANSLIM <b class="so">${c.diem}/5</b> · ${TC_CS.map(([k, t]) => `<span class="${c[k] ? "t" : "d"}" title="${t}">${k} ${c[k] ? "đạt" : "–"}</span>`).join(" · ")}</td></tr>`;
+function dong_cl(r, k) {
+  const x = CLM[r.ma] || []; if (!x.length) return "";
+  const i = k === "cl_gop" ? -1 : +k.slice(3), cua = x.find(y => y.i === i), khac = x.filter(y => y.i !== i), c = CS[r.ma];
+  const ds_ten = a => a.map(y => `<span class="${DS_CL[y.i].dat ? "t" : ""}">${esc(ten_gon(DS_CL[y.i].ten))}${DS_CL[y.i].dat ? " ✔" : ""} #${y.hang}</span>`).join(" · ");
+  const dau = i < 0 ? `<b>${x.length}/${DS_CL.length} chiến lược</b>: ${ds_ten(x)}`
+    : `<b>Hạng ${cua ? cua.hang : "–"}</b>${khac.length ? ` · cũng có trong ${khac.length} chiến lược khác: ${ds_ten(khac)}` : ""}`;
+  const cs = c && (i < 0 || DS_CL[i].ten.startsWith("FT CANSLIM")) ? `<br>CANSLIM <b class="so">${c.diem}/5</b> · `
+    + TC_CS.map(([q, t]) => `<span class="${c[q] ? "t" : "d"}" title="${t}">${q} ${c[q] ? "đạt" : "–"}</span>`).join(" · ") : "";
+  return `<tr style="background:#fafbfd"><td></td><td class="trai" colspan="${COT.length - 1}" style="white-space:normal;color:var(--chu2);font-size:12.5px">${dau}${cs}</td></tr>`;
 }
 function lop_gia(r) { return r.tt === 1 ? "tr" : r.tt === -1 ? "sa" : lop(r.gia - r.tc); }
 function nen_pt(r) { return r.tt === 1 ? "#f2e6fb" : r.tt === -1 ? "#e0f5f8" : r.pt > 0 ? "var(--tang-nen)" : r.pt < 0 ? "var(--giam-nen)" : "var(--dung-nen)"; }

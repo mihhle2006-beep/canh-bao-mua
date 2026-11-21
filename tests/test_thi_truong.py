@@ -151,15 +151,22 @@ def test_chien_luoc_doc_file(tmp_path):
     import json
     f = tmp_path / "cl.json"
     f.write_text(json.dumps({"ngay_can": "2026-11-15", "ky_sau": "2027-02-15", "tao_luc": "x", "khac": 1,
+                             "chien_luoc": [{"ten": "FT CANSLIM (điểm, vốn hoá)", "dat": True, "de_xuat": True, "cagr": 0.135,
+                                             "sut": -0.53, "ma": ["dhc", "TCH"]},
+                                            {"ten": "VGM cao nhất (Hạng A)", "dat": False, "cagr": None, "ma": ["DHC"]}, {"ma": []}],
                              "ft_canslim": [{"ma": "dhc", "diem": 5, "C": 1, "A": 1, "N": 1, "S": 1, "L": 1},
                                             {"ma": "TCH", "diem": 3, "C": 0, "A": True, "N": 1, "S": 0, "L": 1}, {"diem": 2}]}))
     cl = dung.chien_luoc(str(f))
     assert cl == {"ngay_can": "2026-11-15", "ky_sau": "2027-02-15",
+                  "chien_luoc": [{"ten": "FT CANSLIM (điểm, vốn hoá)", "dat": True, "de_xuat": True, "cagr": 0.135, "sut": -0.53,
+                                  "ma": ["DHC", "TCH"]},
+                                 {"ten": "VGM cao nhất (Hạng A)", "dat": False, "de_xuat": False, "cagr": None, "sut": None,
+                                  "ma": ["DHC"]}],
                   "ft_canslim": [{"ma": "DHC", "diem": 5, "C": 1, "A": 1, "N": 1, "S": 1, "L": 1},
                                  {"ma": "TCH", "diem": 3, "C": 0, "A": 1, "N": 1, "S": 0, "L": 1}]}
     f.write_text("{hỏng")
     assert dung.chien_luoc(str(f)) is None and dung.chien_luoc(str(tmp_path / "khong.json")) is None
-    f.write_text(json.dumps({"ngay_can": "2026-11-15", "ft_canslim": []}))
+    f.write_text(json.dumps({"ngay_can": "2026-11-15", "chien_luoc": [{"ten": "X", "ma": []}], "ft_canslim": []}))
     assert dung.chien_luoc(str(f)) is None
 
 

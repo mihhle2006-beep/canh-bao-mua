@@ -227,23 +227,29 @@ def tin_hieu_bot(duong=None):
     return {"hieu_luc": ds.get("hieu_luc"), "ma": ma} if ma else None
 
 
-FILE_CL = os.path.join("thi_truong", "chien_luoc.json")   # FT CANSLIM kỳ gần nhất – workflow Sieu co phieu ghi mỗi quý
+FILE_CL = os.path.join("thi_truong", "chien_luoc.json")   # chiến lược lọc mã kỳ gần nhất – workflow Sieu co phieu ghi mỗi quý
 
 
 def chien_luoc(duong=None):
-    """Chiến lược lọc mã ĐỀ XUẤT cho người ngoài (danh-muc bt_loc_ma, cân lại 15/2 · 5 · 8 · 11) → {"ngay_can", "ky_sau",
-    "ft_canslim": [{ma, diem, C, A, N, S, L}…]} cho tab Lọc mã. Không có / hỏng file → None."""
+    """Chiến lược lọc mã (danh-muc bt_loc_ma, top 15, cân lại 15/2 · 5 · 8 · 11) kỳ gần nhất → {"ngay_can", "ky_sau",
+    "chien_luoc": [{ten, dat, de_xuat, cagr, sut, ma: […]}…], "ft_canslim": [{ma, diem, C, A, N, S, L}…]} cho tab Lọc mã
+    (nhóm CHIẾN LƯỢC). Không có / hỏng file / không chiến lược nào có mã → None."""
     try:
         with open(duong or FILE_CL, encoding="utf-8") as f:
             d = json.load(f)
     except (OSError, ValueError):
         return None
-    ds = [x for x in (d.get("ft_canslim") or []) if isinstance(x, dict) and x.get("ma")] if isinstance(d, dict) else []
-    if not ds or not d.get("ngay_can"):
+    if not isinstance(d, dict) or not d.get("ngay_can"):
         return None
-    return {"ngay_can": d["ngay_can"], "ky_sau": d.get("ky_sau"),
-            "ft_canslim": [{"ma": str(x["ma"]).upper(), "diem": int(x.get("diem") or 0),
-                            **{k: int(bool(x.get(k))) for k in "CANSL"}} for x in ds]}
+    so = lambda v: v if isinstance(v, (int, float)) and v == v else None            # noqa: E731
+    cl = [{"ten": str(c["ten"]), "dat": bool(c.get("dat")), "de_xuat": bool(c.get("de_xuat")), "cagr": so(c.get("cagr")),
+           "sut": so(c.get("sut")), "ma": [str(m).upper() for m in (c.get("ma") or []) if m]}
+          for c in (d.get("chien_luoc") or []) if isinstance(c, dict) and c.get("ten")]
+    ft = [{"ma": str(x["ma"]).upper(), "diem": int(x.get("diem") or 0), **{k: int(bool(x.get(k))) for k in "CANSL"}}
+          for x in (d.get("ft_canslim") or []) if isinstance(x, dict) and x.get("ma")]
+    if not any(c["ma"] for c in cl) and not ft:
+        return None
+    return {"ngay_can": d["ngay_can"], "ky_sau": d.get("ky_sau"), "chien_luoc": cl, "ft_canslim": ft}
 
 
 SO_PHIEN_DT = (5, 10, 20)                     # dòng tiền / tác động nhiều phiên (kiểu FiinTrade 1 · 5 · 10 · 20 ngày)
