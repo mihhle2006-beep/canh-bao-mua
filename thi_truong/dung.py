@@ -230,34 +230,10 @@ def tin_hieu_bot(duong=None):
 FILE_CL = os.path.join("thi_truong", "chien_luoc.json")   # chiến lược lọc mã kỳ gần nhất – workflow Sieu co phieu ghi mỗi quý
 
 
-CHU_DG = ("A", "B", "C", "D", "F")
-
-
-def _danh_gia(x):
-    """Bảng Đánh giá kiểu FiinTrade của 1 mã (danh-muc bt_loc_ma.danh_gia_ft) – chỉ giữ trường đúng kiểu, sai → bỏ:
-    "nganh", "von_hoa" (nghìn tỷ), "v" / "g" [chữ, điểm, tối đa, bit tiêu chí], "m" [chữ, điểm, 10, bit, điểm thanh khoản],
-    "vgm" [chữ, hạng trong ngành, số mã ngành]."""
-    nguyen = lambda v: isinstance(v, int) and not isinstance(v, bool) and 0 <= v < 1 << 16          # noqa: E731
-    chu = lambda v: v if v in CHU_DG else None                                                      # noqa: E731
-    ra = {}
-    if isinstance(x.get("nganh"), str):
-        ra["nganh"] = x["nganh"][:60]
-    if isinstance(x.get("von_hoa"), (int, float)) and not isinstance(x["von_hoa"], bool) and x["von_hoa"] == x["von_hoa"]:
-        ra["von_hoa"] = round(float(x["von_hoa"]), 2)
-    for k, dai in (("v", 4), ("g", 4), ("m", 5)):
-        a = x.get(k)
-        if isinstance(a, list) and len(a) == dai and all(nguyen(v) for v in a[1:]) and a[1] <= a[2]:
-            ra[k] = [chu(a[0]), *a[1:]]
-    a = x.get("vgm")
-    if isinstance(a, list) and len(a) == 3 and all(v is None or nguyen(v) for v in a[1:]):
-        ra["vgm"] = [chu(a[0]), a[1], a[2]]
-    return ra
-
-
 def chien_luoc(duong=None):
     """Chiến lược lọc mã (danh-muc bt_loc_ma, top 15, cân lại 15/2 · 5 · 8 · 11) kỳ gần nhất → {"ngay_can", "ky_sau",
-    "chien_luoc": [{ten, dat, de_xuat, cagr, sut, ma: […]}…], "canslim": [{ma, diem, C, A, N, S, L, + _danh_gia}…]} cho tab Lọc mã
-    (tiêu chí CANSLIM + bảng Đánh giá kiểu FiinTrade từng mã của chiến lược CANSLIM đề xuất; file cũ ghi khoá "ft_canslim")
+    "chien_luoc": [{ten, dat, de_xuat, cagr, sut, ma: […]}…], "canslim": [{ma, diem, C, A, N, S, L}…]} cho tab Lọc mã
+    (tiêu chí CANSLIM từng mã của chiến lược CANSLIM; file cũ ghi khoá "ft_canslim"; trường bảng Đánh giá cũ bị bỏ)
     (nhóm CHIẾN LƯỢC). Không có / hỏng file / không chiến lược nào có mã → None."""
     try:
         with open(duong or FILE_CL, encoding="utf-8") as f:
@@ -270,8 +246,8 @@ def chien_luoc(duong=None):
     cl = [{"ten": str(c["ten"]), "dat": bool(c.get("dat")), "de_xuat": bool(c.get("de_xuat")), "cagr": so(c.get("cagr")),
            "sut": so(c.get("sut")), "ma": [str(m).upper() for m in (c.get("ma") or []) if m]}
           for c in (d.get("chien_luoc") or []) if isinstance(c, dict) and c.get("ten")]
-    ft = [{"ma": str(x["ma"]).upper(), "diem": int(x.get("diem") or 0), **{k: int(bool(x.get(k))) for k in "CANSL"},
-           **_danh_gia(x)} for x in (d.get("canslim") or d.get("ft_canslim") or []) if isinstance(x, dict) and x.get("ma")]
+    ft = [{"ma": str(x["ma"]).upper(), "diem": int(x.get("diem") or 0), **{k: int(bool(x.get(k))) for k in "CANSL"}}
+          for x in (d.get("canslim") or d.get("ft_canslim") or []) if isinstance(x, dict) and x.get("ma")]
     if not any(c["ma"] for c in cl) and not ft:
         return None
     return {"ngay_can": d["ngay_can"], "ky_sau": d.get("ky_sau"), "chien_luoc": cl, "canslim": ft}

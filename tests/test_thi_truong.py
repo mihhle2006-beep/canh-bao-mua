@@ -172,19 +172,17 @@ def test_chien_luoc_doc_file(tmp_path):
     assert dung.chien_luoc(str(f))["canslim"][0]["ma"] == "DHC"                         # file cũ (khoá ft_canslim) vẫn đọc
 
 
-def test_chien_luoc_bang_danh_gia_kieu_fiintrade(tmp_path):
+def test_chien_luoc_bo_bang_danh_gia_cu(tmp_path):
+    """Bỏ FiinTrade (chủ quỹ 22/11/2026): file cũ còn trường bảng Đánh giá (nganh, von_hoa, v, g, m, vgm) → chỉ giữ CANSLIM."""
     import json
     x = {"ma": "dhc", "diem": 5, "C": 1, "A": 1, "N": 1, "S": 1, "L": 1, "nganh": "Vật liệu xây dựng", "von_hoa": 3.456,
          "v": ["B", 5, 9, 31], "g": ["A", 6, 7, 63], "m": ["A", 8, 10, 255, 3], "vgm": ["A", 1, 4], "rac": 1}
-    sai = {"ma": "TCH", "diem": 3, "nganh": 5, "von_hoa": True, "v": ["Z", 5, 9, 31], "g": ["A", 8, 7, 0],
-           "m": ["A", 8, 10, -1, 3], "vgm": ["A", "1", 4]}
     f = tmp_path / "cl.json"
-    f.write_text(json.dumps({"ngay_can": "2026-11-15", "chien_luoc": [{"ten": "CANSLIM ít biến động", "dat": True, "ma": ["DHC"]}],
-                             "canslim": [x, sai]}))
+    f.write_text(json.dumps({"ngay_can": "2026-11-15", "chien_luoc": [{"ten": "CANSLIM", "dat": True, "ma": ["DHC"]}],
+                             "canslim": [x, {"ma": "TCH", "diem": 3}]}))
     a, b = dung.chien_luoc(str(f))["canslim"]
-    assert a == {"ma": "DHC", "diem": 5, "C": 1, "A": 1, "N": 1, "S": 1, "L": 1, "nganh": "Vật liệu xây dựng", "von_hoa": 3.46,
-                 "v": ["B", 5, 9, 31], "g": ["A", 6, 7, 63], "m": ["A", 8, 10, 255, 3], "vgm": ["A", 1, 4]}
-    assert b == {"ma": "TCH", "diem": 3, "C": 0, "A": 0, "N": 0, "S": 0, "L": 0, "v": [None, 5, 9, 31]}   # sai kiểu → bỏ
+    assert a == {"ma": "DHC", "diem": 5, "C": 1, "A": 1, "N": 1, "S": 1, "L": 1}
+    assert b == {"ma": "TCH", "diem": 3, "C": 0, "A": 0, "N": 0, "S": 0, "L": 0}
 
 
 def test_workflow_bang_thi_truong_chi_lay_ma_dang_giu():

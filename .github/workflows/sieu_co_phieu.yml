@@ -4,7 +4,7 @@
 # SIÊU CỔ PHIẾU – đặc điểm các mã tăng ≥ 100% / 12 tháng TRƯỚC khi tăng (phan_tich_sieu_cp.py). Kết quả: log + Artifacts.
 # che_do = loc_ma: backtest CHIẾN LƯỢC LỌC MÃ độc lập (bt_loc_ma.py – top 15 mã theo bộ lọc / điểm, cân lại mỗi quý,
 # so VN-Index · rổ đều · 1.000 rổ ngẫu nhiên; luật đạt đặt trước trong docstring). Lượt loc_ma (lịch 16/2 · 5 · 8 · 11 hoặc
-# bấm tay, code danh-muc main) ghi danh sách chiến lược lọc mã kỳ gần nhất (đạt kiểm định: CANSLIM ít biến động) vào thi_truong/chien_luoc.json → tab Lọc mã của Bảng thị
+# bấm tay, code danh-muc main) ghi danh sách chiến lược lọc mã kỳ gần nhất (chỉ chiến lược đạt kiểm định hiện trên web) vào thi_truong/chien_luoc.json → tab Lọc mã của Bảng thị
 # trường (nhóm CHIẾN LƯỢC) đọc ở lượt dựng trang kế tiếp.
 name: Sieu co phieu
 
