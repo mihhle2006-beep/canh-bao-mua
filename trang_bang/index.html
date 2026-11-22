@@ -835,8 +835,11 @@ const DEM_RIENG = k => k === "theo_doi" ? TDX().length : k === "bot" ? Object.ke
   : k.startsWith("cl_") ? ((DS_CL[+k.slice(3)] || {}).ma || []).length : null;
 const ten_gon = t => t.replace(/\s*\(.*\)$/, "");
 const ky_cl = () => { const c = D.chien_luoc; return c ? ` – kỳ ${ngay_du(c.ngay_can)}${c.ky_sau ? " · kỳ sau " + ngay_du(c.ky_sau) : ""}` : ""; };
+const MO_TA_CL = {                  // cách chọn bằng lời (chỉ tên tiêu chí, không ghi ngưỡng) – chiến lược không phải CANSLIM
+  "Vốn hoá lớn ít biến động": "nhóm vốn hoá lớn nhất, ưu tiên mã giá ít biến động",
+  "Vòng quay thấp có lãi": "mã có lãi, ưu tiên giá trị giao dịch thấp nhất so với vốn hoá (ít bị đầu cơ)"};
 function mo_ta_cl(c) {
-  return `${c.ten} · ${c.de_xuat ? "đạt kiểm định, đề xuất cho người làm tay" : "đạt kiểm định"} (thắng VN-Index và rổ ngẫu nhiên cả 2013–19 lẫn 2020→nay) · backtest `
+  return `${c.ten}${MO_TA_CL[c.ten] ? ` (${MO_TA_CL[c.ten]})` : ""} · ${c.de_xuat ? "đạt kiểm định, đề xuất cho người làm tay" : "đạt kiểm định"} (thắng VN-Index và rổ ngẫu nhiên cả 2013–19 lẫn 2020→nay) · backtest `
     + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`
     + " · top 15, mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11 (không dính bot). Dưới mỗi mã: các chiến lược khác (chưa đạt) cũng chọn mã đó"
     + (/CANSLIM/.test(c.ten) ? " · 5 tiêu chí CANSLIM: C lãi quý tăng mạnh, A lãi năm tăng, N gần đỉnh 52 tuần, S thanh khoản tăng, L giá mạnh hơn thị trường"
