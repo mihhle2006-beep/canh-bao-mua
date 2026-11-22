@@ -114,6 +114,7 @@ def nhac_ato(bay_gio, vt, khong_gui=False):
             continue
         ban.append((v, kb))
         vi_the.can_bao_ban(ma, kb["muc"], bay_gio, tt)
+    da_gui = [v["ma"] for v, kb in ban if not kb.get("gdkhq") and _tu_dat(bay_gio, khong_gui, "B", v["ma"])]
     mua, suat = [], None
     try:
         from ptcp.bat_day import ty_trong_suat
@@ -126,6 +127,8 @@ def nhac_ato(bay_gio, vt, khong_gui=False):
     tt["_nhac_ato"] = f"{hom_nay:%Y-%m-%d}"
     vi_the.ghi_trang_thai_ban(tt)
     nd = vi_the.tin_nhac_ato(ban, mua, bay_gio, suat)
+    if nd and da_gui:                                          # tự bán mọi tín hiệu thoát (chủ quỹ duyệt 22/11/2026)
+        nd += f"\n🤖 Đã gửi máy Mac lệnh BÁN HẾT {', '.join(da_gui)} (lô chẵn + lẻ, giá theo sổ lệnh){DUYET}"
     if nd:
         _in(nd, rieng_tu=True) if khong_gui else gui(nd, rieng_tu=True)
     if not os.environ.get("GITHUB_ACTIONS"):
@@ -553,7 +556,9 @@ def _canh_bao_ban(bay_gio, vt, khong_gui):
                 f"{ma} – {vi_the.NHAN.get(kb['muc'], kb['muc'])} @ {bieu_do_moc._f(gia)}", gia_nay=gia,
                 ngay_mua=v.get("ngay_mua") or None) if kb.get("he_thoat") else None
             nut = [[(f"🛑 Bán hết {ma} (giá theo sổ lệnh)", f"dl|B|{ma}")]] if kb["muc"] in vi_the.BAN_ATO else None
-            if kb["muc"] == "CAT_LO" and not kb.get("gdkhq") and moi and _tu_dat(bay_gio, khong_gui, "B", ma):   # GDKHQ: chỉ báo
+            if kb["muc"] in vi_the.BAN_ATO and not kb.get("gdkhq") and (moi or kb["muc"] != "CAT_LO") \
+                    and not (kb["muc"] == "BAN_YEU_CAU" and kb["ngay_lenh"].normalize() > pd.Timestamp(bay_gio).normalize()) \
+                    and _tu_dat(bay_gio, khong_gui, "B", ma):  # mọi tín hiệu bán của hệ (22/11/2026); GDKHQ: chỉ báo
                 nd, nut = nd + f"\n🤖 Đã gửi máy Mac lệnh BÁN HẾT {ma} (lô chẵn + lẻ, giá theo sổ lệnh){DUYET}", None
             gui(nd, rieng_tu=True, anh=anh, nut=nut) if not khong_gui else _in(nd, rieng_tu=True)
             if anh and os.path.exists(anh):

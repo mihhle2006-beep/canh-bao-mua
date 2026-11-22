@@ -8,7 +8,8 @@ thành "# ⚠ …" như nhập tay. "/help" → trả cú pháp.
   • Mỗi dòng ghi kèm "# tg:<update_id>" → chạy trùng (vòng quét + lịch mỗi giờ) không ghi 2 lần.
   • CHO=<giây> (≤ 50): chờ tin tới (long-poll) – vòng quét gọi lặp trong lúc đợi mốc 15' → trong phiên trả lời sau vài giây.
   • Repo bot CÔNG KHAI → log chỉ in SỐ LƯỢNG, không in nội dung lệnh; trả lời qua Telegram (riêng tư).
-TỰ ĐẶT LỆNH (tu_dat, gọi từ chay.py): tin CHẠM CẮT LỖ → bán hết (lô chẵn + lô lẻ) – không cần bấm.
+TỰ ĐẶT LỆNH (tu_dat, gọi từ chay.py): tin BÁN của hệ (chạm cắt lỗ, gãy MA10 tuần, hết hạn, hệ bắt đáy bán, bạn yêu cầu
+bán – trước giờ mở cửa hoặc trong phiên) → bán hết (lô chẵn + lô lẻ) – không cần bấm.
 NÚT trên tin cảnh báo (bot TELEGRAM_TOKEN, chat TELEGRAM_CHAT_ID) – LUÔN HỎI LẠI: bấm "🛒 <số CP>" (tin MUA ★ / mã dự
 phòng) hoặc "🛑 Bán hết" → 1 tin xác nhận [✅ Mua / Bán] [❌ Thôi] (5 phút) → ✅: repository_dispatch "dat_lenh" tới danh-muc
 → máy Mac đặt lệnh (dmuc/dnse_lenh.py theo_yeu_cau, tự tách lô chẵn + lô lẻ), ghi kết quả vào danh-muc
@@ -173,7 +174,7 @@ def gui_may_mac(yc, gh, repo):
 
 
 def tu_dat(ben, ma, kl=0, gia=0, env=os.environ):
-    """Tin CHẠM CẮT LỖ (chay.py) → gửi lệnh tới máy Mac luôn, không nút. id theo bên + mã + ngày → mỗi ngày
+    """Tin BÁN của hệ (chay.py: chạm cắt lỗ, gãy MA10 tuần, hết hạn…) → gửi lệnh tới máy Mac luôn, không nút. id theo bên + mã + ngày → mỗi ngày
     tối đa 1 lệnh tự động / mã / bên (máy Mac bỏ id trùng). → True khi đã gửi. Log công khai: không in mã / số lượng."""
     gh, chat = env.get("DANH_MUC_TOKEN_GHI"), env.get("TELEGRAM_CHAT_ID")
     if not (gh and chat):

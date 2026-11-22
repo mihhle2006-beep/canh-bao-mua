@@ -674,15 +674,17 @@ def test_nhac_lenh_ato_truoc_gio_mo_cua(monkeypatch, tmp_path):
     monkeypatch.setattr(vi_the.ghi_trang_thai_ban, "__defaults__", (str(tmp_path / "tt.json"),))
     import ptcp.loc_quy_b as LQ
     monkeypatch.setattr(LQ, "doc", lambda *a, **k: {"bat_day": {"ngay": "2026-10-29", "cho_mua": ["DIG", "BBB"]}})
-    gui = []
+    gui, dat = [], []
     monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, **k: gui.append((nd, rieng_tu)))
+    monkeypatch.setattr(chay, "_tu_dat", lambda bg, kg, ben, ma, *a: dat.append((ben, ma)) or True)
     assert chay.nhac_ato(pd.Timestamp("2026-10-30 08:45"), vt) == 0
     (nd, rieng), = gui
+    assert dat == [("B", "AAA"), ("B", "BBB")] and "🤖 Đã gửi máy Mac lệnh BÁN HẾT AAA, BBB" in nd   # tự bán (22/11/2026)
     assert rieng and nd.startswith("⏰ LỆNH ATO HÔM NAY 30/10 – đặt trước 9:00")
     assert "🔴 BÁN AAA 300 CP – bạn yêu cầu bán" in nd and "🔴 BÁN BBB 100 CP – đóng cửa tuần < MA10 tuần" in nd
     assert "🟢 MUA (hệ bắt đáy): DIG –" in nd                                      # BBB đang giữ → không mua
     chay.nhac_ato(pd.Timestamp("2026-10-30 08:50"), vt)
-    assert len(gui) == 1                                                           # 1 lần / ngày
+    assert len(gui) == 1 and len(dat) == 2                                         # 1 lần / ngày
     tt = vi_the.doc_trang_thai_ban()
     assert not vi_the.can_bao_ban("BBB", "BAN_TUAN", "2026-10-30 09:15", tt)          # trong phiên không báo lặp
     assert vi_the.tin_nhac_ato([], [], "2026-10-30") is None
