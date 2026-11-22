@@ -147,20 +147,12 @@ td.ma{font-weight:650;position:sticky;left:0;background:inherit}
 tbody tr{background:var(--the)}
 .nhan-san{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:600;color:var(--mo);border:1px solid var(--vien);border-radius:4px;padding:0 4px}
 .o-pt{display:inline-block;min-width:62px;padding:2px 6px;border-radius:5px;font-weight:600}
-/* bảng Đánh giá kiểu FiinTrade (tab Lọc mã → chiến lược CANSLIM): chữ A–F + tiêu chí đạt / không đạt */
-.chu-dg{display:inline-block;min-width:22px;padding:1px 6px;border-radius:5px;font-weight:700;font-size:12px;text-align:center;background:var(--luoi);color:var(--chu2)}
-.chu-A{background:#e3ecff;color:#2453b8}.chu-B{background:#e0f3e7;color:#17723f}.chu-C{background:#fbf1d4;color:#8a6300}
-.chu-D{background:#fde7d6;color:#a3480b}.chu-F{background:#fde2e0;color:#b4261b}
-.nho-dg{color:var(--mo);font-size:11.5px}
-tr.dg-dong{cursor:pointer}tr.dg-dong:hover td{background:#f7faf8}
-tr.dg-ct td{background:#fafbfd;white-space:normal;font-size:12.5px;color:var(--chu2)}
+/* dòng phụ dưới mã (hạng, chiến lược khác, bot) + chữ dài / ngắn theo màn hình */
 .dg-boc{position:sticky;left:12px;max-width:calc(100vw - 48px)}#loc-than .dg-boc{max-width:var(--rong,calc(100vw - 48px))}
-.dg-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px 18px;padding:4px 0}
-.dg-luoi ul{list-style:none;margin:4px 0 0;padding:0}.dg-luoi li{padding:1px 0}.dg-luoi .mo-dg{color:var(--mo)}
 .dg-ngan{display:none}
-@media (max-width:600px){                 /* điện thoại: chỉ chữ A–F, cột viết tắt, chi tiết 1 dòng – xem đủ tiêu chí trên máy tính */
-  .an-dt,.dg-dai,#loc-than .nho-dg{display:none}span.dg-ngan{display:inline}div.dg-ngan{display:block}
-  .dg-boc{max-width:calc(100vw - 72px)}tr.dg-dong td{padding-left:5px;padding-right:5px}}
+@media (max-width:600px){                 /* điện thoại: cột phụ ẩn, chữ ngắn */
+  .an-dt,.dg-dai{display:none}span.dg-ngan{display:inline}div.dg-ngan{display:block}
+  .dg-boc{max-width:calc(100vw - 72px)}}
 .bien{display:block;width:150px;height:14px}
 .khung-bang-dau{padding:10px 14px;border-bottom:1px solid var(--luoi);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .khung-bang-dau b{font-size:14.5px}
@@ -659,12 +651,12 @@ function cot_nho(ls, w = 150, h = 30) {
   return s;
 }
 const KY_N = [["1", "1 phiên"], ["5", "5"], ["10", "10"], ["20", "20 phiên"]];
-function nut_n(id, gt, doi) {               // nút chọn số phiên (1 · 5 · 10 · 20 – như FiinTrade)
+function nut_n(id, gt, doi) {               // nút chọn số phiên (1 · 5 · 10 · 20)
   const h = $("#" + id); if (!h) return;
   h.innerHTML = KY_N.map(([v, t]) => `<button data-n="${v}" aria-pressed="${String(gt) === v}">${t}</button>`).join("");
   h.querySelectorAll("button").forEach(b => b.onclick = () => { doi(+b.dataset.n); luu_st(); ve_tat(); });
 }
-// DÒNG TIỀN THEO NGÀNH (kiểu FiinTrade): gộp dòng lọc (mọi mã có ngành) – % giá gia quyền GTGD 20 phiên, số mã tăng /
+// DÒNG TIỀN THEO NGÀNH: gộp dòng lọc (mọi mã có ngành) – % giá gia quyền GTGD 20 phiên, số mã tăng /
 // giảm, GTGD phiên so trung bình 20 phiên, khối ngoại ròng; xếp theo GTGD; bấm ngành → tab Lọc mã lọc ngành đó
 function ve_dtn() {
   const t = $("#dtn"); if (!t || !L) return;
@@ -835,16 +827,15 @@ const DEM_RIENG = k => k === "theo_doi" ? TDX().length : k === "bot" ? Object.ke
   : k.startsWith("cl_") ? ((DS_CL[+k.slice(3)] || {}).ma || []).length : null;
 const ten_gon = t => t.replace(/\s*\(.*\)$/, "");
 const ky_cl = () => { const c = D.chien_luoc; return c ? ` – kỳ ${ngay_du(c.ngay_can)}${c.ky_sau ? " · kỳ sau " + ngay_du(c.ky_sau) : ""}` : ""; };
-const MO_TA_CL = {                  // cách chọn bằng lời (chỉ tên tiêu chí, không ghi ngưỡng) – chiến lược không phải CANSLIM
-  "Vốn hoá lớn ít biến động": "nhóm vốn hoá lớn nhất, ưu tiên mã giá ít biến động",
-  "Vòng quay thấp có lãi": "mã có lãi, ưu tiên giá trị giao dịch thấp nhất so với vốn hoá (ít bị đầu cơ)"};
+const MO_TA_CL = {                  // cách chọn bằng lời (chỉ tên tiêu chí, không ghi ngưỡng)
+  "CANSLIM": "mã đạt nhiều tiêu chí CANSLIM, ưu tiên mã giá ít biến động",
+  "Bluechip": "nhóm vốn hoá lớn nhất, ưu tiên mã giá ít biến động",
+  "Ít đầu cơ": "mã có lãi, ưu tiên giá trị giao dịch thấp nhất so với vốn hoá"};
 function mo_ta_cl(c) {
   return `${c.ten}${MO_TA_CL[c.ten] ? ` (${MO_TA_CL[c.ten]})` : ""} · ${c.de_xuat ? "đạt kiểm định, đề xuất cho người làm tay" : "đạt kiểm định"} (thắng VN-Index và rổ ngẫu nhiên cả 2013–19 lẫn 2020→nay) · backtest `
     + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`
     + " · top 15, mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11 (không dính bot). Dưới mỗi mã: các chiến lược khác (chưa đạt) cũng chọn mã đó"
-    + (/CANSLIM/.test(c.ten) ? " · 5 tiêu chí CANSLIM: C lãi quý tăng mạnh, A lãi năm tăng, N gần đỉnh 52 tuần, S thanh khoản tăng, L giá mạnh hơn thị trường"
-      + " · Đánh giá kiểu FiinTrade tại ngày chọn: Giá trị / Tăng trưởng / Động lực / VGM xếp chữ A–F theo hạng điểm trong 150 mã thanh khoản lớn"
-      + " (A = 20% tốt nhất), số = tiêu chí đạt / tổng; bấm mỗi dòng để xem từng tiêu chí" : "");
+    + (/CANSLIM/.test(c.ten) ? " · 5 tiêu chí CANSLIM: C lãi quý tăng mạnh, A lãi năm tăng, N gần đỉnh 52 tuần, S thanh khoản tăng, L giá mạnh hơn thị trường" : "");
 }
 function dung_cl() {
   const C = D.chien_luoc || {}; DS_CL = C.chien_luoc || [];
@@ -863,9 +854,7 @@ function dung_loc() {
   dung_cl();
   for (const r of L) { r.ten = (D.ten || {})[r.ma] || ""; r.tim = bo_dau(r.ma + " " + r.ten);
     r.cl_n = CLM[r.ma] ? CLM[r.ma].length : null; for (const x of CLM[r.ma] || []) r["cl_h" + x.i] = x.hang;
-    const c = CS[r.ma];                                   // khoá xếp bảng Đánh giá (điểm FT, chữ VGM, CANSLIM, vốn hoá)
-    if (c) { r.vh = c.von_hoa ?? null; r.dg_v = c.v ? c.v[1] : null; r.dg_g = c.g ? c.g[1] : null; r.dg_m = c.m ? c.m[1] : null;
-      r.dg_t = c.vgm && c.vgm[0] ? CHU_SO[c.vgm[0]] : null; r.cs_d = c.diem ?? null; } }
+ }
   const sel = $("#loc-nganh"), cu = ST.nganh;
   sel.innerHTML = `<option value="">Mọi ngành</option>` + D.nganh.map((n, i) => `<option value="${i}">${esc(n)}</option>`).join("");
   sel.value = cu;
@@ -898,7 +887,7 @@ function ve_loc() {
   chon.onchange = e => { ST.nhom = e.target.value; ST.sap = null; ST.so_dong = SO_DONG(); luu_st(); ve_loc(); };
   const [k, nhan, mo_ta, f, sap0, chieu0] = NHOM_MAP[ST.nhom] || NHOM_MAP.gt_lon;
   const la_td = k === "theo_doi", la_bot = k === "bot", la_cl = k.startsWith("cl_");
-  const la_dg = la_cl && co_dg(+k.slice(3)), cot = la_dg ? COT_DG(+k.slice(3)) : COT;
+  const cot = COT;
   let ds = la_td ? L.filter(r => TDX().includes(r.ma) && (!ST.tim.trim() || r.tim.includes(bo_dau(ST.tim.trim()))))
     : la_bot ? L.filter(r => BOT[r.ma]) : la_cl ? L.filter(f) : f ? nen.filter(f) : nen.slice();
   $("#td-cong-cu").hidden = !la_td || !TD.length;
@@ -910,8 +899,7 @@ function ve_loc() {
     + (la_cl ? ky_cl() : "");
   if (la_cl) { const c = DS_CL[+k.slice(3)] || {};                // điện thoại: mô tả 1 dòng (chủ quỹ 22/11 "điện thoại ghi ngắn gọn")
     $("#loc-mo-ta").innerHTML = `<span class="dg-dai">${esc(mo_ta)}</span><span class="dg-ngan">Đạt kiểm định · backtest `
-      + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`
-      + `${la_dg ? " · chữ A–F = hạng trong 150 mã · bấm dòng xem tóm tắt" : ""}</span>`;
+      + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}</span>`;
   } else if (la_bot && D.tin_hieu) $("#loc-mo-ta").innerHTML = `<span class="dg-dai">${esc(mo_ta)}</span><span class="dg-ngan">Vùng mua · cắt lỗ · mục tiêu · bấm mã xem phân tích</span>`;
   else $("#loc-mo-ta").textContent = la_bot && !D.tin_hieu ? "Chưa có danh sách mua" : mo_ta;
   $("#loc-so").textContent = `${la_td ? TDX().length : ds.length} mã`;
@@ -921,15 +909,12 @@ function ve_loc() {
   const than = $("#loc-than");
   if (!ds.length && !(la_td && TDX().length)) { than.innerHTML = `<tr><td colspan="${cot.length}" class="trong">${la_td ? "Chưa có mã nào – bấm ☆ cạnh mã ở các nhóm khác (hoặc tìm mã rồi bấm ☆) để thêm" : la_bot ? "Bot chưa có danh sách mua cho phiên này" : la_cl ? "Chưa có danh sách chiến lược" : "Không có mã nào khớp bộ lọc"}</td></tr>`; $("#loc-them").hidden = true; return; }
   const thieu = la_td ? TDX().filter(m => !L.some(r => r.ma === m)) : [];
-  than.innerHTML = ds.slice(0, ST.so_dong).map(r => la_dg ? dong_dg(r, k, cot.length)
-    : dong_html(r) + (la_bot ? dong_bot(r) : la_cl ? dong_cl(r, k) : "")).join("") + thieu.map(m =>
+  than.innerHTML = ds.slice(0, ST.so_dong).map(r => dong_html(r) + (la_bot ? dong_bot(r) : la_cl ? dong_cl(r, k) : "")).join("") + thieu.map(m =>
     `<tr><td class="ma trai">${GIU.includes(m) ? `<span class="sao">💼</span>` : `<button class="sao" aria-pressed="true" data-ma="${esc(m)}" aria-label="Bỏ theo dõi ${esc(m)}">★</button>`}${esc(m)}</td>
      <td class="trai" colspan="${COT.length - 1}" style="color:var(--mo)">Không có trong dữ liệu (mã không giao dịch / thanh khoản quá thấp)</td></tr>`).join("");
   than.querySelectorAll(".sao").forEach(b => b.onclick = e => { e.stopPropagation(); doi_td(b.dataset.ma); });
   const boc = than.closest(".bang-boc");                          // dòng phụ (hạng, chiến lược khác, bot) gói trong khung bảng
   if (boc) than.style.setProperty("--rong", Math.max(200, boc.clientWidth - 24) + "px");
-  than.querySelectorAll("tr.dg-dong").forEach(tr => tr.onclick = e => { if (e.target.closest("a,button")) return;
-    const ct = tr.nextElementSibling; if (ct && ct.classList.contains("dg-ct")) ct.hidden = !ct.hidden; });
   $("#loc-them").hidden = ds.length <= ST.so_dong;
   $("#loc-them").textContent = `Xem thêm (${ds.length - ST.so_dong} mã)`;
 }
@@ -942,53 +927,6 @@ function dong_bot(r) {
 }
 const ngay_du = s => s ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : "";
 const TC_CS = [["C", "lãi quý tăng mạnh"], ["A", "lãi năm tăng"], ["N", "gần đỉnh 52 tuần"], ["S", "thanh khoản tăng"], ["L", "giá mạnh hơn thị trường"]];
-// BẢNG ĐÁNH GIÁ kiểu FiinTrade (chủ quỹ 22/11: "trình bày cái ft canslim … như này") – danh-muc bt_loc_ma.danh_gia_ft tại ngày chọn;
-// thứ tự tiêu chí = bit (chỉ tên, không ghi ngưỡng)
-const TC_V = ["Lợi suất lợi nhuận E/P cao", "Vốn hoá lớn hơn TB ngành", "Cổ tức tiền mặt cao", "P/B thấp hơn ngành và thị trường",
-  "Tiền mặt / tổng tài sản cao hơn ngành", "EV/EBITDA thấp hơn ngành", "Biên lãi gộp ổn định / tăng", "Dòng tiền kinh doanh dương / tăng",
-  "Nợ vay / doanh thu thấp"];
-const TC_G = ["Lãi quý và doanh thu năm tăng", "LNST tăng 3 năm liền", "Biên lãi gộp cải thiện", "Doanh thu tăng 3 năm liền", "PEG hấp dẫn",
-  "ROE cao cả 3 năm", "Tài sản và thanh khoản đủ lớn"];
-const TC_M = ["RSI tăng 3 phiên, chưa quá mua", "Giá trên SMA5", "Giá trên SMA20", "Giá trên SMA100", "SMA5 trên SMA20", "SMA20 trên SMA100",
-  "Tăng 2 phiên liền", "Tăng 4 tuần liền", "Tăng 4 tháng liền"];
-const CHU_SO = {A: 5, B: 4, C: 3, D: 2, F: 1};
-const co_dg = i => /CANSLIM/.test((DS_CL[i] || {}).ten || "") && Object.values(CS).some(x => x.v || x.g || x.m);
-const nhan2 = (dai, ngan) => `<span class="dg-dai">${dai}</span><span class="dg-ngan">${ngan}</span>`;
-const COT_DG = i => [["ma", "Mã", 1], ["cl_h" + i, "#", 0, 1], ["nganh", "Ngành", 1], ["vh", "Vốn hoá", 0, 1], ["dg_v", nhan2("Giá trị", "GT")],
-  ["dg_g", nhan2("Tăng trưởng", "TT")], ["dg_m", nhan2("Động lực", "ĐL")], ["dg_t", "VGM"], ["cs_d", "CANSLIM", 0, 1], ["gia", "Giá", 0, 1], ["pt", "±%"]];
-function chip_dg(a, ten, tc) {
-  if (!a) return "–";
-  const ds = tc.map((t, j) => `${a[3] >> j & 1 ? "✓" : "✗"} ${t}`).concat(a.length > 4 ? [`Thanh khoản ${a[4]}/3 điểm`] : []);
-  return `<span class="chu-dg chu-${a[0] || "x"}" title="${esc(`${ten} ${a[1]}/${a[2]}\n${ds.join("\n")}`)}">${a[0] || "–"}</span> <span class="nho-dg so">${a[1]}/${a[2]}</span>`;
-}
-function khoi_dg(ten, a, tc) {
-  if (!a) return "";
-  return `<div><b>${ten} <span class="chu-dg chu-${a[0] || "x"}">${a[0] || "–"}</span> <span class="so">${a[1]}/${a[2]}</span></b><ul>`
-    + tc.map((t, j) => `<li class="${a[3] >> j & 1 ? "t" : "mo-dg"}">${a[3] >> j & 1 ? "✓" : "✗"} ${esc(t)}</li>`).join("")
-    + (a.length > 4 ? `<li class="${a[4] ? "t" : "mo-dg"}">Thanh khoản ${a[4]}/3 điểm</li>` : "") + "</ul></div>";
-}
-function dong_dg(r, k, n) {
-  const c = CS[r.ma] || {}, i = +k.slice(3), x = CLM[r.ma] || [], khac = x.filter(y => y.i !== i);
-  const vh = c.von_hoa != null ? nf(c.von_hoa, c.von_hoa >= 100 ? 0 : 1) : "–";
-  const hn = c.vgm && c.vgm[1] ? ` <span class="nho-dg so" title="Hạng VGM trong ngành (trong 150 mã thanh khoản lớn)">${c.vgm[1]}/${c.vgm[2]}</span>` : "";
-  const so_dg = (ten, a) => a ? `${ten} <b class="so">${a[1]}/${a[2]}</b>` : "";
-  const ngan = [so_dg("Giá trị", c.v), so_dg("Tăng trưởng", c.g), so_dg("Động lực", c.m),
-    `CANSLIM <b class="so">${c.diem ?? "–"}/5</b> (${TC_CS.filter(([q]) => c[q]).map(([q]) => q).join("") || "–"})`,
-    c.von_hoa != null ? `vốn hoá ${vh} nghìn tỷ` : ""].filter(Boolean).join(" · ")
-    + `<br><span style="color:var(--mo)">Từng tiêu chí: xem trên máy tính</span>`;
-  const cs = `<div><b>CANSLIM <span class="so">${c.diem ?? "–"}/5</span></b><ul>` + TC_CS.map(([q, t]) =>
-    `<li class="${c[q] ? "t" : "mo-dg"}">${c[q] ? "✓" : "✗"} ${q} – ${t}</li>`).join("") + "</ul></div>";
-  return `<tr class="dg-dong" title="Bấm để xem tiêu chí đạt / không đạt">${o_ma(r)}<td class="so an-dt">${r["cl_h" + i] ?? "–"}</td>
-    <td class="trai cot-nganh" style="color:var(--chu2)">${esc(D.nganh[r.nganh] || c.nganh || "")}</td><td class="so an-dt">${vh}</td>
-    <td>${chip_dg(c.v, "Giá trị", TC_V)}</td><td>${chip_dg(c.g, "Tăng trưởng", TC_G)}</td><td>${chip_dg(c.m, "Động lực", TC_M)}</td>
-    <td>${c.vgm && c.vgm[0] ? `<span class="chu-dg chu-${c.vgm[0]}">${c.vgm[0]}</span>` : "–"}${hn}</td>
-    <td class="so an-dt">${c.diem ?? "–"}/5</td><td class="so an-dt ${lop_gia(r)}">${nf(r.gia)}</td>
-    <td class="so"><span class="o-pt ${lop_gia(r)}" style="background:${nen_pt(r)}">${dau(r.pt)}%</span></td></tr>
-    <tr class="dg-ct" hidden><td class="trai" colspan="${n}"><div class="dg-boc"><div class="dg-ngan">${ngan}</div>`
-    + `<div class="dg-luoi dg-dai">${khoi_dg("Giá trị", c.v, TC_V)}${khoi_dg("Tăng trưởng", c.g, TC_G)}`
-    + `${khoi_dg("Động lực", c.m, TC_M)}${cs}</div>${khac.length ? `<div class="dg-dai">Cũng có trong ${khac.length}/${DS_CL.length - 1} chiến lược khác (chưa đạt): `
-    + khac.map(y => `${esc(ten_gon(DS_CL[y.i].ten))} #${y.hang}`).join(" · ") + "</div>" : ""}</div></td></tr>`;
-}
 function dong_cl(r, k) {
   const x = CLM[r.ma] || [], i = +k.slice(3), cua = x.find(y => y.i === i), khac = x.filter(y => y.i !== i), c = CS[r.ma];
   if (!cua) return "";
