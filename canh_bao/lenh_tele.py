@@ -174,7 +174,8 @@ def gui_may_mac(yc, gh, repo):
 
 
 def tu_dat(ben, ma, kl=0, gia=0, env=os.environ):
-    """Tin BÁN của hệ (chay.py: chạm cắt lỗ, gãy MA10 tuần, hết hạn…) → gửi lệnh tới máy Mac luôn, không nút. id theo bên + mã + ngày → mỗi ngày
+    """Tin BÁN của hệ (chay.py: chạm cắt lỗ, gãy MA10 tuần, hết hạn…) → gửi lệnh tới máy Mac luôn, không nút.
+    id theo bên + mã + ngày → mỗi ngày
     tối đa 1 lệnh tự động / mã / bên (máy Mac bỏ id trùng). → True khi đã gửi. Log công khai: không in mã / số lượng."""
     gh, chat = env.get("DANH_MUC_TOKEN_GHI"), env.get("TELEGRAM_CHAT_ID")
     if not (gh and chat):
