@@ -60,6 +60,7 @@ LICH = [
     ("gia_lap.yml", "30 17 * * 1-5", {}, 50),
     ("gia_lap.yml", "53 18 * * 1-5", {}, 60),
     ("suc_khoe.yml", "55 19 * * 1-5", {}, 240),
+    ("kho_quy.yml", "41 20 * * *", {}, 240),                              # NAV quỹ mở (lịch GitHub hay tới 03–05 giờ sáng)
     ("tong_ket_tuan.yml", "17 20 * * 5", {}, 240),
     ("bctc_moi_dem.yml", "13 22 * * *", {}, 300),
     ("doc_bctn.yml", "17 22 * * *", {}, 300),
@@ -86,7 +87,7 @@ BO_NEU_DANG_CHAY = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml",   # đ
                     "bang-thi-truong/bang.yml"}
 # lỗi lần đầu → tự chạy lại job lỗi 1 lần (dựng dữ liệu / trang: lỗi hay do nguồn chập chờn, chạy lại không gửi tin trùng)
 CHAY_LAI = {"bang_thi_truong.yml", "tra_cuu_web.yml", "bctc_moi_dem.yml", "doc_bctn.yml", "loc_quy_b.yml",
-            "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml",
+            "kho_bctc.yml", "boi_so_nganh.yml", "ke_hoach_dhcd.yml", "tra_tai_lieu.yml", "tai_nen_15p.yml", "kho_quy.yml",
             "bang.yml"}                                         # repo bang-thi-truong: vòng bảng chết giữa buổi → chạy lại
 KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu tự nhắn khi lỗi
              "doc_trang.yml", "chan_doan.yml", "dnse_kiem.yml",     # công cụ bấm tay – người bấm tự xem

@@ -8,7 +8,8 @@ name: Kho quy dau tu
 on:
   workflow_dispatch:
   schedule:
-    - cron: "41 13 * * *"          # 20:41 giờ VN mỗi ngày (quỹ cập nhật NAV buổi tối)
+    - cron: "41 13 * * *"          # 20:41 giờ VN mỗi ngày (quỹ cập nhật NAV buổi tối) – đồng hồ gọi đúng giờ; lịch GitHub
+                                   # (hay tới 03:00–05:00 sáng hôm sau) chỉ dự phòng, job gac bỏ lượt trễ đã chạy
 
 permissions:
   contents: read
@@ -18,7 +19,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml)
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: kho_quy.yml
+    permissions:
+      actions: read
+      contents: read
   cap_nhat:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
     runs-on: ubuntu-24.04
     defaults:
       run:

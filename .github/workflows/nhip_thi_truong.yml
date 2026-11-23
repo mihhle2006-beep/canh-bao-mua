@@ -1,18 +1,15 @@
 # NHỊP TRA CỨU MÃ: lịch "*/5" của GitHub hay trễ / bỏ hẳn (05/11/2026: bang_thi_truong.yml KHÔNG chạy theo lịch lần
 # nào – trang đứng từ 14:16) → 1 job chạy suốt buổi, 15' một lần gọi workflow_dispatch bang_thi_truong.yml (dispatch bằng
-# GITHUB_TOKEN vẫn tạo run mới). Lịch dưới chỉ cần bắn ĐƯỢC 1 lần / buổi: nhiều mốc dự phòng; lần đến sau thấy đã có máy
-# nhịp đang chạy → thoát ngay. Sáng: tới 11:35; chiều: tới 15:12 (gọi thêm 1 lần chốt phiên sau 15:05).
+# GITHUB_TOKEN vẫn tạo run mới). Đồng hồ (cong_cu/dong_ho.py) gọi đúng 08:45 / 12:43; lịch GitHub dưới chỉ dự phòng khi đồng
+# hồ đứt (24/11/2026 bỏ 4 mốc dự phòng 9:17 / 10:07 / 13:17 / 14:07 – lịch GitHub tới trễ 3–9 giờ, chỉ sinh lượt thừa buổi
+# tối). Lần đến sau thấy đã có máy nhịp đang chạy → thoát ngay. Sáng: tới 11:35; chiều: tới 15:12 (chốt phiên sau 15:05).
 # Repo công khai → phút Actions miễn phí; job không checkout code, không đụng repo kín.
 name: Nhip bang thi truong
 
 on:
   schedule:
     - cron: "45 1 * * 1-5"         # 8:45 giờ VN
-    - cron: "17 2 * * 1-5"         # dự phòng 9:17
-    - cron: "7 3 * * 1-5"          # dự phòng 10:07
     - cron: "43 5 * * 1-5"         # 12:43
-    - cron: "17 6 * * 1-5"         # dự phòng 13:17
-    - cron: "7 7 * * 1-5"          # dự phòng 14:07
   workflow_dispatch:
 
 permissions:
