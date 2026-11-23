@@ -8,8 +8,8 @@
 # trường (nhóm CHIẾN LƯỢC) đọc ở lượt dựng trang kế tiếp.
 # che_do = phan_bo: backtest PHƯƠNG PHÁP PHÂN BỔ DANH MỤC (bt_phan_bo.py – 13 phương pháp của Cẩm nang × 10 loại danh mục
 # × 200 danh mục ngẫu nhiên, cân đầu tháng 2016 → nay; luật "tối ưu" đặt trước trong docstring). Chỉ bấm tay.
-# che_do = loc_ma_pb: như loc_ma + VÒNG 3 bt_phan_bo (cách cầm 3 chiến lược tab Lọc mã: lọc xu hướng, MA200, Risk Parity,
-# HRP, GMV…; luật đặt trước). Không ghi danh sách chiến lược lên trang. Chỉ bấm tay.
+# che_do = loc_ma_pb: như loc_ma + cách cầm 3 chiến lược tab Lọc mã (VÒNG 4 bt_cach_cam: bóc tách lãi + biến thể tăng lãi
+# so cách cầm live "1/N + lọc xu hướng + MA200"; luật đặt trước). Không ghi danh sách chiến lược lên trang. Chỉ bấm tay.
 name: Sieu co phieu
 
 on:
@@ -120,5 +120,6 @@ jobs:
             danh-muc/bt_loc_ma.xlsx
             danh-muc/bt_phan_bo.xlsx
             danh-muc/bt_phan_bo_ro.xlsx
+            danh-muc/bt_cach_cam.xlsx
           retention-days: 30
           if-no-files-found: ignore
