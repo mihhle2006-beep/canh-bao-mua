@@ -1,6 +1,7 @@
 # TỔNG KẾT TUẦN GIẢ LẬP – 20:17 tối thứ Sáu: tin + Excel gửi Telegram giả lập. Danh mục thật nằm trong file HTML
 # của workflow Danh muc (thứ Sáu). Code ở repo gia_lap (checkout vào gia_lap/), repo này vào gia_lap/canh-bao-mua.
 # CHẠY KÍN (repo công khai): đầu ra chương trình chỉ ghi file trong máy chạy / gửi Telegram, log chỉ in mã thoát.
+# Job lich_nghi (cùng giờ, độc lập): cập nhật lịch nghỉ giao dịch cong_cu/ngay_nghi.json – công khai, chỉ ngày + tên lễ.
 name: Tong ket tuan (gia lap)
 
 on:
@@ -74,3 +75,36 @@ jobs:
         run: |
           ma=0; python tong_ket_tuan.py > /tmp/tong_ket.txt 2>&1 || ma=$?
           echo "Tổng kết tuần: mã thoát $ma"; exit $ma
+
+  lich_nghi:                       # LỊCH NGHỈ GIAO DỊCH – cập nhật hằng tuần trước tuần mới (cong_cu/ngay_nghi.py, độc lập với
+    needs: gac                     # tổng kết: lỗi bên này không chặn bên kia). Công khai: chỉ ngày + tên lễ.
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write              # ghi cong_cu/ngay_nghi.json
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Cài thư viện – holidays BẢN MỚI NHẤT (không cache – bản cũ thiếu ngày lễ mới, vd 24/11/2026)
+        run: pip install -q -U holidays requests "pandas>=3,<4" "numpy>=2,<3" > /dev/null
+      - name: Cập nhật lịch nghỉ (thư viện + cấu hình + phiên thật VNINDEX + quét tin)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python cong_cu/ngay_nghi.py --cap_nhat
+      - name: Lưu lịch nghỉ
+        if: ${{ !cancelled() }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cong_cu/ngay_nghi.json
+          git diff --cached --quiet && echo "Không có thay đổi" && exit 0
+          git commit -q -m "Lịch nghỉ giao dịch $(date -u +%F) (cập nhật hằng tuần)"
+          for i in 1 2 3; do
+            git pull -q --rebase -X theirs --autostash && git push -q && exit 0
+            git rebase --abort 2>/dev/null || true; sleep $((i * 5))
+          done
+          echo "::error::Không đẩy được lịch nghỉ sau 3 lần"; exit 1
