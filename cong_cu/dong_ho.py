@@ -15,6 +15,7 @@ chạy 10:24, Danh mục 08:30 chạy 15:18, Kiểm thử 07:41 chạy 14:22, Qu
   • Giám sát 5 phút / lần: workflow trên main vừa LỖI → workflow dữ liệu / trang (CHAY_LAI – chạy lại không gửi tin
     trùng) tự chạy lại job lỗi 1 lần; còn lại, hoặc chạy lại vẫn lỗi → nhắn Telegram NGAY (không đợi tin 🩺 19:55).
   • Lỗi workflow repo danh-muc (đồng bộ DNSE, đặt lệnh) và bang-thi-truong (vòng bảng): cùng GiamSat, tin có nhãn repo.
+  • Ngày nghỉ lễ (bảng NGHI_LE): không gọi vòng DNSE / xin OTP / vòng bảng, không báo máy Mac / bảng đứng.
   • Máy Mac (cùng nhịp 5 phút, T2–T6 08:30–15:10): job của repo kín chờ máy self-hosted > 10 phút (Mac ngủ / tắt / mất
     mạng → vòng đồng bộ DNSE, lệnh đứng) → nhắn Telegram NGAY 1 tin / đợt; máy nhận việc lại → 1 tin báo đã ổn.
 Chỉ dùng thư viện chuẩn (không cần pip). Log chỉ in tên workflow / giờ.
@@ -93,6 +94,16 @@ KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu t�
 LOI = ("failure", "timed_out", "startup_failure")
 GIAM_SAT_GIAY = 300
 MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
+# NGÀY NGHỈ LỄ T2–T6 (sở không giao dịch): đồng hồ chỉ dùng thư viện chuẩn (job không cài `holidays`) → bảng tĩnh = lễ VN
+# của thư viện `holidays` + canh_bao/cau_hinh.NGAY_NGHI_GIAO_DICH (tests/test_dong_ho.py đối chiếu – thiếu năm mới thì
+# thêm: python -c "import holidays; print(sorted(f'{d}' for d in holidays.country_holidays('VN', years=2028) if d.weekday() < 5))").
+# Ngày lễ: không gọi việc trong phiên ở máy Mac / vòng bảng (NGHI_LE_BO), không báo "Mac chưa nhận việc" / "bảng đứng".
+NGHI_LE = frozenset((
+    "2026-01-01", "2026-01-02", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-04-27",
+    "2026-04-30", "2026-05-01", "2026-08-31", "2026-09-01", "2026-09-02", "2026-11-24",   # 24/11: Ngày Văn hoá VN (lần đầu)
+    "2027-01-01", "2027-02-04", "2027-02-05", "2027-02-08", "2027-02-09", "2027-02-10", "2027-04-16", "2027-04-30",
+    "2027-05-03", "2027-09-02", "2027-09-03", "2027-11-24"))
+NGHI_LE_BO = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml", "bang-thi-truong/bang.yml"}
 MAC_GIO = (("08:30", "11:40"), ("12:45", "15:10"))                 # T2–T6 giờ VN: vòng DNSE 08:35, lệnh, đo trong phiên –
                                                                     # nghỉ trưa không báo (Mac ngủ trưa; vòng DNSE sáng dừng 11:45)
 BANG_TRE_PHUT = 4                                                   # bảng thị trường không có lượt mới quá ngần này → nhắn
@@ -102,6 +113,18 @@ TOKEN_CON_NGAY = 14
 
 
 # ---------------------------------------------------------------- lịch kiểu cron (giờ VN)
+def nghi_le(t):
+    """t (datetime) rơi vào ngày nghỉ lễ của sở (giờ VN)? Có thư viện `holidays` thì hợp thêm lễ VN của nó."""
+    d = t.astimezone(VN) if t.tzinfo else t
+    if f"{d:%Y-%m-%d}" in NGHI_LE:
+        return True
+    try:
+        import holidays
+    except ImportError:
+        return False
+    return d.weekday() < 5 and d.date() in holidays.country_holidays("VN", years=d.year)
+
+
 def _truong(f, gia_tri, nho, lon):
     if f == "*":
         return True
@@ -256,6 +279,10 @@ class DongHo:
             moc = moc_gan_nhat(lich, bay_gio, tre)
             if moc is None or (wf, lich, moc) in self.xong:
                 continue
+            if wf in NGHI_LE_BO and nghi_le(moc):                   # sở nghỉ: không gọi việc trong phiên
+                self.xong.add((wf, lich, moc))
+                self.in_ra(f"{bay_gio:%d/%m %H:%M} ngày nghỉ lễ – không gọi {wf} (mốc {moc:%H:%M})")
+                continue
             gh, ten = self._may(wf)
             if gh is None:                                          # chưa có token repo kín → bỏ (báo 1 lần)
                 self.xong.add((wf, lich, moc))
@@ -348,7 +375,7 @@ class MayMac:
     @staticmethod
     def trong_gio(bay_gio):
         t = bay_gio.astimezone(VN)
-        return t.isoweekday() <= 5 and any(a <= f"{t:%H:%M}" < b for a, b in MAC_GIO)
+        return t.isoweekday() <= 5 and not nghi_le(t) and any(a <= f"{t:%H:%M}" < b for a, b in MAC_GIO)
 
     def _dang_cho(self, bay_gio):
         """[(job, tên việc, phút chờ)] – mọi job self-hosted đang chờ máy (mọi độ dài)."""
@@ -411,7 +438,7 @@ class BangTre:
     @staticmethod
     def trong_gio(bay_gio):
         t = bay_gio.astimezone(VN)
-        return t.isoweekday() <= 5 and any(a <= f"{t:%H:%M}" < b for a, b in BANG_GIO)
+        return t.isoweekday() <= 5 and not nghi_le(t) and any(a <= f"{t:%H:%M}" < b for a, b in BANG_GIO)
 
     def buoc(self, bay_gio):
         """→ tin đã gửi | None."""

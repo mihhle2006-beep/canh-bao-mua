@@ -135,7 +135,7 @@ DUNG_BO_LOC = True
 BO_LOC_SO_PHIEN = 4                # theo dõi 4 PHIÊN GIAO DỊCH kế tiếp (T2–T6, trừ ngày nghỉ lễ bên dưới) – lọc lại / đạt thì tính lại
 # Lịch lễ VN tự lấy từ thư viện `holidays` (mọi năm, Tết âm lịch, nghỉ bù) + phiên thật từ VNINDEX → không cần nhập.
 # Chỉ thêm ở đây ngày HOSE nghỉ THÊM mà thư viện không có (để dự kiến hạn đúng ngay từ đầu).
-NGAY_NGHI_GIAO_DICH = ["2025-05-02", "2026-01-02"]
+NGAY_NGHI_GIAO_DICH = ["2025-05-02", "2026-01-02", "2026-11-24"]   # 24/11/2026: Ngày Văn hoá VN (NQ 28/2026/QH16)
 FILE_MA_BO_LOC = "ma_bo_loc.json"  # trạng thái theo dõi (công khai – chỉ mã & ngày)
 BO_LOC_REPO = "mihhle2006-beep/canh-bao-mua"   # 10/2026: bộ lọc (bo_loc/) chạy NGAY TRONG repo này (workflow
 #                                                 Quet dinh ky) – đọc qua GitHub API để luôn lấy bản mới nhất

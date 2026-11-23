@@ -540,3 +540,35 @@ def test_giam_sat_danh_muc():
     assert len(tin) == 1 and "❌ [danh-muc] Dong bo DNSE" in tin[0] and "Thu dat lenh" not in tin[0]
     src = open(os.path.join(GOC, "cong_cu", "dong_ho.py"), encoding="utf-8").read()
     assert 'GiamSat(gh_khac["danh-muc"]' in src and '("giám sát danh-muc", gs_dm.buoc)' in src
+
+
+def test_ngay_nghi_le_khong_goi_viec_phien_khong_bao_mac_bang():
+    """24/11/2026 (Ngày Văn hoá VN – sở nghỉ, thứ Ba): không gọi vòng DNSE / xin OTP / vòng bảng; vẫn gọi việc khác;
+    không báo máy Mac / bảng đứng. Ngày thường kế tiếp: như cũ."""
+    le = datetime(2026, 11, 24, 8, 41, tzinfo=VN)
+    assert dong_ho.nghi_le(le) and not dong_ho.nghi_le(datetime(2026, 11, 25, 9, 0, tzinfo=VN))
+    lich = [("danh-muc/dat_lenh.yml", "40 8 * * 1-5", {}, 20), ("bang-thi-truong/bang.yml", "50 8 * * 1-5", {}, 150),
+            ("nhip_thi_truong.yml", "45 8 * * 1-5", {}, 150)]
+    dm, bang, cb, log = GiaGH(), GiaGH(), GiaGH(), []
+    dh = dong_ho.DongHo(cb, lich=lich, in_ra=log.append, gh_khac={"danh-muc": dm, "bang-thi-truong": bang})
+    dh.buoc(datetime(2026, 11, 24, 8, 50, tzinfo=VN))
+    assert dm.goi_ds == [] and bang.goi_ds == [] and [w for w, _ in cb.goi_ds] == ["nhip_thi_truong.yml"]
+    assert sum("ngày nghỉ lễ" in x for x in log) == 2
+    dh2 = dong_ho.DongHo(GiaGH(), lich=lich, in_ra=lambda *_: None, gh_khac={"danh-muc": dm, "bang-thi-truong": bang})
+    dh2.buoc(datetime(2026, 11, 25, 8, 50, tzinfo=VN))
+    assert len(dm.goi_ds) == 1 and len(bang.goi_ds) == 1
+    for cls in (dong_ho.MayMac, dong_ho.BangTre):
+        assert not cls.trong_gio(datetime(2026, 11, 24, 10, 0, tzinfo=VN))
+        assert cls.trong_gio(datetime(2026, 11, 25, 10, 0, tzinfo=VN))
+    assert dong_ho.MayMac(None, gui=lambda t: 1 / 0).buoc(datetime(2026, 11, 24, 10, 0, tzinfo=VN)) is None
+
+
+def test_bang_nghi_le_tinh_khop_thu_vien_va_cau_hinh():
+    """Bảng tĩnh NGHI_LE (đồng hồ không cài `holidays`) ⊇ lễ T2–T6 của thư viện + NGAY_NGHI_GIAO_DICH (2026–2027)."""
+    holidays = __import__("pytest").importorskip("holidays")
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from canh_bao import cau_hinh
+    can = {f"{d:%Y-%m-%d}" for y in (2026, 2027) for d in holidays.country_holidays("VN", years=y) if d.weekday() < 5}
+    can |= {d for d in cau_hinh.NGAY_NGHI_GIAO_DICH if d >= "2026"}
+    assert can <= dong_ho.NGHI_LE, sorted(can - dong_ho.NGHI_LE)
+    assert "2026-11-24" in dong_ho.NGHI_LE
