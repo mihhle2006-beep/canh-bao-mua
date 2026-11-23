@@ -107,6 +107,7 @@ TRANG = [
     "ma/index.html#AAA/lich-su|#noi-dung",
     "ma/index.html#bieu-do/AAA||cho:800",                       # biểu đồ toàn màn hình
     "ma/index.html#loc||cho:500",
+    "ma/index.html#danh-muc|#dm-mau|click:#dm-mau;cho:1500",     # Danh mục của tôi: danh mục mẫu → bảng, rủi ro, tỷ trọng gợi ý
     "bang/index.html||cho:800",                                 # Bảng thị trường
 ]
 
