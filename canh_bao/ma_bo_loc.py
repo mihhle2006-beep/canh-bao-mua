@@ -135,11 +135,20 @@ def danh_dau_dat(tt, ma_mua, bay_gio):
 _LICH = {}
 
 
+FILE_LICH_NGHI = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cong_cu", "ngay_nghi.json")
+
+
 def ngay_nghi(nam):
     """Ngày nghỉ lễ VN (thư viện `holidays` – tự tính Tết âm lịch, nghỉ bù… mọi năm) ∪ C.NGAY_NGHI_GIAO_DICH
-    (ngày HOSE nghỉ thêm mà thư viện không có, vd 02/01/2026)."""
+    (ngày HOSE nghỉ thêm mà thư viện không có, vd 02/01/2026) ∪ lịch nghỉ cập nhật hằng tuần cong_cu/ngay_nghi.json
+    (thư viện bản mới nhất + phiên thật VNINDEX – bù khi máy chạy cài bản `holidays` cũ trong cache)."""
     if nam not in _LICH:
         ds = {str(x) for x in getattr(C, "NGAY_NGHI_GIAO_DICH", [])}
+        try:
+            with open(FILE_LICH_NGHI, encoding="utf-8") as f:
+                ds |= {str(x) for x in (json.load(f).get("ngay") or {})}
+        except (OSError, ValueError, AttributeError):
+            pass                                                # thiếu / hỏng → thư viện + cấu hình như cũ
         try:
             import holidays
             ds |= {f"{d:%Y-%m-%d}" for d in holidays.country_holidays("VN", years=nam)}

@@ -15,7 +15,8 @@ chạy 10:24, Danh mục 08:30 chạy 15:18, Kiểm thử 07:41 chạy 14:22, Qu
   • Giám sát 5 phút / lần: workflow trên main vừa LỖI → workflow dữ liệu / trang (CHAY_LAI – chạy lại không gửi tin
     trùng) tự chạy lại job lỗi 1 lần; còn lại, hoặc chạy lại vẫn lỗi → nhắn Telegram NGAY (không đợi tin 🩺 19:55).
   • Lỗi workflow repo danh-muc (đồng bộ DNSE, đặt lệnh) và bang-thi-truong (vòng bảng): cùng GiamSat, tin có nhãn repo.
-  • Ngày nghỉ lễ (bảng NGHI_LE): không gọi vòng DNSE / xin OTP / vòng bảng, không báo máy Mac / bảng đứng.
+  • Ngày nghỉ lễ (cong_cu/ngay_nghi.json, cập nhật hằng tuần): không gọi vòng DNSE / xin OTP / vòng bảng, không báo máy
+    Mac / bảng đứng; 20:05 lịch quá 15 ngày chưa cập nhật → nhắn.
   • Máy Mac (cùng nhịp 5 phút, T2–T6 08:30–15:10): job của repo kín chờ máy self-hosted > 10 phút (Mac ngủ / tắt / mất
     mạng → vòng đồng bộ DNSE, lệnh đứng) → nhắn Telegram NGAY 1 tin / đợt; máy nhận việc lại → 1 tin báo đã ổn.
 Chỉ dùng thư viện chuẩn (không cần pip). Log chỉ in tên workflow / giờ.
@@ -32,6 +33,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+
+import ngay_nghi as NN                                              # noqa: E402 – cùng thư mục cong_cu
 
 VN = timezone(timedelta(hours=7))
 API = "https://api.github.com"
@@ -94,15 +97,11 @@ KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu t�
 LOI = ("failure", "timed_out", "startup_failure")
 GIAM_SAT_GIAY = 300
 MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
-# NGÀY NGHỈ LỄ T2–T6 (sở không giao dịch): đồng hồ chỉ dùng thư viện chuẩn (job không cài `holidays`) → bảng tĩnh = lễ VN
-# của thư viện `holidays` + canh_bao/cau_hinh.NGAY_NGHI_GIAO_DICH (tests/test_dong_ho.py đối chiếu – thiếu năm mới thì
-# thêm: python -c "import holidays; print(sorted(f'{d}' for d in holidays.country_holidays('VN', years=2028) if d.weekday() < 5))").
-# Ngày lễ: không gọi việc trong phiên ở máy Mac / vòng bảng (NGHI_LE_BO), không báo "Mac chưa nhận việc" / "bảng đứng".
-NGHI_LE = frozenset((
-    "2026-01-01", "2026-01-02", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-04-27",
-    "2026-04-30", "2026-05-01", "2026-08-31", "2026-09-01", "2026-09-02", "2026-11-24",   # 24/11: Ngày Văn hoá VN (lần đầu)
-    "2027-01-01", "2027-02-04", "2027-02-05", "2027-02-08", "2027-02-09", "2027-02-10", "2027-04-16", "2027-04-30",
-    "2027-05-03", "2027-09-02", "2027-09-03", "2027-11-24"))
+# NGÀY NGHỈ LỄ (sở không giao dịch): cong_cu/ngay_nghi.json – job lich_nghi (Tong ket tuan, thứ Sáu) cập nhật hằng tuần
+# (ngay_nghi.py: thư viện holidays mới nhất + cau_hinh + phiên thật VNINDEX + quét tin). Ngày lễ: không gọi việc trong
+# phiên ở máy Mac / vòng bảng (NGHI_LE_BO), không báo "Mac chưa nhận việc" / "bảng đứng". 20:05: lịch quá HAN_CU ngày
+# chưa cập nhật → nhắn.
+NGHI_LE = frozenset(NN.doc())
 NGHI_LE_BO = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml", "bang-thi-truong/bang.yml"}
 MAC_GIO = (("08:30", "11:40"), ("12:45", "15:10"))                 # T2–T6 giờ VN: vòng DNSE 08:35, lệnh, đo trong phiên –
                                                                     # nghỉ trưa không báo (Mac ngủ trưa; vòng DNSE sáng dừng 11:45)
@@ -577,6 +576,19 @@ def kiem_token(bay_gio, in_ra=print):
     return canh
 
 
+def kiem_lich(bay_gio, in_ra=print):
+    """Lịch nghỉ (ngay_nghi.json) quá NN.HAN_CU ngày chưa cập nhật / hỏng → Telegram kênh hệ thống. → tin | None."""
+    t = NN.tuoi(bay_gio=bay_gio.astimezone(VN))
+    in_ra(f"Lịch nghỉ giao dịch: cập nhật {'?' if t is None else f'{t} ngày'} trước")
+    if t is not None and t <= NN.HAN_CU:
+        return None
+    tin = (f"⚠ Lịch nghỉ giao dịch {'không đọc được' if t is None else f'chưa cập nhật {t} ngày'} (cong_cu/ngay_nghi.json) – "
+           "job lich_nghi của Tong ket tuan (20:17 thứ Sáu) không chạy / lỗi. Chạy tay: canh-bao-mua → Actions → Tong ket "
+           "tuan → Run workflow. Đồng hồ vẫn dùng lịch cũ / dự phòng.")
+    nhan_tele(tin)
+    return tin
+
+
 def luot_khac_dang_chay(gh, run_id, cho=180, in_ra=print):
     """Lượt dong_ho CŨ HƠN còn chạy? Chờ ≤ cho giây (lượt cũ vừa gọi lượt này thì sắp xong) → True nếu vẫn còn."""
     het = time.time() + cho
@@ -657,6 +669,7 @@ def main(argv=None):
         if m and m != da_kiem:
             da_kiem = m
             viec.append(("token", lambda: kiem_token(bay_gio)))
+            viec.append(("lịch nghỉ", lambda: kiem_lich(bay_gio)))
         if time.time() - lan_gs >= GIAM_SAT_GIAY:
             lan_gs = time.time()
             viec.append(("giám sát", gs.buoc))

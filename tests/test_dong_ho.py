@@ -563,12 +563,7 @@ def test_ngay_nghi_le_khong_goi_viec_phien_khong_bao_mac_bang():
     assert dong_ho.MayMac(None, gui=lambda t: 1 / 0).buoc(datetime(2026, 11, 24, 10, 0, tzinfo=VN)) is None
 
 
-def test_bang_nghi_le_tinh_khop_thu_vien_va_cau_hinh():
-    """Bảng tĩnh NGHI_LE (đồng hồ không cài `holidays`) ⊇ lễ T2–T6 của thư viện + NGAY_NGHI_GIAO_DICH (2026–2027)."""
-    holidays = __import__("pytest").importorskip("holidays")
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    from canh_bao import cau_hinh
-    can = {f"{d:%Y-%m-%d}" for y in (2026, 2027) for d in holidays.country_holidays("VN", years=y) if d.weekday() < 5}
-    can |= {d for d in cau_hinh.NGAY_NGHI_GIAO_DICH if d >= "2026"}
-    assert can <= dong_ho.NGHI_LE, sorted(can - dong_ho.NGHI_LE)
-    assert "2026-11-24" in dong_ho.NGHI_LE
+def test_nghi_le_doc_tu_file_lich_chung():
+    """Đồng hồ đọc lịch nghỉ cập nhật hằng tuần (cong_cu/ngay_nghi.json – tests/test_ngay_nghi.py)."""
+    import ngay_nghi
+    assert dong_ho.NGHI_LE == frozenset(ngay_nghi.doc()) and "2026-11-24" in dong_ho.NGHI_LE
