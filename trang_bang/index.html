@@ -149,7 +149,7 @@ tbody tr{background:var(--the)}
 .o-pt{display:inline-block;min-width:62px;padding:2px 6px;border-radius:5px;font-weight:600}
 /* dòng phụ dưới mã (hạng, chiến lược khác, bot) + chữ dài / ngắn theo màn hình */
 .dg-boc{position:sticky;left:12px;max-width:calc(100vw - 48px)}#loc-than .dg-boc{max-width:var(--rong,calc(100vw - 48px))}
-.dg-ngan{display:none}
+.dg-ngan{display:none}.cam-tom{margin-top:4px;color:var(--chu2)}
 @media (max-width:600px){                 /* điện thoại: cột phụ ẩn, chữ ngắn */
   .an-dt,.dg-dai{display:none}span.dg-ngan{display:inline}div.dg-ngan{display:block}
   .dg-boc{max-width:calc(100vw - 72px)}}
@@ -831,10 +831,22 @@ const MO_TA_CL = {                  // cách chọn bằng lời (chỉ tên ti�
   "CANSLIM": "mã đạt nhiều tiêu chí CANSLIM, ưu tiên mã giá ít biến động",
   "Bluechip": "nhóm vốn hoá lớn nhất, ưu tiên mã giá ít biến động",
   "Ít đầu cơ": "mã có lãi, ưu tiên giá trị giao dịch thấp nhất so với vốn hoá"};
+// CÁCH CẦM theo tháng (thi_truong/dung.CACH_CAM_CL – chủ quỹ duyệt 23/11/2026): phiên đầu mỗi tháng mã đang dưới xu hướng
+// dài hạn → phần đó để tiền mặt; VN-Index dưới xu hướng dài hạn → mọi mã chỉ cầm ½ (không ghi ngưỡng)
+const bt_cam = c => c.cam?.bt ? `cách cầm theo tháng: ${nf(c.cam.bt.cagr * 100, 1)}%/năm, sụt sâu nhất ${nf(c.cam.bt.sut * 100, 0)}%`
+  + ` (chia đều cầm cả quý: ${nf(c.cam.bt.cagr_goc * 100, 1)}%/năm, sụt ${nf(c.cam.bt.sut_goc * 100, 0)}%)` : "";
+function cam_tom(c) {                                   // "Tháng 11/2026 (từ phiên 02/11): cầm 9/15 mã · tiền mặt 40% · …"
+  const m = c.cam; if (!m) return "";
+  const ds = Object.values(m.ma), cam = ds.filter(v => v > 0).length, doi = Object.keys(m.ma).filter(k => m.sau?.[k] != null && (m.ma[k] > 0) !== m.sau[k]).length;
+  return `Tháng ${m.tu.slice(5, 7)}/${m.tu.slice(0, 4)} (từ phiên ${ngay_du(m.tu).slice(0, 5)}): cầm <b>${cam}/${ds.length}</b> mã · tiền mặt <b>${nf(m.tien * 100, 0)}%</b>`
+    + (m.vni === false ? " · VN-Index dưới xu hướng dài hạn → mỗi mã chỉ cầm ½" : "")
+    + (doi || (m.vni_sau != null && m.vni_sau !== m.vni) ? ` · nếu xét hôm nay sẽ đổi ${doi} mã${m.vni_sau != null && m.vni_sau !== m.vni ? " và mức cầm VN-Index" : ""} (chỉ đổi ở phiên đầu tháng sau)` : "");
+}
 function mo_ta_cl(c) {
   return `${c.ten}${MO_TA_CL[c.ten] ? ` (${MO_TA_CL[c.ten]})` : ""} · ${c.de_xuat ? "đạt kiểm định, đề xuất cho người làm tay" : "đạt kiểm định"} (thắng VN-Index và rổ ngẫu nhiên cả 2013–19 lẫn 2020→nay) · backtest `
-    + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`
-    + " · top 15, mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11 (không dính bot). Dưới mỗi mã: các chiến lược khác (chưa đạt) cũng chọn mã đó"
+    + (c.cam ? bt_cam(c) : `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`)
+    + (c.cam ? " · top 15 chia đều, chọn lại 15/2 · 15/5 · 15/8 · 15/11; phiên ĐẦU MỖI THÁNG: mã đang dưới xu hướng dài hạn → phần đó để tiền mặt, VN-Index dưới xu hướng dài hạn → chỉ cầm ½ (không dính bot)"
+      : " · top 15, mua chia đều, giữ tới kỳ chọn lại 15/2 · 15/5 · 15/8 · 15/11 (không dính bot)") + ". Dưới mỗi mã: các chiến lược khác (chưa đạt) cũng chọn mã đó"
     + (/CANSLIM/.test(c.ten) ? " · 5 tiêu chí CANSLIM: C lãi quý tăng mạnh, A lãi năm tăng, N gần đỉnh 52 tuần, S thanh khoản tăng, L giá mạnh hơn thị trường" : "");
 }
 function dung_cl() {
@@ -899,7 +911,9 @@ function ve_loc() {
     + (la_cl ? ky_cl() : "");
   if (la_cl) { const c = DS_CL[+k.slice(3)] || {};                // điện thoại: mô tả 1 dòng (chủ quỹ 22/11 "điện thoại ghi ngắn gọn")
     $("#loc-mo-ta").innerHTML = `<span class="dg-dai">${esc(mo_ta)}</span><span class="dg-ngan">Đạt kiểm định · backtest `
-      + `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}</span>`;
+      + (c.cam ? `${nf(c.cam.bt.cagr * 100, 1)}%/năm, sụt sâu nhất ${nf(c.cam.bt.sut * 100, 0)}% (cầm theo tháng)`
+        : `${c.cagr != null ? nf(c.cagr * 100, 1) + "%/năm" : "–"}${c.sut != null ? ", sụt sâu nhất " + nf(c.sut * 100, 0) + "%" : ""}`) + "</span>"
+      + (c.cam ? `<div class="cam-tom">${cam_tom(c)}</div>` : "");
   } else if (la_bot && D.tin_hieu) $("#loc-mo-ta").innerHTML = `<span class="dg-dai">${esc(mo_ta)}</span><span class="dg-ngan">Vùng mua · cắt lỗ · mục tiêu · bấm mã xem phân tích</span>`;
   else $("#loc-mo-ta").textContent = la_bot && !D.tin_hieu ? "Chưa có danh sách mua" : mo_ta;
   $("#loc-so").textContent = `${la_td ? TDX().length : ds.length} mã`;
@@ -933,8 +947,12 @@ function dong_cl(r, k) {
   const ds_ten = a => a.map(y => `${esc(ten_gon(DS_CL[y.i].ten))} #${y.hang}`).join(" · ");
   const cs = c && /CANSLIM/.test(DS_CL[i].ten) ? ` · CANSLIM <b class="so">${c.diem}/5</b> · `
     + TC_CS.map(([q, t]) => `<span class="${c[q] ? "t" : "d"}" title="${t}">${q} ${c[q] ? "đạt" : "–"}</span>`).join(" · ") : "";
+  const m = DS_CL[i].cam, w = m?.ma?.[r.ma], sau = m?.sau?.[r.ma];
+  const cam = !m ? "" : w == null ? ` · <span class="d">thiếu lịch sử giá – chưa xét cách cầm</span>`
+    : w > 0 ? ` · <b class="t">Cầm ${nf(w * 100, 1)}%</b>${sau === false ? ` <span class="d">(đang dưới xu hướng – phiên đầu tháng sau sẽ để tiền)</span>` : ""}`
+    : ` · <b class="g">Để tiền</b> <span class="dg-dai">(dưới xu hướng dài hạn khi xét đầu tháng)</span>${sau ? ` <span class="t">(đã lên lại – phiên đầu tháng sau mua lại)</span>` : ""}`;
   return `<tr style="background:#fafbfd"><td class="trai" colspan="${COT.length}" style="white-space:normal;color:var(--chu2);font-size:12.5px"><div class="dg-boc">
-    <b>Hạng ${cua.hang}</b>${cs}${khac.length ? `<span class="dg-ngan"> · cũng có trong ${khac.length} chiến lược khác</span>`
+    <b>Hạng ${cua.hang}</b>${cam}${cs}${khac.length ? `<span class="dg-ngan"> · cũng có trong ${khac.length} chiến lược khác</span>`
     + `<span class="dg-dai"><br>Cũng có trong ${khac.length}/${DS_CL.length - 1} chiến lược khác: ${ds_ten(khac)}</span>` : ""}</div></td></tr>`;
 }
 function lop_gia(r) { return r.tt === 1 ? "tr" : r.tt === -1 ? "sa" : lop(r.gia - r.tc); }

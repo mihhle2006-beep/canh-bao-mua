@@ -156,9 +156,13 @@ def ky_thuat(ls, gia):
     return out
 
 
+TUAN_GIU = 48                                                         # số tuần đóng cửa giữ lại (≥ 40 tuần + dư)
+
+
 def tom_lich_su(ds, truoc_ngay=None):
     """Lịch sử ngày IQ (mới → cũ) → bản gọn cho lọc mã: 60 giá đóng cửa điều chỉnh (cũ → mới), đỉnh / đáy 250 phiên, KL &
-    GT khớp TB 20 phiên, khối ngoại ròng 25 phiên (tỷ, mới → cũ). Chỉ phiên TRƯỚC truoc_ngay (phiên đang chạy tính riêng)."""
+    GT khớp TB 20 phiên, khối ngoại ròng 25 phiên (tỷ, mới → cũ), "tuan" = [[thứ Sáu, đóng cửa cuối tuần]…] TUAN_GIU tuần
+    (cũ → mới). Chỉ phiên TRƯỚC truoc_ngay (phiên đang chạy tính riêng)."""
     dong = []
     for x in ds or []:
         d = str(x.get("tradingDate") or "")[:10]
@@ -174,7 +178,12 @@ def tom_lich_su(ds, truoc_ngay=None):
     dong.sort(reverse=True)                                           # mới → cũ
     cao = [r[2] for r in dong[:250] if r[2] > 0]
     thap = [r[3] for r in dong[:250] if r[3] > 0]
-    return {"ngay": dong[0][0], "c": [r[1] for r in dong[:60]][::-1],
+    tuan = {}                                                         # đóng cửa cuối tuần (nhãn thứ Sáu) – cách cầm tab Lọc mã
+    for r in dong:                                                    # (mới → cũ: giữ phiên mới nhất của mỗi tuần)
+        if r[1] > 0:
+            t = pd.Timestamp(r[0])
+            tuan.setdefault(f"{t + pd.Timedelta(days=(4 - t.weekday()) % 7):%Y-%m-%d}", r[1])
+    return {"ngay": dong[0][0], "c": [r[1] for r in dong[:60]][::-1], "tuan": [[k, tuan[k]] for k in sorted(tuan)][-TUAN_GIU:],
             "cao250": max(cao) if len(cao) >= 120 else None, "thap250": min(thap) if len(thap) >= 120 else None,
             "kl20": float(np.mean([r[4] for r in dong[:20]])), "gt20": float(np.mean([r[5] for r in dong[:20]])),
             "nn": [round(r[6], 3) for r in dong[:25]]}
