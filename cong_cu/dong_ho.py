@@ -584,7 +584,7 @@ def kiem_lich(bay_gio, in_ra=print):
         return None
     tin = (f"⚠ Lịch nghỉ giao dịch {'không đọc được' if t is None else f'chưa cập nhật {t} ngày'} (cong_cu/ngay_nghi.json) – "
            "job lich_nghi của Tong ket tuan (20:17 thứ Sáu) không chạy / lỗi. Chạy tay: canh-bao-mua → Actions → Tong ket "
-           "tuan → Run workflow. Đồng hồ vẫn dùng lịch cũ / dự phòng.")
+           "tuan → Run workflow (tích chi_lich_nghi). Đồng hồ vẫn dùng lịch cũ / dự phòng.")
     nhan_tele(tin)
     return tin
 
