@@ -26,29 +26,29 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Workflow | Lịch | Làm gì | Code ở |
 |---|---|---|---|
 | Loc quy But Pha | 06:07 T2–T6 | lọc mã đủ luật Quỹ Bứt Phá (top GTGD, RS, biến động) → `loc_quy_b.json` | danh-muc `ptcp` |
-| Canh bao mua | 06:43 (dự phòng 07:15) T2–T6 → vòng sáng xong tự gọi vòng chiều (lịch 10:53 / 12:15 chỉ dự phòng) → 15:02 gọi danh mục, 15:20 tổng kết · 09:07 thứ Bảy | bot: vòng sáng / chiều mỗi 15', tin MUA / BÁN, tổng kết 15:20, chấm lại tín hiệu thứ Bảy. Tin MUA có nút chọn số CP (lô chẵn + lẻ) → ✅ xác nhận mới đặt; chạm cắt lỗ tự bán hết (máy Mac phải mở); nghe tin nhắn bot (`canh_bao/lenh_tele.py`) | repo này + `ptcp` |
+| Canh bao mua | 06:43 T2–T6 → vòng sáng xong tự gọi vòng chiều (lịch 10:53 chỉ dự phòng) → 15:02 gọi danh mục, 15:20 tổng kết · 09:07 thứ Bảy | bot: vòng sáng / chiều mỗi 15', tin MUA / BÁN, tổng kết 15:20, chấm lại tín hiệu thứ Bảy. Tin MUA có nút chọn số CP (lô chẵn + lẻ) → ✅ xác nhận mới đặt; chạm cắt lỗ tự bán hết (máy Mac phải mở); nghe tin nhắn bot (`canh_bao/lenh_tele.py`) | repo này + `ptcp` |
 | Kiem thu | 07:41 T2–T6 + mỗi lần push | test canh-bao-mua + gia_lap + danh-muc; hỏng → Telegram | cả 3 repo |
 | Quet dinh ky | 14:20 T2–T6 | bộ lọc quét toàn sàn → `ma_mua_bo_loc.json` cho bot | repo này (`bo_loc`) |
 | Danh muc hang ngay | 15:02 T2–T6 (vòng chiều gọi; lịch 14:50 dự phòng) · 08:30 / trong phiên khi có `nhap.txt` mới | danh mục THẬT: nhập lệnh, tóm tắt, dashboard, Excel, tiền nhàn rỗi; đầu tháng + phân rã hiệu suất tháng trước (thật so giả lập) → Telegram (chạy kín) | danh-muc `dmuc` |
 | Gia lap | 16:30 (kiểm lại 17:30, 18:53) T2–T6 | tài khoản giả lập theo luật | gia_lap |
 | Suc khoe he thong | 19:55 T2–T6 | các workflow có chạy / lỗi không, NAV giả lập | gia_lap |
-| Tong ket tuan (gia lap) | 20:17 thứ Sáu | tổng kết tuần giả lập | gia_lap |
+| Tong ket tuan (gia lap) | 20:17 thứ Sáu (bấm tay tích `chi_lich_nghi` = chỉ cập nhật lịch nghỉ) | tổng kết tuần giả lập · job `lich_nghi`: cập nhật lịch nghỉ giao dịch `cong_cu/ngay_nghi.json` (thư viện holidays mới nhất + cấu hình + phiên thật VNINDEX + quét tin) – đồng hồ, bộ lọc, máy Mac dùng chung | gia_lap · repo này `cong_cu/ngay_nghi.py` |
 | BCTC moi hang dem | 22:13 hằng ngày | tải BCTC kỳ mới vào kho → kéo theo Bat thuong BCTC | danh-muc `ptcp.kho_bctc` |
 | Doc bao cao thuong nien | 22:17 hằng ngày | đọc BCTN mới (chiến lược DN, OCR) | danh-muc `ptcp.chien_luoc_dn` |
-| Kho BCTC | 00:47 thứ Bảy | làm mới kho BCTC toàn bộ | danh-muc |
+| Kho BCTC | 00:47 đêm thứ Bảy rạng CN · 01:37 hằng đêm (bổ sung UPCoM + BCTC dài) | làm mới kho BCTC toàn bộ | danh-muc |
 | Du lieu tra cuu | 06:41 T2–T7 | dữ liệu trang Tra cứu mã + trang **Biểu đồ** (giá, BCTC, doanh nghiệp, nến 1' / 5' ~3 tháng của MỌI mã – `thi_truong/phut_web.py`; mã thêm ngoài HOSE + HNX: `thi_truong/ma_them.txt`; dữ liệu mục **Đọc biểu đồ**: điều kiện chọn mã Quỹ Bứt Phá + lịch sử tín hiệu bot – `thi_truong/he_thong_web.py` → `docs/ma/doc_bd.js`; VN-Index ngày từ 2010 cho đường RS – `thi_truong/vni_web.py`) → triển khai web; trong giờ giao dịch Bảng thị trường nối thêm nến phút hôm nay (`phut_web --trong_phien`) | repo này `thi_truong` |
-| Tai nen 15p | 01:43 thứ Bảy | tải nến 15' (giữ cache backtest) | repo này |
-| Boi so nganh | 03:13 thứ Bảy | bội số định giá theo ngành | danh-muc |
+| Tai nen 15p | 01:43 rạng sáng CN | tải nến 15' (giữ cache backtest) | repo này |
+| Boi so nganh | 03:13 rạng sáng CN | bội số định giá theo ngành | danh-muc |
 | Tra cuu ma | 07:53 thứ Bảy (+ chạy tay) | tra cứu mã đang giữ / theo dõi | danh-muc `ptcp.tra_cuu` |
 | Backtest quy But Pha | 09:13 ngày 1 hằng tháng (+ chạy tay) | mốc luật đang chạy (`chuan`); kết luận các phần cũ đã xoá ở danh-muc `KET_LUAN_BACKTEST_CU.md` | danh-muc `chay_backtest_quy_b.py` |
 | Backtest | 02:17 ngày 2 hằng tháng | backtest điểm vào 15' → `ket_qua_backtest.json` (bot tự chọn cách vào) | repo này |
-| Dong ho | liên tục (lượt ≈ 5 giờ 40', tự gọi lượt sau; lịch 2 giờ / lần chỉ để khởi động lại chuỗi) | gọi các workflow đúng giờ VN thay cron GitHub hay trễ; giám sát lỗi, máy Mac, bảng đứng; 20:05 kiểm hạn token | repo này `cong_cu/dong_ho.py` |
+| Dong ho | liên tục (lượt ≈ 5 giờ 40', tự gọi lượt sau; lịch 2 giờ / lần + máy Mac mỗi giờ chỉ để khởi động lại chuỗi) | gọi các workflow đúng giờ VN thay cron GitHub hay trễ (cron GitHub chỉ còn 1 mốc dự phòng / lượt); ngày nghỉ lễ không gọi việc trong phiên ở máy Mac / vòng bảng; giám sát lỗi, máy Mac, bảng đứng; 20:05 kiểm hạn token + lịch nghỉ quá 15 ngày chưa cập nhật | repo này `cong_cu/dong_ho.py` |
 | Gac lich | – (job dùng chung, workflow_call) | lịch cron tới trễ mà đồng hồ / bấm tay đã chạy từ mốc đó → job chính bỏ qua, không gửi lặp | repo này `cong_cu/dong_ho.py --gac` |
 | Lenh Telegram | phút 37 mỗi giờ (cả cuối tuần; trong phiên vòng 15' nghe liên tục) | tin nhắn lệnh của chủ quỹ → `nhap.txt` danh-muc; nút 🛒 / 🛑 / ✅ → máy Mac đặt lệnh; chuyển kết quả lệnh về Telegram | repo này `canh_bao/lenh_tele.py` |
-| Nhip bang thi truong | 08:45 / 12:43 T2–T6 (+ dự phòng) | 1 job chạy suốt buổi, 15' gọi Bang thi truong một lần (lịch */5 của GitHub không tin được) | repo này |
+| Nhip bang thi truong | 08:45 / 12:43 T2–T6 (đồng hồ gọi; lịch GitHub cùng giờ dự phòng) | 1 job chạy suốt buổi, 15' gọi Bang thi truong một lần (lịch */5 của GitHub không tin được) | repo này |
 | Bang thi truong | được Nhịp gọi 15' / lần · 15:10 chốt phiên · 19:07 chuẩn bị phiên sau | dựng trang Bảng thị trường (`docs/thi_truong`) + dữ liệu Tra cứu mã trong phiên | repo này `thi_truong/` |
 | Ke hoach DHCD | 00:23 hằng đêm (mã còn thiếu) + chạy tay | kế hoạch DT / LNTT / LNST năm từ tài liệu ĐHCĐ + tỷ lệ hoàn thành | danh-muc `ptcp/ke_hoach_dhcd.py` |
-| Kho quy dau tu | 20:41 hằng ngày | NAV / danh mục quỹ mở Fmarket → `du_lieu/quy/` (danh-muc) | danh-muc |
+| Kho quy dau tu | 20:41 hằng ngày (đồng hồ gọi; trước đây lịch GitHub tới 03–05 giờ sáng) | NAV / danh mục quỹ mở Fmarket → `du_lieu/quy/` (danh-muc) | danh-muc |
 
 ### Chạy trên máy Mac ở Việt Nam (repo danh-muc, runner `vn` – API DNSE chỉ gọi được từ VN)
 

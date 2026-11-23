@@ -2,6 +2,7 @@
 """Bảng thị trường (thi_truong): chuẩn hoá bảng giá, hồ sơ thanh khoản, chuỗi khối ngoại, cờ kỹ thuật, dựng du_lieu.json
 từ dữ liệu mẫu (không gọi mạng)."""
 import json
+import sys
 
 import numpy as np
 import pytest
@@ -217,13 +218,17 @@ def test_ma_dang_giu(tmp_path, monkeypatch):
 
 def test_workflow_nhip_goi_bang_thi_truong():
     """Lịch "*/5" của GitHub không tin được → máy nhịp gọi bang_thi_truong.yml (main); không checkout, không chạm repo kín,
-    chỉ quyền actions; mỗi buổi có ≥ 2 mốc lịch dự phòng."""
+    chỉ quyền actions; mỗi buổi: đồng hồ gọi đúng giờ + ≥ 1 mốc lịch GitHub dự phòng (24/11/2026 bỏ mốc dự phòng thừa)."""
     import yaml
     d = yaml.safe_load(open(".github/workflows/nhip_thi_truong.yml", encoding="utf-8"))
     tren = d.get("on") or d.get(True)
     assert d["permissions"] == {"actions": "write"} and "workflow_dispatch" in tren
     lich = [int(x["cron"].split()[1]) for x in tren["schedule"]]
-    assert sum(h < 4 for h in lich) >= 2 and sum(5 <= h < 8 for h in lich) >= 2
+    assert sum(h < 4 for h in lich) >= 1 and sum(5 <= h < 8 for h in lich) >= 1
+    sys.path.insert(0, "cong_cu")
+    import dong_ho
+    gio = [int(x[1].split()[1]) for x in dong_ho.LICH if x[0] == "nhip_thi_truong.yml"]
+    assert any(h < 11 for h in gio) and any(12 <= h < 15 for h in gio)          # đồng hồ gọi cả 2 buổi
     (job,) = d["jobs"].values()
     t = json.dumps(job, ensure_ascii=False)
     assert "checkout" not in t and "danh-muc" not in t and "DANH_MUC" not in t

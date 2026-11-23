@@ -9,11 +9,11 @@ on:
     - cron: "43 23 * * 0-4"        # 06:43 giờ VN (T2–T6) – vòng lặp buổi sáng: ⏰ nhắc ATO 08:00–09:00 rồi 09:00–11:30.
                                    # Lịch 07:15 (00:15 UTC – giờ GitHub đông nhất) trễ 92–111' (10/2026: chạy ~09:00 →
                                    # lỡ cả khung nhắc ATO); trước 08:00 vòng lặp chỉ chờ ("ngoài giờ → không làm gì")
-    - cron: "15 0 * * 1-5"         # 07:15 giờ VN – DỰ PHÒNG nếu lịch 06:43 không chạy (chạy trùng thì xếp sau, tự thoát)
     - cron: "53 3 * * 1-5"         # 10:53 giờ VN – vòng lặp buổi chiều: XẾP HÀNG sau vòng sáng (cùng concurrency), vòng sáng
                                    # lưu trạng thái xong (~11:47) là chạy ngay 13:00–14:45 (gồm lượt 14:30 báo MUA ATC) –
                                    # GitHub trễ ≤ 2 giờ vẫn kịp; vòng sáng lỗi sớm → chạy luôn từ 10:53 (quét nốt buổi sáng)
-    - cron: "15 5 * * 1-5"         # 12:15 giờ VN – DỰ PHÒNG nếu lịch 10:53 không chạy (chạy trùng thì xếp sau, tự thoát)
+    # (24/11/2026 bỏ 2 lịch dự phòng 07:15 / 12:15: đồng hồ gọi đúng giờ 06:43 / 10:53, vòng sáng xong tự gọi vòng chiều;
+    #  lịch GitHub tới trễ 2–9 giờ → chỉ sinh lượt thừa buổi tối và chen hàng đợi concurrency)
     - cron: "20 8 * * 1-5"         # 15:20 giờ VN – tổng kết cuối ngày (kèm chấm đúng/sai tín hiệu)
     - cron: "7 2 * * 6"            # 09:07 thứ Bảy giờ VN – chạy LỊCH SỬ hằng tuần (chấm lại mọi tín hiệu, xuất Excel)
   workflow_dispatch:
@@ -142,8 +142,8 @@ jobs:
           if [ "$CHI_THU" = "true" ]; then THEM="--khong_gui"; rm -rf /tmp/ptcp_goc; cp -a cache_ptcp /tmp/ptcp_goc 2>/dev/null || true; fi
           ma_thoat=0
           case "${{ github.event.schedule }}${{ inputs.vong }}" in
-            "43 23 * * 0-4"|"15 0 * * 1-5"|sang) HET=1135 ;;
-            "53 3 * * 1-5"|"15 5 * * 1-5"|chieu) HET=1447 ;;
+            "43 23 * * 0-4"|sang) HET=1135 ;;
+            "53 3 * * 1-5"|chieu) HET=1447 ;;
             *) HET="" ;;
           esac
           # nhap.txt ở danh-muc còn lệnh chưa áp → chạy danh mục ngay (không đợi cuối phiên). Không gọi khi danh mục đang
