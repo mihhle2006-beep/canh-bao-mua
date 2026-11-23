@@ -135,7 +135,11 @@ def dung_lai_trang(goc, ra=FILE_RA, in_tien_do=print):
         out = json.load(r)
     if not isinstance(out, dict) or not out.get("phien"):
         raise ValueError("du_lieu.json trên trang không hợp lệ")
+    cu = {c.get("ten"): c.get("cam") for c in ((out.get("chien_luoc") or {}).get("chien_luoc") or []) if c.get("cam")}
     out["tin_hieu"], out["danh_muc"], out["chien_luoc"] = tin_hieu_bot(), ma_dang_giu(), chien_luoc()
+    for c in (out["chien_luoc"] or {}).get("chien_luoc") or []:         # cách cầm tính lúc trong phiên (cần lịch sử tuần)
+        if cu.get(c["ten"]) and set(cu[c["ten"]].get("ma") or {}) == set(c["ma"]):
+            c["cam"] = cu[c["ten"]]
     _ghi(out, ra)
     try:
         with urllib.request.urlopen(goc + "quy_ls.json", timeout=60) as r:
@@ -251,6 +255,49 @@ def chien_luoc(duong=None):
     if not any(c["ma"] for c in cl) and not ft:
         return None
     return {"ngay_can": d["ngay_can"], "ky_sau": d.get("ky_sau"), "chien_luoc": cl, "canslim": ft}
+
+
+# CÁCH CẦM tab Lọc mã (chủ quỹ duyệt 23/11/2026 – danh-muc bt_phan_bo vòng 3, run 45164965559): chia đều, xét lại PHIÊN ĐẦU
+# MỖI THÁNG – mã có đóng cửa tuần cuối (trước phiên đầu tháng) dưới trung bình 40 tuần → phần đó để tiền mặt; VN-Index
+# (phiên trước) dưới MA200 → mọi mã chỉ cầm ½. bt = backtest 2013 → 11/2026 cùng bộ máy: cách mới · chia đều cầm quý.
+CACH_CAM_CL = {"Bluechip": {"cagr": 0.101, "sut": -0.122, "cagr_goc": 0.111, "sut_goc": -0.328},
+               "Ít đầu cơ": {"cagr": 0.132, "sut": -0.216, "cagr_goc": 0.172, "sut_goc": -0.391}}
+TUAN_XU_HUONG, PHIEN_MA200 = 40, 200
+
+
+def _tren_xu_huong(tuan, truoc=None):
+    """Đóng cửa tuần cuối (nhãn thứ Sáu < truoc; None = mọi tuần) > TB TUAN_XU_HUONG tuần? Thiếu dữ liệu → None."""
+    c = [v for d, v in tuan or [] if v and (truoc is None or d < truoc)][-TUAN_XU_HUONG:]
+    return None if len(c) < TUAN_XU_HUONG else bool(c[-1] > sum(c) / len(c))
+
+
+def _vni_tren_ma200(vni_ngay, truoc=None):
+    c = [v for d, v in vni_ngay or [] if v and (truoc is None or d < truoc)][-PHIEN_MA200:]
+    return None if len(c) < PHIEN_MA200 else bool(c[-1] > sum(c) / len(c))
+
+
+def cach_cam(cl, cb, ps):
+    """Thêm "cam" cho chiến lược trong CACH_CAM_CL: {"tu": phiên đầu tháng đang cầm, "vni": VN-Index trên MA200 khi xét,
+    "ma": {mã: tỷ trọng (0 = để tiền mặt; None = thiếu dữ liệu)}, "tien": tỷ lệ tiền mặt, "sau": {mã: trên xu hướng nếu
+    xét bây giờ}, "vni_sau": như "vni" nếu xét bây giờ, "bt": số backtest}. Không có chiến lược / dữ liệu → giữ nguyên."""
+    if not cl or not cb:
+        return cl
+    ls, vn = cb.get("ls") or {}, cb.get("vni_ngay") or []
+    phien = sorted({d for d, _ in vn} | {ps})
+    tu = min(d for d in phien if d[:7] == ps[:7])                     # phiên đầu tháng hiện tại
+    vni, vni_sau = _vni_tren_ma200(vn, tu), _vni_tren_ma200(vn)
+    for c in cl.get("chien_luoc") or []:
+        bt = CACH_CAM_CL.get(c.get("ten"))
+        if not bt or not c.get("ma"):
+            continue
+        k = 1.0 if vni in (True, None) else 0.5
+        xh = {m: _tren_xu_huong(((ls.get(m) or {}).get("day_du") or {}).get("tuan"), tu) for m in c["ma"]}
+        n = sum(v is not None for v in xh.values()) or 1
+        w = {m: (None if v is None else round(k / n, 4) if v else 0.0) for m, v in xh.items()}
+        c["cam"] = {"tu": tu, "vni": vni, "ma": w, "tien": round(1 - sum(v or 0 for v in w.values()), 4),
+                    "sau": {m: _tren_xu_huong(((ls.get(m) or {}).get("day_du") or {}).get("tuan")) for m in c["ma"]},
+                    "vni_sau": vni_sau, "bt": bt}
+    return cl
 
 
 SO_PHIEN_DT = (5, 10, 20)                     # dòng tiền / tác động nhiều phiên (kiểu FiinTrade 1 · 5 · 10 · 20 ngày)
@@ -387,7 +434,7 @@ def chup(cb, ra=FILE_RA, luc=None, in_tien_do=print):
                    "bit": BIT, "du_tk": GT_DU_THANH_KHOAN},
            "ten": {m: cb.get("ten", {}).get(m, "") for m in cp.index},
            "nhom": cb.get("nhom", {}), "chuan_bi": cb.get("tao_luc"), "tin_hieu": tin_hieu_bot(), "danh_muc": ma_dang_giu(),
-           "chien_luoc": chien_luoc(), "quy": {k: v for k, v in (cb.get("quy") or {}).items() if k != "ls"} or None}
+           "chien_luoc": cach_cam(chien_luoc(), cb, ps), "quy": {k: v for k, v in (cb.get("quy") or {}).items() if k != "ls"} or None}
     _ghi(out, ra)
     if (cb.get("quy") or {}).get("ls"):                              # lịch sử danh mục quỹ: file riêng (trang không tải)
         _ghi(cb["quy"]["ls"], os.path.join(os.path.dirname(ra), "quy_ls.json"))

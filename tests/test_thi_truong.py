@@ -930,3 +930,32 @@ def test_dung_lai_trang_ngoai_gio(tmp_path, monkeypatch):
     monkeypatch.setattr(dung, "doc_chuan_bi", lambda *a: {"x": 1})
     monkeypatch.setattr(dung, "chup", lambda cb, ra: goi.append(cb))
     assert M.main(["--tu_trang", "https://x/thi_truong", "--ra", str(ra)]) == 0 and goi == [{"x": 1}]   # trang hỏng → nguồn
+
+
+def test_cach_cam_loc_xu_huong_ma200():
+    """Bluechip / Ít đầu cơ (chủ quỹ duyệt 23/11/2026): xét ở phiên ĐẦU THÁNG – mã có đóng cửa tuần (trước phiên đầu tháng)
+    dưới TB 40 tuần → để tiền; VN-Index phiên trước dưới MA200 → cầm ½; chiến lược khác không đổi."""
+    import pandas as pd
+    tuan = lambda c0, buoc: [[f"{d:%Y-%m-%d}", c0 + buoc * i] for i, d in enumerate(pd.date_range("2025-12-05", periods=48, freq="W-FRI"))]
+    ls = {"AAA": {"day_du": {"tuan": tuan(100, 1)}}, "BBB": {"day_du": {"tuan": tuan(200, -1)}}, "CCC": {"day_du": {"tuan": tuan(50, 0)[:30]}}}
+    ngay = pd.bdate_range("2026-01-01", "2026-11-20")
+    vni = [[f"{d:%Y-%m-%d}", 1000 + i] for i, d in enumerate(ngay)]       # tăng đều → trên MA200
+    cl = {"chien_luoc": [{"ten": "Bluechip", "ma": ["AAA", "BBB", "CCC"]}, {"ten": "CANSLIM", "ma": ["AAA"]}]}
+    ra = dung.cach_cam(cl, {"ls": ls, "vni_ngay": vni}, "2026-11-23")
+    cam = ra["chien_luoc"][0]["cam"]
+    assert cam["tu"] == "2026-11-02" and cam["vni"] is True                 # phiên đầu tháng 11 trong lịch VN-Index
+    assert cam["ma"] == {"AAA": 0.5, "BBB": 0.0, "CCC": None} and cam["tien"] == 0.5   # CCC < 40 tuần → thiếu dữ liệu
+    assert cam["sau"]["AAA"] is True and cam["sau"]["BBB"] is False and cam["bt"]["sut"] > cam["bt"]["sut_goc"]
+    assert "cam" not in ra["chien_luoc"][1]
+    vni_giam = [[d, 3000 - i] for i, (d, _) in enumerate(vni)]
+    cam2 = dung.cach_cam({"chien_luoc": [{"ten": "Ít đầu cơ", "ma": ["AAA", "BBB"]}]}, {"ls": ls, "vni_ngay": vni_giam}, "2026-11-23")
+    assert cam2["chien_luoc"][0]["cam"]["ma"] == {"AAA": 0.25, "BBB": 0.0} and cam2["chien_luoc"][0]["cam"]["vni"] is False
+    assert dung.cach_cam(None, {}, "2026-11-23") is None
+
+
+def test_tom_lich_su_dong_cua_tuan():
+    ds = [{"tradingDate": f"{d:%Y-%m-%d}T00:00:00", "closePriceAdjusted": 100 + i, "totalMatchVolume": 1, "totalMatchValue": 1e9}
+          for i, d in enumerate(pd.bdate_range("2025-06-02", "2026-11-20")[::-1])]
+    a = tinh.tom_lich_su(ds)
+    assert len(a["tuan"]) == tinh.TUAN_GIU and a["tuan"][-1][0] == "2026-11-20" and all(x[0] < y[0] for x, y in zip(a["tuan"], a["tuan"][1:]))
+    assert a["tuan"][-1][1] == 100                                          # phiên mới nhất của tuần cuối (danh sách mới → cũ)
