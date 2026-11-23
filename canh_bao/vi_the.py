@@ -394,7 +394,12 @@ def _danh_gia_ban(vt, kq, dn=None, bay_gio=None, f_gdkhq=None):
     # 20/11/2026: mua hôm trước, hôm nay chạm cắt lỗ → trước báo CẮT LỖ + nút + tự gửi lệnh bán → DNSE từ chối (CP chưa
     # về). Như mo_phong: chạm lúc chưa về → CHAM_CHUA_VE (không nút, không tự bán); phiên đầu bán được → CAT_LO kể cả khi
     # giá đã hồi (ptcp he_thoat.cham_chua_ve – phiên đã đóng). Không có ngày mua → không biết T+2 → coi như bán được.
-    chua_ve = not ht["ban_duoc"] and _ngay(vt.get("ngay_mua")) is not None
+    # 23/11/2026 đo DNSE: lô mua 19/11 bán được 0/500 tới 11:01 ngày T+2, đủ lúc 12:47 → CP về TRƯA T+2: phiên đầu bán
+    # được chỉ từ GIO_CP_VE giờ (sáng / ATO T+2 vẫn coi như chưa về – trước báo "bán ATO phiên T+2" → DNSE từ chối).
+    nb, bg = ht.get("ngay_ban_duoc"), pd.Timestamp(bay_gio) if bay_gio is not None else None
+    sang_t2 = bg is not None and nb is not None and pd.notna(nb) and bg.normalize() == pd.Timestamp(nb).normalize() \
+        and bg.hour < getattr(C, "GIO_CP_VE", 13)
+    chua_ve = (not ht["ban_duoc"] or sang_t2) and _ngay(vt.get("ngay_mua")) is not None
     cham = ht.get("cham_chua_ve")
     if gia <= lo and chua_ve:
         muc = "CHAM_CHUA_VE"
@@ -550,8 +555,9 @@ def tin_ban(vt, kb, kq, bay_gio, so=None):
                  "CHOT_LOI": f"Chốt lời (toàn bộ hoặc ½ = {vt['so_cp'] / 2:,.0f} CP), phần còn lại dời cắt lỗ lên",
                  "CAN_NHAC_BAN": "Xem xét giảm tỷ trọng / siết cắt lỗ – xu hướng đang yếu đi",
                  "GAN_CAT_LO": f"Chuẩn bị lệnh bán {vt['so_cp']:,.0f} CP: giá chạm {_f(kb['cat_lo'])} thì bán toàn bộ",
-                 "CHAM_CHUA_VE": f"CHƯA bán được – bán {vt['so_cp']:,.0f} CP lệnh ATO phiên {_ngay_ve(kb)} (phiên đầu "
-                                 "bán được), kể cả khi giá đã hồi lên trên cắt lỗ – bot không tự đặt lệnh trước",
+                 "CHAM_CHUA_VE": f"CHƯA bán được – bán {vt['so_cp']:,.0f} CP phiên CHIỀU {_ngay_ve(kb)} (CP về trưa "
+                                 f"T+2, bán được từ {getattr(C, 'GIO_CP_VE', 13)}:00), kể cả khi giá đã hồi lên trên cắt "
+                                 "lỗ – bot tự gửi lệnh bán lúc đó, không đặt trước",
                  "DOI_CAT_LO": f"Đặt lệnh cắt lỗ mới {_f(kb.get('cat_lo_he_thong'))} & cập nhật cat_lo_dat trong "
                                f"danh_muc.csv (repo danh-muc)",
                  "BD_BAN": f"Bán {vt['so_cp']:,.0f} CP lệnh ATO phiên "

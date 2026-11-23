@@ -118,7 +118,7 @@ def danh_gia(mo, gia_ngay, tai, bay_gio, tt):
             dong, muc = f"⬆ {dau} | GIỮ, DỜI cắt lỗ {_f(cl_bao)} → {_f(cl)}{vao}", "DOI"
             da_bao[khoa] = round(float(cl), 2)
         elif muc == "CHAM_CHUA_VE":
-            dong = f"🟠 {dau} | chạm cắt lỗ {_f(cl)} lúc CP chưa về (T+2) – BÁN ATO phiên đầu bán được{vao}"
+            dong = f"🟠 {dau} | chạm cắt lỗ {_f(cl)} lúc CP chưa về (T+2) – BÁN phiên chiều đầu bán được (CP về trưa T+2){vao}"
         elif muc == "GAN_CAT_LO":
             dong = f"⚠ {dau} | GIỮ, sát cắt lỗ {_f(cl)} – thủng là bán{vao}"
         else:

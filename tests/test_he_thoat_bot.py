@@ -263,11 +263,13 @@ def test_cham_luc_chua_ve_phien_dau_ban_duoc_van_cat_lo():
     vt["cat_lo_goc"] = vt["cat_lo"] = vt["gia_von"] * 0.95
     dn.iloc[-2, dn.columns.get_loc("low")] = vt["gia_von"] * 0.94
     gia = vt["gia_von"] * 1.0
-    sang = pd.Timestamp("2026-10-02 08:30")                    # nhắc ATO: phiên 01/10 đã đóng, hôm nay bán được
+    sang = pd.Timestamp("2026-10-02 08:30")                    # nhắc ATO T+2: CP về TRƯA T+2 (đo DNSE 23/11/2026)
     kb = vi_the.danh_gia_ban(vt, {"gia": gia}, dn.iloc[:-1], sang)
-    assert kb["muc"] == "CAT_LO" and "01/10" in kb["ly_do"][0] and kb["muc"] in vi_the.BAN_ATO
+    assert kb["muc"] not in vi_the.BAN_ATO and any("chưa về" in g for g in kb["ghi_chu"])   # sáng T+2: chưa bán được
+    kb = vi_the.danh_gia_ban(vt, {"gia": gia}, dn.iloc[:-1], pd.Timestamp("2026-10-02 13:15"))
+    assert kb["muc"] == "CAT_LO" and "01/10" in kb["ly_do"][0] and kb["muc"] in vi_the.BAN_ATO     # chiều T+2: bán
     kb0 = vi_the.danh_gia_ban(vt, {"gia": gia}, dn.iloc[:-2], pd.Timestamp("2026-10-01 10:30"))
     assert kb0["muc"] != "CAT_LO"                               # T+1 trong phiên, giá trên cắt lỗ: chưa có gì
     dn2 = dn.copy()
     dn2.iloc[-2, dn2.columns.get_loc("low")] = vt["gia_von"] * 0.99   # không chạm → giữ
-    assert vi_the.danh_gia_ban(vt, {"gia": gia}, dn2.iloc[:-1], sang)["muc"] != "CAT_LO"
+    assert vi_the.danh_gia_ban(vt, {"gia": gia}, dn2.iloc[:-1], pd.Timestamp("2026-10-02 13:15"))["muc"] != "CAT_LO"
