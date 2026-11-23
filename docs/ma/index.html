@@ -545,6 +545,32 @@ dialog#pp::backdrop{background:#1d243066}
 .ng-ct>div{border:1px solid var(--vien);border-radius:10px;padding:8px 10px;min-width:0}.ng-ct .n{font-size:12px;color:var(--mo)}.ng-ct .v{font-size:17px;font-weight:650}
 svg.spark{width:64px;height:20px;display:block;margin-left:auto}
 @media (max-width:600px){.ng-noi,.ng-ct{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cot{display:flex;flex-direction:column;gap:14px;min-width:0}.cot>.the,.cot>div>.the{margin:0}
+.dn-than{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:4px 14px;padding:6px 14px 12px;align-items:start}
+.dn-than svg{width:100%;height:auto;display:block}.dn-than h4{margin:6px 0 3px;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mo)}
+.mn-luoi{fill:none;stroke:var(--vien);stroke-width:1}.mn-vung{fill:rgba(15,138,74,.18);stroke:var(--tang);stroke-width:1.6;stroke-linejoin:round}
+.dn-than text{font-size:10.5px;fill:var(--chu2)}.dn-than tspan.t{fill:var(--tang)}.dn-than tspan.d{fill:#e0a800}.dn-than tspan.g{fill:var(--giam)}.dn-than tspan.k{fill:var(--mo)}
+.dn-ds{list-style:none;margin:0;padding:0;font-size:13px;line-height:1.45}.dn-ds li{display:flex;gap:7px;align-items:baseline;margin:2px 0}.dn-ds li .cham{position:relative;top:1px}
+@media (max-width:700px){.dn-than{grid-template-columns:minmax(0,1fr)}.dn-than svg{max-width:280px;margin:0 auto}}
+.dm-than{padding:10px 14px 4px}.dm-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dm-form input{border:1px solid var(--vien);border-radius:8px;padding:6px 10px;font:inherit;font-size:13.5px;min-width:0;width:150px;background:var(--the);color:var(--chu)}
+.dm-form input[name=ma]{width:120px;text-transform:uppercase}
+.dm-nhap{margin:8px 0 0;font-size:13px}.dm-nhap summary{cursor:pointer;color:var(--nhan);font-weight:600}
+.dm-nhap textarea{width:100%;box-sizing:border-box;font:13px/1.5 ui-monospace,monospace;border:1px solid var(--vien);border-radius:8px;padding:8px;margin:6px 0}
+.dm-hang{display:flex;gap:8px;flex-wrap:wrap}.dm-rieng{margin:8px 0 6px}
+.dm-x{border:0;background:none;color:var(--mo);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px}.dm-x:hover{background:var(--giam-nen);color:var(--giam)}
+.dm-canh{list-style:none;margin:4px 14px 8px;padding:0;font-size:13px}.dm-canh li{display:flex;gap:7px;align-items:baseline;margin:3px 0}
+.dm-hai{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:8px 18px;padding:4px 14px 14px;align-items:start}
+.dm-hai h4{margin:6px 0 4px;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mo)}
+.dm-bd{width:100%;height:auto;display:block}.dm-bd text{font-size:11px;fill:var(--mo)}.dm-luoi{stroke:var(--luoi)}
+.dm-bd polyline{fill:none;stroke-width:2;stroke-linejoin:round}.dm-bd .dm-nav{stroke:var(--tang)}.dm-bd .dm-vni{stroke:#8a94a3;stroke-width:1.6}
+.dm-cg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--chu2);margin-top:2px}.dm-cg i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.dm-cg i.dm-nav{background:var(--tang)}.dm-cg i.dm-vni{background:#8a94a3}
+.dm-thanh{display:grid;grid-template-columns:110px minmax(0,1fr) 42px;gap:6px;align-items:center;font-size:12.5px;margin:3px 0}
+.dm-thanh span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dm-thanh b{height:8px;border-radius:4px;background:var(--tang);opacity:.75}
+.dm-thanh em{font-style:normal;text-align:right;color:var(--chu2)}
+.dm-pp{padding:8px 14px 0}.dm-chon{background:var(--tang-nen)}.dm-ghi{padding:6px 14px 12px;margin:0}
+@media (max-width:700px){.dm-hai{grid-template-columns:minmax(0,1fr)}.dm-form input,.dm-form input[name=ma]{width:calc(50% - 4px)}}
 </style>
 </head>
 <body>
@@ -553,7 +579,7 @@ svg.spark{width:64px;height:20px;display:block;margin-left:auto}
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../../bang-thi-truong/">Thị trường</a><a href="../">Tổng hợp</a><a id="nut-otp" hidden href="https://github.com/mihhle2006-beep/danh-muc/actions/workflows/dat_lenh.yml" target="_blank" rel="noopener" title="Mở trang chạy workflow trên GitHub → bấm Run workflow → app DNSE hiện Smart OTP để duyệt (đã có mã hôm nay thì không hỏi lại)">Lấy mã DNSE</a></div>
+  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#danh-muc">Danh mục</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../../bang-thi-truong/">Thị trường</a><a href="../">Tổng hợp</a><a id="nut-otp" hidden href="https://github.com/mihhle2006-beep/danh-muc/actions/workflows/dat_lenh.yml" target="_blank" rel="noopener" title="Mở trang chạy workflow trên GitHub → bấm Run workflow → app DNSE hiện Smart OTP để duyệt (đã có mã hôm nay thì không hỏi lại)">Lấy mã DNSE</a></div>
 </div></header>
 <main>
   <div id="noi-dung"><div class="trong">Đang tải dữ liệu…</div></div>
@@ -2702,12 +2728,67 @@ function tong_quan(ma, k) {
   h += `<div class="hai">` + the("Chỉ số cơ bản", `LNST 4 quý tới ${esc(r.ky || "")}`, `<div class="luoi-so">` +
     o_so("P/E", pe ? so(pe, 1) : "–", r.pe_nganh ? "ngành " + so(r.pe_nganh, 1) : "") + o_so("P/B", pb ? so(pb, 2) : "–") +
     o_so("EPS 4 quý", r.eps ? so(r.eps, 0) + " đ" : "–") + o_so("BVPS", r.bvps ? so(r.bvps, 0) + " đ" : "–") +
-    o_so("ROE", r.ts?.chi_so?.ROE ? pt(r.ts.chi_so.ROE.v, 1, false) : "–") + o_so("PEG", r.peg ? so(r.peg, 2) : "–") + `</div>`) +
+    o_so("ROE", r.ts?.chi_so?.ROE ? pt(r.ts.chi_so.ROE.v, 1, false) : "–") + o_so("PEG", r.peg ? so(r.peg, 2) : "–") + `</div>`).replace('<div class="the">', '<div class="cot"><div class="the">') +
+    diem_nhan(ma, k, x, gn) + `</div>` +
     the("Góc hệ thống", "kỹ thuật · dòng tiền · định giá", goc_he_thong(ma, k, x, gn)) + `</div>`;
   h += so_sanh_nganh(ma);
   const ho = n.sz?.linh_vuc || ct.ho_so;
   if (ho) h += the("Giới thiệu", `<a href="#${esc(ma)}/ho-so">hồ sơ đầy đủ</a>`, `<div class="than van">${esc(ho.slice(0, 700))}${ho.length > 700 ? "…" : ""}</div>`);
   return h;
+}
+// ---------------------------------------------------------------- ĐIỂM NHẤN (Tổng quan): điểm mạnh · cần lưu ý + mạng nhện 6 trụ – kiểu "phân tích
+// nhanh" của Simplize. 6 trụ = thẻ điểm tab Phân tích (pt_tinh, cần BCTC năm → tải sau, lưu k.pt6); giá / dòng tiền tính ngay từ chuỗi giá.
+const MN_NGAN = {z: "An toàn", f: "Sức khoẻ", dp: "Sinh lời", cl: "Chất lượng LN", dg: "Định giá", tt: "Tăng trưởng"};
+function mang_nhen(TRU) {                               // tốt 3 · theo dõi 2 · rủi ro 1 · chưa đủ số liệu ~0
+  const N = TRU.length, R = 58, cx = 130, cy = 88, d = {t: 3, d: 2, g: 1};
+  const p = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / N; return [cx + Math.cos(a) * R * v / 3, cy + Math.sin(a) * R * v / 3]; };
+  const da_giac = v => TRU.map((_, i) => p(i, v).map(q => q.toFixed(1)).join(",")).join(" ");
+  const nhan = TRU.map((t, i) => { const [x, y] = p(i, 3.5), ben = Math.abs(x - cx) < 4 ? "middle" : x > cx ? "start" : "end";
+    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${ben}"><tspan class="${t[3] || "k"}">●</tspan> ${esc(MN_NGAN[t[0]] || t[1])}</text>`; }).join("");
+  return `<svg viewBox="-12 0 284 180" role="img" aria-label="Mạng nhện 6 trụ: ${TRU.map(t => `${MN_NGAN[t[0]]} ${t[4] || "chưa đủ số liệu"}`).join(", ")}">
+    ${[1, 2, 3].map(v => `<polygon points="${da_giac(v)}" class="mn-luoi"/>`).join("")}
+    ${TRU.map((_, i) => `<line x1="${cx}" y1="${cy}" x2="${p(i, 3)[0].toFixed(1)}" y2="${p(i, 3)[1].toFixed(1)}" class="mn-luoi"/>`).join("")}
+    <polygon points="${TRU.map((t, i) => p(i, d[t[3]] || 0.2).map(q => q.toFixed(1)).join(",")).join(" ")}" class="mn-vung"/>${nhan}</svg>`;
+}
+function tru_dn(ma, k, gn) {                              // 6 trụ cho Điểm nhấn: trụ Định giá theo GIÁ TRỊ HỢP LÝ của hệ thống (như nhãn RẺ / ĐẮT ở đầu trang)
+  const r = k.r || {}, g = gn?.gia ? gn.gia * 1000 : r.gia, v = r.gia_tri && g ? r.gia_tri / g - 1 : null;
+  return (k.pt6?.TRU || []).map(t => t[0] !== "dg" || v == null ? t
+    : [t[0], t[1], t[2], v >= 0.2 ? "t" : v <= -0.2 ? "g" : "d", v >= 0.2 ? "Rẻ" : v <= -0.2 ? "Đắt" : "Hợp lý", `giá trị hợp lý ${so(r.gia_tri / 1000, 2)} (${pt(v)})`]);
+}
+function diem_nhan_ds(ma, k, x, gn) {                    // [[mức t | d | g, câu]…] từ giá, dòng tiền, xếp hạng, 6 trụ
+  const o = [], r = k.r || {}, dd = dong_ds(ma);
+  for (const t of tru_dn(ma, k, gn)) if (t[3]) o.push([t[3], `${t[1]}: <b>${esc(t[4])}</b>${t[5] ? ` · ${esc(String(t[5]).replace(/<[^>]+>/g, ""))}` : ""}`]);
+  if (x?.c?.length > 60) {
+    const c = x.c, L = c.length - 1, m50 = sma(c, 50)[L], m200 = sma(c, 200)[L];
+    if (m200 != null && c[L] > m50 && m50 > m200) o.push(["t", "Xu hướng tăng: giá trên MA50, MA50 trên MA200"]);
+    else if (m200 != null && c[L] < m200 && m50 < m200) o.push(["g", "Xu hướng giảm: giá dưới MA200, MA50 dưới MA200"]);
+    const cao = Math.max(...x.h.slice(-250)), cach = c[L] / cao - 1;
+    if (cach >= -0.05) o.push(["t", `Sát đỉnh 52 tuần (cách ${pt(cach, 1)})`]);
+    else if (cach <= -0.4) o.push(["g", `Đã giảm ${pt(-cach, 0, false)} từ đỉnh 52 tuần`]);
+    const nn = (x.nn || []).filter(v => v != null);
+    let chuoi = 0; for (let i = nn.length - 1; i >= 0 && nn[i] && Math.sign(nn[i]) === Math.sign(nn.at(-1)); i--) chuoi++;
+    if (chuoi >= 5) o.push([nn.at(-1) > 0 ? "t" : "g", `Khối ngoại ${nn.at(-1) > 0 ? "mua" : "bán"} ròng ${chuoi} phiên liền`]);
+  }
+  const gt20 = k.g?.gt?.length ? tb(k.g.gt.slice(-20)) : null;
+  if (gt20 != null && gt20 < 1) o.push(["g", `Thanh khoản thấp: GTGD TB 20 phiên ${so(gt20, 2)} tỷ`]);
+  if (dd.vgm) { const v = String(dd.vgm).slice(-1);
+    if ("AB".includes(v)) o.push(["t", `Xếp hạng VGM <b>${esc(v)}</b> (giá trị · tăng trưởng · động lượng)`]);
+    else if ("EF".includes(v)) o.push(["g", `Xếp hạng VGM <b>${esc(v)}</b> (giá trị · tăng trưởng · động lượng)`]); }
+  if (r.ln_yoy != null && r.ln_q > 0 && r.ln_yoy >= 0.3) o.push(["t", `LNST quý ${esc(r.ky || "")} tăng ${pt(r.ln_yoy, 0)} so cùng kỳ`]);
+  else if (r.ln_q != null && r.ln_q < 0) o.push(["g", `Quý ${esc(r.ky || "")} lỗ ${so(-r.ln_q, 0)} tỷ`]);
+  else if (r.ln_yoy != null && r.ln_yoy <= -0.3) o.push(["g", `LNST quý ${esc(r.ky || "")} giảm ${pt(-r.ln_yoy, 0, false)} so cùng kỳ`]);
+  return o;
+}
+function diem_nhan(ma, k, x, gn) {
+  if (CHI_SO_TEN[ma]) return "";
+  if (!k.pt6 && !k.pt6_p) k.pt6_p = pt_tinh(ma, k).then(v => { k.pt6 = v; }).catch(() => { k.pt6 = {TRU: []}; }).then(() => {
+    const el = document.getElementById("diem-nhan"); if (el && el.dataset.ma === ma) el.outerHTML = diem_nhan(ma, k, chuoi_gia(k, ma), gia_nay(ma, k)); });
+  const o = diem_nhan_ds(ma, k, x, gn), tot = o.filter(z => z[0] === "t"), luu = o.filter(z => z[0] !== "t").sort((a, b) => (a[0] === "g" ? 0 : 1) - (b[0] === "g" ? 0 : 1));
+  const li = a => a.map(([m_, t]) => `<li><i class="cham ${m_}"></i><span>${t}</span></li>`).join("");
+  const than = `<div class="dn-than">${k.pt6?.TRU?.length ? mang_nhen(tru_dn(ma, k, gn)) : `<div class="trong nho">${k.pt6 ? "Chưa đủ BCTC năm để chấm 6 trụ." : "Đang chấm 6 trụ…"}</div>`}
+    <div><h4>Điểm mạnh</h4><ul class="dn-ds">${li(tot) || `<li class="m">Chưa thấy điểm nổi bật.</li>`}</ul>
+    <h4>Cần lưu ý</h4><ul class="dn-ds">${li(luu) || `<li class="m">Chưa thấy rủi ro nổi bật.</li>`}</ul></div></div>`;
+  return `<div id="diem-nhan" data-ma="${esc(ma)}">` + the("Điểm nhấn", `6 trụ BCTC · giá · dòng tiền · <a href="#${esc(ma)}/phan-tich">thẻ điểm đầy đủ</a>`, than) + `</div>`;
 }
 function goc_he_thong(ma, k, x, gn) {
   const d = [], r = k.r || {}, b = BOT[ma];
@@ -3162,7 +3243,7 @@ const vung_thanh = (v, lo, hi, a, b, dao = false) => {       // thanh 3 vùng; d
   return `<div class="thanh-pt vung" style="background:linear-gradient(90deg,${c1} 0 ${p1}%,#fbf3d6 ${p1}% ${p2}%,${c3} ${p2}%)">${v != null ? `<span class="vach" style="left:${x(v)}%"></span>` : ""}</div>`;
 };
 
-async function phan_tich(ma, k) {
+async function pt_tinh(ma, k) {                         // thẻ điểm 6 trụ + số liệu nền – dùng cho tab Phân tích và Điểm nhấn (Tổng quan)
   const r = k.r || {}, n = k.n || {}, s = r.suc_khoe || {}, b = await tai_bctc(ma);
   const gn = gia_nay(ma, k), gia_d = gn.gia ? gn.gia * 1000 : r.gia, loai = b?.loai || s.loai || r.loai || "CT", ct = loai === "CT";
   const S = b ? bctc_nam(b) : null, nam = S ? S.Y[S.Y.length - 1] : (s.f?.nam || "");
@@ -3191,6 +3272,10 @@ async function phan_tich(ma, k) {
       dg.bien != null ? `<div class="m nho">biên an toàn <b class="${mau(dg.bien)}">${pt(dg.bien)}</b> · ${dg.pp.filter(x => x.v && !x.loai).length} phương pháp</div>` : ""],
     ["tt", "Tăng trưởng bền vững", "Tăng trưởng có tự tài trợ được không?", tt.muc, tt.muc === "t" ? "Tăng trưởng" : tt.muc === "g" ? "Suy giảm" : tt.muc === "d" ? "Chậm" : "", tt.cg.ln != null ? `CAGR LN ${pt(tt.cg.ln, 1)}` : "",
       tt.sgr != null ? `<div class="m nho">SGR ${pt(tt.sgr, 1, false)}${tt.g_dt != null ? ` · doanh thu ${pt(tt.g_dt, 1)}` : ""}</div>` : ""]];
+  return {s, b, gia_d, loai, ct, S, nam, dp, m, cl, tt, dg, z, f, roe, db, TRU};
+}
+async function phan_tich(ma, k) {
+  const {s, b, gia_d, loai, ct, S, nam, dp, m, cl, tt, dg, z, f, roe, db, TRU} = await pt_tinh(ma, k);
   const dem = m_ => TRU.filter(x => x[3] === m_).length;
   const sub = `<div class="sub">${nut(PT_CC, ST.pt, "ptc")}</div>`;
   const chu_dn = ct ? "" : `<p class="m" style="margin:0 0 10px;font-size:12.5px">${({NH: "Ngân hàng", CK: "Công ty chứng khoán", BH: "Doanh nghiệp bảo hiểm"})[loai] || ""}: Z-Score, F-Score, M-Score và chất lượng lợi nhuận chỉ áp dụng cho doanh nghiệp thường; DuPont tách 3 nhân tố.</p>`;
@@ -4795,6 +4880,220 @@ function tim_ma(q) {
   const k = BO_DAU(q), r = DS.find(r => r.ma.startsWith(q)) || DS.find(r => BO_DAU(ten_ma(r)).includes(k));
   return r ? r.ma : MA_OK(q) ? q : null;
 }
+// ---------------------------------------------------------------- DANH MỤC CỦA TÔI (#danh-muc) – kiểu danh mục ảo của Simplize / FireAnt: lãi lỗ,
+// rủi ro 1 năm so VN-Index, tỷ trọng gợi ý theo phương pháp đã backtest (danh-muc bt_phan_bo: 2.000 danh mục 2016–2026).
+// CHỈ lưu trong trình duyệt người xem (localStorage) – không gửi đi đâu, trang công khai không chứa danh mục của ai.
+const KHOA_DM = "dm_cua_toi";
+let DM = (() => { try { return (JSON.parse(localStorage.getItem(KHOA_DM) || "[]") || []).filter(x => MA_OK(x?.ma) && x.kl > 0); } catch (e) { return []; } })();
+const dm_luu = () => { try { localStorage.setItem(KHOA_DM, JSON.stringify(DM)); } catch (e) {} };
+const DM_ST = {pp: "gmv", luot: 0};
+// [mã, tên, Sharpe trung vị backtest vòng 2 (2.000 danh mục ngẫu nhiên, 01/2016 → 11/2026, phí + thuế)]
+const DM_PP = [["n", "1/N chia đều", "0,33"], ["rp", "Risk Parity", "0,36"], ["hrp", "HRP", "0,38"], ["gmv", "GMV Σ tương quan hằng · trần 40%", "0,42*"]];
+function dm_them(ma, kl, gv) {                          // trùng mã → cộng KL, giá vốn bình quân
+  ma = String(ma || "").trim().toUpperCase(); kl = Math.round(+kl); gv = +String(gv ?? "").replace(",", ".");
+  if (!MA_OK(ma) || !(kl > 0)) return false;
+  const c = DM.find(x => x.ma === ma);
+  if (c) { const t = c.kl + kl; c.gv = c.gv && gv > 0 ? (c.gv * c.kl + gv * kl) / t : c.gv || gv || null; c.kl = t; }
+  else DM.push({ma, kl, gv: gv > 0 ? gv : null});
+  return true;
+}
+async function dm_tai(ma) {                             // chỉ giá (gia + gia_dai) và BCTC tóm tắt (ma) – không tải cả hồ sơ doanh nghiệp
+  const k = KHO[ma] || (KHO[ma] = {});
+  if (!k.dm_p) k.dm_p = Promise.all([k.g || lay(DL + "gia/" + ma + ".json", false), k.gd || lay(DL + "gia_dai/" + ma + ".json", false),
+    k.r || lay(DL + "ma/" + ma + ".json", false)]).then(([g, gd, r]) => { k.g = k.g || g; k.gd = k.gd || gd; k.r = k.r || r; });
+  await k.dm_p; return k;
+}
+// ----- đại số nhỏ (ma trận dạng mảng hàng)
+const dm_mv = (A, v) => A.map(r => r.reduce((s, a, j) => s + a * v[j], 0));
+function dm_cov(R) {                                    // R: T × N → [Σ mẫu, X đã trừ trung bình]
+  const T = R.length, N = R[0].length, mu = Array(N).fill(0);
+  R.forEach(r => r.forEach((v, j) => { mu[j] += v / T; }));
+  const X = R.map(r => r.map((v, j) => v - mu[j])), S = [];
+  for (let i = 0; i < N; i++) { S.push([]); for (let j = 0; j < N; j++) { let a = 0; for (const x of X) a += x[i] * x[j]; S[i].push(a / T); } }
+  return [S, X];
+}
+function dm_lw_cc(R) {                                  // Σ co Ledoit–Wolf (2003) về tương quan hằng – như bt_phan_bo.ledoit_wolf_cc
+  const [S, X] = dm_cov(R), T = R.length, N = S.length;
+  if (N < 2) return S;
+  const sd = S.map((r, i) => Math.sqrt(r[i]) || 1e-9);
+  let rb = 0; for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) rb += S[i][j] / (sd[i] * sd[j]);
+  rb = 2 * rb / (N * (N - 1));
+  let pi = 0, rho = 0, gam = 0;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    let p_ = 0, th = 0, th2 = 0;
+    for (const x of X) { const y = x[i] * x[j] - S[i][j]; p_ += y * y; th += (x[i] * x[i] - S[i][i]) * y; th2 += (x[j] * x[j] - S[j][j]) * y; }
+    p_ /= T; th /= T; th2 /= T; pi += p_;
+    if (i === j) rho += p_; else rho += rb / 2 * (sd[j] / sd[i] * th + sd[i] / sd[j] * th2);
+    const F = i === j ? S[i][i] : rb * sd[i] * sd[j]; gam += (F - S[i][j]) ** 2;
+  }
+  const dl = gam > 0 ? Math.max(0, Math.min(1, (pi - rho) / gam / T)) : 1;
+  return S.map((r, i) => r.map((v, j) => dl * (i === j ? v : rb * sd[i] * sd[j]) + (1 - dl) * v));
+}
+const dm_chuan = w => { const s = w.reduce((a, v) => a + v, 0); return w.map(v => v / s); };
+const dm_ndbd = S => dm_chuan(S.map((r, i) => 1 / Math.sqrt(r[i])));
+function dm_rp(S) {                                     // Risk Parity – lặp toạ độ như bt_phan_bo.risk_parity
+  const N = S.length, b = 1 / N, y = S.map((r, i) => 1 / Math.sqrt(r[i]));
+  for (let v = 0; v < 500; v++) {
+    let doi = 0;
+    for (let i = 0; i < N; i++) { const c = S[i].reduce((s, a, j) => s + a * y[j], 0) - S[i][i] * y[i], m = (-c + Math.sqrt(c * c + 4 * S[i][i] * b)) / (2 * S[i][i]);
+      doi = Math.max(doi, Math.abs(m - y[i])); y[i] = m; }
+    if (doi <= 1e-10 * Math.max(...y)) break;
+  }
+  return dm_chuan(y);
+}
+function dm_hrp(S) {                                    // HRP (López de Prado): cây tương quan single linkage + chia đôi đệ quy
+  const N = S.length; if (N < 3) return dm_ndbd(S);
+  const sd = S.map((r, i) => Math.sqrt(r[i])), D = S.map((r, i) => r.map((v, j) => Math.sqrt(Math.max(0, (1 - Math.max(-1, Math.min(1, v / (sd[i] * sd[j])))) / 2))));
+  let cum = S.map((_, i) => [i]);
+  while (cum.length > 1) {                              // gộp 2 cụm gần nhất (khoảng cách nhỏ nhất giữa 2 phần tử)
+    let a = 0, b = 1, best = Infinity;
+    for (let p = 0; p < cum.length; p++) for (let q = p + 1; q < cum.length; q++) for (const i of cum[p]) for (const j of cum[q]) if (D[i][j] < best) { best = D[i][j]; a = p; b = q; }
+    const moi = cum[a].concat(cum[b]); cum = cum.filter((_, t) => t !== a && t !== b); cum.push(moi);
+  }
+  const tt = cum[0], w = Array(N).fill(1);
+  const var_cum = c => { const iv = dm_chuan(c.map(i => 1 / S[i][i])); let v = 0; c.forEach((i, p) => c.forEach((j, q) => { v += iv[p] * S[i][j] * iv[q]; })); return v; };
+  let ds = [tt];
+  while (ds.length) {
+    const moi = [];
+    for (const c of ds) { if (c.length < 2) continue; const h = c.length >> 1, c1 = c.slice(0, h), c2 = c.slice(h), v1 = var_cum(c1), v2 = var_cum(c2), al = 1 - v1 / (v1 + v2);
+      c1.forEach(i => { w[i] *= al; }); c2.forEach(i => { w[i] *= 1 - al; }); moi.push(c1, c2); }
+    ds = moi;
+  }
+  return dm_chuan(w);
+}
+function dm_chieu(y, u) {                               // chiếu lên {0 ≤ w ≤ u, Σw = 1}: w = kẹp(y − λ), λ tìm bằng chia đôi
+  let lo = Math.min(...y) - u - 1, hi = Math.max(...y) + 1;
+  for (let t = 0; t < 100; t++) { const l = (lo + hi) / 2, s = y.reduce((a, v) => a + Math.min(u, Math.max(0, v - l)), 0); if (s > 1) lo = l; else hi = l; }
+  const l = (lo + hi) / 2; return y.map(v => Math.min(u, Math.max(0, v - l)));
+}
+function dm_gmv(S, tran = 0.4) {                        // GMV không bán khống, trần mỗi mã – hạ bậc chiếu (bài toán lồi)
+  const N = S.length, u = N <= 2 ? 1 : Math.max(tran, 1 / N + 1e-9), m = S.reduce((a, r, i) => a + r[i], 0) / N, Q = S.map(r => r.map(v => v / m));
+  let v = Array(N).fill(1), L = 1;
+  for (let t = 0; t < 60; t++) { const z = dm_mv(Q, v); L = Math.hypot(...z) || 1; v = z.map(q => q / L); }
+  let w = Array(N).fill(1 / N);
+  for (let t = 0; t < 20000; t++) {
+    const g = dm_mv(Q, w), w2 = dm_chieu(w.map((x, i) => x - g[i] / L), u);
+    const d = Math.max(...w2.map((x, i) => Math.abs(x - w[i]))); w = w2; if (d < 1e-10) break;
+  }
+  return w;
+}
+function dm_chuoi(ma) {                                 // đóng cửa điều chỉnh theo ngày (kèm nến trong phiên)
+  const x = chuoi_gia(KHO[ma] || {}, ma); if (!x) return null;
+  const m = new Map(); x.d.forEach((d, i) => { if (x.c[i] > 0) m.set(d, x.c[i]); }); return m;
+}
+function dm_nav(ds, ngay) {                             // giá trị nếu giữ đúng số CP hiện tại suốt khoảng ngày (giá điều chỉnh)
+  return ngay.map(d => ds.reduce((s, z) => s + z.kl * z.m.get(d), 0));
+}
+const dm_sut = a => { let dinh = -Infinity, s = 0; for (const v of a) { dinh = Math.max(dinh, v); s = Math.min(s, v / dinh - 1); } return s; };
+const dm_ty = v => v == null || !isFinite(v) ? "–" : Math.abs(v) >= 1e9 ? so(v / 1e9, 2) + " tỷ" : so(v / 1e6, 1) + " tr";
+function dm_duong(nav, vni, ngay) {                     // SVG: danh mục vs VN-Index (cùng mốc 100)
+  const W = innerWidth < 700 ? 420 : 720, H = 220, l = 44, r = 10, t = 12, b = 24, a = nav.map(v => v / nav[0] * 100), c = vni.map(v => v / vni[0] * 100);
+  const lo = Math.min(...a, ...c), hi = Math.max(...a, ...c), X = i => l + i * (W - l - r) / (a.length - 1), Y = v => t + (hi - v) / (hi - lo || 1) * (H - t - b);
+  const ve = s => s.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+  const nac = [lo, (lo + hi) / 2, hi].map(v => `<line x1="${l}" x2="${W - r}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="dm-luoi"/><text x="${l - 6}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end">${so(v, 0)}</text>`).join("");
+  const thang = []; let cu = "";
+  ngay.forEach((d, i) => { const m = d.slice(0, 7); if (m !== cu && i > 0 && i < ngay.length - 8 && +d.slice(5, 7) % 2) thang.push(`<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="middle">T${+d.slice(5, 7)}/${d.slice(2, 4)}</text>`); cu = m; });
+  return `<svg class="dm-bd" viewBox="0 0 ${W} ${H}" role="img" aria-label="Giá trị danh mục so VN-Index">${nac}${thang.join("")}
+    <polyline points="${ve(c)}" class="dm-vni"/><polyline points="${ve(a)}" class="dm-nav"/></svg>
+    <div class="dm-cg"><span><i class="dm-nav"></i>Danh mục (giữ đúng số CP hiện tại)</span><span><i class="dm-vni"></i>VN-Index</span></div>`;
+}
+async function hien_dm() {
+  document.title = "Danh mục của tôi – Tra cứu mã";
+  const luot = ++DM_ST.luot, nd = $("#noi-dung");
+  const form = `<form class="dm-form" id="dm-form" autocomplete="off"><input name="ma" placeholder="Mã (VD FPT)" maxlength="10" required aria-label="Mã">
+    <input name="kl" type="number" min="1" step="1" placeholder="Số cổ phiếu" required aria-label="Số cổ phiếu"><input name="gv" inputmode="decimal" placeholder="Giá vốn (nghìn đ)" aria-label="Giá vốn">
+    <button class="nut-tai" type="submit">+ Thêm</button></form>
+    <details class="dm-nhap"><summary>Nhập nhiều dòng / sao lưu</summary><p class="m nho">Mỗi dòng: <b>MÃ SỐ_CP GIÁ_VỐN</b> – VD <code>FPT 1000 95,5</code>. Ô dưới đang chứa danh mục hiện tại – sao chép để lưu sang máy khác.</p>
+    <textarea id="dm-vb" rows="5">${esc(DM.map(x => `${x.ma} ${x.kl}${x.gv ? " " + String(+x.gv.toFixed(3)).replace(".", ",") : ""}`).join("\n"))}</textarea>
+    <div class="dm-hang"><button class="nut-tai" id="dm-ghi">Thay bằng nội dung ô trên</button><button class="nut-tai" id="dm-xoa-het">Xoá hết</button></div></details>
+    <p class="m nho dm-rieng">Riêng tư: danh mục chỉ lưu trong trình duyệt này (localStorage) – không gửi lên máy chủ, người khác không xem được. Xoá dữ liệu trình duyệt là mất: sao lưu ở ô "Nhập nhiều dòng".</p>`;
+  if (!DM.length) {
+    nd.innerHTML = the("Danh mục của tôi", "lãi lỗ · rủi ro · so VN-Index · tỷ trọng gợi ý", `<div class="dm-than">${form}
+      <div class="trong">Chưa có mã nào. Thêm mã ở trên, hoặc <button class="nut-tai" id="dm-mau">Dùng thử danh mục mẫu</button> (5 mã vốn hoá lớn).</div></div>`);
+    return;
+  }
+  nd.innerHTML = the("Danh mục của tôi", `${DM.length} mã`, `<div class="dm-than">${form}<div class="trong">Đang tải giá ${DM.length} mã…</div></div>`);
+  const [vni] = await Promise.all([tai_vni(), ...DM.map(x => dm_tai(x.ma).catch(() => null))]);
+  if (luot !== DM_ST.luot || !/^#danh-muc/i.test(location.hash)) return;
+  // ----- bảng vị thế
+  const ds = DM.map(x => { const k = KHO[x.ma] || {}, gn = gia_nay(x.ma, k), r = k.r || {}, gia = gn.gia ?? (r.gia ? r.gia / 1000 : null);
+    return {...x, k, r, gia, pt: gn.pt, gt: gia != null ? gia * 1000 * x.kl : null, nganh: dong_ds(x.ma).nganh || r.nganh || "Khác", m: dm_chuoi(x.ma)}; });
+  const tong = ds.reduce((s, z) => s + (z.gt || 0), 0), von = ds.reduce((s, z) => s + (z.gv && z.gt != null ? z.gv * 1000 * z.kl : 0), 0);
+  const gt_co_von = ds.reduce((s, z) => s + (z.gv && z.gt != null ? z.gt : 0), 0), hom = ds.reduce((s, z) => s + (z.gt != null && z.pt != null ? z.gt - z.gt / (1 + z.pt) : 0), 0);
+  const xu = z => { if (!z.m || z.m.size < 200) return ""; const c = [...z.m.values()], m200 = tb(c.slice(-200)), m50 = tb(c.slice(-50)), g = c.at(-1);
+    return g > m50 && m50 > m200 ? `<span class="t">tăng</span>` : g < m200 && m50 < m200 ? `<span class="g">giảm</span>` : `<span class="m">đi ngang</span>`; };
+  const dgia = z => { const v = z.r.gia_tri && z.gia ? z.r.gia_tri / (z.gia * 1000) - 1 : null; return v == null ? "–" : `<span class="${v >= 0.2 ? "t" : v <= -0.2 ? "g" : "m"}">${v >= 0.2 ? "rẻ" : v <= -0.2 ? "đắt" : "hợp lý"} ${pt(v, 0)}</span>`; };
+  const dong = ds.map(z => { const ll = z.gv && z.gia != null ? z.gia / z.gv - 1 : null, b = BOT[z.ma];
+    return `<tr><td class="trai"><a href="#${esc(z.ma)}"><b>${esc(z.ma)}</b></a>${b ? ` <span class="huy bot" title="${esc(b[7] || "")}">bot</span>` : ""}<div class="m nho">${esc(z.nganh)}</div></td>
+      <td>${so(z.kl, 0)}</td><td>${z.gv ? so(z.gv, 2) : "–"}</td><td>${z.gia != null ? so(z.gia, 2) : "–"}</td><td class="${mau(z.pt)}">${pt(z.pt, 2)}</td>
+      <td>${dm_ty(z.gt)}</td><td>${tong ? pt(z.gt / tong, 1, false) : "–"}</td><td class="${mau(ll)}">${pt(ll, 1)}</td><td class="${mau(ll)}">${ll != null ? dm_ty(z.gt - z.gv * 1000 * z.kl) : "–"}</td>
+      <td>${xu(z)}</td><td>${dong_ds(z.ma).vgm ? esc(String(dong_ds(z.ma).vgm).slice(-1)) : "–"}</td><td>${dgia(z)}</td>
+      <td><button class="dm-x" data-dm-xoa="${esc(z.ma)}" title="Bỏ ${esc(z.ma)}" aria-label="Bỏ ${esc(z.ma)}">✕</button></td></tr>`; }).join("");
+  const o = o_so("Giá trị thị trường", dm_ty(tong)) + o_so("Lãi / lỗ", von ? `<span class="${mau(gt_co_von - von)}">${dm_ty(gt_co_von - von)} (${pt(gt_co_von / von - 1, 1)})</span>` : "–", von ? "trên vốn " + dm_ty(von) : "nhập giá vốn để tính")
+    + o_so("Hôm nay", `<span class="${mau(hom)}">${dm_ty(hom)}${tong ? ` (${pt(hom / (tong - hom), 2)})` : ""}</span>`) + o_so("Số mã", String(ds.length));
+  let h = the("Danh mục của tôi", `${ds.length} mã · giá trong phiên từ Bảng thị trường`, `<div class="dm-than">${form}</div><div class="luoi-so">${o}</div>
+    <div class="bang-boc"><table class="dm-bang" id="dm-bang"><thead><tr><th>Mã</th><th>Số CP</th><th>Giá vốn</th><th>Giá</th><th>Hôm nay</th><th>Giá trị</th><th>Tỷ trọng</th><th>Lãi/lỗ %</th><th>Lãi/lỗ</th><th>Xu hướng</th><th>VGM</th><th>Định giá</th><th></th></tr></thead><tbody>${dong}</tbody></table></div>`);
+  // ----- rủi ro 1 năm (ngày chung của mọi mã + VN-Index)
+  const co = ds.filter(z => z.m?.size && z.gt), thieu = ds.filter(z => !co.includes(z)).map(z => z.ma);
+  const chung = co.length ? [...co[0].m.keys()].filter(d => vni.has(d) && co.every(z => z.m.has(d))) : [];
+  const n1 = chung.slice(-251);
+  if (n1.length >= 60) {
+    const nav = dm_nav(co, n1), vv = n1.map(d => vni.get(d)), rp = nav.slice(1).map((v, i) => v / nav[i] - 1), rv = vv.slice(1).map((v, i) => v / vv[i] - 1);
+    const mp = tb(rp), mv_ = tb(rv), cv = tb(rp.map((v, i) => (v - mp) * (rv[i] - mv_))), vr = tb(rv.map(v => (v - mv_) ** 2)), bd = Math.sqrt(tb(rp.map(v => (v - mp) ** 2)) * 250);
+    const n3 = chung.slice(-751), sut3 = n3.length > n1.length + 100 ? dm_sut(dm_nav(co, n3)) : null;
+    const Rd = n1.slice(1).map((d, i) => co.map(z => z.m.get(d) / z.m.get(n1[i]) - 1)), [Sd] = dm_cov(Rd);
+    const w = co.map(z => z.gt / co.reduce((s, q) => s + q.gt, 0)), Sw = dm_mv(Sd, w), vp = w.reduce((s, x, i) => s + x * Sw[i], 0);
+    const rc = co.map((z, i) => [z.ma, w[i] * Sw[i] / vp]).sort((a, b) => b[1] - a[1]);
+    let tq = 0, sl = 0; for (let i = 0; i < co.length; i++) for (let j = i + 1; j < co.length; j++) { tq += Sd[i][j] / Math.sqrt(Sd[i][i] * Sd[j][j]); sl++; }
+    const ng = {}; ds.forEach(z => { ng[z.nganh] = (ng[z.nganh] || 0) + (z.gt || 0) / tong; });
+    const ngs = Object.entries(ng).sort((a, b) => b[1] - a[1]), canh = [];
+    if (ngs[0][1] > 0.4 && ds.length > 1) canh.push(`Ngành <b>${esc(ngs[0][0])}</b> chiếm ${pt(ngs[0][1], 0, false)} – một cú sốc ngành kéo cả danh mục.`);
+    if (rc[0][1] > 0.4 && co.length > 2) canh.push(`<b>${esc(rc[0][0])}</b> gánh ${pt(rc[0][1], 0, false)} rủi ro danh mục.`);
+    const sut1 = dm_sut(nav); if (sut1 < -0.25) canh.push(`Giữ nguyên danh mục này 1 năm qua sẽ có lúc sụt ${pt(-sut1, 0, false)} – cao hơn mức nhiều người chịu được (~20–25%).`);
+    if (sl && tq / sl > 0.6) canh.push(`Các mã đi cùng chiều mạnh (tương quan TB ${so(tq / sl, 2)}) – đa dạng hoá ít tác dụng.`);
+    const rr = o_so("Lợi suất 1 năm", `<span class="${mau(nav.at(-1) / nav[0] - 1)}">${pt(nav.at(-1) / nav[0] - 1, 1)}</span>`, `VN-Index ${pt(vv.at(-1) / vv[0] - 1, 1)}`)
+      + o_so("Sụt tối đa 1 năm", `<span class="g">${pt(sut1, 1)}</span>`, `VN-Index ${pt(dm_sut(vv), 1)}${sut3 != null ? ` · 3 năm ${pt(sut3, 0)}` : ""}`)
+      + o_so("Biến động năm", pt(bd, 1, false), "độ lệch chuẩn lợi suất ngày × √250") + o_so("Beta", vr ? so(cv / vr, 2) : "–", "so VN-Index · 1 = đi cùng thị trường")
+      + o_so("Tương quan TB", sl ? so(tq / sl, 2) : "–", "giữa từng cặp mã · thấp = đa dạng tốt");
+    h += the("Rủi ro & hiệu quả", `${n1.length - 1} phiên gần nhất · giữ đúng số CP hiện tại · giá điều chỉnh cổ tức / chia tách${thieu.length ? ` · thiếu giá: ${esc(thieu.join(", "))}` : ""}`,
+      `<div class="luoi-so">${rr}</div>${canh.length ? `<ul class="dm-canh">${canh.map(c => `<li><i class="cham g"></i><span>${c}</span></li>`).join("")}</ul>` : ""}
+      <div class="dm-hai"><div>${dm_duong(nav, vv, n1)}</div><div><h4>Đóng góp rủi ro</h4>${rc.map(([m_, v]) => `<div class="dm-thanh"><span>${esc(m_)}</span><b style="width:${Math.max(1, v * 100).toFixed(1)}%"></b><em>${pt(v, 0, false)}</em></div>`).join("")}
+      <h4>Theo ngành</h4>${ngs.map(([n_, v]) => `<div class="dm-thanh"><span title="${esc(n_)}">${esc(n_)}</span><b style="width:${Math.max(1, v * 100).toFixed(1)}%"></b><em>${pt(v, 0, false)}</em></div>`).join("")}</div></div>`);
+  }
+  // ----- tỷ trọng gợi ý (lợi suất tuần ≤ 156 tuần, như bt_phan_bo)
+  if (co.length >= 2) {
+    const tuan = []; for (let i = chung.length - 1; i >= 0 && tuan.length <= 156; i -= 5) tuan.unshift(chung[i]);
+    if (tuan.length >= 27) {
+      const R = tuan.slice(1).map((d, i) => co.map(z => z.m.get(d) / z.m.get(tuan[i]) - 1)), S = dm_lw_cc(R);
+      const W = {n: co.map(() => 1 / co.length), rp: dm_rp(S), hrp: dm_hrp(S), gmv: dm_gmv(S, 0.4)};
+      const bd_pp = w => Math.sqrt(dm_mv(S, w).reduce((s, v, i) => s + v * w[i], 0) * 52);
+      const tg = co.reduce((s, z) => s + z.gt, 0), wn = co.map(z => z.gt / tg), wc = W[DM_ST.pp] || W.gmv;
+      const lenh = co.map((z, i) => { const lech = wn[i] - wc[i], cp = Math.round((wc[i] - wn[i]) * tg / (z.gia * 1000) / 100) * 100;
+        return `<tr><td class="trai"><b>${esc(z.ma)}</b></td><td>${pt(wn[i], 1, false)}</td>${DM_PP.map(([k_]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${pt(W[k_][i], 1, false)}</td>`).join("")}
+          <td class="trai">${Math.abs(lech) <= 0.05 || !cp ? `<span class="m">giữ (lệch ${pt(-lech, 1)})</span>` : `<b class="${cp > 0 ? "t" : "g"}">${cp > 0 ? "Mua" : "Bán"} ${so(Math.abs(cp), 0)} CP</b> <span class="m nho">≈ ${dm_ty(Math.abs(cp) * z.gia * 1000)}</span>`}</td></tr>`; }).join("");
+      h += the("Tỷ trọng gợi ý", `${tuan.length - 1} tuần lợi suất · Σ co Ledoit–Wolf về tương quan hằng · chỉ giao dịch mã lệch quá ±5 điểm %`,
+        `<div class="dm-pp"><span class="nut">${nut(DM_PP.map(([k_, t]) => [k_, t]), DM_ST.pp, "dmpp")}</span></div>
+        <div class="bang-boc"><table><thead><tr><th>Mã</th><th>Hiện tại</th>${DM_PP.map(([k_, t]) => `<th${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${esc(t.split(" · ")[0])}</th>`).join("")}<th class="trai">Cân lại theo ${esc((DM_PP.find(p => p[0] === DM_ST.pp) || DM_PP[3])[1].split(" · ")[0])}</th></tr></thead>
+        <tbody>${lenh}<tr class="c1"><td class="trai">Biến động năm dự kiến</td><td>${pt(bd_pp(wn), 1, false)}</td>${DM_PP.map(([k_]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${pt(bd_pp(W[k_]), 1, false)}</td>`).join("")}<td></td></tr>
+        <tr><td class="trai">Sharpe trung vị backtest</td><td>–</td>${DM_PP.map(([k_, , sr]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${sr}</td>`).join("")}<td></td></tr></tbody></table></div>
+        <p class="m nho dm-ghi">Sharpe trung vị: backtest hệ thống trên 2.000 danh mục ngẫu nhiên Việt Nam (10 loại, 01/2016 → 11/2026, cân đầu tháng, trừ phí + thuế). Markowitz Sharpe tối đa gốc chỉ 0,20 nên không dùng. * GMV kiểm chứng không trần (dồn 34–60% vào 1 mã) – trần 40% là bản an toàn hơn, chưa kiểm chứng riêng. Không phải khuyến nghị đầu tư; lô 100 CP.</p>`);
+    }
+  }
+  nd.innerHTML = h;
+}
+document.addEventListener("submit", e => { if (e.target.id !== "dm-form") return; e.preventDefault(); const f = e.target;
+  if (dm_them(f.ma.value, f.kl.value, f.gv.value)) { dm_luu(); hien_dm(); } else f.ma.focus(); });
+document.addEventListener("click", e => {
+  const t = e.target; if (!t.closest?.("#noi-dung") || !/^#danh-muc/i.test(location.hash)) return;
+  const x = t.closest("[data-dm-xoa]"); if (x) { DM = DM.filter(z => z.ma !== x.dataset.dmXoa); dm_luu(); return hien_dm(); }
+  const p = t.closest("[data-dmpp]"); if (p) { DM_ST.pp = p.dataset.dmpp; return hien_dm(); }
+  if (t.id === "dm-mau") { DM = []; DS.filter(r => r.von && r.gia).slice(0, 5).forEach(r => dm_them(r.ma, 1000, r.gia / 1000)); dm_luu(); return hien_dm(); }
+  if (t.id === "dm-xoa-het") { e.preventDefault(); if (confirm("Xoá hết danh mục trong trình duyệt này?")) { DM = []; dm_luu(); hien_dm(); } return; }
+  if (t.id === "dm-ghi") { e.preventDefault(); const cu = DM; DM = [];
+    for (const d of ($("#dm-vb")?.value || "").split(/\n+/)) { const [m_, k_, g_] = d.trim().split(/[\s;\t]+/); if (m_) dm_them(m_, (k_ || "").replace(/[.,]/g, ""), g_); }
+    if (!DM.length && cu.length && !confirm("Ô trống – xoá hết danh mục?")) DM = cu;
+    dm_luu(); hien_dm(); }
+});
 function dinh_tuyen() {
   const [a, b] = decodeURIComponent(location.hash.slice(1)).split("/"), h = (a || "").toUpperCase();
   const dat = v => { $("#o-tim").value = v; $("#tim-dau").classList.toggle("co", !!v); };
@@ -4805,6 +5104,7 @@ function dinh_tuyen() {
   if (h === "NGANH") { dat(""); return hien_nganh(); }
   if (h === "LICH") { dat(""); return hien_lich(); }
   if (h === "RRG") { dat(""); return hien_rrg(); }
+  if (h === "DANH-MUC") { dat(""); return hien_dm(); }
   if (h === "BIEU-DO") { dat(""); return bd_trang(b); }
   if (CHI_SO_TEN[h]) { dat(""); return bd_trang(h); }                      // chỉ số: chỉ có biểu đồ
   if (h === "LUOI") { dat(""); return hien_luoi(); }
@@ -4876,6 +5176,7 @@ addEventListener("hashchange", () => {
     const [a, b] = decodeURIComponent(location.hash.slice(1)).split("/");
     if (MA_OK((a || "").toUpperCase()) && (!b || ["tong-quan", "dinh-gia"].includes(b))) dinh_tuyen();
     else if ((a || "").toUpperCase() === "NGANH") hien_nganh();
+    else if ((a || "").toUpperCase() === "DANH-MUC" && !document.activeElement?.closest?.("#noi-dung") && !document.querySelector(".dm-nhap[open]")) hien_dm();
   }, 30000);                                                 // dữ liệu trong phiên ~30 giây / lượt (vòng bảng thị trường)
 })();
 // ---------------------------------------------------------------- TỰ CẬP NHẬT BẢN MỚI (ứng dụng ở màn hình chính iPhone giữ trang chạy nền;
