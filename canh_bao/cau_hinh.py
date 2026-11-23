@@ -53,7 +53,10 @@ THU_MUC_CACHE = "cache_gia"
 EV_NGUONG = 1.0                    # % – EV sau phí (ptcp) tối thiểu để phát MUA NGAY (= ngưỡng ptcp)
 
 # --- Nhật ký & chấm điểm tín hiệu (canh_bao/nhat_ky.py) ---
-TU_DAT_LENH = True                 # CHẠM CẮT LỖ → tự gửi lệnh BÁN HẾT tới máy Mac (False = chỉ nút bấm); tin MUA ★ luôn qua nút 🛒 → ✅
+GIO_CP_VE = 13                     # CP mua ngày T về TRƯA T+2 – bán được từ 13:00 (đo DNSE 23/11/2026: 0/500 tới 11:01, đủ 12:47)
+TU_DAT_LENH = True                 # tín hiệu BÁN của hệ (vi_the.BAN_ATO: chạm cắt lỗ · gãy MA10 tuần · hết hạn · hệ bắt đáy bán ·
+#                                    bạn yêu cầu bán – từ 22/11/2026) → tự gửi lệnh BÁN HẾT tới máy Mac (False = chỉ nút bấm);
+#                                    tin MUA ★ luôn qua nút 🛒 → ✅
 GHI_NHAT_KY = True                 # ghi mọi tín hiệu (MUA NGAY, khuyến nghị ptcp, cảnh báo bán) & tự chấm ĐÚNG/SAI
 KY_HAN_MUA = 63                    # phiên – hạn chấm lệnh mua khi ptcp không cho kỳ hạn (= SO_PHIEN_XAC_SUAT)
 KY_HAN_BAN = 20                    # phiên – sau cảnh báo bán bao lâu thì so giá để chấm

@@ -471,6 +471,32 @@ def test_gdkhq_khong_tu_dat_lenh_ban(monkeypatch):
     assert len(tin) == 2
 
 
+def test_tu_ban_moi_tin_hieu_thoat_trong_phien(monkeypatch):
+    """22/11/2026: gãy MA10 tuần / hết hạn / hệ bắt đáy bán / bạn yêu cầu bán (tới ngày) cũng tự gửi lệnh bán như cắt lỗ;
+    yêu cầu bán ngày SAU, mức giữ → không; mức chưa phải bán (sát cắt lỗ) → không."""
+    from canh_bao import vi_the as VT
+    dn = pd.DataFrame({"close": [10.0, 10.1]}, index=pd.bdate_range(end="2026-11-12", periods=2))
+    goi = []
+    monkeypatch.setattr(chay, "tai", lambda *a, **k: dn)
+    monkeypatch.setattr(chay, "hom_nay_co_giao_dich", lambda *a: True)
+    dp = pd.DataFrame({"close": [10.05]}, index=[pd.Timestamp("2026-11-12 09:45")])
+    monkeypatch.setattr(chay, "bo_nen_chua_dong", lambda *a: dp)
+    monkeypatch.setattr(chay, "_tu_dat", lambda *a: goi.append(a[3]) or True)
+    monkeypatch.setattr(chay, "gui", lambda nd, **k: None)
+    monkeypatch.setattr(VT, "can_bao_ban", lambda *a: True)
+    monkeypatch.setattr(VT, "tin_ban", lambda *a, **k: "tin")
+    monkeypatch.setattr(VT, "doc_trang_thai_ban", lambda: {})
+    monkeypatch.setattr(VT, "ghi_trang_thai_ban", lambda *a, **k: None)
+    monkeypatch.setattr(C, "QUET_DANH_MUC_CU", False, raising=False)
+    monkeypatch.setattr(C, "GHI_NHAT_KY", False, raising=False)
+    muc = {"A": {"muc": "BAN_TUAN"}, "B": {"muc": "HET_HAN"}, "C": {"muc": "BD_BAN"}, "D": {"muc": "SAT_CAT_LO"},
+           "E": {"muc": "BAN_YEU_CAU", "ngay_lenh": pd.Timestamp("2026-11-12")},
+           "F": {"muc": "BAN_YEU_CAU", "ngay_lenh": pd.Timestamp("2026-11-13")}}
+    monkeypatch.setattr(VT, "danh_gia_ban", lambda v, *a: {**muc[v["ma"]], "he_thoat": False})
+    chay._canh_bao_ban(pd.Timestamp("2026-11-12 10:00"), {m: {"ma": m, "so_cp": 100} for m in muc}, False)
+    assert goi == ["A", "B", "C", "E"]
+
+
 def test_nen_15p_cu_khong_tu_ban(monkeypatch):
     """Nguồn 15' lỗi → tai trả cache hôm qua: giá lấy từ nến ngày (đã kiểm là hôm nay), vẫn báo nhưng KHÔNG tự gửi lệnh bán."""
     from canh_bao import vi_the as VT
