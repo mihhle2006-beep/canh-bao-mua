@@ -8,6 +8,8 @@
 # trường (nhóm CHIẾN LƯỢC) đọc ở lượt dựng trang kế tiếp.
 # che_do = phan_bo: backtest PHƯƠNG PHÁP PHÂN BỔ DANH MỤC (bt_phan_bo.py – 13 phương pháp của Cẩm nang × 10 loại danh mục
 # × 200 danh mục ngẫu nhiên, cân đầu tháng 2016 → nay; luật "tối ưu" đặt trước trong docstring). Chỉ bấm tay.
+# che_do = loc_ma_pb: như loc_ma + VÒNG 3 bt_phan_bo (cách cầm 3 chiến lược tab Lọc mã: lọc xu hướng, MA200, Risk Parity,
+# HRP, GMV…; luật đặt trước). Không ghi danh sách chiến lược lên trang. Chỉ bấm tay.
 name: Sieu co phieu
 
 on:
@@ -24,7 +26,7 @@ on:
       che_do:
         description: "sieu = đặc điểm siêu cổ phiếu · loc_ma = backtest chiến lược lọc mã (bt_loc_ma.py) · phan_bo = backtest phương pháp phân bổ (bt_phan_bo.py)"
         type: choice
-        options: [sieu, loc_ma, phan_bo]
+        options: [sieu, loc_ma, phan_bo, loc_ma_pb]
         default: sieu
       xem:
         description: "loc_ma: mã cần soi, cách nhau dấu phẩy – bộ lọc nào chọn được mã trước khi tăng (trống = không)"
@@ -88,6 +90,7 @@ jobs:
         run: |
           if [ "$CHE_DO" = loc_ma ]; then python bt_loc_ma.py --ma "$MA" --tu "$TU" --xem "$XEM"
           elif [ "$CHE_DO" = phan_bo ]; then python bt_phan_bo.py --ma "$MA" --tu "$TU"
+          elif [ "$CHE_DO" = loc_ma_pb ]; then python bt_loc_ma.py --ma "$MA" --tu "$TU" --xem "$XEM" --phan_bo
           else python phan_tich_sieu_cp.py --ma "$MA" --tu "$TU"; fi
       - uses: actions/checkout@v5                 # loc_ma: danh sách chiến lược kỳ gần nhất → trang (chỉ code danh-muc main)
         if: (inputs.che_do || 'loc_ma') == 'loc_ma' && !inputs.nhanh_danh_muc && hashFiles('danh-muc/chien_luoc_ky.json') != ''
@@ -116,5 +119,6 @@ jobs:
             danh-muc/sieu_co_phieu.xlsx
             danh-muc/bt_loc_ma.xlsx
             danh-muc/bt_phan_bo.xlsx
+            danh-muc/bt_phan_bo_ro.xlsx
           retention-days: 30
           if-no-files-found: ignore
