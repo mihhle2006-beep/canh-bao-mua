@@ -69,7 +69,7 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Tra cứu sở hữu | mã, từ, đến | cơ cấu cổ đông / sở hữu nước ngoài | repo này `cong_cu/so_huu` |
 | Bat thuong BCTC | mã, làm mới | dò bất thường BCTC + đọc thuyết minh giải thích (cũng tự chạy sau BCTC mới) | danh-muc |
 | To chuc phat hanh trai phieu | mã | DN phát hành trái phiếu tin cậy / sự cố | danh-muc |
-| Sieu co phieu | mã, từ, che_do, xem, nhanh_danh_muc · lịch 16/2 · 5 · 8 · 11 (loc_ma) | đặc điểm các siêu cổ phiếu · che_do = loc_ma: backtest chiến lược lọc mã độc lập (top 15, cân lại mỗi quý) + ghi `thi_truong/chien_luoc.json` (chiến lược đạt kiểm định kỳ gần nhất – CANSLIM ít biến động → tab Lọc mã, nhóm CHIẾN LƯỢC) | danh-muc `phan_tich_sieu_cp.py` · `bt_loc_ma.py` |
+| Sieu co phieu | mã, từ, che_do, xem, nhanh_danh_muc · lịch 16/2 · 5 · 8 · 11 (loc_ma) | đặc điểm các siêu cổ phiếu · che_do = loc_ma: backtest chiến lược lọc mã độc lập (top 15, cân lại mỗi quý) + ghi `thi_truong/chien_luoc.json` (chiến lược đạt kiểm định kỳ gần nhất – CANSLIM ít biến động → tab Lọc mã, nhóm CHIẾN LƯỢC) · che_do = phan_bo: backtest phương pháp phân bổ danh mục (13 phương pháp × 10 loại danh mục, chỉ bấm tay) | danh-muc `phan_tich_sieu_cp.py` · `bt_loc_ma.py` · `bt_phan_bo.py` |
 | Kiem dinh dinh gia | số mã, từ | kiểm định độ chính xác định giá | danh-muc |
 | Kiem du lieu thi truong moi noi | thị trường, … | đủ dữ liệu để thử luật ở thị trường khác không | danh-muc |
 | Chan doan nguon | nhiều ô | in mẫu dữ liệu các nguồn giá / BCTC khi nghi lỗi nguồn | danh-muc |

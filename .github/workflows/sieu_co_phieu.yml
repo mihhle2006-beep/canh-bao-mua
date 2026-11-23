@@ -6,6 +6,8 @@
 # so VN-Index · rổ đều · 1.000 rổ ngẫu nhiên; luật đạt đặt trước trong docstring). Lượt loc_ma (lịch 16/2 · 5 · 8 · 11 hoặc
 # bấm tay, code danh-muc main) ghi danh sách chiến lược lọc mã kỳ gần nhất (chỉ chiến lược đạt kiểm định hiện trên web) vào thi_truong/chien_luoc.json → tab Lọc mã của Bảng thị
 # trường (nhóm CHIẾN LƯỢC) đọc ở lượt dựng trang kế tiếp.
+# che_do = phan_bo: backtest PHƯƠNG PHÁP PHÂN BỔ DANH MỤC (bt_phan_bo.py – 13 phương pháp của Cẩm nang × 10 loại danh mục
+# × 200 danh mục ngẫu nhiên, cân đầu tháng 2016 → nay; luật "tối ưu" đặt trước trong docstring). Chỉ bấm tay.
 name: Sieu co phieu
 
 on:
@@ -20,9 +22,9 @@ on:
         description: "Từ năm"
         default: "2013"
       che_do:
-        description: "sieu = đặc điểm siêu cổ phiếu · loc_ma = backtest chiến lược lọc mã (bt_loc_ma.py)"
+        description: "sieu = đặc điểm siêu cổ phiếu · loc_ma = backtest chiến lược lọc mã (bt_loc_ma.py) · phan_bo = backtest phương pháp phân bổ (bt_phan_bo.py)"
         type: choice
-        options: [sieu, loc_ma]
+        options: [sieu, loc_ma, phan_bo]
         default: sieu
       xem:
         description: "loc_ma: mã cần soi, cách nhau dấu phẩy – bộ lọc nào chọn được mã trước khi tăng (trống = không)"
@@ -85,6 +87,7 @@ jobs:
           XEM: ${{ inputs.xem }}
         run: |
           if [ "$CHE_DO" = loc_ma ]; then python bt_loc_ma.py --ma "$MA" --tu "$TU" --xem "$XEM"
+          elif [ "$CHE_DO" = phan_bo ]; then python bt_phan_bo.py --ma "$MA" --tu "$TU"
           else python phan_tich_sieu_cp.py --ma "$MA" --tu "$TU"; fi
       - uses: actions/checkout@v5                 # loc_ma: danh sách chiến lược kỳ gần nhất → trang (chỉ code danh-muc main)
         if: (inputs.che_do || 'loc_ma') == 'loc_ma' && !inputs.nhanh_danh_muc && hashFiles('danh-muc/chien_luoc_ky.json') != ''
@@ -112,5 +115,6 @@ jobs:
           path: |
             danh-muc/sieu_co_phieu.xlsx
             danh-muc/bt_loc_ma.xlsx
+            danh-muc/bt_phan_bo.xlsx
           retention-days: 30
           if-no-files-found: ignore
