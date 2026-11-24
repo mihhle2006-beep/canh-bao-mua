@@ -149,6 +149,15 @@ def cac_nguon(ma, tu, den, khung, chi_so=False):
 NGUON_DA_DUNG = {}           # (mã, khung) → nguồn – in ra để biết nguồn nào đang sống
 
 
+def _bo_phien_gia(df):
+    """Phiên giả khi mã tạm ngừng giao dịch (VNDirect / Vietcap điền giá gốc cũ – ptcp.du_lieu.bo_phien_gia, 24/11/2026)."""
+    try:
+        from ptcp.du_lieu import bo_phien_gia
+    except ImportError:                                                  # ptcp cũ / chưa có → giữ nguyên
+        return df
+    return bo_phien_gia(df)
+
+
 def chuan_hoa(df, chi_so=False):
     df = df.copy()
     df["time"] = pd.to_datetime(df["time"])
@@ -165,7 +174,7 @@ def chuan_hoa(df, chi_so=False):
     df["volume"] = df["volume"].fillna(0)
     if not chi_so and len(df) and df.close.median() > 1000:      # nguồn trả theo ĐỒNG
         df[["open", "high", "low", "close"]] /= 1000
-    return df[["open", "high", "low", "close", "volume"]].astype(float)
+    return _bo_phien_gia(df[["open", "high", "low", "close", "volume"]].astype(float))
 
 
 def _cache(khoa):
@@ -235,9 +244,10 @@ def _doc_cache(khoa):
     if not os.path.exists(f):
         return None
     try:
-        return pd.read_csv(f, index_col=0, parse_dates=True).astype(float)
+        df = pd.read_csv(f, index_col=0, parse_dates=True).astype(float)
     except (OSError, ValueError):
         return None
+    return _bo_phien_gia(df) if {"open", "close", "volume"} <= set(df.columns) else df   # cache cũ còn phiên giả
 
 
 def tai(ma, khung="D", tu_ngay="2019-01-01", chi_so=False):

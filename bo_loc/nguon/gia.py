@@ -135,7 +135,12 @@ def chuan_hoa(df):
     for c in ("open", "high", "low"):
         df[c] = df[c].fillna(df["close"])
     df["volume"] = df["volume"].fillna(0)
-    return df[["open", "high", "low", "close", "volume"]].astype(float)
+    df = df[["open", "high", "low", "close", "volume"]].astype(float)
+    try:                                       # phiên giả khi mã tạm ngừng giao dịch (VNDirect / Vietcap – 24/11/2026)
+        from ptcp.du_lieu import bo_phien_gia
+        return bo_phien_gia(df)
+    except ImportError:
+        return df
 
 
 def ve_nghin_dong(df, don_vi):
