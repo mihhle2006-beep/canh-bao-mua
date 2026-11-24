@@ -14,6 +14,7 @@
 #   qua_khop – (chạy tay, 24/11/2026) K2 độ nhạy tham số lõi ± 20–30 % + K3 xác suất quá khớp (PBO) / Sharpe giảm trừ.
 #   vuot_vni – (chạy tay, 24/11/2026) V0 chẩn đoán lãi vượt VN-Index: tách chọn mã / tiền mặt (chỉ phân tích, không thử luật).
 #   rui_ro_cao – (chạy tay, 24/11/2026) R2 đổi rủi ro lấy lãi: 8 cần gạt + lưới, lãi cao nhất trong ngân sách sụt −20 / −25 %.
+#   tien_mat – (chạy tay, 24/11/2026) T1 tiền nhàn rỗi cầm ETF theo 8 tín hiệu (xu hướng / độ rộng / biến động) + giả dược.
 # Kết quả: log + Artifacts (backtest_quy_b_<phần>.xlsx).
 name: Backtest quy But Pha
 
@@ -29,7 +30,7 @@ on:
         description: "Từ ngày"
         default: "2012-01-01"
       phan:
-        description: "Phần chạy: chuan / cham1r / nhin_truoc / qua_khop / vuot_vni / rui_ro_cao (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao / vao_tre_cl đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
+        description: "Phần chạy: chuan / cham1r / nhin_truoc / qua_khop / vuot_vni / rui_ro_cao / tien_mat (phân cách dấu phẩy; all = tất cả) – phần cũ von55–von101 / het_han / gia_cao / lenh_vao / vao_tre_cl đã xoá, kết luận ở danh-muc/KET_LUAN_BACKTEST_CU.md"
         default: "chuan"
       co_huy:
         description: "Thêm mã phá sản / huỷ niêm yết (true/false)"
@@ -62,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phan: [chuan, cham1r, nhin_truoc, qua_khop, vuot_vni, rui_ro_cao]
+        phan: [chuan, cham1r, nhin_truoc, qua_khop, vuot_vni, rui_ro_cao, tien_mat]
     runs-on: ubuntu-24.04
     defaults:
       run:
