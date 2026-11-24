@@ -2,12 +2,12 @@
  "cl": 1,
  "diem": 1,
  "ngay_du_lieu": "2026-11-23",
- "cap_nhat": "2026-11-24 03:20",
+ "cap_nhat": "2026-11-24 15:20",
  "ds_mua": {
   "hieu_luc": "2026-11-24",
   "ngay_du_lieu": "2026-11-23",
   "cl": 1,
-  "tao_luc": "2026-11-24 03:20",
+  "tao_luc": "2026-11-24 15:20",
   "ma": [
    {
     "ma": "DIG",
@@ -36,7 +36,7 @@
     "he_so_quy": 0.75,
     "loc_quy": "Beneish M -1.04 > -1.78 ×0.5; nhiệt dài hạn (VN-Index Giảm) ×1.5",
     "manh_b": false,
-    "dau_hieu_manh": "RS 3T cao",
+    "dau_hieu_manh": "",
     "he_so_vni": 1.5,
     "he_so_rong": 1.0,
     "he_so_quy_ma": 0.5,
@@ -102,7 +102,7 @@
     "he_so_quy": 1.5,
     "loc_quy": "nhiệt dài hạn (VN-Index Giảm) ×1.5",
     "manh_b": false,
-    "dau_hieu_manh": "RS 3T cao",
+    "dau_hieu_manh": "",
     "he_so_vni": 1.5,
     "he_so_rong": 1.0,
     "he_so_quy_ma": 1.0,
@@ -135,7 +135,7 @@
     "he_so_quy": 1.5,
     "loc_quy": "nhiệt dài hạn (VN-Index Giảm) ×1.5",
     "manh_b": false,
-    "dau_hieu_manh": "RS 3T cao",
+    "dau_hieu_manh": "",
     "he_so_vni": 1.5,
     "he_so_rong": 1.0,
     "he_so_quy_ma": 1.0,
@@ -201,7 +201,7 @@
     "he_so_quy": 1.5,
     "loc_quy": "nhiệt dài hạn (VN-Index Giảm) ×1.5",
     "manh_b": false,
-    "dau_hieu_manh": "RS 3T cao, thanh khoản tăng",
+    "dau_hieu_manh": "thanh khoản tăng",
     "he_so_vni": 1.5,
     "he_so_rong": 1.0,
     "he_so_quy_ma": 1.0,
@@ -377,11 +377,11 @@
      "vni_tt": "Giảm",
      "ew_tt": "Giảm",
      "vni_60p": -6.82,
-     "tv_60p": -6.91,
+     "tv_60p": -7.15,
      "he_so": 1.0,
      "ly_do": [],
      "tre": 0,
-     "nguon": "lọc + giá 97 mã rổ"
+     "nguon": "lọc"
     }
    },
    "he_so_tong": 1.5
@@ -428,7 +428,7 @@
     "chi_tiet": "14.4% vs 17.1%"
    }
   ],
-  "cap_nhat": "2026-11-24 03:20"
+  "cap_nhat": "2026-11-24 15:20"
  },
  "khuyen_nghi": [
   {
@@ -9091,7 +9091,7 @@
    "hieu_luc": "2026-11-24",
    "ngay_du_lieu": "2026-11-23",
    "cl": 1,
-   "tao_luc": "2026-11-24 03:20",
+   "tao_luc": "2026-11-24 15:20",
    "ma": [
     {
      "ma": "DIG",
@@ -9120,7 +9120,7 @@
      "he_so_quy": 0.75,
      "loc_quy": "Beneish M -1.04 > -1.78 ×0.5; nhiệt dài hạn (VN-Index Giảm) ×1.5",
      "manh_b": false,
-     "dau_hieu_manh": "RS 3T cao",
+     "dau_hieu_manh": "",
      "he_so_vni": 1.5,
      "he_so_rong": 1.0,
      "he_so_quy_ma": 0.5,
@@ -9186,7 +9186,7 @@
      "he_so_quy": 1.5,
      "loc_quy": "nhiệt dài hạn (VN-Index Giảm) ×1.5",
      "manh_b": false,
-     "dau_hieu_manh": "RS 3T cao",
+     "dau_hieu_manh": "",
      "he_so_vni": 1.5,
      "he_so_rong": 1.0,
      "he_so_quy_ma": 1.0,
@@ -9219,7 +9219,7 @@
      "he_so_quy": 1.5,
      "loc_quy": "nhiệt dài hạn (VN-Index Giảm) ×1.5",
      "manh_b": false,
-     "dau_hieu_manh": "RS 3T cao",
+     "dau_hieu_manh": "",
      "he_so_vni": 1.5,
      "he_so_rong": 1.0,
      "he_so_quy_ma": 1.0,
@@ -9285,7 +9285,7 @@
      "he_so_quy": 1.5,
      "loc_quy": "nhiệt dài hạn (VN-Index Giảm) ×1.5",
      "manh_b": false,
-     "dau_hieu_manh": "RS 3T cao, thanh khoản tăng",
+     "dau_hieu_manh": "thanh khoản tăng",
      "he_so_vni": 1.5,
      "he_so_rong": 1.0,
      "he_so_quy_ma": 1.0,
