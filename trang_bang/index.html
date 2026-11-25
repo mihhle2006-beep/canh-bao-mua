@@ -96,6 +96,7 @@ main{max-width:1440px;margin:0 auto;padding:16px}
 .vm-hh .lq{display:block;font-size:11px;color:var(--mo);white-space:normal;max-width:250px;line-height:1.35}
 .vm-hh tr.nhom td{background:var(--nen);color:var(--chu2);font-weight:650;font-size:12px;cursor:default;padding:5px 10px}
 .vm-hh .cu{color:var(--dung)}
+@media (max-width:600px){.vm-hh td,.vm-hh th{padding:6px 5px;font-size:12.5px}.vm-hh .lq{max-width:150px}.vm-hh td:first-child{white-space:normal}}
 @media (max-width:600px){.vm-the{grid-template-columns:repeat(2,minmax(0,1fr))}.vm-the .gia{font-size:16px}.vm-bd{height:240px}}
 .luoi3{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);gap:16px}
 @media (max-width:1000px){.luoi2,.luoi3{grid-template-columns:minmax(0,1fr)}}
@@ -1203,8 +1204,8 @@ function vm_hh_bang() {                               // bảng hàng hoá theo 
   if (!ds.some(r => r.k === ST.vm_hh)) ST.vm_hh = ds[0].k;
   const pt = (x, an) => `<td class="so${an ? " an-dt" : ""}${x > 0 ? " t" : x < 0 ? " g" : ""}">${x == null ? "–" : (x > 0 ? "+" : "") + vm_so(x, 1) + "%"}</td>`;
   const dong = r => { const cheo = r.cheo ? ` · so nguồn 2: ${r.cheo[0]} ngày trùng, tương quan thay đổi ngày ${r.cheo[1]}, lệch ${r.cheo[2]}%` : "";
-    return `<tr data-k="${r.k}" class="${r.k === ST.vm_hh ? "chon" : ""}" title="${esc("Nguồn: " + r.nguon + cheo + " · giá ngày " + r.ngay)}">
-      <td class="trai"><b>${esc(r.ten)}</b><span class="lq">${esc(r.dv)}${r.lq ? " · " + esc(r.lq) : ""}${r.cu ? ` · <span class="cu">giá ngày ${ngay_vn(r.ngay)}/${r.ngay.slice(0, 4)}</span>` : ""}</span></td>
+    return `<tr data-k="${r.k}" class="${r.k === ST.vm_hh ? "chon" : ""}" title="${esc((r.lq ? "Liên quan: " + r.lq + " · " : "") + "Nguồn: " + r.nguon + cheo + " · giá ngày " + r.ngay)}">
+      <td class="trai"><b>${esc(r.ten)}</b><span class="lq">${esc(r.dv)}${r.lq ? '<span class="an-dt"> · ' + esc(r.lq) + "</span>" : ""}${r.cu ? ` · <span class="cu">giá ngày ${ngay_vn(r.ngay)}/${r.ngay.slice(0, 4)}</span>` : ""}</span></td>
       <td class="so">${vm_so(r.gia, Math.abs(r.gia) < 20 ? 3 : 2)}</td>${pt(r.d1)}${pt(r.m1)}${pt(r.ytd, 1)}${pt(r.y1)}</tr>`; };
   $("#vm-hh").innerHTML = Object.entries(d.nhom_hh || {}).map(([k, ten]) => { const nh = ds.filter(r => r.nhom === k);
     return nh.length ? `<tr class="nhom"><td class="trai" colspan="6">${esc(ten)}</td></tr>` + nh.map(dong).join("") : ""; }).join("");

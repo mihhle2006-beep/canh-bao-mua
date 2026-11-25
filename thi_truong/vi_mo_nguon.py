@@ -68,9 +68,10 @@ def ngay(s, bu=0):
 
 
 def tv(sym, khung="1D", n=5000):
-    """Khung ngày / tháng: ngày theo cách cũ (UTC.normalize) như lai_suat; khung phút: giữ giờ."""
+    """Khung ngày / tháng: ngày theo lai_suat.TV_BU_GIO (đã sửa lệch 1 ngày – kiem_ngay); khung phút: giữ giờ."""
+    from thi_truong.lai_suat import TV_BU_GIO
     s = tv_tho(sym, khung, n)
-    return ngay(s) if khung in ("1D", "1W", "1M") else s
+    return ngay(s, TV_BU_GIO) if khung in ("1D", "1W", "1M") else s
 
 
 def lbma(kim="gold_pm"):
@@ -226,6 +227,8 @@ def so_cheo(a, b):
 # KIỂM NGÀY NẾN (25/11/2026): TV ↔ Yahoo cùng hàng hoá tương quan lợi suất ngày chỉ ~0,2 dù mức lệch < 1 % → nghi nến TV
 # bị gán lùi 1 ngày (nến ngày TV đánh dấu bằng GIỜ MỞ phiên – vàng/dầu/FX mở 22–23 h UTC hôm TRƯỚC). Đo: giờ UTC của nến,
 # tương quan theo độ trễ −1/0/+1 với nguồn gắn nhãn ngày chuẩn (Yahoo theo ngày giao dịch sàn, Bộ Tài chính Mỹ, HNX).
+# KẾT QUẢ (máy GitHub): cách cũ lệch 1 ngày (cùng ngày ≈ 0, trễ +1: vàng 0,89 · đồng 0,99 · Mỹ 10N 0,61); +12/14 h: cùng ngày
+# vàng 0,90 · DXY 0,97 · Mỹ 10N 0,95 · đồng 0,99 · VIX/BTC 1,00 → lai_suat.TV_BU_GIO = 14 (SGX phiên T+1 mở 10:15 UTC cần ≥ 14).
 KIEM_NGAY = [
     ("OANDA:XAUUSD", "yf:GC=F"), ("TVC:GOLD", "yf:GC=F"), ("OANDA:XAGUSD", "yf:SI=F"), ("TVC:PLATINUM", "yf:PL=F"),
     ("TVC:UKOIL", "yf:BZ=F"), ("TVC:USOIL", "yf:CL=F"), ("NYMEX:NG1!", "yf:NG=F"), ("COMEX:HG1!", "yf:HG=F"),
@@ -274,7 +277,7 @@ def kiem_ngay():
             continue
         la_ls = loai in ("bt", "hnx") or sym.startswith("TVC:US") or sym.startswith("TVC:VN")
         kq = []
-        for bu in (0, 12):
+        for bu in (0, 14):                                            # cách cũ · lai_suat.TV_BU_GIO
             a = ngay(r, bu)
             a = a[a.index >= "2021-01-01"]
             bb = b[b.index >= "2021-01-01"]

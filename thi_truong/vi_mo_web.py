@@ -65,14 +65,16 @@ HANG_HOA = [
     ("ure", "ns", "Urê (vịnh Mỹ)", "USD/tấn ngắn", ["tv:CBOT:UFV1!"], "phân bón: DPM, DCM"),
 ]
 THE_HH = ("bac", "brent", "wti")              # thẻ đầu trang (nhóm "Bạc · dầu"); đủ 22 loại ở bảng Hàng hoá
-# Kinh tế VN (TradingView ECONOMICS, theo tháng / quý): (khoá, mã, tên, đơn vị, chia, kiểu đổi, kỳ)
+# Kinh tế VN (TradingView ECONOMICS, theo tháng / quý): (khoá, mã, tên, đơn vị, chia, kiểu đổi, kỳ so). Đã kiểm 15 kỳ cuối
+# 25/11/2026: xuất khẩu, cán cân TM là số TỪNG THÁNG (không tụt về tháng 1); GDP theo quý; dự trữ là số dư.
 VM_VN = [("vn_gdp", "ECONOMICS:VNGDPYY", "GDP (so cùng kỳ)", "%", 1, "đ", "quý trước"),
          ("vn_sxcn", "ECONOMICS:VNIPYY", "Sản xuất công nghiệp (so cùng kỳ)", "%", 1, "đ", "tháng trước"),
          ("vn_banle", "ECONOMICS:VNRSYY", "Bán lẻ (so cùng kỳ)", "%", 1, "đ", "tháng trước"),
          ("vn_cpi_loi", "ECONOMICS:VNCIR", "Lạm phát lõi", "%", 1, "đ", "tháng trước"),
-         ("vn_xk", "ECONOMICS:VNEXP", "Xuất khẩu", "tỷ USD", 1e9, "%", "tháng trước"),
-         ("vn_bot", "ECONOMICS:VNBOT", "Cán cân thương mại", "tỷ USD", 1e9, "đ", "tháng trước"),
-         ("vn_fdi", "ECONOMICS:VNFDI", "FDI", "tỷ USD", 1e9, "%", "tháng trước"),
+         ("vn_xk", "ECONOMICS:VNEXP", "Xuất khẩu (tháng)", "tỷ USD", 1e9, "%", "tháng trước"),
+         ("vn_bot", "ECONOMICS:VNBOT", "Cán cân thương mại (tháng)", "tỷ USD", 1e9, "đ", "tháng trước"),
+         # FDI: CỘNG DỒN từ đầu năm (kiểm 25/11/2026: 12/2025 27,62 tỷ = giải ngân cả năm 2025, 01/2026 tụt về 1,68) → so cùng kỳ
+         ("vn_fdi", "ECONOMICS:VNFDI", "FDI giải ngân (cộng dồn năm)", "tỷ USD", 1e9, "%", "cùng kỳ năm trước"),
          ("vn_dtnh", "ECONOMICS:VNFER", "Dự trữ ngoại hối", "tỷ USD", 1e9, "%", "tháng trước")]
 
 
@@ -450,10 +452,14 @@ def _the(k, nhom, ten, s, dv, nguon, ky=1, kieu="%", le=2, ten_ky="phiên trư�
     if not len(s):
         return None
     v = float(s.iloc[-1])
-    q = float(s.iloc[-1 - ky]) if len(s) > ky else None
+    if ten_ky.startswith("cùng kỳ"):
+        tr = s[s.index <= s.index[-1] - pd.DateOffset(years=1)]
+        q = float(tr.iloc[-1]) if len(tr) and tr.index[-1] > s.index[-1] - pd.DateOffset(years=1, days=20) else None
+    else:
+        q = float(s.iloc[-1 - ky]) if len(s) > ky else None
     doi = None if q is None else (round((v / q - 1) * 100, 2) if kieu == "%" else round(v - q, 3))
     d = s.index[-1]
-    kn = "quý" if ten_ky.startswith("quý") else "tháng" if ten_ky.startswith("tháng") else ""
+    kn = "quý" if ten_ky.startswith("quý") else "tháng" if ten_ky.startswith(("tháng", "cùng kỳ")) else ""
     return {"k": k, "nhom": nhom, "ten": ten, "gia": round(v, le), "dv": dv, "doi": doi, "kieu_doi": kieu,
             "ky": ten_ky, "ngay": f"{d:%Y-%m-%d}", "nguon": nguon,
             **({"ky_so": f"quý {(d.month - 1) // 3 + 1}/{d.year}" if kn == "quý" else f"tháng {d.month}/{d.year}"} if kn else {})}

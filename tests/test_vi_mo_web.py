@@ -30,6 +30,9 @@ def _mau():
          "hh_than": _gia(300, 100.0, tu="2024-01-01", seed=11),                       # nguồn ngừng cập nhật → "cu"
          "vn_gdp": pd.Series([6.9, 7.1, 8.2], index=pd.to_datetime(["2026-03-01", "2026-06-01", "2026-09-01"])),
          "vn_xk": pd.Series([3.5e10, 3.7e10], index=pd.to_datetime(["2026-09-01", "2026-10-01"])),
+         "vn_fdi": pd.Series([2.13e10, 2.36e10, 2.762e10, 1.68e9, 2.107e10, 2.408e10],          # cộng dồn năm: tụt về tháng 1
+                             index=pd.to_datetime(["2025-10-01", "2025-11-01", "2025-12-01", "2026-01-01", "2026-09-01",
+                                                   "2026-10-01"])),
          "us_cpi": pd.Series([3.0, 3.2, 2.9], index=pd.to_datetime(["2026-08-01", "2026-09-01", "2026-10-01"])),
          "us_vix": _gia(2000, 18.0, seed=12)}
     N = {"xau": "Stooq", "sjc": "vang.today", "vn_10n": "HNX từ 2014", "hh_bac": "TradingView OANDA:XAGUSD"}
@@ -111,6 +114,8 @@ def test_hang_hoa_bang_the_va_chuoi():
     assert the["vn_gdp"]["ky_so"] == "quý 3/2026" and the["us_cpi"]["ky_so"] == "tháng 10/2026" and "ky_so" not in the["bac"]
     assert the["vn_xk"]["gia"] == 37.0 and the["vn_xk"]["dv"] == "tỷ USD"                # USD → tỷ USD
     assert the["us_cpi"]["doi"] == -0.3 and the["us_cpi"]["kieu_doi"] == "đ"
+    assert the["vn_fdi"]["ky"] == "cùng kỳ năm trước" and the["vn_fdi"]["doi"] == round((24.08 / 21.3 - 1) * 100, 2)   # 10/2026 vs 10/2025
+    assert the["vn_fdi"]["ky_so"] == "tháng 10/2026"
 
 
 def test_bien_dong_moc_va_thieu():
