@@ -12,6 +12,11 @@ on:
     - cron: "37 5 * * *"           # 12:37 giờ VN – vàng, SJC giữa ngày
     - cron: "37 12 * * *"          # 19:37 giờ VN – sau phiên VN (SJC cuối ngày, TPCP HNX)
   workflow_dispatch:
+    inputs:
+      thu_nguon:
+        description: "Chỉ DÒ NGUỒN (thi_truong/vi_mo_nguon.py) – in thống kê + so chéo, không dựng / triển khai"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -52,7 +57,11 @@ jobs:
           path: cache_du_lieu/vi_mo
           key: vimo-dem-${{ github.run_id }}
           restore-keys: vimo-dem-
+      - name: Dò nguồn (bấm tay, ô thu_nguon)
+        if: inputs.thu_nguon
+        run: python -m thi_truong.vi_mo_nguon
       - name: Dựng dữ liệu Vĩ mô
+        if: ${{ !inputs.thu_nguon }}
         run: python -m thi_truong.vi_mo_web --ra docs/vi_mo
       - name: Lưu đệm nguồn
         if: always()
@@ -61,13 +70,13 @@ jobs:
           path: cache_du_lieu/vi_mo
           key: vimo-dem-${{ github.run_id }}
       - name: Lưu dữ liệu cho trang (bang_thi_truong.yml lấy bản mới nhất)
-        if: github.ref == 'refs/heads/main'          # cache nhánh khác main không dùng được ở main
+        if: github.ref == 'refs/heads/main' && !inputs.thu_nguon          # cache nhánh khác main không dùng được ở main
         uses: actions/cache/save@v5
         with:
           path: docs/vi_mo
           key: vi-mo-${{ github.run_id }}
       - name: Triển khai trang
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && !inputs.thu_nguon
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run bang_thi_truong.yml --ref main -R "$GITHUB_REPOSITORY" || echo "::warning::Không gọi được triển khai – trang nhận dữ liệu ở lần triển khai sau"
