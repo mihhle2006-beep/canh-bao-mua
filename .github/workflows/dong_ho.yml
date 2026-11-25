@@ -14,6 +14,7 @@ on:
 permissions:
   actions: write                   # gọi workflow_dispatch (GITHUB_TOKEN gọi dispatch vẫn tạo lần chạy mới)
   contents: read
+  checks: read                     # giám sát: chú thích lần chạy bị huỷ – huỷ tay (không nhắn) hay quá giờ
 
 jobs:
   dong_ho:

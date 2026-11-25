@@ -201,7 +201,7 @@ def test_dong_ho_viec_repo_kin_danh_muc():
     dh.buoc(luc)
     dh.buoc(luc + timedelta(minutes=1))
     assert len(log) == 1 and "DANH_MUC_TOKEN_GHI" in log[0]
-    assert all(x[0] in ("danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml", "bang-thi-truong/bang.yml")
+    assert all(x[0] in ("danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml", "bang-thi-truong/bang.yml", "gia_vang/gia_vang.yml")
                for x in dong_ho.LICH if "/" in x[0])
     otp = [x[1] for x in dong_ho.LICH if x[0] == "danh-muc/dat_lenh.yml"]
     assert otp == ["40 8 * * 1-5", "5 9 * * 1-5"]                      # 09:05 xin lại OTP (lịch GitHub hay trễ / bỏ)
@@ -583,6 +583,47 @@ def test_giam_sat_viec_lap_loi_le_tu_hoi_khong_nhan():
     gh.runs = [r(4, 30, "failure"), r(5, 40, "failure")]
     out = gs.buoc(luc + timedelta(minutes=41))
     assert len(out) == 1 and "lượt sau cũng lỗi" in out[0]
+
+
+def test_giam_sat_huy_tay_khong_nhan_qua_gio_ghi_ro():
+    """25/11/2026: lần chạy bị huỷ không có lần mới thay → đọc chú thích job: "canceled by @…" (bấm Cancel) → không nhắn,
+    không tự chạy lại; "exceeded the maximum execution time" → nhắn "quá giờ"; không đọc được (thiếu quyền) → như cũ."""
+    import urllib.error
+
+    def r(id_, wf, phut):
+        luc = (datetime(2026, 11, 25, 3, 0, tzinfo=UTC) + timedelta(minutes=phut)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return {"id": id_, "path": f".github/workflows/{wf}", "name": wf.split(".")[0], "status": "completed",
+                "conclusion": "cancelled", "head_branch": "main", "updated_at": luc, "created_at": luc, "html_url": "u"}
+
+    AN = {11: [{"message": "The run was canceled by @ai-do."}, {"message": "The operation was canceled."}],
+          12: [{"message": "The job has exceeded the maximum execution time of 4h50m0s"}]}
+
+    class Gh:
+        post = []
+
+        def _goi(self, duong, du_lieu=None, phuong=None):
+            if phuong == "POST":
+                self.post.append(duong)
+                return {}
+            if duong.startswith("actions/runs/") and duong.endswith("/jobs"):
+                id_ = int(duong.split("/")[2])
+                return {"jobs": [{"id": id_ + 10, "conclusion": "cancelled"}]}
+            if duong.startswith("check-runs/"):
+                id_ = int(duong.split("/")[1])
+                if id_ not in AN:
+                    raise urllib.error.HTTPError("u", 403, "Resource not accessible", {}, None)
+                return AN[id_]
+            return {"workflow_runs": [r(1, "tra_cuu_web.yml", 1), r(2, "nhip_thi_truong.yml", 2), r(3, "quet.yml", 3)]}
+
+    gh, tin, log = Gh(), [], []
+    out = dong_ho.GiamSat(gh, datetime(2026, 11, 25, tzinfo=UTC), gui=tin.append, in_ra=log.append).buoc(
+        datetime(2026, 11, 25, 4, 0, tzinfo=UTC))
+    assert gh.post == []                                                             # huỷ tay → không tự chạy lại
+    assert any("tra_cuu_web.yml bị huỷ tay" in x for x in log) and not any("tra_cuu" in x for x in out)
+    assert len(out) == 2 and "nhip_thi_truong lỗi" in out[0] and "quá giờ – vượt thời gian chạy tối đa" in out[0]
+    assert "quet lỗi" in out[1] and "(bị huỷ – quá giờ?)" in out[1]                  # không đọc được chú thích → như cũ
+    d = yaml.safe_load(open(os.path.join(WF, "dong_ho.yml"), encoding="utf-8"))
+    assert d["permissions"].get("checks") == "read"
 
 
 def test_ngay_nghi_le_khong_goi_viec_phien_khong_bao_mac_bang():
