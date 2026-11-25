@@ -37,6 +37,8 @@ def test_dung_json_the_chuoi_nen():
     kq = V.dung(S, N, P, bay_gio=datetime(2026, 11, 25, 22, 0, tzinfo=V.VN))
     the = {t["k"]: t for t in kq["the"]}
     assert the["xau"]["gia"] == 3600.0 and the["xau"]["luc"] == "21:50 25/11"          # giá ngay trên thẻ
+    c = S["xau_nen"]["close"]                                                          # % theo chuỗi ngày, không trộn giá ngay
+    assert the["xau"]["doi"] == round((c.iloc[-1] / c.iloc[-2] - 1) * 100, 2)
     assert {"sjc_ban", "nhan_ban", "tg_vnd", "chenh", "usdvnd", "dxy", "vn_dh", "vn_10n", "us_10n", "us_thuc10",
             "vcb"} <= set(the)
     tg = kq["chuoi"]["tg_vnd"]["d"][-1][1]
