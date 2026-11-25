@@ -261,18 +261,12 @@ def dung(S, N, P, bay_gio=None):
     xau = xd["close"] if xd is not None else None
     usd = S.get("usdvnd")
     if xau is not None:
-        if P.get("gia_ngay"):                                         # giá ngay (Swissquote) cho thẻ – ngày VN hôm nay
-            hn = pd.Timestamp(P["gia_ngay_luc"].replace(tzinfo=None)).normalize()
-            xt = xau.copy()
-            xt.loc[hn] = P["gia_ngay"]
-            xt = xt.sort_index()
-            xt = xt[~xt.index.duplicated(keep="last")]
-        else:
-            xt = xau
+        # % thay đổi: theo CHÍNH chuỗi ngày (cùng nguồn – COMEX GC=F khi Stooq chặn); giá trên thẻ: giá giao ngay lúc dựng
+        # (Swissquote) – không lấy giao ngay chia cho đóng cửa hợp đồng tương lai (lệch cơ sở ~0,5–1 %)
         them("xau", "vang", "Vàng thế giới XAU/USD", xau, "USD/oz", le=2)
-        T[-1].update(_the("xau", "vang", "Vàng thế giới XAU/USD", xt, "USD/oz", N.get("xau", ""), le=2) or {})
         if P.get("gia_ngay"):
-            T[-1]["luc"] = P["gia_ngay_luc"].strftime("%H:%M %d/%m")
+            T[-1].update(gia=round(float(P["gia_ngay"]), 2), luc=P["gia_ngay_luc"].strftime("%H:%M %d/%m"),
+                         ky="phiên trước (" + ("COMEX" if "GC=F" in N.get("xau", "") else "giao ngay") + ")")
     for k, ten in (("sjc", "Vàng miếng SJC – bán"), ("nhan", "Nhẫn 9999 – bán")):
         x = S.get(k)
         if x is not None and len(x):
