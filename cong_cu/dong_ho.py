@@ -85,6 +85,9 @@ LICH = [
     ("danh-muc/dat_lenh.yml", "40 8 * * 1-5", {}, 20),                       # xin mã giao dịch (Smart OTP)
     ("danh-muc/dat_lenh.yml", "5 9 * * 1-5", {}, 20),     # xin lại nếu 08:40 chưa duyệt (có mã thì im) – lịch GitHub 09:05
                                                           # hay trễ / bỏ (12 & 13/11/2026: OTP 08:40 hết hạn, 09:05 không chạy)
+    # repo kín gia_vang (25/11/2026): lịch GitHub 16:07 tới trễ 7–12 giờ → gọi đúng giờ (token DANH_MUC_TOKEN_GHI phải có
+    # repo gia_vang, quyền Actions: Read and write; thiếu → cảnh báo, lượt lịch trễ vẫn chạy và tự ghi đúng ngày)
+    ("gia_vang/gia_vang.yml", "7 16 * * 1-6", {}, 240),
     # repo bang-thi-truong (13/11/2026): vòng bảng thị trường ~30 giây / lượt (bang_rieng/bang.yml) – sáng / chiều
     ("bang-thi-truong/bang.yml", "50 8 * * 1-5", {}, 150),
     ("bang-thi-truong/bang.yml", "50 12 * * 1-5", {}, 120),
@@ -336,6 +339,23 @@ class GiamSat:
         self.gh, self.tu, self.gui, self.in_ra, self.nhan = gh, tu, gui or nhan_tele, in_ra, nhan   # nhan: "[repo] "
         self.da = set()
 
+    def _ly_do_huy(self, r):
+        """Lần chạy bị huỷ → "tay" (người bấm Cancel – "The run was canceled by @…") | "qua_gio" (vượt timeout-minutes –
+        "exceeded the maximum execution time") | None (không đọc được chú thích: token thiếu quyền Checks…)."""
+        try:
+            for j in self.gh._goi(f"actions/runs/{r['id']}/jobs").get("jobs") or []:
+                if j.get("conclusion") != "cancelled":
+                    continue
+                an = self.gh._goi(f"check-runs/{j['id']}/annotations")
+                ms = " ".join(str(a.get("message", "")) for a in (an if isinstance(an, list) else []) if isinstance(a, dict))
+                if "maximum execution time" in ms:
+                    return "qua_gio"
+                if "canceled by" in ms:
+                    return "tay"
+        except Exception:                                           # noqa: BLE001 – không rõ → báo như cũ
+            return None
+        return None
+
     def buoc(self, bay_gio=None):
         bay_gio = bay_gio or datetime.now(timezone.utc)
         ds = [r for r in self.gh._goi("actions/runs?branch=main&per_page=60").get("workflow_runs") or [] if _tren_main(r)]
@@ -367,9 +387,13 @@ class GiamSat:
                     continue                                        # chờ lượt sau (không ghi "đã xét")
                 sau_loi = bool(sau)
             self.da.add((r.get("id"), lan))
+            ly_do = self._ly_do_huy(r) if huy else None
+            if ly_do == "tay":                                      # người tự bấm huỷ → không nhắn, không chạy lại
+                self.in_ra(f"giám sát: {wf} bị huỷ tay {luc.astimezone(VN):%H:%M} → không nhắn")
+                continue
             luc = luc.astimezone(VN)
-            them = ((" (bị huỷ – quá giờ?)" if huy else "") + (" – đã tự chạy lại 1 lần, vẫn lỗi" if lan > 1 else "")
-                    + (" – lượt sau cũng lỗi" if sau_loi else ""))
+            them = ((" (quá giờ – vượt thời gian chạy tối đa)" if ly_do == "qua_gio" else " (bị huỷ – quá giờ?)" if huy else "")
+                    + (" – đã tự chạy lại 1 lần, vẫn lỗi" if lan > 1 else "") + (" – lượt sau cũng lỗi" if sau_loi else ""))
             if wf in CHAY_LAI and lan == 1:
                 try:
                     self.gh._goi(f"actions/runs/{r['id']}/{'rerun' if huy else 'rerun-failed-jobs'}", {}, "POST")
@@ -675,7 +699,8 @@ def main(argv=None):
     tk_dm = os.environ.get("DANH_MUC_TOKEN_GHI", "").strip()
     chu = repo.split("/")[0]
     gh_khac = {"danh-muc": GitHub(os.environ.get("DANH_MUC_REPO") or "mihhle2006-beep/danh-muc", tk_dm),
-               "bang-thi-truong": GitHub(os.environ.get("BANG_REPO") or f"{chu}/bang-thi-truong", tk_dm)} if tk_dm else {}
+               "bang-thi-truong": GitHub(os.environ.get("BANG_REPO") or f"{chu}/bang-thi-truong", tk_dm),
+               "gia_vang": GitHub(os.environ.get("VANG_REPO") or f"{chu}/gia_vang", tk_dm)} if tk_dm else {}
     dh = DongHo(gh, gh_khac=gh_khac)
     gs = GiamSat(gh, datetime.now(timezone.utc) - timedelta(minutes=10))   # phủ khoảng nối giữa 2 lượt đồng hồ
     mac = MayMac(gh_khac["danh-muc"]) if gh_khac else None
