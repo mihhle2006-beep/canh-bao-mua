@@ -71,6 +71,9 @@ LICH = [
     ("ke_hoach_dhcd.yml", "23 0 * * *", {"con_lai": "HOSE,HNX,UPCOM"}, 240),  # kế hoạch ĐHCĐ mã còn lại
     ("tai_nen_15p.yml", "43 1 * * 7", {}, 600),
     ("boi_so_nganh.yml", "13 3 * * 7", {}, 600),
+    ("vi_mo.yml", "47 5 * * *", {}, 30),                                   # tab Vĩ mô: sau phiên Mỹ (vàng chốt 05:00)
+    ("vi_mo.yml", "37 12 * * *", {}, 120),                                 # giữa ngày
+    ("vi_mo.yml", "37 19 * * *", {}, 180),                                 # sau phiên VN (SJC, TPCP HNX)
     ("backtest_quy_b.yml", "13 9 1 * *", {}, 1440),
     ("backtest.yml", "17 2 2 * *", {}, 1440),
     # repo kín danh-muc – chạy trên máy Mac (như may_mac/bat_vong.sh): Mac ngủ thì lần chạy chờ, Mac thức là chạy

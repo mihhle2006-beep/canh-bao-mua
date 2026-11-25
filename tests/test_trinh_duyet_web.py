@@ -94,6 +94,12 @@ def _site(tmp_path, monkeypatch):
     (site / "bang").mkdir()
     shutil.copy(os.path.join(GOC, "trang_bang", "index.html"), site / "bang" / "index.html")
     shutil.copy(bang, site / "bang" / "du_lieu.json")
+    from datetime import datetime
+    from tests.test_vi_mo_web import _mau
+    from thi_truong import vi_mo_web
+    (site / "vi_mo").mkdir()                                    # tab Vĩ mô đọc <GOC>vi_mo/du_lieu.json (GOC = "../" khi chạy cục bộ)
+    (site / "vi_mo" / "du_lieu.json").write_text(json.dumps(
+        vi_mo_web.dung(*_mau(), bay_gio=datetime(2026, 11, 25, 22, 0, tzinfo=vi_mo_web.VN)), ensure_ascii=False), encoding="utf-8")
     return site
 
 
@@ -109,6 +115,7 @@ TRANG = [
     "ma/index.html#loc||cho:500",
     "ma/index.html#danh-muc|#dm-mau|click:#dm-mau;cho:1500",     # Danh mục của tôi: danh mục mẫu → bảng, rủi ro, tỷ trọng gợi ý
     "bang/index.html||cho:800",                                 # Bảng thị trường
+    "bang/index.html||vm",                                      # Bảng thị trường – tab Vĩ mô (thẻ + 6 biểu đồ)
 ]
 
 

@@ -5,7 +5,7 @@ Nguyên tắc (11/2026): **thứ gì KÍN để ở repo riêng tư, việc CH�
 
 | Repo | Công khai? | Chứa gì |
 |---|---|---|
-| **canh-bao-mua** (repo này) | công khai | 43 workflow · bot cảnh báo (`canh_bao/`, `chay.py`) · bộ lọc (`bo_loc/`) · công cụ sở hữu (`cong_cu/so_huu`) · kết quả công khai (tín hiệu, lịch sử ★, backtest điểm vào) |
+| **canh-bao-mua** (repo này) | công khai | 44 workflow · bot cảnh báo (`canh_bao/`, `chay.py`) · bộ lọc (`bo_loc/`) · công cụ sở hữu (`cong_cu/so_huu`) · kết quả công khai (tín hiệu, lịch sử ★, backtest điểm vào) |
 | **danh-muc** | kín | thư viện chung `ptcp/` (luật Quỹ Bứt Phá, chỉ báo, backtest, định giá, BCTC…) · danh mục thật `dmuc/` + file danh mục / tiền / lệnh / Trứng vàng · script nghiên cứu (backtest quỹ, báo cáo mã, siêu cổ phiếu) · kho dữ liệu `du_lieu/` (BCTC, BCTN, bất thường) – xem `CAU_TRUC.md` trong danh-muc |
 | **gia_lap** | kín | giao dịch giả lập (tài khoản ảo theo đúng luật), sức khoẻ hệ thống, tổng kết tuần |
 | Bo_Loc | kín | phần bộ lọc riêng (PTĐTTC) – không chạy từ đây |
@@ -47,6 +47,7 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Lenh Telegram | phút 37 mỗi giờ (cả cuối tuần; trong phiên vòng 15' nghe liên tục) | tin nhắn lệnh của chủ quỹ → `nhap.txt` danh-muc; nút 🛒 / 🛑 / ✅ → máy Mac đặt lệnh; chuyển kết quả lệnh về Telegram | repo này `canh_bao/lenh_tele.py` |
 | Nhip bang thi truong | 08:45 / 12:43 T2–T6 (đồng hồ gọi; lịch GitHub cùng giờ dự phòng) | 1 job chạy suốt buổi, 15' gọi Bang thi truong một lần (lịch */5 của GitHub không tin được) | repo này |
 | Bang thi truong | được Nhịp gọi 15' / lần · 15:10 chốt phiên · 19:07 chuẩn bị phiên sau | dựng trang Bảng thị trường (`docs/thi_truong`) + dữ liệu Tra cứu mã trong phiên | repo này `thi_truong/` |
+| Vi mo | 05:47 · 12:37 · 19:37 mỗi ngày (đồng hồ gọi; lịch GitHub dự phòng) | dữ liệu tab Vĩ mô của Bảng thị trường: vàng XAU/USD (ngày, giờ, giá ngay), SJC / nhẫn, chênh SJC – thế giới, lãi suất VN (điều hành, liên ngân hàng, TPCP HNX), Mỹ (Fed funds, 2N / 10N, lợi suất thực), USD/VND, DXY → cache → gọi Bang thi truong triển khai | repo này `thi_truong/vi_mo_web.py` |
 | Ke hoach DHCD | 00:23 hằng đêm (mã còn thiếu) + chạy tay | kế hoạch DT / LNTT / LNST năm từ tài liệu ĐHCĐ + tỷ lệ hoàn thành | danh-muc `ptcp/ke_hoach_dhcd.py` |
 | Kho quy dau tu | 20:41 hằng ngày (đồng hồ gọi; trước đây lịch GitHub tới 03–05 giờ sáng) | NAV / danh mục quỹ mở Fmarket → `du_lieu/quy/` (danh-muc) | danh-muc |
 

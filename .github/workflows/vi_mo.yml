@@ -1,0 +1,73 @@
+# VĨ MÔ – dữ liệu tab "Vĩ mô" của Bảng thị trường (thi_truong/vi_mo_web.py, 25/11/2026): vàng XAU/USD (ngày + giờ, giá ngay),
+# SJC / nhẫn, chênh SJC – thế giới, lãi suất VN (điều hành, liên ngân hàng, TPCP HNX), Mỹ (Fed funds, 2N / 10N, lợi suất
+# thực), USD/VND, DXY → docs/vi_mo/du_lieu.json → cache vi-mo-* (bang_thi_truong.yml gói vào trang mỗi lần triển khai) →
+# gọi bang_thi_truong.yml triển khai ngay. Repo CÔNG KHAI: không token, không danh mục – chỉ số liệu thị trường công khai.
+# Giá XAU/USD trực tiếp trên trang: trình duyệt tự gọi nguồn cho phép (bộ dựng kiểm CORS), không cần chạy dày.
+# 3 lần / ngày – đồng hồ (cong_cu/dong_ho.py) gọi đúng giờ, lịch GitHub dưới là dự phòng (gác bỏ lượt trễ).
+name: Vi mo
+
+on:
+  schedule:
+    - cron: "47 22 * * *"          # 05:47 giờ VN – sau phiên Mỹ (vàng thế giới chốt 05:00, lợi suất Mỹ, DXY)
+    - cron: "37 5 * * *"           # 12:37 giờ VN – vàng, SJC giữa ngày
+    - cron: "37 12 * * *"          # 19:37 giờ VN – sau phiên VN (SJC cuối ngày, TPCP HNX)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vi-mo
+  cancel-in-progress: false
+
+jobs:
+  gac:                             # lịch GitHub tới trễ mà đồng hồ / bấm tay đã chạy từ mốc này → bỏ lượt (gac.yml)
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/gac.yml
+    with:
+      wf: vi_mo.yml
+    permissions:
+      actions: read
+      contents: read
+  dung:
+    needs: gac
+    if: ${{ !cancelled() && needs.gac.outputs.chay != 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45            # lần đầu tải TPCP HNX từ 2013 (~3.400 ngày) – sau đó đệm, chỉ tải 10 ngày gần nhất
+    permissions:
+      contents: read
+      actions: write               # gọi bang_thi_truong.yml triển khai trang
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -q -r requirements.txt websocket-client certifi
+      - name: Đệm nguồn (TPCP HNX, TradingView, lần lỗi mạng dùng bản cũ)
+        uses: actions/cache/restore@v5
+        with:
+          path: cache_du_lieu/vi_mo
+          key: vimo-dem-${{ github.run_id }}
+          restore-keys: vimo-dem-
+      - name: Dựng dữ liệu Vĩ mô
+        run: python -m thi_truong.vi_mo_web --ra docs/vi_mo
+      - name: Lưu đệm nguồn
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: cache_du_lieu/vi_mo
+          key: vimo-dem-${{ github.run_id }}
+      - name: Lưu dữ liệu cho trang (bang_thi_truong.yml lấy bản mới nhất)
+        if: github.ref == 'refs/heads/main'          # cache nhánh khác main không dùng được ở main
+        uses: actions/cache/save@v5
+        with:
+          path: docs/vi_mo
+          key: vi-mo-${{ github.run_id }}
+      - name: Triển khai trang
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bang_thi_truong.yml --ref main -R "$GITHUB_REPOSITORY" || echo "::warning::Không gọi được triển khai – trang nhận dữ liệu ở lần triển khai sau"

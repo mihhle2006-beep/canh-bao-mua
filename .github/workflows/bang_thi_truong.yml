@@ -190,6 +190,15 @@ jobs:
         continue-on-error: true
         run: python -m thi_truong.chung_quyen_web --ra docs/ma/du_lieu
 
+      - name: Lấy dữ liệu tab Vĩ mô (workflow "Vi mo" – cache mới nhất)
+        if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
+        continue-on-error: true
+        uses: actions/cache/restore@v5
+        with:
+          path: docs/vi_mo
+          key: vi-mo-${{ github.run_id }}
+          restore-keys: vi-mo-
+
       - name: Gói trang
         if: steps.pages.outputs.bat == '1' && github.ref == 'refs/heads/main' && !inputs.chi_bang
         run: |
