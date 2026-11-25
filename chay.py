@@ -665,7 +665,8 @@ def xem_lich_su(bay_gio=None, khong_gui=False):
     bay_gio = pd.Timestamp(bay_gio) if bay_gio is not None else gio_viet_nam()
     tt, thang = doc_trang_thai(), f"{bay_gio:%Y-%m}"
     if not khong_gui and tt.get("_do_chinh_xac_thang") != thang:
-        gui(nhat_ky.dong_tong_ket(tieu_de=f"📊 ĐỘ CHÍNH XÁC TÍN HIỆU BOT – tới {bay_gio:%d/%m/%Y} (tháng 1 lần)"))
+        tk = nhat_ky.dong_tong_ket(tieu_de=f"📊 ĐỘ CHÍNH XÁC TÍN HIỆU BOT – tới {bay_gio:%d/%m/%Y} (tháng 1 lần)")
+        gui(tk if isinstance(tk, str) else "\n".join(tk))      # dong_tong_ket trả DANH SÁCH dòng (lỗi 21/11/2026)
         gui_file(xlsx, chu_thich="Nhật ký tín hiệu công khai + thống kê (chấm lại mỗi thứ Bảy)")
         tt["_do_chinh_xac_thang"] = thang
         ghi_trang_thai(tt)

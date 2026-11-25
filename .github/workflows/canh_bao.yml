@@ -146,6 +146,11 @@ jobs:
             "53 3 * * 1-5"|chieu) HET=1447 ;;
             *) HET="" ;;
           esac
+          # 25/11/2026: lịch GitHub có lúc tới trễ nửa ngày – vòng chiều tới 02:00 hôm sau sẽ chạy tới 14:47 → quá giờ, báo
+          # lỗi. Vòng tới cuối tuần hoặc trước 06:30 (giờ VN) = lượt trễ của phiên cũ → thoát (đồng hồ gọi lượt đúng giờ).
+          if [ -n "$HET" ] && { [ "$(TZ=Asia/Ho_Chi_Minh date +%u)" -ge 6 ] || [ "$(TZ=Asia/Ho_Chi_Minh date +%H%M)" -lt 630 ]; }; then
+            echo "Vòng quét tới ngoài giờ ($(TZ=Asia/Ho_Chi_Minh date '+%a %H:%M')) → thoát"; exit 0
+          fi
           # nhap.txt ở danh-muc còn lệnh chưa áp → chạy danh mục ngay (không đợi cuối phiên). Không gọi khi danh mục đang
           # chạy hoặc đã chạy trong 45' (lệnh nhập sai không áp được → không gọi lặp mỗi 15'); log không in nội dung lệnh
           kiem_nhap() {

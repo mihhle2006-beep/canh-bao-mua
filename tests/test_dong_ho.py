@@ -207,6 +207,21 @@ def test_dong_ho_viec_repo_kin_danh_muc():
     assert otp == ["40 8 * * 1-5", "5 9 * * 1-5"]                      # 09:05 xin lại OTP (lịch GitHub hay trễ / bỏ)
 
 
+def test_dong_bo_dnse_10_phut_mot_luot_ngan():
+    """25/11/2026: đồng bộ DNSE = lượt ngắn 10' / lần (vòng suốt buổi chết khi Mac ngủ) – đủ mốc 08:35 … 11:45 và
+    12:45 … 15:05, không mốc nào giờ nghỉ trưa, không truyền "vong", trễ tối đa < 10' (không gọi bù chồng mốc sau)."""
+    dong = [x for x in dong_ho.LICH if x[0] == "danh-muc/dnse_dong_bo.yml"]
+    assert all(not x[2] and x[3] < 10 for x in dong)
+    ngay = datetime(2026, 11, 25, tzinfo=VN)                                  # thứ Tư
+    moc = sorted({m for x in dong for m in dong_ho.cac_moc(x[1], ngay, ngay + timedelta(days=1))})
+    gio = [f"{m:%H:%M}" for m in moc]
+    sang = [f"{h:02d}:{p:02d}" for h in range(8, 12) for p in range(5, 60, 10) if "08:35" <= f"{h:02d}:{p:02d}" <= "11:45"]
+    chieu = [f"{h:02d}:{p:02d}" for h in range(12, 16) for p in range(5, 60, 10) if "12:45" <= f"{h:02d}:{p:02d}" <= "15:05"]
+    assert gio == sang + chieu
+    t7 = datetime(2026, 11, 28, tzinfo=VN)
+    assert not any(list(dong_ho.cac_moc(x[1], t7, t7 + timedelta(days=1))) for x in dong)    # cuối tuần không gọi
+
+
 def test_dong_ho_thu_in_ra():
     out = io.StringIO()
     with redirect_stdout(out):
@@ -540,6 +555,34 @@ def test_giam_sat_danh_muc():
     assert len(tin) == 1 and "❌ [danh-muc] Dong bo DNSE" in tin[0] and "Thu dat lenh" not in tin[0]
     src = open(os.path.join(GOC, "cong_cu", "dong_ho.py"), encoding="utf-8").read()
     assert 'GiamSat(gh_khac["danh-muc"]' in src and '("giám sát danh-muc", gs_dm.buoc)' in src
+
+
+def test_giam_sat_viec_lap_loi_le_tu_hoi_khong_nhan():
+    """25/11/2026: đồng bộ DNSE 10' / lần – 1 lượt lỗi (Mac ngủ đúng lúc job chạy) mà lượt sau ổn → không nhắn; chưa có lượt
+    sau → chờ (tối đa TU_HOI_CHO phút) rồi nhắn; lượt sau cũng lỗi → nhắn."""
+    def r(id_, phut, kq):
+        luc = (datetime(2026, 11, 25, 3, 0, tzinfo=UTC) + timedelta(minutes=phut)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return {"id": id_, "path": ".github/workflows/dnse_dong_bo.yml", "name": "Dong bo DNSE", "status": "completed",
+                "conclusion": kq, "head_branch": "main", "updated_at": luc, "created_at": luc, "html_url": "u"}
+
+    class Gh:
+        runs = []
+
+        def _goi(self, duong, *a):
+            return {"workflow_runs": self.runs}
+
+    gh, tin = Gh(), []
+    gs = dong_ho.GiamSat(gh, datetime(2026, 11, 25, tzinfo=UTC), gui=tin.append, in_ra=lambda *_: None, nhan="[danh-muc] ")
+    luc = datetime(2026, 11, 25, 3, 0, tzinfo=UTC)
+    gh.runs = [r(1, 0, "failure")]
+    assert gs.buoc(luc + timedelta(minutes=5)) == []                                   # chờ lượt sau
+    gh.runs = [r(1, 0, "failure"), r(2, 10, "success")]
+    assert gs.buoc(luc + timedelta(minutes=11)) == [] and tin == []                    # lượt sau ổn → không nhắn
+    gh.runs = [r(3, 20, "failure")]
+    assert len(gs.buoc(luc + timedelta(minutes=20 + dong_ho.TU_HOI_CHO))) == 1        # quá lâu không lượt nào xong → nhắn
+    gh.runs = [r(4, 30, "failure"), r(5, 40, "failure")]
+    out = gs.buoc(luc + timedelta(minutes=41))
+    assert len(out) == 1 and "lượt sau cũng lỗi" in out[0]
 
 
 def test_ngay_nghi_le_khong_goi_viec_phien_khong_bao_mac_bang():

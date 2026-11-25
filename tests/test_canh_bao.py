@@ -527,13 +527,14 @@ def test_lich_su_gui_telegram_thang_1_lan(monkeypatch, tmp_path):
     monkeypatch.setattr(nhat_ky, "doc", lambda p: pd.DataFrame())
     monkeypatch.setattr(nhat_ky, "thong_ke", lambda d: pd.DataFrame())
     monkeypatch.setattr(nhat_ky, "xuat_excel", lambda **k: str(tmp_path / "dg.xlsx"))
-    monkeypatch.setattr(nhat_ky, "dong_tong_ket", lambda **k: "📊 " + k["tieu_de"])
+    monkeypatch.setattr(nhat_ky, "dong_tong_ket", lambda **k: ["📊 " + k["tieu_de"], "đúng 1/1"])   # như thật: danh sách
     tt, gui, tep = {}, [], []
     monkeypatch.setattr(chay, "doc_trang_thai", lambda: tt)
     monkeypatch.setattr(chay, "ghi_trang_thai", lambda t: None)
     monkeypatch.setattr(chay, "gui", lambda nd, **k: gui.append(nd))
     monkeypatch.setattr(chay, "gui_file", lambda p, **k: tep.append(p))
     assert chay.xem_lich_su("2026-11-07 09:07") == 0 and len(gui) == len(tep) == 1 and "07/11/2026" in gui[0]
+    assert isinstance(gui[0], str) and "đúng 1/1" in gui[0]
     assert tt["_do_chinh_xac_thang"] == "2026-11"
     chay.xem_lich_su("2026-11-14 09:07")                                   # cùng tháng → không gửi lại
     chay.xem_lich_su("2026-12-05 09:07", khong_gui=True)                   # chạy thử → không gửi, không ghi
@@ -563,3 +564,14 @@ def test_tin_thu_nut_chi_ngoai_gio(monkeypatch):
     assert TN.gui_thu(datetime(2026, 11, 4, 10, 0, tzinfo=TN.VN)) == 1 and gui == []   # trong giờ: không gửi
     assert TN.gui_thu(datetime(2026, 11, 3, 15, 0, tzinfo=TN.VN)) == 0
     assert gui[0][0][0] == ("🛒 Mua 200 + 37 lẻ", "dl|M|VND|237|23800")
+
+
+def test_gui_nhan_danh_sach_dong(monkeypatch, capsys):
+    """gui() nhận danh sách dòng (lỗi 21/11/2026: 'list' object has no attribute 'split') → nối bằng xuống dòng."""
+    from canh_bao import thong_bao
+    monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+    thong_bao.gui(["Dòng 1", "Dòng 2"])
+    out = capsys.readouterr().out
+    assert "Dòng 1\nDòng 2" in out
+    assert thong_bao._chia("a\nb") == ["a\nb\n"]

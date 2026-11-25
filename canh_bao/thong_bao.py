@@ -29,7 +29,9 @@ def gui(noi_dung, rieng_tu=False, anh=None, nut=None):
     nut = [[(chữ, callback_data), …], …] → nút bấm dưới phần tin cuối (canh_bao/lenh_tele.py xử lý khi bấm).
     """
     from .trinh_bay import dinh_dang_html, vn_hoa
-    noi_dung = vn_hoa(noi_dung)
+    if isinstance(noi_dung, (list, tuple)):                     # 28/11/2026: dong_tong_ket trả danh sách dòng → nối lại
+        noi_dung = "\n".join(str(d) for d in noi_dung if d is not None)
+    noi_dung = vn_hoa(noi_dung if isinstance(noi_dung, str) else str(noi_dung or ""))
     token, chat = os.environ.get("TELEGRAM_TOKEN", "").strip(), os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not (rieng_tu and os.environ.get("GITHUB_ACTIONS")):     # log công khai: tin riêng tư không để lại dấu (vị trí, độ dài)
         print(noi_dung)

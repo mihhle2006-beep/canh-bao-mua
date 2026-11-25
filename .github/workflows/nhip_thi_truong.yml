@@ -32,6 +32,12 @@ jobs:
           if [ "${KHAC:-0}" -gt 0 ]; then echo "Đã có máy nhịp khác đang chạy → thoát"; exit 0; fi
 
           phut() { local h m; h=$(TZ=Asia/Ho_Chi_Minh date +%H); m=$(TZ=Asia/Ho_Chi_Minh date +%M); echo $((10#$h * 60 + 10#$m)); }
+          # 25/11/2026: lịch GitHub hay tới trễ hàng giờ – tới lúc rạng sáng (VD 02:00) thì vòng dưới chạy tới 11:35 → quá
+          # 290' → báo lỗi. Ngoài 08:00–15:12 ngày thường → thoát ngay (lượt sau đồng hồ gọi đúng giờ).
+          THU=$(TZ=Asia/Ho_Chi_Minh date +%u)
+          if [ "$THU" -ge 6 ] || [ "$(phut)" -lt 480 ] || [ "$(phut)" -ge 912 ]; then
+            echo "Ngoài giờ phiên ($(TZ=Asia/Ho_Chi_Minh date '+%a %H:%M')) → thoát"; exit 0
+          fi
           # 13/11/2026: bảng thị trường cập nhật ~30 giây ở repo riêng bang-thi-truong (vòng riêng của repo đó) → ở đây chỉ
           # còn lượt ĐỦ 15' / lần cho Tra cứu mã (nến phút hôm nay, bước giá, giá trong phiên) – trước 2' / lần (~170 lượt/ngày)
           CHU_KY=900

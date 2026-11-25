@@ -74,11 +74,17 @@ LICH = [
     ("backtest_quy_b.yml", "13 9 1 * *", {}, 1440),
     ("backtest.yml", "17 2 2 * *", {}, 1440),
     # repo kín danh-muc – chạy trên máy Mac (như may_mac/bat_vong.sh): Mac ngủ thì lần chạy chờ, Mac thức là chạy
-    ("danh-muc/dnse_dong_bo.yml", "35 8 * * 1-5", {"vong": "true"}, 360),     # vòng đồng bộ DNSE 10' / lần tới 15:05
+    # đồng bộ DNSE 10' / lần trong phiên (25/11/2026: mỗi lượt 1 lần ~30 giây – thay vòng suốt buổi chết khi Mac ngủ):
+    # 08:35 … 11:45, 12:45 … 15:05 (lượt 14:55 trước danh mục 15:02, 15:05 lượt chốt). Mac ngủ → lượt chờ, không gọi chồng
+    ("danh-muc/dnse_dong_bo.yml", "35-55/10 8 * * 1-5", {}, 8),
+    ("danh-muc/dnse_dong_bo.yml", "5-55/10 9-10 * * 1-5", {}, 8),
+    ("danh-muc/dnse_dong_bo.yml", "5-45/10 11 * * 1-5", {}, 8),
+    ("danh-muc/dnse_dong_bo.yml", "45,55 12 * * 1-5", {}, 8),
+    ("danh-muc/dnse_dong_bo.yml", "5-55/10 13-14 * * 1-5", {}, 8),
+    ("danh-muc/dnse_dong_bo.yml", "5 15 * * 1-5", {}, 8),
     ("danh-muc/dat_lenh.yml", "40 8 * * 1-5", {}, 20),                       # xin mã giao dịch (Smart OTP)
     ("danh-muc/dat_lenh.yml", "5 9 * * 1-5", {}, 20),     # xin lại nếu 08:40 chưa duyệt (có mã thì im) – lịch GitHub 09:05
                                                           # hay trễ / bỏ (12 & 13/11/2026: OTP 08:40 hết hạn, 09:05 không chạy)
-    ("danh-muc/dnse_dong_bo.yml", "47 12 * * 1-5", {"vong": "true"}, 120),    # vòng chết buổi trưa → bật lại
     # repo bang-thi-truong (13/11/2026): vòng bảng thị trường ~30 giây / lượt (bang_rieng/bang.yml) – sáng / chiều
     ("bang-thi-truong/bang.yml", "50 8 * * 1-5", {}, 150),
     ("bang-thi-truong/bang.yml", "50 12 * * 1-5", {}, 120),
@@ -96,6 +102,10 @@ KHONG_BAO = {"dong_ho.yml", "kiem_thu.yml",                       # kiem_thu t�
              "trien_khai.yml",                                      # bang-thi-truong Pages (chập chờn – BangTre theo dõi bảng đứng)
              "dat_lenh_thu.yml"}                                    # danh-muc: thử đặt lệnh bấm tay
 LOI = ("failure", "timed_out", "startup_failure")
+# việc LẶP 10' / lần (máy Mac): 1 lượt lỗi lẻ (Mac ngủ đúng lúc job đang chạy, DNSE chập chờn) mà lượt SAU chạy ổn → tự hồi,
+# không nhắn; lượt sau cũng lỗi, hoặc quá TU_HOI_CHO phút chưa có lượt nào xong → nhắn như thường (25/11/2026)
+TU_HOI = {"dnse_dong_bo.yml"}
+TU_HOI_CHO = 40
 GIAM_SAT_GIAY = 300
 MAC_CHO_PHUT = 10                                                   # job chờ máy Mac quá ngần này → nhắn
 # NGÀY NGHỈ LỄ (sở không giao dịch): cong_cu/ngay_nghi.json – job lich_nghi (Tong ket tuan, thứ Sáu) cập nhật hằng tuần
@@ -104,8 +114,8 @@ MAC_CHO_PHUT = 10                                                   # job chờ 
 # chưa cập nhật → nhắn.
 NGHI_LE = frozenset(NN.doc())
 NGHI_LE_BO = {"danh-muc/dnse_dong_bo.yml", "danh-muc/dat_lenh.yml", "bang-thi-truong/bang.yml"}
-MAC_GIO = (("08:30", "11:40"), ("12:45", "15:10"))                 # T2–T6 giờ VN: vòng DNSE 08:35, lệnh, đo trong phiên –
-                                                                    # nghỉ trưa không báo (Mac ngủ trưa; vòng DNSE sáng dừng 11:45)
+MAC_GIO = (("08:30", "11:40"), ("12:45", "15:10"))                 # T2–T6 giờ VN: đồng bộ DNSE 10' / lần, lệnh, đo trong
+                                                                    # phiên – nghỉ trưa không báo (Mac ngủ trưa; lượt sáng cuối 11:45)
 BANG_TRE_PHUT = 4                                                   # bảng thị trường không có lượt mới quá ngần này → nhắn
 BANG_GIO = (("09:20", "11:30"), ("13:05", "15:03"))                 # T2–T6 giờ VN: vòng bảng phải đang đẩy lượt 30 giây
 KIEM_TOKEN = "5 20 * * *"                                           # giờ VN kiểm hạn token
@@ -326,7 +336,8 @@ class GiamSat:
         self.gh, self.tu, self.gui, self.in_ra, self.nhan = gh, tu, gui or nhan_tele, in_ra, nhan   # nhan: "[repo] "
         self.da = set()
 
-    def buoc(self):
+    def buoc(self, bay_gio=None):
+        bay_gio = bay_gio or datetime.now(timezone.utc)
         ds = [r for r in self.gh._goi("actions/runs?branch=main&per_page=60").get("workflow_runs") or [] if _tren_main(r)]
         tin = []
         for r in sorted(ds, key=lambda r: r.get("updated_at") or ""):
@@ -344,9 +355,21 @@ class GiamSat:
             lan = int(r.get("run_attempt") or 1)
             if luc < self.tu or (r.get("id"), lan) in self.da:
                 continue
+            sau_loi = False
+            if wf in TU_HOI:
+                sau = [x for x in ds if x.get("path") == r.get("path") and x.get("status") == "completed"
+                       and (x.get("created_at") or "") > (r.get("created_at") or "")]
+                if any(x.get("conclusion") == "success" for x in sau):
+                    self.da.add((r.get("id"), lan))
+                    self.in_ra(f"giám sát: {wf} lỗi lẻ {luc.astimezone(VN):%H:%M} – lượt sau đã ổn → không nhắn")
+                    continue
+                if not sau and bay_gio - luc < timedelta(minutes=TU_HOI_CHO):
+                    continue                                        # chờ lượt sau (không ghi "đã xét")
+                sau_loi = bool(sau)
             self.da.add((r.get("id"), lan))
             luc = luc.astimezone(VN)
-            them = (" (bị huỷ – quá giờ?)" if huy else "") + (" – đã tự chạy lại 1 lần, vẫn lỗi" if lan > 1 else "")
+            them = ((" (bị huỷ – quá giờ?)" if huy else "") + (" – đã tự chạy lại 1 lần, vẫn lỗi" if lan > 1 else "")
+                    + (" – lượt sau cũng lỗi" if sau_loi else ""))
             if wf in CHAY_LAI and lan == 1:
                 try:
                     self.gh._goi(f"actions/runs/{r['id']}/{'rerun' if huy else 'rerun-failed-jobs'}", {}, "POST")
