@@ -80,6 +80,8 @@ def main(argv=None):
         print(f"Vị thế đang giữ: {len(vt)} mã (nguồn: {nguon_vt})")
     if che_do in ("tong_ket", "chien_luoc"):
         return tong_ket(bay_gio, vt, them, a.khong_gui)
+    if che_do in ("truoc_phien", "trong_phien", "lo_le"):
+        gui_ban_cho(bay_gio, vt, a.khong_gui)                       # lệnh tự bán ATO hoãn từ lượt trước 08:45
     if che_do == "truoc_phien":
         return nhac_ato(bay_gio, vt, a.khong_gui)
     if che_do == "lo_le":
@@ -114,7 +116,13 @@ def nhac_ato(bay_gio, vt, khong_gui=False):
             continue
         ban.append((v, kb))
         vi_the.can_bao_ban(ma, kb["muc"], bay_gio, tt)
-    da_gui = [v["ma"] for v, kb in ban if not kb.get("gdkhq") and _tu_dat(bay_gio, khong_gui, "B", v["ma"])]
+    ban_tu = [v["ma"] for v, kb in ban if not kb.get("gdkhq")]
+    if _dnse_nhan(bay_gio):
+        da_gui, cho = [m for m in ban_tu if _tu_dat(bay_gio, khong_gui, "B", m)], []
+    else:   # 25/11/2026: lượt 08:00 gửi máy Mac → DNSE chưa nhận lệnh (từ 08:45) → lệnh bị bỏ, không ai gửi lại → hoãn
+        da_gui, cho = [], (ban_tu if not khong_gui and getattr(C, "TU_DAT_LENH", False) else [])
+    if cho:
+        tt["_cho_ban"] = {"ngay": f"{hom_nay:%Y-%m-%d}", "ma": cho}
     mua, suat = [], None
     try:
         from ptcp.bat_day import ty_trong_suat
@@ -129,11 +137,49 @@ def nhac_ato(bay_gio, vt, khong_gui=False):
     nd = vi_the.tin_nhac_ato(ban, mua, bay_gio, suat)
     if nd and da_gui:                                          # tự bán mọi tín hiệu thoát (chủ quỹ duyệt 22/11/2026)
         nd += f"\n🤖 Đã gửi máy Mac lệnh BÁN HẾT {', '.join(da_gui)} (lô chẵn + lẻ, giá theo sổ lệnh){DUYET}"
+    if nd and cho:
+        nd += (f"\n🤖 {GIO_NHAN_LENH[0] // 100:02d}:{GIO_NHAN_LENH[0] % 100:02d} (DNSE mở nhận lệnh) tự gửi máy Mac lệnh "
+               f"BÁN HẾT {', '.join(cho)} (lô chẵn + lẻ, giá theo sổ lệnh){DUYET}")
     if nd:
         _in(nd, rieng_tu=True) if khong_gui else gui(nd, rieng_tu=True)
     if not os.environ.get("GITHUB_ACTIONS"):
         print(f"Nhắc lệnh ATO: {len(ban)} bán, {len(mua)} mua hệ bắt đáy.")
     return 0
+
+
+GIO_NHAN_LENH = (845, 1445)       # DNSE nhận lệnh T2–T6 08:45–14:45 (danh-muc dmuc/dnse_lenh.GIO_NHAN)
+
+
+def _dnse_nhan(bay_gio):
+    t = pd.Timestamp(bay_gio)
+    return GIO_NHAN_LENH[0] <= t.hour * 100 + t.minute <= GIO_NHAN_LENH[1]
+
+
+def gui_ban_cho(bay_gio, vt, khong_gui=False):
+    """Lệnh tự bán ATO nhac_ato hoãn vì trước 08:45 (DNSE chưa nhận lệnh) → lượt đầu tiên trong giờ nhận lệnh gửi máy Mac
+    + 1 tin. Mã không còn giữ → bỏ; gửi lỗi → giữ cho lượt sau; sang ngày khác → bỏ. → số lệnh đã gửi."""
+    tt = vi_the.doc_trang_thai_ban()
+    cho = tt.get("_cho_ban") or {}
+    if khong_gui or not cho:
+        return 0
+    if cho.get("ngay") != f"{pd.Timestamp(bay_gio):%Y-%m-%d}":
+        tt.pop("_cho_ban", None)
+        vi_the.ghi_trang_thai_ban(tt)
+        return 0
+    if not _dnse_nhan(bay_gio):
+        return 0
+    ds = [m for m in cho.get("ma") or [] if m in vt]
+    da = [m for m in ds if _tu_dat(bay_gio, khong_gui, "B", m)]
+    con = [m for m in ds if m not in da]
+    if con:
+        tt["_cho_ban"] = {**cho, "ma": con}
+    else:
+        tt.pop("_cho_ban", None)
+    vi_the.ghi_trang_thai_ban(tt)
+    if da:
+        gui(f"🤖 Đã gửi máy Mac lệnh BÁN HẾT {', '.join(da)} (lô chẵn + lẻ, giá theo sổ lệnh – lệnh ATO hoãn tới khi DNSE "
+            f"mở nhận lệnh){DUYET}", rieng_tu=True)
+    return len(da)
 
 
 def _phien_thuc(bay_gio):

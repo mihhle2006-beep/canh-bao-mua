@@ -1042,3 +1042,40 @@ def test_tong_ket_ma_dang_giu_khong_o_muc_mua_moi(monkeypatch):
     assert "GGG" not in t and "★2 NNN 10.00" in t and "➕ đang giữ – đủ điều kiện MUA THÊM" in t and "★3 AAA" in t
     t = "\n".join(tong_ket_cl._tin(ra, "2026-10-29 15:20", None, set()))
     assert "★1 GGG 10.00" in t and "➕" not in t
+
+
+def test_tu_ban_ato_truoc_0845_hoan_toi_khi_dnse_nhan(monkeypatch, tmp_path):
+    """25/11/2026: lượt 08:00 gửi lệnh tự bán ATO → máy Mac "ngoài giờ" (DNSE nhận từ 08:45), lệnh bị bỏ, không gửi lại →
+    lượt trước 08:45 chỉ báo + giữ chờ; lượt đầu tiên ≥ 08:45 (08:45 hoặc trong phiên) mới gửi, 1 lần; mã đã bán → bỏ."""
+    monkeypatch.chdir(tmp_path)
+    vt = {"AAA": {"ma": "AAA", "so_cp": 300, "gia_von": 50.0, "ngay_mua": "01/09/2026", "ban_ato": None},
+          "BBB": {"ma": "BBB", "so_cp": 100, "gia_von": 20.0, "ngay_mua": "05/10/2026", "ban_ato": None}}
+    kb = {"AAA": {"muc": "CAT_LO", "gia": 45.0, "ly_do": ["đóng cửa dưới cắt lỗ"], "ghi_chu": []},
+          "BBB": {"muc": "BAN_TUAN", "gia": 25.0, "ly_do": ["đóng cửa tuần < MA10 tuần"], "ghi_chu": []}}
+    monkeypatch.setattr(chay, "tai", lambda ma, *a, **k: _gia_dai(ma))
+    monkeypatch.setattr(vi_the, "_danh_gia_ban", lambda v, kq, dn=None, bay_gio=None, f=None: dict(kb[v["ma"]]))
+    for f in (vi_the.doc_trang_thai_ban, vi_the.ghi_trang_thai_ban):
+        monkeypatch.setattr(f, "__defaults__", (str(tmp_path / "tt.json"),))
+    import ptcp.loc_quy_b as LQ
+    monkeypatch.setattr(LQ, "doc", lambda *a, **k: {})
+    monkeypatch.setattr(chay.C, "TU_DAT_LENH", True, raising=False)
+    gui, dat = [], []
+    monkeypatch.setattr(chay, "gui", lambda nd, rieng_tu=False, **k: gui.append(nd))
+    monkeypatch.setattr(chay, "_tu_dat", lambda bg, kg, ben, ma, *a: dat.append((ben, ma)) or True)
+    assert chay.gui_ban_cho(pd.Timestamp("2026-10-30 08:00"), vt) == 0
+    assert chay.nhac_ato(pd.Timestamp("2026-10-30 08:00"), vt) == 0
+    assert dat == [] and "🤖 08:45 (DNSE mở nhận lệnh) tự gửi máy Mac lệnh BÁN HẾT AAA, BBB" in gui[0]
+    assert "Đã gửi máy Mac" not in gui[0]
+    assert chay.gui_ban_cho(pd.Timestamp("2026-10-30 08:30"), vt) == 0 and dat == []         # 08:30: chưa nhận lệnh
+    vt2 = {k: v for k, v in vt.items() if k != "BBB"}                                        # BBB đã bán tay
+    assert chay.gui_ban_cho(pd.Timestamp("2026-10-30 08:45"), vt2) == 1 and dat == [("B", "AAA")]
+    assert "🤖 Đã gửi máy Mac lệnh BÁN HẾT AAA" in gui[-1]
+    assert chay.gui_ban_cho(pd.Timestamp("2026-10-30 09:00"), vt) == 0 and len(dat) == 1     # không gửi lặp
+    # gửi lỗi → giữ cho lượt sau; sang ngày khác → bỏ
+    tt = vi_the.doc_trang_thai_ban()
+    tt["_cho_ban"] = {"ngay": "2026-10-30", "ma": ["AAA"]}
+    vi_the.ghi_trang_thai_ban(tt)
+    monkeypatch.setattr(chay, "_tu_dat", lambda *a: False)
+    assert chay.gui_ban_cho(pd.Timestamp("2026-10-30 09:15"), vt) == 0
+    assert vi_the.doc_trang_thai_ban()["_cho_ban"]["ma"] == ["AAA"]
+    assert chay.gui_ban_cho(pd.Timestamp("2026-11-02 09:15"), vt) == 0 and "_cho_ban" not in vi_the.doc_trang_thai_ban()
