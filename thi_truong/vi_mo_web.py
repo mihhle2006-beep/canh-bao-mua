@@ -74,7 +74,9 @@ def xau_ngay(tu="2010-01-01"):
     """XAU/USD theo ngày → (DataFrame open/high/low/close, nguồn)."""
     try:
         txt = _get(f"https://stooq.com/q/d/l/?s=xauusd&d1={pd.Timestamp(tu):%Y%m%d}&i=d").text
-        if txt[:40].lower().startswith("date"):
+        if not txt[:40].lower().startswith("date"):
+            print(f"  ⚠ Stooq không trả CSV: {txt[:60]!r}")
+        else:
             df = pd.read_csv(io.StringIO(txt))
             df.columns = [c.strip().lower() for c in df.columns]
             df = df.set_index(pd.to_datetime(df["date"]))[["open", "high", "low", "close"]].astype(float)
@@ -332,6 +334,9 @@ def main(argv=None):
     print(f"Vĩ mô: {len(kq['the'])} thẻ, {len(kq['chuoi'])} chuỗi, nến ngày {len(kq['xau_nen'])}, nến giờ {len(kq['xau_gio'])},"
           f" giá trực tiếp: {(kq['song'] or {}).get('kieu') or 'không'} · "
           + " · ".join(f"{k}: {v}" for k, v in N.items()))
+    for t in kq["the"]:                                              # số công khai – soát nhanh trong log
+        print(f"  {t['ten']}: {t['gia']} {t['dv']}" + (f" ({t['doi']:+}{'%' if t['kieu_doi'] == '%' else ''})"
+                                                       if t.get("doi") is not None else "") + f" · {t['ngay']}")
     thieu = [k for k in ("xau", "sjc_ban", "vn_10n", "us_10n") if k not in kq["chuoi"]]
     if len(thieu) >= 3:
         print(f"::error::Vĩ mô thiếu gần hết chuỗi chính: {thieu}")
