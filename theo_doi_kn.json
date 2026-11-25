@@ -1,13 +1,10 @@
 {
  "cat_lo": {
-  "MSB|2026-10-08": 15.6,
   "FRT|2026-10-14": 135.57,
   "VPL|2026-10-21": 84.82,
   "NAB|2026-10-27": 12.1,
   "VJC|2026-10-27": 132.79,
-  "HDC|2026-10-27": 12.07,
   "TCH|2026-10-20": 11.9,
-  "DIG|2026-11-05": 9.73,
   "VIX|2026-11-06": 12.18,
   "DXG|2026-11-09": 10.27,
   "KDH|2026-11-09": 14.43,
@@ -36,6 +33,8 @@
   "CHIEN_LUOC|DGC|2026-10-22",
   "CHIEN_LUOC|DGW|2026-10-13",
   "CHIEN_LUOC|DIG|2026-10-12",
+  "CHIEN_LUOC|DIG|2026-11-04",
+  "CHIEN_LUOC|DIG|2026-11-13",
   "CHIEN_LUOC|DPR|2026-10-08",
   "CHIEN_LUOC|DPR|2026-10-22",
   "CHIEN_LUOC|DPR|2026-10-23",
@@ -52,6 +51,7 @@
   "CHIEN_LUOC|HAH|2026-10-26",
   "CHIEN_LUOC|HDB|2026-10-07",
   "CHIEN_LUOC|HDB|2026-10-12",
+  "CHIEN_LUOC|HDC|2026-10-26",
   "CHIEN_LUOC|HHV|2026-11-04",
   "CHIEN_LUOC|HSG|2026-11-04",
   "CHIEN_LUOC|HSG|2026-11-05",
@@ -67,6 +67,7 @@
   "CHIEN_LUOC|MCH|2026-10-08",
   "CHIEN_LUOC|MCH|2026-10-23",
   "CHIEN_LUOC|MCH|2026-10-26",
+  "CHIEN_LUOC|MSB|2026-10-07",
   "CHIEN_LUOC|MSN|2026-10-07",
   "CHIEN_LUOC|MSN|2026-10-12",
   "CHIEN_LUOC|MWG|2026-10-07",
@@ -108,26 +109,29 @@
   "CHIEN_LUOC|VSC|2026-10-26"
  ],
  "bang": {
-  "luc": "2026-11-25 02:33",
+  "luc": "2026-11-26 01:42",
   "dang_mo": [
-   "⚠ DIG 9.88 | GIỮ, sát cắt lỗ 9.73 – thủng là bán · Đã vào lệnh: 05/11 giá vốn 10.10 · hiện lỗ -2.2% (-0.3R) · báo MUA lại 13/11",
+   "⚠ HDC 11.95 | GIỮ, sát cắt lỗ 11.92 – thủng là bán · Đã vào lệnh: 28/10 giá vốn 11.45 · hiện lãi +4.4% (+1.1R) · báo MUA lại 03/11",
    "⚠ VRE 23.45 | GIỮ, sát cắt lỗ 23.02 – thủng là bán · Đã vào lệnh: 16/11 giá vốn 24.00 · hiện lỗ -2.3% (-0.6R)",
-   "⚠ KHG 4.46 | GIỮ, sát cắt lỗ 4.39 – thủng là bán · Đã vào lệnh: 19/11 giá vốn 4.60 · hiện lỗ -3.0% (-0.7R)",
-   "🟢 VPL 96.00 | GIỮ · Cắt lỗ 84.82 · Đã vào lệnh: 21/10 giá vốn 80.40 · hiện lãi +19.4% (+3.5R)",
-   "🟢 TCH 13.30 | GIỮ · Cắt lỗ 11.90 · Đã vào lệnh: 20/10 giá vốn 11.25 · hiện lãi +18.2% (+3.2R)",
-   "🟢 MSB 16.45 | GIỮ · Cắt lỗ 15.60 · Đã vào lệnh: 08/10 giá vốn 14.70 · hiện lãi +11.9% (+1.9R)",
-   "🟢 HDC 12.80 | GIỮ · Cắt lỗ 12.07 · Đã vào lệnh: 27/10 giá vốn 11.80 · hiện lãi +8.5% (+1.3R) · báo MUA lại 03/11",
-   "🟢 NAB 13.20 | GIỮ · Cắt lỗ 12.10 · Đã vào lệnh: 27/10 giá vốn 12.55 · hiện lãi +5.2% (+0.9R) · báo MUA lại 17/11",
-   "🟢 VJC 137.30 | GIỮ · Cắt lỗ 132.79 · Đã vào lệnh: 27/10 giá vốn 132.00 · hiện lãi +4.0% (+1.0R) · báo MUA lại 09/11",
-   "🟢 FRT 148.00 | GIỮ · Cắt lỗ 136.14 · Đã vào lệnh: 14/10 giá vốn 143.80 · hiện lãi +2.9% (+0.5R) · báo MUA lại 11/11, 12/11",
-   "🟢 HDG 16.75 | GIỮ · Cắt lỗ 15.50 · Đã vào lệnh: 17/11 giá vốn 16.30 · hiện lãi +2.8% (+0.6R) · báo MUA lại 19/11",
-   "🟢 KDH 15.35 | GIỮ · Cắt lỗ 14.43 · Đã vào lệnh: 09/11 giá vốn 15.10 · hiện lãi +1.7% (+0.2R) · báo MUA lại 20/11",
-   "🟢 DBC 16.40 | GIỮ · Cắt lỗ 15.72 · Đã vào lệnh: 10/11 giá vốn 16.40 · hiện lãi +0.0% (+0.0R) · báo MUA lại 18/11",
+   "⚠ KHG 4.45 | GIỮ, sát cắt lỗ 4.39 – thủng là bán · Đã vào lệnh: 19/11 giá vốn 4.60 · hiện lỗ -3.3% (-0.7R)",
+   "⚠ VIX 12.30 | GIỮ, sát cắt lỗ 12.18 – thủng là bán · Đã vào lệnh: 06/11 giá vốn 12.90 · hiện lỗ -4.7% (-0.8R) · báo MUA lại 16/11",
+   "⚠ DXG 10.50 | GIỮ, sát cắt lỗ 10.30 – thủng là bán · Đã vào lệnh: 09/11 giá vốn 11.05 · hiện lỗ -5.0% (-0.7R) · báo MUA lại 16/11, 20/11",
+   "🟢 VPL 97.00 | GIỮ · Cắt lỗ 84.82 · Đã vào lệnh: 21/10 giá vốn 80.40 · hiện lãi +20.6% (+3.8R)",
+   "🟢 TCH 12.85 | GIỮ · Cắt lỗ 11.90 · Đã vào lệnh: 20/10 giá vốn 11.25 · hiện lãi +14.2% (+2.5R)",
+   "🟢 VJC 137.80 | GIỮ · Cắt lỗ 132.79 · Đã vào lệnh: 27/10 giá vốn 132.00 · hiện lãi +4.4% (+1.1R) · báo MUA lại 09/11",
+   "🟢 HDG 16.70 | GIỮ · Cắt lỗ 15.50 · Đã vào lệnh: 17/11 giá vốn 16.30 · hiện lãi +2.5% (+0.5R) · báo MUA lại 19/11",
+   "🟢 NAB 12.80 | GIỮ · Cắt lỗ 12.10 · Đã vào lệnh: 27/10 giá vốn 12.55 · hiện lãi +2.0% (+0.3R) · báo MUA lại 17/11",
+   "🟢 FRT 146.20 | GIỮ · Cắt lỗ 136.14 · Đã vào lệnh: 14/10 giá vốn 143.80 · hiện lãi +1.7% (+0.3R) · báo MUA lại 11/11, 12/11",
    "🟢 HUT 12.40 | GIỮ · Cắt lỗ 11.89 · Đã vào lệnh: 10/11 giá vốn 12.50 · hiện lỗ -0.8% (-0.2R) · báo MUA lại 12/11",
-   "🟢 DXG 10.85 | GIỮ · Cắt lỗ 10.30 · Đã vào lệnh: 09/11 giá vốn 11.05 · hiện lỗ -1.8% (-0.3R) · báo MUA lại 16/11, 20/11",
-   "🟢 VIX 12.65 | GIỮ · Cắt lỗ 12.18 · Đã vào lệnh: 06/11 giá vốn 12.90 · hiện lỗ -1.9% (-0.3R) · báo MUA lại 16/11",
-   "🟢 IDC 34.80 | GIỮ · Cắt lỗ 33.29 · Đã vào lệnh: 12/11 giá vốn 35.80 · hiện lỗ -2.8% (-0.4R)"
+   "🟢 KDH 14.95 | GIỮ · Cắt lỗ 14.43 · Đã vào lệnh: 09/11 giá vốn 15.10 · hiện lỗ -1.0% (-0.1R) · báo MUA lại 20/11",
+   "🟢 DBC 16.20 | GIỮ · Cắt lỗ 15.72 · Đã vào lệnh: 10/11 giá vốn 16.40 · hiện lỗ -1.2% (-0.2R) · báo MUA lại 18/11",
+   "🟢 IDC 35.00 | GIỮ · Cắt lỗ 33.29 · Đã vào lệnh: 12/11 giá vốn 35.80 · hiện lỗ -2.2% (-0.3R)"
   ],
-  "da_dong": []
+  "da_dong": [
+   "✅ MSB – mua 08/10 giá 14.70, đã bán 15.60 ngày 25/11 (+5.5%)",
+   "✅ HDC – mua 27/10 giá 11.80, đã bán 12.07 ngày 25/11 (+1.7%)",
+   "❌ DIG – mua 05/11 giá 10.10, đã bán 9.73 ngày 25/11 (-4.3%)",
+   "❌ DIG – mua 16/11 giá 10.20, đã bán 9.73 ngày 25/11 (-5.2%)"
+  ]
  }
 }

@@ -2,7 +2,7 @@
  "ma": {
   "HHV": {
    "ngay_them": "2026-11-04",
-   "het_han": "2026-11-27",
+   "het_han": "2026-11-30",
    "chien_luoc": [
     "quy_b"
    ],
@@ -10,19 +10,9 @@
    "dat_gan_nhat": "2026-11-20",
    "loc_gan_nhat": "2026-11-19"
   },
-  "HSG": {
-   "ngay_them": "2026-11-04",
-   "het_han": "2026-11-25",
-   "chien_luoc": [
-    "quy_b"
-   ],
-   "dat_mua": "2026-11-04",
-   "dat_gan_nhat": "2026-11-18",
-   "loc_gan_nhat": "2026-11-17"
-  },
   "KBC": {
    "ngay_them": "2026-11-04",
-   "het_han": "2026-11-26",
+   "het_han": "2026-11-27",
    "chien_luoc": [
     "quy_b"
    ],
@@ -32,27 +22,27 @@
   },
   "DXG": {
    "ngay_them": "2026-11-06",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-06",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "KDH": {
    "ngay_them": "2026-11-06",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-06",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "PDR": {
    "ngay_them": "2026-11-06",
-   "het_han": "2026-11-27",
+   "het_han": "2026-11-30",
    "chien_luoc": [
     "quy_b"
    ],
@@ -62,48 +52,48 @@
   },
   "DBC": {
    "ngay_them": "2026-11-09",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-09",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "HUT": {
    "ngay_them": "2026-11-09",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-09",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "FRT": {
    "ngay_them": "2026-11-11",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b",
     "xu_huong"
    ],
    "dat_mua": "2026-11-11",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "IDC": {
    "ngay_them": "2026-11-11",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-11",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "TPB": {
    "ngay_them": "2026-11-11",
-   "het_han": "2026-11-27",
+   "het_han": "2026-11-30",
    "chien_luoc": [
     "quy_b"
    ],
@@ -113,7 +103,7 @@
   },
   "VCG": {
    "ngay_them": "2026-11-11",
-   "het_han": "2026-11-26",
+   "het_han": "2026-11-27",
    "chien_luoc": [
     "quy_b"
    ],
@@ -123,7 +113,7 @@
   },
   "DIG": {
    "ngay_them": "2026-11-13",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
@@ -133,37 +123,37 @@
   },
   "HDG": {
    "ngay_them": "2026-11-16",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-16",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "KHG": {
    "ngay_them": "2026-11-16",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-16",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "VIX": {
    "ngay_them": "2026-11-16",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-16",
-   "dat_gan_nhat": "2026-11-25",
+   "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
   "NAB": {
    "ngay_them": "2026-11-17",
-   "het_han": "2026-11-27",
+   "het_han": "2026-11-30",
    "chien_luoc": [
     "quy_b",
     "xu_huong"
@@ -174,7 +164,7 @@
   },
   "NLG": {
    "ngay_them": "2026-11-17",
-   "het_han": "2026-11-26",
+   "het_han": "2026-11-27",
    "chien_luoc": [
     "quy_b"
    ],
@@ -184,12 +174,12 @@
   },
   "VC3": {
    "ngay_them": "2026-11-25",
-   "het_han": "2026-12-01",
+   "het_han": "2026-12-02",
    "chien_luoc": [
     "quy_b"
    ],
    "dat_mua": "2026-11-25",
-   "dat_gan_nhat": "2026-11-25"
+   "dat_gan_nhat": "2026-11-26"
   }
  },
  "ngay_quet_da_nhan": "2026-11-25 15:04"
