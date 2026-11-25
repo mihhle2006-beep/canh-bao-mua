@@ -59,16 +59,26 @@ for (const t of trang) {
           await pg.click(".sk-pnl [aria-label='Đóng']");
           await pg.waitForTimeout(400);
         }
-        else if (lenh === "vm") {                     // tab Vĩ mô: thẻ + 6 biểu đồ phải vẽ; đổi nến giờ / khoảng "Tất cả"
+        else if (lenh === "vm") {                     // tab Vĩ mô: thẻ + 9 biểu đồ + bảng hàng hoá; đổi nến giờ / khoảng / hàng hoá / % nhóm
           await pg.click("#tab-vm");
           await pg.waitForSelector("#vm-the .o", {timeout: 8000});
-          for (const id of ["#vm-bd-xau", "#vm-bd-sjc", "#vm-bd-lsvn", "#vm-bd-my", "#vm-bd-chenh", "#vm-bd-tg"])
+          for (const id of ["#vm-bd-xau", "#vm-bd-sjc", "#vm-bd-lsvn", "#vm-bd-my", "#vm-bd-chenh", "#vm-bd-tg", "#vm-bd-vn",
+                            "#vm-bd-myl", "#vm-bd-hh"])
             await pg.waitForSelector(id + " canvas", {timeout: 8000, state: "attached"});
           const n = await pg.$$eval("#vm-the .o", e => e.length);
           if (n < 8) throw new Error("tab Vĩ mô thiếu thẻ: " + n);
+          const hh = await pg.$$eval("#vm-hh tr[data-k]", e => e.length);
+          if (hh < 3) throw new Error("bảng hàng hoá thiếu dòng: " + hh);
           await pg.click("#vm-xau-k button[data-k=gio]"); await pg.waitForTimeout(400);
           await pg.click("#vm-ky button[data-k='0']"); await pg.waitForTimeout(400);
           await pg.waitForSelector("#vm-bd-xau canvas", {timeout: 5000, state: "attached"});
+          await pg.click("#vm-hh tr[data-k]:last-child"); await pg.waitForTimeout(400);
+          const chon = await pg.$eval("#vm-hh tr.chon", e => e.dataset.k), ten = await pg.$eval("#vm-hh-ten", e => e.textContent);
+          if (!chon || !ten || ten === "Hàng hoá") throw new Error("chọn hàng hoá không đổi biểu đồ: " + chon + " / " + ten);
+          await pg.click("#vm-hh-k button[data-k=pt]"); await pg.waitForTimeout(400);
+          await pg.waitForSelector("#vm-bd-hh canvas", {timeout: 5000, state: "attached"});
+          await pg.click("#vm-the .o[data-k=bac]"); await pg.waitForTimeout(400);
+          if (await pg.$eval("#vm-hh tr.chon", e => e.dataset.k) !== "bac") throw new Error("chạm thẻ bạc không chọn bạc ở bảng");
         }
         else if (lenh === "sk") {                     // rê chuột / chạm vào bong bóng sự kiện đầu tiên → hộp chi tiết phải hiện
           await pg.waitForTimeout(800);

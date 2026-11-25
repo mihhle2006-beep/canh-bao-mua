@@ -398,8 +398,8 @@ def tai_tat_ca():
             x, n = _thu(k, lambda m=ma: _tv(m, "1M")["close"])
             if x is not None:
                 S[k], N[k] = x, ("TradingView " + ma) if n is None else n
-        if k in S:                                                    # kiểm: in 4 kỳ cuối (đơn vị, theo tháng hay cộng dồn năm)
-            print(f"  kiểm {ten}: " + " · ".join(f"{d:%m/%Y} {v:,.4g}" for d, v in pd.Series(S[k]).dropna().iloc[-4:].items()))
+        if k in S:                                                    # kiểm: in 15 kỳ cuối (đơn vị; số tháng hay cộng dồn năm)
+            print(f"  kiểm {ten}: " + " · ".join(f"{d:%m/%Y} {v:,.4g}" for d, v in pd.Series(S[k]).dropna().iloc[-15:].items()))
     try:
         P["gia_ngay"], P["gia_ngay_luc"] = xau_giao_ngay()
     except Exception as e:                                            # noqa: BLE001
@@ -452,8 +452,11 @@ def _the(k, nhom, ten, s, dv, nguon, ky=1, kieu="%", le=2, ten_ky="phiên trư�
     v = float(s.iloc[-1])
     q = float(s.iloc[-1 - ky]) if len(s) > ky else None
     doi = None if q is None else (round((v / q - 1) * 100, 2) if kieu == "%" else round(v - q, 3))
+    d = s.index[-1]
+    kn = "quý" if ten_ky.startswith("quý") else "tháng" if ten_ky.startswith("tháng") else ""
     return {"k": k, "nhom": nhom, "ten": ten, "gia": round(v, le), "dv": dv, "doi": doi, "kieu_doi": kieu,
-            "ky": ten_ky, "ngay": f"{s.index[-1]:%Y-%m-%d}", "nguon": nguon}
+            "ky": ten_ky, "ngay": f"{d:%Y-%m-%d}", "nguon": nguon,
+            **({"ky_so": f"quý {(d.month - 1) // 3 + 1}/{d.year}" if kn == "quý" else f"tháng {d.month}/{d.year}"} if kn else {})}
 
 
 def dung(S, N, P, bay_gio=None):
