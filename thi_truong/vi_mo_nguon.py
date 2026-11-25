@@ -291,7 +291,92 @@ def kiem_ngay():
         print(dong + " · " + " | ".join(kq), flush=True)
 
 
+# VÒNG 2 (25/11/2026, chủ quỹ: "trình bày như FireAnt – Kinh tế vĩ mô"): dò thêm chỉ tiêu VN theo chủ đề (tăng trưởng, sản
+# xuất, giá, tiền tệ, thương mại, tiêu dùng, lao động) + thế giới, nguồn năm (World Bank, IMF), giá xăng dầu, báo cáo vĩ mô.
+TV_VN = ["VNGDP", "VNGDPPC", "VNGDPPCP", "VNGDPCP", "VNGDPQQ", "VNGDPA", "VNGDPCONS", "VNGDPMAN", "VNGDPMIN", "VNGDPSERV",
+         "VNGDPUTIL", "VNGFCF", "VNGDPDEF", "VNGNP", "VNIRMM", "VNCPI", "VNCPIT", "VNCPIH", "VNFOODINF", "VNPPIYY", "VNPPI",
+         "VNEXPP", "VNIMPP", "VNIPMM", "VNMPMI", "VNSPMI", "VNRSMM", "VNCCI", "VNBCI", "VNUR", "VNPOP", "VNEMP", "VNLF", "VNWAG",
+         "VNMW", "VNEP", "VNCOP", "VNSTP", "VNCARR", "VNCP", "VNTA", "VNTR", "VNIMP", "VNCA", "VNCAG", "VNGD", "VNGDG",
+         "VNGBV", "VNGB", "VNM0", "VNM1", "VNM3", "VNLTPS", "VNPSC", "VNCBBS", "VNGASP", "VNCORP", "VNLR", "VNDIR", "VNM2",
+         "VNEXPYY", "VNIMPYY", "VNRR", "VNCAPUT", "VNHPI", "VNDGC", "VNFE", "VNCI", "VNTOT", "VNBC", "VNIRYY", "VNCIR",
+         "VNINTR", "VNINBR", "VNIPYY", "VNRSYY", "VNGDPYY", "VNEXP", "VNBOT", "VNFDI", "VNFER"]
+TV_TG = ["USGDPQQ", "USGDPYY", "USUR", "USNFP", "USCIR", "USMPMI", "USRSYY", "CNGDPYY", "CNIRYY", "CNMPMI", "CNBOT", "CNIPYY",
+         "CNRSYY", "CNINTR", "EUGDPYY", "EUIRYY", "EUINTR", "EUUR", "JPGDPYY", "JPIRYY", "JPINTR", "KRGDPYY", "KRIRYY",
+         "KRINTR", "THGDPYY", "THIRYY", "THINTR"]
+WB = {"NY.GDP.MKTP.KD.ZG": "GDP tăng trưởng %", "NY.GDP.MKTP.CD": "GDP USD", "NY.GDP.PCAP.CD": "GDP/người USD",
+      "NY.GDP.PCAP.PP.CD": "GDP/người PPP", "SP.POP.TOTL": "dân số", "SL.UEM.TOTL.ZS": "thất nghiệp %",
+      "FP.CPI.TOTL.ZG": "lạm phát %", "NE.EXP.GNFS.ZS": "xuất khẩu % GDP", "GC.DOD.TOTL.GD.ZS": "nợ CP % GDP",
+      "BN.CAB.XOKA.GD.ZS": "cán cân vãng lai % GDP"}
+IMF = {"NGDP_RPCH": "GDP tăng trưởng %", "PCPIPCH": "lạm phát %", "NGDPDPC": "GDP/người USD", "LUR": "thất nghiệp %",
+       "GGXWDG_NGDP": "nợ CP % GDP", "BCA_NGDPD": "vãng lai % GDP", "NGDPD": "GDP tỷ USD"}
+
+
+def _tom(s):
+    s = pd.Series(s).dropna().sort_index()
+    gap = pd.Series(s.index).diff().dt.days.median() if len(s) > 2 else float("nan")
+    return (f"{len(s)} điểm {s.index[0]:%Y-%m} → {s.index[-1]:%Y-%m-%d} · ~{gap:.0f} ngày/kỳ · cuối: "
+            + " · ".join(f"{d:%m/%y} {v:,.4g}" for d, v in s.iloc[-5:].items()))
+
+
+def do_vn():
+    print("=== TradingView ECONOMICS – Việt Nam ===")
+    for m in TV_VN:
+        try:
+            print(f"✔ VN {m}: {_tom(tv('ECONOMICS:' + m, '1M'))}", flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ VN {m}: {type(e).__name__} {str(e)[:50]}", flush=True)
+    print("=== TradingView ECONOMICS – thế giới ===")
+    for m in TV_TG:
+        try:
+            print(f"✔ TG {m}: {_tom(tv('ECONOMICS:' + m, '1M'))}", flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ TG {m}: {type(e).__name__} {str(e)[:50]}", flush=True)
+    print("=== World Bank (năm) ===")
+    for ma, ten in WB.items():
+        try:
+            j = _get(f"https://api.worldbank.org/v2/country/VNM/indicator/{ma}?format=json&per_page=80").json()
+            s = pd.Series({pd.Timestamp(f"{x['date']}-12-31"): x["value"] for x in j[1] if x.get("value") is not None})
+            print(f"✔ WB {ma} ({ten}): {_tom(s)}")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ WB {ma} ({ten}): {type(e).__name__} {str(e)[:60]}")
+    print("=== IMF DataMapper (năm, có dự báo) ===")
+    for ma, ten in IMF.items():
+        try:
+            j = _get(f"https://www.imf.org/external/datamapper/api/v1/{ma}/VNM").json()
+            d = j["values"][ma]["VNM"]
+            s = pd.Series({pd.Timestamp(f"{k}-12-31"): v for k, v in d.items()})
+            print(f"✔ IMF {ma} ({ten}): {_tom(s)}")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ IMF {ma} ({ten}): {type(e).__name__} {str(e)[:60]}")
+    print("=== Giá xăng dầu ===")
+    for url in ("https://www.petrolimex.com.vn/", "https://webgia.com/gia-xang-dau/petrolimex/",
+                "https://vnexpress.net/chu-de/gia-xang-dau-3026", "https://xangdau.net/"):
+        try:
+            t = _get(url, timeout=30).text
+            m = re.findall(r"(RON\s*95[^<]{0,40}|DO\s*0[,.]05S[^<]{0,40})", t)
+            g = re.findall(r"\b(\d{2}[.,]\d{3})\b", t)
+            print(f"✔ {url}: {len(t)} ký tự · nhãn {m[:3]} · số {g[:8]}")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {url}: {type(e).__name__} {str(e)[:60]}")
+    print("=== Báo cáo vĩ mô (CTCK) ===")
+    for url in ("https://cafef.vn/du-lieu/Ajax/PageNew/BaoCaoPhanTich.ashx?Symbol=&PageIndex=1&PageSize=20&Type=4",
+                "https://cafef.vn/du-lieu/Ajax/PageNew/BaoCaoPhanTich.ashx?Symbol=&PageIndex=1&PageSize=20",
+                "https://api.simplize.vn/api/company/analysis-report/list?page=0&size=20&reportType=MACRO",
+                "https://api.simplize.vn/api/company/analysis-report/list?ticker=&page=0&size=20"):
+        try:
+            r = _get(url, timeout=30, headers={"Referer": "https://cafef.vn/"})
+            print(f"✔ {url}: {r.status_code} {r.text[:300]!r}")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {url}: {type(e).__name__} {str(e)[:60]}")
+
+
 def main():
+    do_vn()
+    return 0
+
+
+def do_cu():
+    """Vòng 1 (đã kết luận – vi_mo_web): ngày nến + ứng viên vàng / hàng hoá / lãi suất."""
     kiem_ngay()
     kq = {}
     for (nhom, ten), ham in UNG_VIEN.items():
