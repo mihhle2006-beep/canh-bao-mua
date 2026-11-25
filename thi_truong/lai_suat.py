@@ -34,8 +34,17 @@ MA_MY = {"US_EFFR": ("Fed funds thực tế (EFFR)", "FRED:DFF"), "US_TRAN": ("T
 THU_MUC = os.path.join("cache_du_lieu", "lai_suat")
 
 
-def tv_lich_su(sym, khung="1D", n=5000, cho=30):
-    """1 mã TradingView → (DataFrame [o, h, l, c] chỉ mục ngày, thông điệp lỗi | "")."""
+# NGÀY CỦA NẾN TradingView: nến ngày đánh dấu bằng GIỜ MỞ phiên (UTC) – vàng / dầu / FX / sàn CME mở 21–23 h UTC hôm TRƯỚC,
+# SGX phiên T+1 mở 10–12 h UTC hôm trước, London 08–09 h, BTC / ECONOMICS 00 h cùng ngày. Kiểm 25/11/2026 trên máy GitHub
+# (canh-bao-mua thi_truong/vi_mo_nguon.kiem_ngay, đối chiếu nguồn gắn ngày chuẩn – Yahoo theo ngày sàn, Bộ Tài chính Mỹ): cách
+# cũ (UTC.normalize) gán LÙI 1 NGÀY mọi phiên mở tối – tương quan thay đổi ngày cùng ngày ≈ 0, lệch 1 ngày 0,6–0,99; cộng 14 h
+# rồi lấy ngày: vàng 0,90 · DXY 0,97 · Mỹ 10N 0,95 / 2N 0,93 · đồng 0,99 · VIX / BTC 1,00 cùng ngày. KHÔNG đúng cho phiên mở từ
+# 10 h UTC mà thuộc CÙNG ngày (cổ phiếu Mỹ mở 13:30 UTC) – không dùng ở đây.
+TV_BU_GIO = 14
+
+
+def tv_lich_su(sym, khung="1D", n=5000, cho=30, giu_gio=False):
+    """1 mã TradingView → (DataFrame [o, h, l, c] chỉ mục ngày – giu_gio: mốc UTC thô cho nến phút / giờ –, lỗi | "")."""
     try:
         from websocket import create_connection
     except ImportError:
@@ -68,17 +77,19 @@ def tv_lich_su(sym, khung="1D", n=5000, cho=30):
         if any(k in m for k in ("series_completed", "symbol_error", "critical_error", "series_error")):
             break
     ws.close()
-    return doc_nen(tho)
+    return doc_nen(tho, giu_gio, thang=khung.upper().endswith("M") and khung[:-1] in ("", "1"))
 
 
-def doc_nen(tho):
+def doc_nen(tho, giu_gio=False, thang=False):
     so = r"(-?[\d.]+(?:[eE][+-]?\d+)?)"
     v = re.findall(r'"v":\[' + ",".join([so] * 5), tho)
     if not v:
         loi = re.search(r'"m":"(symbol_error|critical_error|series_error)".{0,160}', tho)
         return None, (loi.group(0) if loi else tho[-200:])
     df = pd.DataFrame([[float(x) for x in r] for r in v], columns=["t", "o", "h", "l", "c"])
-    df.index = pd.to_datetime(df.pop("t"), unit="s").dt.normalize()
+    t = pd.to_datetime(df.pop("t"), unit="s")
+    t = t if giu_gio else (t + pd.Timedelta(hours=TV_BU_GIO)).dt.normalize()            # xem TV_BU_GIO
+    df.index = t.dt.to_period("M").dt.to_timestamp() if thang and not giu_gio else t     # tháng → ngày 1
     df.index.name = None
     return df[~df.index.duplicated(keep="last")].sort_index(), ""
 
