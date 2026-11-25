@@ -22,15 +22,8 @@ def _get(url, **kw):
     return r
 
 
-def tv(sym, khung="1D", n=5000):
-    """TradingView (không đăng nhập) → Series giá đóng cửa; khung phút giữ giờ (không gộp ngày)."""
-    from thi_truong import lai_suat as LS
-    if khung == "1D" or khung == "1M" or khung == "1W":
-        df, loi = LS.tv_lich_su(sym, khung, n)
-        if df is None:
-            raise ValueError(loi[:120])
-        return df["c"]
-    # khung giờ / phút: đọc thô, giữ mốc thời gian
+def tv_tho(sym, khung="1D", n=5000):
+    """TradingView (không đăng nhập) → Series giá đóng cửa, chỉ mục = mốc UTC THÔ của nến (chưa gộp ngày)."""
     import random
     import string
 
@@ -65,6 +58,19 @@ def tv(sym, khung="1D", n=5000):
         raise ValueError(tho[-120:])
     s = pd.Series([float(r[4]) for r in v], index=pd.to_datetime([float(r[0]) for r in v], unit="s"))
     return s[~s.index.duplicated(keep="last")].sort_index()
+
+
+def ngay(s, bu=0):
+    """Mốc UTC thô → ngày: (UTC + bu giờ).normalize(); bu=0 là cách cũ (lai_suat.doc_nen)."""
+    s = s.copy()
+    s.index = (pd.DatetimeIndex(s.index) + pd.Timedelta(hours=bu)).normalize()
+    return s[~s.index.duplicated(keep="last")]
+
+
+def tv(sym, khung="1D", n=5000):
+    """Khung ngày / tháng: ngày theo cách cũ (UTC.normalize) như lai_suat; khung phút: giữ giờ."""
+    s = tv_tho(sym, khung, n)
+    return ngay(s) if khung in ("1D", "1W", "1M") else s
 
 
 def lbma(kim="gold_pm"):
@@ -122,7 +128,8 @@ def bls(ma="CUUR0000SA0"):
     j = _get(f"https://api.bls.gov/publicAPI/v1/timeseries/data/{ma}").json()
     ds = j["Results"]["series"][0]["data"]
     s = pd.Series({pd.Timestamp(f"{x['year']}-{x['period'][1:]}-01"): float(x["value"]) for x in ds
-                   if x["period"].startswith("M") and x["period"] != "M13"}).sort_index()
+                   if x["period"].startswith("M") and x["period"] != "M13"
+                   and re.fullmatch(r"-?[\d.]+", str(x["value"]))}).sort_index()
     return (s / s.shift(12) - 1).dropna() * 100 if len(s) > 13 else s
 
 
@@ -216,7 +223,73 @@ def so_cheo(a, b):
     return len(x), r.iloc[:, 0].corr(r.iloc[:, 1]), ((x.iloc[:, 0] / x.iloc[:, 1] - 1).abs().median() * 100)
 
 
+# KIỂM NGÀY NẾN (25/11/2026): TV ↔ Yahoo cùng hàng hoá tương quan lợi suất ngày chỉ ~0,2 dù mức lệch < 1 % → nghi nến TV
+# bị gán lùi 1 ngày (nến ngày TV đánh dấu bằng GIỜ MỞ phiên – vàng/dầu/FX mở 22–23 h UTC hôm TRƯỚC). Đo: giờ UTC của nến,
+# tương quan theo độ trễ −1/0/+1 với nguồn gắn nhãn ngày chuẩn (Yahoo theo ngày giao dịch sàn, Bộ Tài chính Mỹ, HNX).
+KIEM_NGAY = [
+    ("OANDA:XAUUSD", "yf:GC=F"), ("TVC:GOLD", "yf:GC=F"), ("OANDA:XAGUSD", "yf:SI=F"), ("TVC:PLATINUM", "yf:PL=F"),
+    ("TVC:UKOIL", "yf:BZ=F"), ("TVC:USOIL", "yf:CL=F"), ("NYMEX:NG1!", "yf:NG=F"), ("COMEX:HG1!", "yf:HG=F"),
+    ("CAPITALCOM:COPPER", "yf:HG=F"), ("COMEX:HRC1!", "yf:HRC=F"), ("SGX:FEF1!", "yf:TIO=F"), ("ICEEUR:NCF1!", "yf:MTF=F"),
+    ("TVC:DXY", "yf:DX-Y.NYB"), ("FX_IDC:USDVND", "yf:VND=X"), ("TVC:VIX", "yf:^VIX"), ("BITSTAMP:BTCUSD", "yf:BTC-USD"),
+    ("TVC:US10Y", "bt:US_10Y"), ("TVC:US02Y", "bt:US_2Y"), ("TVC:VN10Y", "hnx:10"), ("TVC:VN01Y", "hnx:1"),
+    ("ICEEUR:RC1!", None), ("SGX:TF1!", None), ("CBOT:UFV1!", None), ("CAPITALCOM:ALUMINUM", None),
+]
+
+
+def _thay_doi(s, la_ls):
+    return s.diff() if la_ls else s.pct_change()
+
+
+def kiem_ngay():
+    print("=== KIỂM NGÀY NẾN TradingView (giờ UTC của nến · tương quan thay đổi ngày theo độ trễ, 2 cách gán ngày) ===")
+    bt, hnx = None, None
+    for sym, ref in KIEM_NGAY:
+        try:
+            r = tv_tho(sym, "1D", 1500)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"  ✘ {sym}: {type(e).__name__} {str(e)[:80]}")
+            continue
+        gio = pd.Series(pd.DatetimeIndex(r.index).strftime("%H:%M")).value_counts().head(3).to_dict()
+        cuoi = ", ".join(f"{d:%Y-%m-%d %H:%M}" for d in r.index[-3:])
+        dong = f"  {sym}: giờ UTC {gio} · 3 nến cuối {cuoi}"
+        if ref is None:
+            print(dong)
+            continue
+        try:
+            loai, ma = ref.split(":", 1)
+            if loai == "yf":
+                b = yf(ma, "2020-01-01")
+            elif loai == "bt":
+                if bt is None:
+                    from thi_truong import lai_suat as LS
+                    bt = LS.tai_bo_tai_chinh_my(2020)
+                b = bt[ma]
+            else:
+                if hnx is None:
+                    from thi_truong import lai_suat as LS
+                    hnx = LS.tai_hnx("cache_du_lieu/vi_mo/lai_suat", tu="2020-01-01")
+                b = hnx[int(ma)].dropna()
+        except Exception as e:                                        # noqa: BLE001
+            print(dong + f" · ✘ đối chiếu {ref}: {type(e).__name__} {str(e)[:60]}")
+            continue
+        la_ls = loai in ("bt", "hnx") or sym.startswith("TVC:US") or sym.startswith("TVC:VN")
+        kq = []
+        for bu in (0, 12):
+            a = ngay(r, bu)
+            a = a[a.index >= "2021-01-01"]
+            bb = b[b.index >= "2021-01-01"]
+            for tre in (-1, 0, 1):
+                x = pd.concat([_thay_doi(a, la_ls).shift(tre), _thay_doi(bb, la_ls)], axis=1, join="inner").dropna()
+                c = x.iloc[:, 0].corr(x.iloc[:, 1]) if len(x) > 30 else np.nan
+                kq.append(f"bu{bu:+d}h trễ{tre:+d}={c:.2f}")
+            m = pd.concat([a, bb], axis=1, join="inner").dropna()
+            khop = (m.iloc[:, 0] - m.iloc[:, 1]).abs().le((m.iloc[:, 1].abs() * 0.002) + (0.01 if la_ls else 0)).mean()
+            kq.append(f"bu{bu:+d}h khớp mức {khop:.0%}")
+        print(dong + " · " + " | ".join(kq), flush=True)
+
+
 def main():
+    kiem_ngay()
     kq = {}
     for (nhom, ten), ham in UNG_VIEN.items():
         try:
