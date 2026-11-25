@@ -7,7 +7,7 @@ Nguồn (mỗi chuỗi có dự phòng; lỗi hết → đệm cache_du_lieu/vi_
                           giá ngay: Swissquote (giữa mua–bán)
   Vàng SJC / nhẫn 9999    vang.today (giá CUỐI ngày từng ngày)
   USD/VND · DXY           yfinance VND=X · DX-Y.NYB; tỷ giá Vietcombank (chuyển khoản / bán) cho thẻ
-  Lãi suất VN             ptcp/lai_suat_vn: TPCP 1N / 10N HNX (chính thức, từ 2014), lãi điều hành / liên ngân hàng / lạm
+  Lãi suất VN             thi_truong/lai_suat (chép danh-muc ptcp/lai_suat_vn): TPCP 1N / 10N HNX (chính thức, từ 2014), lãi điều hành / liên ngân hàng / lạm
                           phát (TradingView ECONOMICS, gốc NHNN / TCTK – theo tháng)
   Mỹ                      NY Fed (Fed funds thực tế, trần mục tiêu), Bộ Tài chính Mỹ (lợi suất 2N / 10N, lợi suất thực 10N)
 Giá trực tiếp trên trang: thử nguồn cho phép trình duyệt gọi thẳng (CORS) → ghi vào "song"; không có thì dùng số lúc dựng.
@@ -192,7 +192,7 @@ def tai_tat_ca():
     if x is not None:
         S["us_thuc10"], N["us_thuc10"] = x, "Bộ Tài chính Mỹ (TIPS)"
     try:
-        from ptcp import lai_suat_vn as LS
+        from thi_truong import lai_suat as LS
         ls, nguon = LS.tai_tat_ca(os.path.join(DEM, "lai_suat"))
         for k, kk in (("vn_1n", "VN01Y"), ("vn_10n", "VN10Y"), ("vn_dh", "ECONOMICS:VNINTR"), ("vn_lnh", "ECONOMICS:VNINBR"),
                       ("vn_cpi", "ECONOMICS:VNIRYY"), ("us_ff", "US_EFFR"), ("us_tran", "US_TRAN"), ("us_2n", "US_2Y"),
