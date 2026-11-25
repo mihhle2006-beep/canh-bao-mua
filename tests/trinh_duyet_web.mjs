@@ -59,6 +59,17 @@ for (const t of trang) {
           await pg.click(".sk-pnl [aria-label='Đóng']");
           await pg.waitForTimeout(400);
         }
+        else if (lenh === "vm") {                     // tab Vĩ mô: thẻ + 6 biểu đồ phải vẽ; đổi nến giờ / khoảng "Tất cả"
+          await pg.click("#tab-vm");
+          await pg.waitForSelector("#vm-the .o", {timeout: 8000});
+          for (const id of ["#vm-bd-xau", "#vm-bd-sjc", "#vm-bd-lsvn", "#vm-bd-my", "#vm-bd-chenh", "#vm-bd-tg"])
+            await pg.waitForSelector(id + " canvas", {timeout: 8000, state: "attached"});
+          const n = await pg.$$eval("#vm-the .o", e => e.length);
+          if (n < 8) throw new Error("tab Vĩ mô thiếu thẻ: " + n);
+          await pg.click("#vm-xau-k button[data-k=gio]"); await pg.waitForTimeout(400);
+          await pg.click("#vm-ky button[data-k='0']"); await pg.waitForTimeout(400);
+          await pg.waitForSelector("#vm-bd-xau canvas", {timeout: 5000, state: "attached"});
+        }
         else if (lenh === "sk") {                     // rê chuột / chạm vào bong bóng sự kiện đầu tiên → hộp chi tiết phải hiện
           await pg.waitForTimeout(800);
           await pg.evaluate(() => document.querySelector(".sk-hop")?.parentElement.scrollIntoView({block: "center"}));
