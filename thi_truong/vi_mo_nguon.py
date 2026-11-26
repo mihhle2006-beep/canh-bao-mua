@@ -700,8 +700,23 @@ def do_vn7():
     cot = [c for c in ("cpi_yoy", "xk", "nk", "can_can", "ban_le", "dn_moi", "nsnn", "nsnn_kh", "fdi_dk", "gdp_dv") if c in df]
     print(df[cot].to_string())
 
+
+def do_vn8():
+    """Vòng 8: câu CPI / giá vàng / USD / cán cân / nhập khẩu ở các báo cáo mẫu hiện tại không khớp."""
+    import requests
+    from thi_truong import nso
+    g = lambda u: requests.get(u, headers={**UA, "Accept-Language": "vi"}, timeout=50).text   # noqa: E731
+    ds = {f"{k:%Y-%m}": u for u, k, _ in nso.danh_sach(g, trang=4)}
+    for ky in ("2025-10", "2025-04", "2026-05", "2026-06", "2025-11", "2026-10", "2026-07"):
+        if ky not in ds:
+            continue
+        tt = nso.chu(g(ds[ky]))
+        for k in ("Chỉ số giá tiêu dùng (CPI) tháng", "Chỉ số giá vàng", "Chỉ số giá đô la Mỹ", "cán cân thương mại hàng hóa",
+                  "nhập khẩu hàng hóa tháng", "CPI bình quân", "Bình quân"):
+            print(f"   {ky} [{k}] {_quanh(tt, k, 1, 300)}")
+
 def main():
-    do_vn7()
+    do_vn8()
     return 0
 
 
