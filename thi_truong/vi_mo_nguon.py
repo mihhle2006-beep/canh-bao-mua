@@ -545,8 +545,9 @@ def do_vn4():
     try:
         t = g("https://finance.vietstock.vn/bao-cao-phan-tich").text
         print(f"✔ Vietstock: {_quanh(_chu(t), 'Vĩ mô', 3, 200)}")
-        print(f"   ajax: {list(dict.fromkeys(re.findall(r'[\'\"](/[A-Za-z]+/[A-Za-z]*[Rr]eport[A-Za-z]*)[\'\"]', t)))[:10]}")
-        print(f"   pdf: {re.findall(r'href=\"([^\"]+\.pdf)\"', t)[:3]}")
+        ajax = list(dict.fromkeys(re.findall(r"""['"](/[A-Za-z]+/[A-Za-z]*[Rr]eport[A-Za-z]*)['"]""", t)))[:10]
+        pdf = re.findall(r'href="([^"]+\.pdf)"', t)[:3]
+        print(f"   ajax: {ajax} · pdf: {pdf}")
     except Exception as e:                                            # noqa: BLE001
         print(f"✘ Vietstock: {type(e).__name__} {str(e)[:80]}")
     # 7) CafeF – RSS vĩ mô (tin, đường dẫn)
