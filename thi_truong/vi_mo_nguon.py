@@ -868,14 +868,14 @@ def _gia_dai(thu, ma):
     return pd.Series(j["c"], index=d)
 
 
-def do_vn12():
+def do_vn12(cap=None, do_tq=True):
     """Vòng 12 (chủ quỹ: "kiếm thêm nguồn" + "giá hàng hoá so tương quan ngành có giúp mua bán không"): mã hàng hoá Trung Quốc /
     cước tàu trên TradingView; thử tín hiệu hàng hoá → rổ mã ngành (CAP12, tiêu chí dat12 đặt trước)."""
     import subprocess
     import tempfile
     import requests
     from thi_truong import vi_mo_web as W
-    for ma in TQ12:
+    for ma in (TQ12 if do_tq else []):
         try:
             s = tv(ma, "1D").dropna()
             print(f"✔ {ma}: {len(s)} phiên {s.index[0]:%m/%Y}→{s.index[-1]:%d/%m/%Y} · cuối {s.iloc[-1]:,.6g}", flush=True)
@@ -889,7 +889,8 @@ def do_vn12():
         with open(f, "wb") as fp:
             for k in r.iter_content(1 << 20):
                 fp.write(k)
-    mas = sorted({m for *_, ds in CAP12 for m in ds.split()})
+    cap = cap or CAP12
+    mas = sorted({m for x in cap for m in x[3].split()})
     subprocess.run(["tar", "--zstd", "-xf", f, "-C", thu, "du_lieu/chi_so/VNINDEX.json",
                     *[f"du_lieu/gia_dai/{m}.json" for m in mas]], check=False)
     j = json.load(open(f"{thu}/du_lieu/chi_so/VNINDEX.json", encoding="utf-8"))
@@ -901,12 +902,12 @@ def do_vn12():
         except Exception as e:                                        # noqa: BLE001
             print(f"  ✘ {m}: {e}")
     print(f"\n=== Hàng hoá → rổ ngành (tháng, vượt VN-Index; IS < 2020 ≤ OOS) · đạt = chênh>0 cả 2 đoạn, OOS t≥1,5, lợi thế OOS ≥ +3%/năm ===")
-    for k, ng, dau, ds in CAP12:
+    for k, ng, dau, ds, *ky in cap:
         try:
             c = thang(W._lay(ng, "2010-01-01"))
             r = pd.concat([gia[m].pct_change() for m in ds.split() if m in gia], axis=1).mean(axis=1, skipna=True)
             b = (1 + r.fillna(0)).cumprod()[r.notna().cumsum() > 0]
-            x = thu_tin_hieu(c, b, vni, dau)
+            x = thu_tin_hieu(c, b, vni, dau, ky=ky[0] if ky else 3)
             i, o = x["is"], x["oos"]
             print(f"  {'ĐẠT ' if dat12(x) else '  – '}{k:11s} {dau:+d} [{ds}] · cùng tháng {i['cung']:+.2f}/{o['cung']:+.2f} · tháng sau "
                   f"{i['sau']:+.2f}/{o['sau']:+.2f} · chênh {i['chenh']:+.2f}%/{o['chenh']:+.2f}% (t {i['t']:+.1f}/{o['t']:+.1f}) · lợi thế "
@@ -915,8 +916,19 @@ def do_vn12():
             print(f"  ✘ {k}: {type(e).__name__} {str(e)[:80]}", flush=True)
 
 
+# Vòng 12 (26/11/2026) – KẾT QUẢ: 14/15 cặp KHÔNG đạt (hàng hoá đi CÙNG tháng với rổ ngành: dầu +0,39/+0,25, HRC OOS +0,30 –
+# nhưng không báo trước tháng sau); chỉ đường → SBT/LSS/QNS đạt sát vạch (OOS t 1,5, lợi thế +3,5 %/năm). TradingView có ZCE
+# (đường, bông, urê, PTA) + INDEX:BDI; không có SHFE / DCE / INE (resolve error).
+# Vòng 13: cặp mới + ĐỘ BỀN cặp đường – đặt trước: coi là thật chỉ khi chênh > 0 cả 2 đoạn ở cả khung 1 / 3 / 6 tháng
+# VÀ đường Trịnh Châu (ZCE) cùng chiều.
+CAP13 = [("bdi", "tv:INDEX:BDI", +1, "HAH VOS VSC GMD PVT"), ("duong_tq", "tv:ZCE:SR1!", +1, "SBT LSS QNS"),
+         ("bong_tq", "tv:ZCE:CF1!", -1, "TCM MSH"), ("pta_tq", "tv:ZCE:TA1!", -1, "TCM MSH STK"), ("ure_tq", "tv:ZCE:UR1!", +1, "DPM DCM"),
+         ("duong_k1", "yf:SB=F", +1, "SBT LSS QNS", 1), ("duong_k6", "yf:SB=F", +1, "SBT LSS QNS", 6),
+         ("bdi_k1", "tv:INDEX:BDI", +1, "HAH VOS VSC GMD PVT", 1)]
+
+
 def main():
-    do_vn12()  # vòng 12: hàng hoá Trung Quốc / cước tàu · thử tín hiệu hàng hoá → rổ mã ngành
+    do_vn12(CAP13, do_tq=False)  # vòng 13: cước tàu BDI → vận tải biển, ZCE, độ bền cặp đường
     return 0
 
 
