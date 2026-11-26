@@ -83,6 +83,7 @@ def main(argv=None):
     if che_do in ("truoc_phien", "trong_phien", "lo_le"):
         gui_ban_cho(bay_gio, vt, a.khong_gui)                       # lệnh tự bán ATO hoãn từ lượt trước 08:45
     if che_do == "truoc_phien":
+        dem_qua_sang(bay_gio, a.khong_gui)
         return nhac_ato(bay_gio, vt, a.khong_gui)
     if che_do == "lo_le":
         return lo_le_1425(bay_gio, vt, a.khong_gui)
@@ -95,6 +96,29 @@ def truoc_phien(bay_gio):
     if t.weekday() >= 5 or f"{t:%Y-%m-%d}" in ma_bo_loc.ngay_nghi(t.year):
         return False
     return t.normalize() + pd.Timedelta(hours=8) <= t < t.normalize() + pd.Timedelta(hours=9)
+
+
+def dem_qua_sang(bay_gio, khong_gui=False):
+    """🌙 1 lần / sáng (lượt trước phiên): hàng hoá / chứng khoán Mỹ biến động mạnh đêm qua → nhóm cổ phiếu liên quan
+    (canh_bao/dem_qua – số đo 2012–2026, chỉ là thông tin). Tải được < 3 nguồn → lượt sau thử lại."""
+    tt = vi_the.doc_trang_thai_ban()
+    hom_nay = f"{pd.Timestamp(bay_gio):%Y-%m-%d}"
+    if tt.get("_dem_qua") == hom_nay:
+        return
+    try:
+        from canh_bao import dem_qua
+        ch = dem_qua.lay_tat_ca(bay_gio)
+        if len(ch) < 3:
+            print(f"⚠ Đêm qua: chỉ tải được {len(ch)} nguồn – lượt sau thử lại")
+            return
+        nd = dem_qua.tin(ch, bay_gio)
+    except Exception as e:                                     # noqa: BLE001 – không chặn nhắc lệnh ATO
+        print(f"⚠ Đêm qua: {type(e).__name__} {str(e)[:60]}")
+        return
+    tt["_dem_qua"] = hom_nay
+    vi_the.ghi_trang_thai_ban(tt)
+    if nd:
+        _in(nd) if khong_gui else gui(nd)
 
 
 def nhac_ato(bay_gio, vt, khong_gui=False):

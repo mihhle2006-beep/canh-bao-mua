@@ -1079,3 +1079,19 @@ def test_tu_ban_ato_truoc_0845_hoan_toi_khi_dnse_nhan(monkeypatch, tmp_path):
     assert chay.gui_ban_cho(pd.Timestamp("2026-10-30 09:15"), vt) == 0
     assert vi_the.doc_trang_thai_ban()["_cho_ban"]["ma"] == ["AAA"]
     assert chay.gui_ban_cho(pd.Timestamp("2026-11-02 09:15"), vt) == 0 and "_cho_ban" not in vi_the.doc_trang_thai_ban()
+
+
+def test_dem_qua_chi_bao_bien_dong_manh_phien_truoc_hom_nay():
+    import numpy as np
+    from canh_bao import dem_qua
+    d = pd.bdate_range("2025-10-01", "2026-11-26")
+    rng = np.random.default_rng(3)
+    s = pd.Series(80 * np.cumprod(1 + rng.normal(0, 0.01, len(d))), d)
+    s.iloc[-2] = s.iloc[-3] * 0.94                                   # phiên 25/11 (đêm qua) −6 % ≈ −6 độ lệch
+    x = dem_qua.bien_dong(s, "2026-11-26")
+    assert x and x[0] == -6.0 and x[1] < -2 and x[2] == pd.Timestamp("2026-11-25")   # nến 26/11 (đang chạy) bị bỏ
+    assert dem_qua.bien_dong(s.iloc[:-2], "2026-11-26") is None       # phiên 24/11 bình thường
+    assert dem_qua.bien_dong(s, "2026-12-15") is None                 # dữ liệu cũ quá 5 ngày → không báo
+    t = dem_qua.tin({"Dầu Brent": s, "S&P 500": s.iloc[:-2]}, "2026-11-26")
+    assert "Dầu Brent -6.0%" in t and "GAS, PVS" in t and "S&P 500" not in t
+    assert dem_qua.tin({}, "2026-11-26") == ""
