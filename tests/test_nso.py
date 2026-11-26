@@ -35,6 +35,13 @@ def test_ky_tu_url_thang_va_quy():
     assert nso.ky_tu_url("https://www.nso.gov.vn/x/2026/10/thong-cao-kinh-te-xa-hoi-quy-iii-nam-2026/") == \
         (pd.Timestamp("2026-09-01"), True)
     assert nso.ky_tu_url("https://www.nso.gov.vn/tin-khac/") == (None, False)
+    b = "https://www.nso.gov.vn/bai-top/"
+    assert nso.ky_tu_url(b + "2026/02/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-mot-nam-2026/") == (pd.Timestamp("2026-01-01"), False)
+    assert nso.ky_tu_url(b + "2026/07/bao-cao-tinh-hinh-kinh-te-xa-hoi-quy-ii-va-sau-thang-dau-nam-2026/") == \
+        (pd.Timestamp("2026-06-01"), True)
+    assert nso.ky_tu_url(b + "2026/06/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-nam-va-5-thang-dau-nam-2025-2/")[0] == \
+        pd.Timestamp("2026-05-01")                                   # slug ghi nhầm năm → theo thư mục đăng
+    assert nso.ky_tu_url(nso.DS + "page/7/?paged=2") == (None, False)
 
 
 def test_doc_bao_cao_thang():
@@ -50,6 +57,9 @@ def test_doc_bao_cao_thang():
                 "tăng 3,82%; khu vực công nghiệp và xây dựng tăng 12,10%; khu vực dịch vụ tăng 9,40%.")
     assert q == {"gdp_yoy": 9.95, "gdp_nn": 3.82, "gdp_cn": 12.10, "gdp_dv": 9.40}
     assert "cpi_yoy" not in nso.doc("Chỉ số giá tiêu dùng (CPI) tháng Mười tăng mạnh")      # không khớp → bỏ, không đoán
+    nam = nso.doc(nso.chu("<p>Tổng mức bán lẻ hàng ho\u0301a và doanh thu dịch vụ tiêu dùng theo giá hiện hành tháng Chín năm "
+                          "2026 ước đạt 690,6\u200b nghìn tỷ&nbsp;đồng, tăng 1,7% so với tháng trước và tăng 14,1% so với cùng kỳ</p>"))
+    assert nam == {"ban_le": 690.6, "ban_le_yoy": 14.1}              # "tháng Chín năm 2026", dấu tổ hợp, ký tự vô hình
 
 
 def test_kiem_bo_so_mau_thuan():
@@ -72,14 +82,16 @@ def test_tai_dem_chi_doc_bao_cao_moi():
         da.append(u)
         if u == nso.DS:
             return f'<a href="{u10}">a</a> <a href="{u9}">b</a> <a href="{u10}">a</a>'
+        if u == nso.DS + "?paged=2":
+            return f'<a href="{u9}">b</a>'                           # không có báo cáo mới → dừng, không đọc trang 3'
         if u == u10:
             return f"<p>{BC}</p>"
         if u == u9:
             return "<p>Kim ngạch xuất khẩu hàng hóa tháng Chín ước đạt 50,0 tỷ USD.</p>"
         raise OSError("hết trang")
 
-    df, dem = nso.tai_dem(lay, {}, trang=2)
-    assert set(dem) == {u10, u9} and dem[u10]["_ky"] == "2026-10" and df.loc["2026-09-01", "xk"] == 50.0
+    df, dem = nso.tai_dem(lay, {}, trang=5)
+    assert nso.DS + "?paged=3" not in da and set(dem) == {u10, u9} and dem[u10]["_ky"] == "2026-10" and df.loc["2026-09-01", "xk"] == 50.0
     assert df.loc["2026-10-01", "cpi_yoy"] == 5.08 and df.index.is_monotonic_increasing
     da.clear()
     df2, _ = nso.tai_dem(lay, dem, trang=1)

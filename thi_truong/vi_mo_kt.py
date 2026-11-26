@@ -144,6 +144,7 @@ CHI_TIEU = [
     ("th_ls", "the_gioi", "Thái Lan – Lãi suất BOT", "tv:THINTR", "%/năm", 1, "pt", "M", 0, "BOT"),
 ]
 KHONG_CU = {"vn_luong_tt"}                     # đổi theo lần điều chỉnh (không định kỳ) – không gắn "cũ"
+HAN_CU = {"vn_tin_dung": 135, "vn_du_no": 135}                     # NHNN công bố tín dụng trễ ~3 tháng (T8 có vào cuối T11)
 TONG_QUAN = ["vn_gdp", "vn_cpi", "vn_cpi_loi", "vn_tin_dung", "vn_sxcn", "vn_banle", "vn_xk", "vn_bot", "vn_fdi", "vn_lnh",
              "vn_10n", "usdvnd"]
 # Mục tiêu năm 2026 (Nghị quyết Quốc hội về kế hoạch phát triển KT-XH 2026): GDP từ 10 %, CPI khoảng 4,5 %
@@ -306,7 +307,7 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
          "gt": round(v, 4), "le": _le(v, dv), "kt": kt, "ck": ck, "kieu": kieu, "ts": ts, "huong": huong,
          "sp": [round(float(x), 4) for x in sp], "nguon": nguon, "ghi": "", "tot": 0}
     if hom_nay is not None:
-        han = {"D": 10, "M": 95, "Q": 150, "Y": 550}[ts]               # số tháng công bố trễ tới ~75 ngày sau ngày 1
+        han = HAN_CU.get(k) or {"D": 10, "M": 95, "Q": 150, "Y": 550}[ts]   # số tháng công bố trễ tới ~75 ngày sau ngày 1
         r["cu"] = (pd.Timestamp(hom_nay) - d).days > han and k not in KHONG_CU
     # ghi chú + tốt / xấu
     if k in MUC_TIEU:
@@ -333,7 +334,7 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
         w = s[s.index >= d - pd.DateOffset(years=1)]
         le = _le(v, dv)
         r["ghi"] = f"1 năm: {so_vn(w.min(), le)}–{so_vn(w.max(), le)}"
-    elif ts in ("M", "Q") and len(s) > 4:
+    elif ts in ("M", "Q") and len(s) > (12 if ts == "M" else 4):   # đủ 12 tháng / 4 quý trước mới so trung bình
         n = 12 if ts == "M" else 4
         tb = float(s.iloc[-1 - n:-1].mean())
         r["ghi"] = ("Trên" if v > tb else "Dưới" if v < tb else "Bằng") + \

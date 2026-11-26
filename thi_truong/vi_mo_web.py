@@ -281,7 +281,7 @@ def tai_nso(S, N, P):
             dem = json.load(fp)
     except (OSError, ValueError):
         dem = {}
-    df, dem = nso.tai_dem(lay, dem, trang=3)
+    df, dem = nso.tai_dem(lay, dem, trang=4)                          # ~10 báo cáo / trang → ~3 năm (đủ so cùng kỳ)
     os.makedirs(DEM, exist_ok=True)
     with open(f, "w", encoding="utf-8") as fp:
         json.dump(dem, fp, ensure_ascii=False)

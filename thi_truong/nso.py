@@ -11,13 +11,14 @@ chỉ tiêu là một mẫu riêng, không khớp thì bỏ (không đoán). Ki�
 """
 import html as _html
 import re
+import unicodedata
 
 import pandas as pd
 
 DS = "https://www.nso.gov.vn/bao-cao-tinh-hinh-kinh-te-xa-hoi-hang-thang/"
 _SO = r"([\d.]+(?:,\d+)?)"
 _TG = r"(tăng|giảm)"
-_THANG = r"tháng [^\s,]+(?: (?:một|hai))?"                        # "tháng Mười", "tháng Mười một", "tháng 10"
+_THANG = r"tháng [^\s,]+(?: (?:một|hai))?(?: năm \d{4})?"         # "tháng Mười", "tháng Mười một", "tháng Chín năm 2026"
 
 
 def so(x):
@@ -30,33 +31,51 @@ def dau(tg, x):
 
 
 def chu(html):
+    """HTML → chữ một dòng: dựng sẵn dấu (NFC – trang có chỗ gõ dấu tổ hợp), bỏ ký tự vô hình, gộp khoảng trắng."""
     t = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
     t = re.sub(r"<[^>]+>", " ", t)
-    return re.sub(r"\s+", " ", _html.unescape(t))
+    t = unicodedata.normalize("NFC", _html.unescape(t))
+    return re.sub(r"\s+", " ", re.sub(r"[\u200b-\u200d\u2060\ufeff\u00ad]", "", t))
+
+
+_TU = {"mot": 1, "hai": 2, "ba": 3, "tu": 4, "nam": 5, "sau": 6, "bay": 7, "tam": 8, "chin": 9, "muoi": 10, "muoi-mot": 11,
+       "muoi-hai": 12}
 
 
 def ky_tu_url(url):
-    """URL báo cáo → (tháng số liệu – Timestamp ngày 1, quý?). Năm theo thư mục đăng (báo cáo tháng M đăng đầu tháng M+1)."""
-    m = re.search(r"/(\d{4})/(\d{2})/[^/]*?(?:-va-|-)(\d{1,2})-thang(?:-dau)?-nam", url)
-    if not m:                                                         # thông cáo quý: "...-quy-iii-nam-2026"
-        q = re.search(r"-quy-(iv|iii|ii|i)-nam-(\d{4})", url)
-        if not q:
-            return None, False
-        return pd.Timestamp(year=int(q.group(2)), month={"i": 3, "ii": 6, "iii": 9, "iv": 12}[q.group(1)], day=1), True
-    nam_dang, thang_dang, th = int(m.group(1)), int(m.group(2)), int(m.group(3))
-    nam = nam_dang if thang_dang > th else nam_dang - 1
-    return pd.Timestamp(year=nam, month=th, day=1), "-quy-" in url
+    """URL báo cáo → (tháng số liệu – Timestamp ngày 1, quý?). Tháng: "-va-N-thang" / "-quy-ii-" / "thang-mot-nam-…" (chữ);
+    năm theo thư mục đăng (báo cáo tháng M đăng đầu tháng M+1 – slug có khi ghi sai năm, vd "…-nam-2025-2" đăng 06/2026)."""
+    f = re.search(r"/(\d{4})/(\d{2})/([^/?#]+)/?$", url)
+    if not f or "kinh-te-xa-hoi" not in f.group(3):
+        return None, False
+    nam_dang, thang_dang, slug = int(f.group(1)), int(f.group(2)), f.group(3)
+    m = re.search(r"(?:-va-|-)(\d{1,2})-thang(?:-dau)?-nam", slug)
+    q = re.search(r"-quy-(iv|iii|ii|i)-", slug)
+    w = re.search(r"kinh-te-xa-hoi-thang-(muoi-hai|muoi-mot|muoi|mot|hai|ba|tu|nam|sau|bay|tam|chin)-", slug)
+    if m:
+        th = int(m.group(1))
+    elif q:
+        th = {"i": 3, "ii": 6, "iii": 9, "iv": 12}[q.group(1)]
+    elif w:
+        th = _TU[w.group(1)]
+    else:
+        return None, False
+    if not 1 <= th <= 12:
+        return None, False
+    nam = nam_dang if thang_dang >= th else nam_dang - 1
+    return pd.Timestamp(year=nam, month=th, day=1), bool(q)
 
 
 def danh_sach(lay, trang=3):
     """lay(url) → html. → [(url, tháng, quý?)] mới nhất trước (không trùng)."""
     out, thay = [], set()
     for p in range(1, trang + 1):
-        u = DS if p == 1 else f"{DS}page/{p}/"
+        u = DS if p == 1 else f"{DS}?paged={p}"                      # phân trang "?paged=N" ("/page/N/" trả lại trang 1)
         try:
             t = lay(u)
         except Exception:                                            # noqa: BLE001 – hết trang / lỗi → dừng
             break
+        moi = 0
         for x in re.findall(r'href="(https://www\.nso\.gov\.vn/[^"]*kinh-te-xa-hoi-(?:thang|quy)[^"]*)"', t):
             if x in thay:
                 continue
@@ -64,6 +83,9 @@ def danh_sach(lay, trang=3):
             ky, quy = ky_tu_url(x)
             if ky is not None:
                 out.append((x, ky, quy))
+                moi += 1
+        if not moi:
+            break                                                     # trang không thêm báo cáo nào → hết
     out.sort(key=lambda r: r[1], reverse=True)
     return out
 
