@@ -18,7 +18,7 @@ import pandas as pd
 DS = "https://www.nso.gov.vn/bao-cao-tinh-hinh-kinh-te-xa-hoi-hang-thang/"
 _SO = r"([\d.]+(?:,\d+)?)"
 _TG = r"(tăng|giảm)"
-_THANG = r"tháng [^\s,]+(?: (?:một|hai))?(?: năm \d{4})?"         # "tháng Mười", "tháng Mười một", "tháng Chín năm 2026"
+_THANG = r"tháng [^\s,]+(?: (?:[Mm]ột|[Hh]ai))?(?: năm \d{4})?"   # "tháng Mười", "tháng Mười Một", "tháng Chín năm 2026"
 
 
 def so(x):
@@ -92,19 +92,9 @@ def danh_sach(lay, trang=3):
 
 MAU = {
     # khoá: (mẫu, hàm → giá trị)  – mỗi mẫu bắt MỘT câu đặc trưng của báo cáo
-    "cpi_mom": (rf"Chỉ số giá tiêu dùng \(CPI\) {_THANG} {_TG} {_SO}% so với tháng trước", lambda g: dau(g[0], g[1])),
-    "cpi_ytd": (rf"Chỉ số giá tiêu dùng \(CPI\) {_THANG} {_TG} {_SO}% so với tháng trước; {_TG} {_SO}% so với tháng 12",
-                lambda g: dau(g[2], g[3])),
-    "cpi_yoy": (rf"Chỉ số giá tiêu dùng \(CPI\) {_THANG} {_TG} {_SO}% so với tháng trước; {_TG} {_SO}% so với tháng 12/\d{{4}} "
-                rf"và {_TG} {_SO}% so với cùng kỳ", lambda g: dau(g[4], g[5])),
-    "cpi_bq": (rf"[Bb]ình quân [^,]{{0,40}}, CPI {_TG} {_SO}% so với cùng kỳ", lambda g: dau(g[0], g[1])),
+    # chỉ số giá CPI / vàng / USD: đọc theo ĐOẠN (_gia) – câu đổi thứ tự / tách câu theo từng tháng
+    "cpi_bq": (rf"(?:[Bb]ình quân|Tính chung) [^,]{{0,40}}, CPI {_TG} {_SO}% so với cùng kỳ", lambda g: dau(g[0], g[1])),
     "lp_cb_bq": (rf"lạm phát cơ bản {_TG} {_SO}%", lambda g: dau(g[0], g[1])),
-    "vang_mom": (rf"Chỉ số giá vàng {_THANG} {_TG} {_SO}% so với tháng trước", lambda g: dau(g[0], g[1])),
-    "vang_yoy": (rf"Chỉ số giá vàng {_THANG} {_TG} {_SO}% so với tháng trước; {_TG} {_SO}% so với cùng kỳ",
-                 lambda g: dau(g[2], g[3])),
-    "usd_mom": (rf"Chỉ số giá đô la Mỹ {_THANG} {_TG} {_SO}% so với tháng trước", lambda g: dau(g[0], g[1])),
-    "usd_yoy": (rf"Chỉ số giá đô la Mỹ {_THANG} {_TG} {_SO}% so với tháng trước; {_TG} {_SO}% so với cùng kỳ",
-                lambda g: dau(g[2], g[3])),
     "iip_yoy": (rf"Chỉ số sản xuất (?:toàn ngành )?công nghiệp \(IIP\) {_THANG} (?:ước tính |ước )?{_TG} {_SO}% so với tháng trước "
                 rf"và {_TG} {_SO}% so với cùng kỳ", lambda g: dau(g[2], g[3])),
     "ban_le": (rf"Tổng mức bán lẻ hàng hóa và doanh thu dịch vụ tiêu dùng theo giá hiện hành {_THANG} (?:ước tính |ước )?đạt "
@@ -150,9 +140,37 @@ MAU["gdp_yoy"] = (rf"(?:Tổng sản phẩm trong nước \(GDP\)|GDP) quý [IVX
                   rf"so với cùng kỳ", lambda g: so(g[0]))
 
 
+_HET_GIA = ("Bình quân", "bình quân", "Tính chung", "lạm phát cơ bản", "Lạm phát cơ bản", " d) ", " b) ")
+GIA = {  # tiền tố: (mẫu mở đoạn, chữ kết đoạn thêm)
+    "cpi": (r"(?:Chỉ số giá tiêu dùng \(CPI\)|\bCPI) tháng (?=[^.]{0,60}so với tháng trước)", ("Chỉ số giá vàng",)),
+    "vang": (r"Chỉ số giá vàng tháng ", ("Chỉ số giá đô la Mỹ",)),
+    "usd": (r"Chỉ số giá đô la Mỹ tháng ", ()),
+}
+
+
+def _gia(text):
+    """Đoạn chỉ số giá (từ câu mở tới "Bình quân / Tính chung / chỉ số kế tiếp") → {x_mom, x_ytd, x_yoy}: số đầu tiên đứng trước
+    "so với tháng trước|tháng <tên tháng>" / "so với tháng 12" / "so với cùng kỳ" trong đoạn."""
+    out = {}
+    for x, (mo, het) in GIA.items():
+        m = re.search(mo, text)
+        if not m:
+            continue
+        d = text[m.start():m.start() + 700]
+        for h in _HET_GIA + het:
+            j = d.find(h, 20)
+            if j > 0:
+                d = d[:j]
+        for k, sau in (("mom", r"tháng (?!12)[^\s;,.]+"), ("ytd", r"tháng 12"), ("yoy", r"cùng kỳ")):
+            g = re.search(rf"{_TG} {_SO}% so với {sau}", d)
+            if g:
+                out[f"{x}_{k}"] = round(dau(g.group(1), g.group(2)), 4)
+    return out
+
+
 def doc(text):
     """Chữ báo cáo → {khoá: giá trị} (chỉ khoá khớp mẫu)."""
-    out = {}
+    out = _gia(text)
     for k, (mau, f) in MAU.items():
         m = re.search(mau, text)
         if m:
@@ -161,19 +179,6 @@ def doc(text):
             except (ValueError, IndexError):
                 pass
     return out
-
-
-def tai(lay, trang=3, so_bc=24):
-    """→ DataFrame tháng × khoá (mới nhất cuối) từ tối đa so_bc báo cáo gần nhất. lay(url) → html."""
-    hang = {}
-    for url, ky, quy in danh_sach(lay, trang)[:so_bc]:
-        try:
-            d = doc(chu(lay(url)))
-        except Exception:                                            # noqa: BLE001 – một báo cáo lỗi không hỏng cả lượt
-            continue
-        if d:
-            hang.setdefault(ky, {}).update({k: v for k, v in d.items() if k not in hang.get(ky, {})})
-    return pd.DataFrame.from_dict(hang, orient="index").sort_index()
 
 
 QUY = ("gdp_yoy", "gdp_nn", "gdp_cn", "gdp_dv", "that_nghiep")
@@ -203,9 +208,12 @@ def kiem(df):
     return df
 
 
+PHIEN = 2                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
+
+
 def tai_dem(lay, dem=None, trang=3):
     """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới. → (df, dem)."""
-    dem = dict(dem or {})
+    dem = {u: v for u, v in (dem or {}).items() if v.get("_v") == PHIEN}   # bộ đọc đổi → đọc lại
     for url, ky, _ in danh_sach(lay, trang):
         if url in dem:
             continue
@@ -213,12 +221,12 @@ def tai_dem(lay, dem=None, trang=3):
             d = doc(chu(lay(url)))
         except Exception:                                            # noqa: BLE001 – lượt sau thử lại
             continue
-        dem[url] = {**d, "_ky": f"{ky:%Y-%m}"}
+        dem[url] = {**d, "_ky": f"{ky:%Y-%m}", "_v": PHIEN}
     hang = {}
     for v in dem.values():
         ky = pd.Timestamp(v["_ky"] + "-01")
         for k, x in v.items():
-            if k != "_ky" and k not in hang.setdefault(ky, {}):
+            if k not in ("_ky", "_v") and k not in hang.setdefault(ky, {}):
                 hang[ky][k] = x
     df = pd.DataFrame.from_dict(hang, orient="index").sort_index()
     return kiem(df), dem

@@ -57,6 +57,20 @@ def test_doc_bao_cao_thang():
                 "tăng 3,82%; khu vực công nghiệp và xây dựng tăng 12,10%; khu vực dịch vụ tăng 9,40%.")
     assert q == {"gdp_yoy": 9.95, "gdp_nn": 3.82, "gdp_cn": 12.10, "gdp_dv": 9.40}
     assert "cpi_yoy" not in nso.doc("Chỉ số giá tiêu dùng (CPI) tháng Mười tăng mạnh")      # không khớp → bỏ, không đoán
+    # các kiểu câu thật đã gặp (2025–2026): tách câu, "tháng 4/2025", "tháng Mười Một", "; tăng", "so với tháng Năm"
+    a = nso.doc("Chỉ số giá tiêu dùng (CPI) tháng 4/2025 tăng 0,07% so với tháng trước. CPI tháng Tư tăng 1,37% so với tháng 12/2024 "
+                "và tăng 3,12% so với cùng kỳ năm trước. Bình quân bốn tháng đầu năm 2025, CPI tăng 3,2% so với cùng kỳ năm trước; "
+                "lạm phát cơ bản tăng 3,05%. – Chỉ số giá vàng tháng 4/2025 tăng 10,54% so với tháng trước; tăng 37,14% so với cùng "
+                "kỳ năm trước; tăng 22,43% so với tháng 12/2024; bình quân bốn tháng đầu năm 2025 tăng 32,85%. – Chỉ số giá đô la Mỹ "
+                "tháng 4/2025 tăng 0,97% so với tháng trước; tăng 3,17% so với cùng kỳ năm trước; tăng 1,9% so với tháng 12/2024.")
+    assert (a["cpi_mom"], a["cpi_ytd"], a["cpi_yoy"], a["cpi_bq"], a["lp_cb_bq"]) == (0.07, 1.37, 3.12, 3.2, 3.05)
+    assert (a["vang_mom"], a["vang_yoy"], a["vang_ytd"], a["usd_yoy"], a["usd_ytd"]) == (10.54, 37.14, 22.43, 3.17, 1.9)
+    b = nso.doc("Chỉ số giá tiêu dùng (CPI) tháng Mười Một tăng 0,45% so với tháng trước; tăng 3,28% so với tháng 12/2024; tăng "
+                "3,58% so với cùng kỳ năm trước. Bình quân mười một tháng năm 2025, CPI tăng 3,29% so với cùng kỳ năm trước. "
+                "Chỉ số giá vàng tháng Sáu giảm 8,46% so với tháng Năm; tăng 24,11% so với cùng kỳ năm trước; giảm 2,72% so với tháng "
+                "12/2025; bình quân quý II/2026 tăng 36,84%. Theo số liệu sơ bộ, cán cân thương mại hàng hóa tháng Mười Một xuất siêu "
+                "1,09 tỷ USD.")
+    assert (b["cpi_yoy"], b["cpi_ytd"], b["cpi_bq"], b["vang_mom"], b["vang_yoy"], b["can_can"]) == (3.58, 3.28, 3.29, -8.46, 24.11, 1.09)
     nam = nso.doc(nso.chu("<p>Tổng mức bán lẻ hàng ho\u0301a và doanh thu dịch vụ tiêu dùng theo giá hiện hành tháng Chín năm "
                           "2026 ước đạt 690,6\u200b nghìn tỷ&nbsp;đồng, tăng 1,7% so với tháng trước và tăng 14,1% so với cùng kỳ</p>"))
     assert nam == {"ban_le": 690.6, "ban_le_yoy": 14.1}              # "tháng Chín năm 2026", dấu tổ hợp, ký tự vô hình
@@ -95,7 +109,11 @@ def test_tai_dem_chi_doc_bao_cao_moi():
     assert df.loc["2026-10-01", "cpi_yoy"] == 5.08 and df.index.is_monotonic_increasing
     da.clear()
     df2, _ = nso.tai_dem(lay, dem, trang=1)
-    assert da == [nso.DS] and df2.equals(df)                         # báo cáo đã đọc không tải lại
+    assert da[0] == nso.DS and u10 not in da and df2.equals(df)      # báo cáo đã đọc không tải lại
+    cu = {k: {**v, "_v": 1} for k, v in dem.items()}
+    da.clear()
+    nso.tai_dem(lay, cu, trang=1)
+    assert u10 in da                                                 # đệm của bộ đọc cũ → đọc lại
 
 
 def test_tin_dung_nhnn():

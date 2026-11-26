@@ -570,7 +570,7 @@ def do_vn5():
     g = lambda u, **k: requests.get(u, headers={**UA, "Accept-Language": "vi,en;q=0.8"}, timeout=50, **k)   # noqa: E731
     ds = nso.danh_sach(lambda u: g(u).text, trang=4)
     print(f"✔ NSO: {len(ds)} báo cáo · cũ nhất {ds[-1][1]:%m/%Y} · mới nhất {ds[0][1]:%m/%Y}" if ds else "✘ NSO: không có báo cáo")
-    df = nso.tai(lambda u: g(u).text, trang=4, so_bc=30)
+    df, _ = nso.tai_dem(lambda u: g(u).text, {}, trang=4)
     pd.set_option("display.width", 250)
     pd.set_option("display.max_columns", 40)
     print(df.to_string())
@@ -716,7 +716,7 @@ def do_vn8():
             print(f"   {ky} [{k}] {_quanh(tt, k, 1, 300)}")
 
 def main():
-    do_vn8()
+    do_vn8()  # vòng 8 đã kết luận (nso._gia); ô thu_nguon chạy lại để xem câu
     return 0
 
 
