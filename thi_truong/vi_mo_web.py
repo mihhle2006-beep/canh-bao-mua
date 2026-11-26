@@ -23,6 +23,7 @@ import argparse
 import io
 import json
 import os
+import re
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -311,6 +312,25 @@ def _roa_moi(lay, nso, toi_da=8):
         r = nso.roa_roe(lay(u), q)
         if r:
             out.append((q, *r))
+    return out
+
+
+def hh_theo_ma(bang, chuoi):
+    """Bảng hàng hoá (cột lq ghi mã ngành VN liên quan) + chuỗi hang_hoa.json → {MÃ: [{k, ten, dv, gia, ngay, d1, m1, ytd, y1,
+    sp: giá cuối mỗi tuần 1 năm}]} – file nhỏ cho trang Tra cứu mã (khỏi tải cả hang_hoa.json)."""
+    out = {}
+    for r in bang:
+        mas = re.findall(r"\b[A-Z]{3}\b", r.get("lq") or "")
+        if not mas:
+            continue
+        c = chuoi.get(r["k"]) or []
+        s = pd.Series([v for _, v in c], index=pd.to_datetime([d for d, _ in c]), dtype=float).dropna() if c else pd.Series(dtype=float)
+        if len(s):
+            s = s[s.index >= s.index.max() - pd.Timedelta(days=365)]
+        x = {k: r.get(k) for k in ("k", "ten", "dv", "gia", "ngay", "d1", "m1", "ytd", "y1")}
+        x["sp"] = [round(float(v), 4) for v in s.groupby(s.index.to_period("W")).last()] if len(s) else []
+        for m in dict.fromkeys(mas):
+            out.setdefault(m, []).append(x)
     return out
 
 
@@ -785,6 +805,8 @@ def main(argv=None):
         json.dump(hh, f, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(a.ra, "du_lieu.json"), "w", encoding="utf-8") as f:
         json.dump(kq, f, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(a.ra, "hh_ma.json"), "w", encoding="utf-8") as f:      # Tra cứu mã: khối "Hàng hoá liên quan"
+        json.dump(hh_theo_ma(kq["hang_hoa"], hh), f, ensure_ascii=False, separators=(",", ":"))
     for r in kq["hang_hoa"]:
         print(f"  {r['ten']}: {r['gia']:,} {r['dv']} ({r['ngay']}) · ngày {r['d1']} % · tháng {r['m1']} % · năm {r['y1']} % · "
               f"{r['nguon']}" + (" · ⚠ CŨ" if r["cu"] else ""))

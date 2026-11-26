@@ -355,6 +355,9 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 .xem-het{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600}
 @media (max-width:600px){.loc-bo{grid-template-columns:1fr 1fr;padding:10px;gap:8px}}
 .cuoi{color:var(--mo);font-size:12px;margin:18px 0}
+.hh-ghi{margin:0;padding:8px 14px 12px;font-size:12px;color:var(--mo)}#hh-lq svg{display:block;margin-left:auto}
+#hh-lq td.trai .m{display:block;font-size:11.5px;font-weight:400}
+@media (max-width:600px){#hh-lq th:nth-child(6),#hh-lq td:nth-child(6){display:none}#hh-lq td,#hh-lq th{padding:6px 5px}#hh-lq td.trai{white-space:normal}}
 .sub{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
 .sub button{border:1px solid var(--vien);background:var(--the);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--chu2)}
 .sub button[aria-pressed=true]{background:var(--nhan);border-color:var(--nhan);color:#fff;font-weight:600}
@@ -2817,10 +2820,30 @@ function tong_quan(ma, k) {
     o_so("ROE", r.ts?.chi_so?.ROE ? pt(r.ts.chi_so.ROE.v, 1, false) : "–") + o_so("PEG", r.peg ? so(r.peg, 2) : "–") + `</div>`).replace('<div class="the">', '<div class="cot"><div class="the">') +
     diem_nhan(ma, k, x, gn) + `</div>` +
     the("Góc hệ thống", "kỹ thuật · dòng tiền · định giá", goc_he_thong(ma, k, x, gn)) + `</div>`;
-  h += so_sanh_nganh(ma);
+  h += so_sanh_nganh(ma) + `<div id="hh-lq" data-ma="${esc(ma)}"></div>`;
+  setTimeout(() => ve_hh_lq(ma), 0);                        // khối điền sau khi Tổng quan đã vào trang
   const ho = n.sz?.linh_vuc || ct.ho_so;
   if (ho) h += the("Giới thiệu", `<a href="#${esc(ma)}/ho-so">hồ sơ đầy đủ</a>`, `<div class="than van">${esc(ho.slice(0, 700))}${ho.length > 700 ? "…" : ""}</div>`);
   return h;
+}
+// ---------------------------------------------------------------- HÀNG HOÁ LIÊN QUAN (Tổng quan): ../vi_mo/hh_ma.json – workflow Vi mo
+// (thi_truong/vi_mo_web.hh_theo_ma). Kiểm 2012–2026 (thi_truong/vi_mo_nguon vòng 12–15): đi cùng cổ phiếu ngành nhưng không báo trước.
+let HH_MA_P = null;
+async function ve_hh_lq(ma) {
+  HH_MA_P = HH_MA_P || lay("../vi_mo/hh_ma.json", false).then(j => j || {}).catch(() => ({}));
+  const ds = (await HH_MA_P)[ma], el = $("#hh-lq");
+  if (!ds?.length || !el || el.dataset.ma !== ma) return;
+  const tia = sp => { if (!sp || sp.length < 2) return "";
+    const lo = Math.min(...sp), hi = Math.max(...sp), w = 96, ht = 26, d = hi - lo || 1;
+    const xy = sp.map((v, i) => `${(i / (sp.length - 1) * w).toFixed(1)},${(ht - 2 - (v - lo) / d * (ht - 4)).toFixed(1)}`).join(" ");
+    return `<svg viewBox="0 0 ${w} ${ht}" width="${w}" height="${ht}" aria-hidden="true"><polyline points="${xy}" fill="none" stroke="${sp[sp.length - 1] >= sp[0] ? "#0f8a4a" : "#d1342b"}" stroke-width="1.5"/></svg>`; };
+  const p = v => `<td class="${mau(v)}">${pt(v == null ? null : v / 100, 1)}</td>`;
+  el.innerHTML = the("Hàng hoá liên quan", `giá thế giới · <a href="../../bang-thi-truong/#vi-mo">Vĩ mô › Hàng hoá</a>`,
+    `<div class="bang-boc"><table><thead><tr><th class="trai">Hàng hoá</th><th>Giá</th><th>Ngày</th><th>Tháng</th><th>Năm</th><th>1 năm</th></tr></thead><tbody>` +
+    ds.map(r => `<tr><td class="trai"><b>${esc(r.ten)}</b> <span class="m">${esc(r.dv)}</span></td><td>${so(r.gia, Math.abs(r.gia) < 20 ? 3 : 2)}</td>` +
+      p(r.d1) + p(r.m1) + p(r.y1) + `<td>${tia(r.sp)}</td></tr>`).join("") + `</tbody></table></div>` +
+    `<p class="hh-ghi">Kiểm 2012–2026: giá hàng hoá đi cùng cổ phiếu ngành (giải thích được biến động) nhưng KHÔNG báo trước để mua bán; ` +
+    `biến động đêm qua phần lớn đã vào giá mở cửa phiên sáng. Giá ngày ${esc((ds[0].ngay || "").split("-").reverse().join("/"))}.</p>`);
 }
 // ---------------------------------------------------------------- ĐIỂM NHẤN (Tổng quan): điểm mạnh · cần lưu ý + mạng nhện 6 trụ – kiểu "phân tích
 // nhanh" của Simplize. 6 trụ = thẻ điểm tab Phân tích (pt_tinh, cần BCTC năm → tải sau, lưu k.pt6); giá / dòng tiền tính ngay từ chuỗi giá.
