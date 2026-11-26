@@ -458,8 +458,108 @@ def do_vn3():
             print(f"✘ {ma}: {type(e).__name__} {str(e)[:60]}")
 
 
+def _chu(html):
+    t = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
+    t = re.sub(r"<[^>]+>", " ", t)
+    import html as h
+    return re.sub(r"\s+", " ", h.unescape(t))
+
+
+def _quanh(t, k, n=2, rong=320):
+    out = []
+    for i, m in enumerate(re.finditer(re.escape(k), t)):
+        if i >= n:
+            break
+        out.append(t[max(0, m.start() - 60):m.start() + rong])
+    return out
+
+
+def do_vn4():
+    import requests
+    g = lambda u, **k: requests.get(u, headers={**UA, "Accept-Language": "vi,en;q=0.8"}, timeout=50, **k)   # noqa: E731
+    # 1) Cục Thống kê – báo cáo tháng: câu chứa số cần lấy
+    try:
+        ds = g("https://www.nso.gov.vn/bao-cao-tinh-hinh-kinh-te-xa-hoi-hang-thang/").text
+        lk = list(dict.fromkeys(re.findall(r'href="(https://www\.nso\.gov\.vn/[^"]*bao-cao-tinh-hinh-kinh-te-xa-hoi-thang[^"]*)"', ds)))
+        print(f"✔ NSO danh sách báo cáo tháng: {len(lk)} link · {lk[:4]}")
+        u = lk[0] if lk else "https://www.nso.gov.vn/bai-top/2026/11/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-muoi-va-10-thang-nam-2026/"
+        t = _chu(g(u).text)
+        print(f"✔ NSO báo cáo {u}: {len(t)} ký tự")
+        for k in ("tổng sản phẩm trong nước", "Chỉ số giá tiêu dùng (CPI) tháng", "lạm phát cơ bản", "Chỉ số sản xuất toàn ngành công nghiệp",
+                  "Tổng mức bán lẻ hàng hóa và doanh thu dịch vụ", "Tổng kim ngạch xuất, nhập khẩu", "xuất siêu", "nhập siêu",
+                  "vốn đầu tư trực tiếp nước ngoài", "Vốn đầu tư thực hiện từ nguồn ngân sách", "khách quốc tế", "thành lập mới",
+                  "tăng trưởng tín dụng", "tổng phương tiện thanh toán", "tỷ lệ thất nghiệp", "sản lượng điện", "xi măng", "thép"):
+            for x in _quanh(t, k, 1):
+                print(f"   [{k}] {x}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ NSO báo cáo: {type(e).__name__} {str(e)[:80]}")
+    # 2) Cục Thống kê – cổng số liệu PX-Web
+    try:
+        t = g("https://www.nso.gov.vn/px-web-2/").text
+        lk = list(dict.fromkeys(re.findall(r'href="([^"]*(?:pxid|px-web|pxweb)[^"]*)"', t, re.I)))
+        api = re.findall(r'["\'](/?[^"\']*api[^"\']*)["\']', t)[:10]
+        print(f"✔ PX-Web: {len(lk)} link {lk[:8]} · api? {api}")
+        for u in ("https://www.nso.gov.vn/px-web-2/api/v1/vi/", "https://www.nso.gov.vn/px-web-2/api/v1/en/",
+                  "https://pxweb.nso.gov.vn/api/v1/vi/", "https://www.nso.gov.vn/px-web-2/api/v2/tables?lang=vi"):
+            try:
+                r = g(u)
+                print(f"   {r.status_code} {u}: {r.text[:200]!r}")
+            except Exception as e:                                    # noqa: BLE001
+                print(f"   ✘ {u}: {type(e).__name__}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ PX-Web: {type(e).__name__} {str(e)[:80]}")
+    # 3) S&P Global – PMI Việt Nam
+    try:
+        t = g("https://www.pmi.spglobal.com/Public/Release/PressReleases?language=en").text
+        m = re.search(r'href="(/Public/Home/PressRelease/[0-9a-f]+)"[^>]*>(?:(?!</a>).){0,200}Vietnam', t, re.S) or \
+            re.search(r'Vietnam(?:(?!href).){0,400}href="(/Public/Home/PressRelease/[0-9a-f]+)"', t, re.S)
+        print(f"✔ S&P danh sách: {'có' if m else 'không thấy'} Vietnam · {_quanh(_chu(t), 'Vietnam', 2, 160)}")
+        if m:
+            u = "https://www.pmi.spglobal.com" + m.group(1)
+            tt = _chu(g(u).text)
+            print(f"   {u}: {_quanh(tt, 'PMI', 3, 300)}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ S&P PMI: {type(e).__name__} {str(e)[:80]}")
+    # 4) Petrolimex – thông cáo điều chỉnh giá mới nhất
+    try:
+        t = g("https://www.petrolimex.com.vn/ndi/thong-cao-bao-chi.html").text
+        lk = list(dict.fromkeys(re.findall(r'href="(/ndi/thong-cao-bao-chi/petrolimex-dieu-chinh-gia[^"]+)"', t)))
+        print(f"✔ Petrolimex thông cáo: {len(lk)} · {lk[:3]}")
+        if lk:
+            tt = _chu(g("https://www.petrolimex.com.vn" + lk[0]).text)
+            for k in ("RON 95-III", "E5 RON 92", "DO 0,05S", "Vùng 1"):
+                print(f"   [{k}] {_quanh(tt, k, 1, 220)}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ Petrolimex: {type(e).__name__} {str(e)[:80]}")
+    # 5) NHNN – dư nợ tín dụng, thông cáo
+    for u in ("https://sbv.gov.vn/du-no-tin-dung-doi-voi-nen-kt-dttktt", "https://sbv.gov.vn/vi/thong-cao-bao-chi",
+              "https://sbv.gov.vn/vi/ty-le-no-xau-trong-tong-du-no-tin-dung"):
+        try:
+            r = g(u)
+            tt = _chu(r.text)
+            print(f"✔ {r.status_code} {u}: {len(tt)} · {_quanh(tt, 'tín dụng', 3, 260)}")
+            print(f"   bảng: {re.findall(r'<table', r.text)[:1]} · năm: {sorted(set(re.findall(r'20[12][0-9]', tt)))[-6:]}")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {u}: {type(e).__name__} {str(e)[:80]}")
+    # 6) Vietstock – báo cáo phân tích (vĩ mô)
+    try:
+        t = g("https://finance.vietstock.vn/bao-cao-phan-tich").text
+        print(f"✔ Vietstock: {_quanh(_chu(t), 'Vĩ mô', 3, 200)}")
+        print(f"   ajax: {list(dict.fromkeys(re.findall(r'[\'\"](/[A-Za-z]+/[A-Za-z]*[Rr]eport[A-Za-z]*)[\'\"]', t)))[:10]}")
+        print(f"   pdf: {re.findall(r'href=\"([^\"]+\.pdf)\"', t)[:3]}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ Vietstock: {type(e).__name__} {str(e)[:80]}")
+    # 7) CafeF – RSS vĩ mô (tin, đường dẫn)
+    try:
+        t = g("https://cafef.vn/vi-mo-dau-tu.rss").text
+        it = re.findall(r"<item>.*?<title>(.*?)</title>.*?<link>(.*?)</link>.*?<pubDate>(.*?)</pubDate>", t, re.S)
+        print(f"✔ CafeF RSS vĩ mô: {len(it)} tin · {[(a[:70], c[:25]) for a, _, c in it[:3]]}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ CafeF RSS: {type(e).__name__} {str(e)[:80]}")
+
+
 def main():
-    do_vn3()
+    do_vn4()
     return 0
 
 
