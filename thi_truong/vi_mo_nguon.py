@@ -370,8 +370,28 @@ def do_vn():
             print(f"✘ {url}: {type(e).__name__} {str(e)[:60]}")
 
 
+def do_te():
+    """Trading Economics (26/11/2026, chủ quỹ hỏi "Trading Economics có dùng được không"): API khoá khách guest:guest + trang web."""
+    for url in ("https://api.tradingeconomics.com/country/vietnam?c=guest:guest&f=json",
+                "https://api.tradingeconomics.com/historical/country/vietnam/indicator/inflation%20rate?c=guest:guest&f=json",
+                "https://api.tradingeconomics.com/country/thailand?c=guest:guest&f=json",
+                "https://tradingeconomics.com/vietnam/indicators",
+                "https://tradingeconomics.com/vietnam/manufacturing-pmi",
+                "https://tradingeconomics.com/vietnam/loans-to-private-sector",
+                "https://tradingeconomics.com/vietnam/calendar"):
+        try:
+            import requests
+            r = requests.get(url, headers=UA, timeout=40)
+            t = r.text
+            hang = re.findall(r"<td[^>]*>\s*<a[^>]*>([^<]{3,60})</a>\s*</td>\s*<td[^>]*>\s*([-\d.,]+)\s*</td>", t)
+            print(f"{'✔' if r.ok else '✘'} {r.status_code} {url}: {len(t)} ký tự · {r.headers.get('server', '')} · "
+                  f"{hang[:6] if hang else t[:220]!r}", flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {url}: {type(e).__name__} {str(e)[:80]}", flush=True)
+
+
 def main():
-    do_vn()
+    do_te()
     return 0
 
 
