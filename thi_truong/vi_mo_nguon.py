@@ -932,8 +932,93 @@ CAP13 = [("bdi", "tv:INDEX:BDI", +1, "HAH VOS VSC GMD PVT"), ("duong_tq", "tv:ZC
 # khung 1 tháng âm); bông / PTA / urê ZCE không đạt. → hiển thị ghi chú ở trang, KHÔNG đưa vào lệnh (chưa hỏi chủ quỹ).
 
 
+# Vòng 14 (chủ quỹ: "coi xem có dùng làm gì được không"): biến động ĐÊM QUA (phiên Mỹ/Âu chốt sau giờ VN đóng cửa) → cổ phiếu ngành
+# PHIÊN SAU, tách khe mở cửa (đóng D → mở D+1) và trong phiên (mở → đóng D+1). Tiêu chí ĐẶT TRƯỚC:
+#   (A) đưa vào tin sáng: OOS tương quan (biến động đêm qua, vượt VNI cả phiên sau) ≥ 0,08 và t ≥ 3
+#   (B) giao dịch được: ngày |z| > 2 (z = biến động / độ lệch 60 phiên), OOS trung bình dấu×(vượt VNI TRONG PHIÊN mở→đóng) ≥ 0,3 %
+#       với t ≥ 2, cùng dấu IS
+CAP14 = [("brent", "yf:BZ=F", "GAS PVS PVD BSR PLX"), ("wti", "yf:CL=F", "GAS PVS PVD BSR PLX"), ("hrc", "tv:COMEX:HRC1!", "HPG HSG NKG"),
+         ("duong", "yf:SB=F", "SBT LSS QNS"), ("dong", "yf:HG=F", "HPG HSG NKG"), ("cao_su", "tv:SGX:TF1!", "GVR PHR DPR"),
+         ("ure", "tv:CBOT:UFV1!", "DPM DCM"), ("than", "tv:ICEEUR:NCF1!", "TVD NBC"), ("heo", "yf:HE=F", "DBC BAF"),
+         ("sp500", "yf:^GSPC", ""), ("vix", "yf:^VIX", ""), ("dxy", "yf:DX-Y.NYB", "")]
+
+
+def thu_dem(c, o, cl, vo, vc, chia="2020-01-01"):
+    """c: giá đóng cửa hàng hoá (ngày giao dịch của nó); o, cl: giá mở / đóng rổ (ngày VN, rổ = trung bình lợi suất); vo, vc: VN-Index.
+    Tín hiệu phiên VN ngày T = lợi suất hàng hoá ngày gần nhất TRƯỚC T (chốt sau giờ VN đóng cửa). Rổ rỗng (o None) → dùng VN-Index tuyệt đối.
+    → {is, oos: n, tq (tương quan với vượt cả phiên), t_tq, lon_n, lon_ngay (dấu×vượt cả phiên ngày |z|>2, %), lon_trong (… mở→đóng, %), t_trong}."""
+    rc = c.pct_change().dropna()
+    z = (rc / rc.rolling(60).std()).dropna()
+    s = pd.DataFrame({"rc": rc, "z": z}).dropna()
+    s.index = s.index + pd.Timedelta(hours=12)                        # ngày hàng hoá D chốt đêm D (giờ VN) → dùng cho phiên sau D
+    if o is None:
+        ca, tr = vc.pct_change(), vc / vo - 1
+    else:
+        ca, tr = cl.pct_change() - vc.pct_change(), (cl / o - 1) - (vc / vo - 1)
+    v = pd.DataFrame({"ca": ca, "tr": tr}).dropna().sort_index()
+    m = pd.merge_asof(v, s.sort_index(), left_index=True, right_index=True, direction="backward",
+                      tolerance=pd.Timedelta(days=4)).dropna()
+    out = {}
+    for ten, k in (("is", m[m.index < chia]), ("oos", m[m.index >= chia])):
+        r = k.rc.corr(k.ca)
+        lon = k[k.z.abs() > 2]
+        x, y = np.sign(lon.rc) * lon.ca * 100, np.sign(lon.rc) * lon.tr * 100
+        out[ten] = {"n": len(k), "tq": r, "t_tq": r * (len(k) - 2) ** 0.5 / max(1e-9, (1 - r * r) ** 0.5), "lon_n": len(lon),
+                    "lon_ngay": x.mean(), "lon_trong": y.mean(), "t_trong": y.mean() / (y.std(ddof=1) / len(y) ** 0.5) if len(y) > 2 else float("nan")}
+    return out
+
+
+def dat14(r):
+    i, o = r["is"], r["oos"]
+    return (bool(o["tq"] >= 0.08 and o["t_tq"] >= 3), bool(o["lon_trong"] >= 0.3 and o["t_trong"] >= 2 and i["lon_trong"] > 0))
+
+
+def do_vn14():
+    import subprocess
+    import tempfile
+    import requests
+    from thi_truong import vi_mo_web as W
+    thu = tempfile.mkdtemp()
+    f = f"{thu}/d.tar.zst"
+    with requests.get("https://github.com/mihhle2006-beep/canh-bao-mua/releases/download/sao-luu-tra-cuu/du_lieu.tar.zst",
+                      stream=True, timeout=120) as r:
+        r.raise_for_status()
+        with open(f, "wb") as fp:
+            for k in r.iter_content(1 << 20):
+                fp.write(k)
+    mas = sorted({m for *_, ds in CAP14 for m in ds.split()})
+    subprocess.run(["tar", "--zstd", "-xf", f, "-C", thu, "du_lieu/chi_so/VNINDEX.json", *[f"du_lieu/gia_dai/{m}.json" for m in mas]],
+                   check=False)
+
+    def doc(p):
+        j = json.load(open(p, encoding="utf-8"))
+        d = pd.Timestamp(j["d0"]) + pd.to_timedelta(np.cumsum(j["g"]), unit="D")
+        return pd.Series(j["o"], index=d, dtype=float), pd.Series(j["c"], index=d, dtype=float)
+    vo, vc = doc(f"{thu}/du_lieu/chi_so/VNINDEX.json")
+    print("\n=== Biến động ĐÊM QUA → phiên VN sau (IS < 2020 ≤ OOS) · A: tq OOS ≥ 0,08 & t ≥ 3 · B: ngày |z|>2 trong phiên ≥ 0,3 % & t ≥ 2 ===")
+    for k, ng, ds in CAP14:
+        try:
+            c = W._lay(ng, "2010-01-01").dropna()
+            if ds:
+                oc = [doc(f"{thu}/du_lieu/gia_dai/{m}.json") for m in ds.split()]
+                ro = pd.concat([x[1] / x[0] - 1 for x in oc], axis=1).mean(axis=1)     # mở → đóng trung bình rổ
+                rcl = pd.concat([x[1].pct_change() for x in oc], axis=1).mean(axis=1)   # đóng → đóng
+                cl = (1 + rcl.fillna(0)).cumprod()
+                o = cl / (1 + ro)                                                # giá mở "rổ" sao cho cl/o − 1 = mở→đóng trung bình
+                x = thu_dem(c, o, cl, vo, vc)
+            else:
+                x = thu_dem(c, None, None, vo, vc)
+            a, b = dat14(x)
+            i, oo = x["is"], x["oos"]
+            print(f"  {'A' if a else '-'}{'B' if b else '-'} {k:6s} [{ds or 'VN-Index'}] · tương quan {i['tq']:+.3f}/{oo['tq']:+.3f} (t {i['t_tq']:+.1f}/"
+                  f"{oo['t_tq']:+.1f}) · ngày lớn {i['lon_n']}/{oo['lon_n']}: cả phiên {i['lon_ngay']:+.2f}/{oo['lon_ngay']:+.2f}% · trong phiên "
+                  f"{i['lon_trong']:+.2f}/{oo['lon_trong']:+.2f}% (t {i['t_trong']:+.1f}/{oo['t_trong']:+.1f})", flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"  ✘ {k}: {type(e).__name__} {str(e)[:80]}", flush=True)
+
+
 def main():
-    do_vn12(CAP13, do_tq=False)  # vòng 13 (đã kết luận ở trên) – ô thu_nguon chạy lại để xem
+    do_vn14()  # vòng 14: biến động đêm qua → phiên VN sau (khe mở cửa / trong phiên)
     return 0
 
 
