@@ -33,7 +33,8 @@ CHU_DE = [("tq", "Tổng quan", "12 chỉ số chính: số mới nhất, thay �
           ("lao_dong", "Lao động & dân số", "thất nghiệp, lao động, thu nhập, lương tối thiểu, dân số"),
           ("the_gioi", "Thế giới", "Mỹ, Trung Quốc, châu Âu, Nhật, Hàn Quốc, Đài Loan, ASEAN"),
           ("vang", "Vàng & tỷ giá", "vàng thế giới, SJC, nhẫn, chênh lệch, tỷ giá – biểu đồ"),
-          ("hh", "Hàng hoá", "22 hàng hoá thế giới – giá, % thay đổi, ngành VN liên quan")]
+          ("hh", "Hàng hoá", "27 hàng hoá thế giới, Trung Quốc và cước tàu – giá, % thay đổi, ngành VN liên quan. Kiểm 2012–2026: "
+                                 "giá hàng hoá đi CÙNG cổ phiếu ngành trong tháng nhưng phần lớn KHÔNG báo trước tháng sau (trừ đường)")]
 
 TC = "Cục Thống kê"
 # Chỉ tiêu: (khoá, chủ đề, tên, nguồn, đơn vị, chia, kiểu đổi, tần suất, hướng tốt, mô tả gốc)
