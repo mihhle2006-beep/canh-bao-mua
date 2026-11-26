@@ -390,8 +390,76 @@ def do_te():
             print(f"✘ {url}: {type(e).__name__} {str(e)[:80]}", flush=True)
 
 
+# VÒNG 3 (26/11/2026, chủ quỹ: "tìm thêm nguồn đi"): phần còn thiếu so FireAnt – PMI, tín dụng, thất nghiệp quý, xuất nhập khẩu
+# mới, GDP theo ngành, vốn đầu tư, DN thành lập (thông cáo Cục Thống kê), xăng dầu (Petrolimex), báo cáo vĩ mô CTCK, IMF IFS
+# qua DBnomics (tín dụng, M2 theo tháng).
+URL_VN3 = {
+    "nso_trang_chu": "https://www.nso.gov.vn/",
+    "gso_trang_chu": "https://www.gso.gov.vn/",
+    "nso_ktxh": "https://www.nso.gov.vn/tinh-hinh-kinh-te-xa-hoi/",
+    "nso_tim": "https://www.nso.gov.vn/?s=t%C3%ACnh+h%C3%ACnh+kinh+t%E1%BA%BF+x%C3%A3+h%E1%BB%99i+th%C3%A1ng+m%C6%B0%E1%BB%9Di",
+    "nso_px": "https://www.nso.gov.vn/px-web-2/",
+    "hai_quan": "https://www.customs.gov.vn/",
+    "spglobal_pmi": "https://www.pmi.spglobal.com/Public/Release/PressReleases?language=en",
+    "petrolimex": "https://www.petrolimex.com.vn/",
+    "vietstock_bc": "https://finance.vietstock.vn/bao-cao-phan-tich",
+    "vndirect_vimo": "https://www.vndirect.com.vn/danh_muc_bao_cao/bao-cao-vi-mo/",
+    "mbs_vimo": "https://mbs.com.vn/trung-tam-nghien-cuu/bao-cao-phan-tich/nghien-cuu-vi-mo/",
+    "ssi_vimo": "https://www.ssi.com.vn/khach-hang-ca-nhan/bao-cao-vi-mo",
+    "cafef_vimo": "https://cafef.vn/vi-mo-dau-tu.chn",
+    "cafef_dl_vimo": "https://s.cafef.vn/du-lieu-vi-mo.chn",
+    "sbv": "https://www.sbv.gov.vn/",
+}
+TU_KHOA = ["PMI", "tín dụng", "tăng trưởng tín dụng", "thất nghiệp", "xuất khẩu", "RON 95", "Vĩ mô", "vĩ mô", "Manufacturing PMI",
+           "Vietnam", "CPI", "tình hình kinh tế"]
+
+
+def do_vn3():
+    import requests
+    for ten, url in URL_VN3.items():
+        try:
+            r = requests.get(url, headers={**UA, "Accept-Language": "vi,en;q=0.8"}, timeout=40, allow_redirects=True)
+            t = r.text
+            dem = {k: t.count(k) for k in TU_KHOA if t.count(k)}
+            lk = re.findall(r'href="([^"]*(?:kinh-te-xa-hoi|thong-cao|bao-cao|vi-mo|pmi|PressRelease|tin-dung|xuat-nhap)[^"]*)"', t, re.I)
+            print(f"{'✔' if r.ok else '✘'} {r.status_code} {ten} → {r.url[:90]} · {len(t)} ký tự · {dem} · link: {list(dict.fromkeys(lk))[:6]}",
+                  flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {ten}: {type(e).__name__} {str(e)[:90]}", flush=True)
+    # Petrolimex: ngữ cảnh quanh nhãn xăng RON 95 / dầu DO
+    try:
+        t = requests.get(URL_VN3["petrolimex"], headers=UA, timeout=40).text
+        for nhan in ("RON 95-V", "RON 95-III", "E5 RON 92", "DO 0,05S"):
+            i = t.find(nhan)
+            if i >= 0:
+                print(f"  Petrolimex [{nhan}]: {re.sub(r'<[^>]+>', ' ', t[i:i + 400])[:260]!r}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ petrolimex ngữ cảnh: {type(e).__name__}")
+    # DBnomics – IMF IFS Việt Nam theo tháng: liệt kê chuỗi + kỳ cuối
+    try:
+        j = _get("https://api.db.nomics.world/v22/series/IMF/IFS?dimensions=%7B%22REF_AREA%22%3A%5B%22VN%22%5D%2C%22FREQ%22%3A%5B%22M%22%5D%7D"
+                 "&limit=1000&observations=0", timeout=60).json()
+        ds = j.get("series", {}).get("docs", [])
+        print(f"✔ DBnomics IMF/IFS VN tháng: {len(ds)} chuỗi")
+        for d in ds:
+            ten = d.get("series_name", "")
+            if re.search(r"credit|claims on private|broad money|monetary|deposit rate|lending rate|reserve", ten, re.I):
+                print(f"   {d.get('series_code')}: {ten[:110]} · cuối {d.get('indexed_at', '')[:10]}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ DBnomics IFS: {type(e).__name__} {str(e)[:80]}")
+    for ma in ("IMF/IFS/M.VN.FASMB_XDC", "IMF/IFS/M.VN.FOSAOP_XDC", "IMF/IFS/M.VN.FDSAOP_XDC", "IMF/IFS/M.VN.FPOLM_PA",
+               "IMF/IFS/M.VN.FILR_PA", "IMF/IFS/M.VN.FIDR_PA"):
+        try:
+            j = _get(f"https://api.db.nomics.world/v22/series/{ma}?observations=1", timeout=40).json()
+            d = j["series"]["docs"][0]
+            per, val = d.get("period", []), d.get("value", [])
+            print(f"✔ {ma}: {d.get('series_name', '')[:80]} · {len(per)} kỳ · cuối {per[-3:]} {val[-3:]}")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {ma}: {type(e).__name__} {str(e)[:60]}")
+
+
 def main():
-    do_te()
+    do_vn3()
     return 0
 
 
