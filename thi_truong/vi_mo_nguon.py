@@ -760,8 +760,38 @@ def do_vn9():
                 print(f"   {ky} [{k}] {c}")
 
 
+def do_vn10():
+    """Vòng 10: trang thống kê NHNN (nợ xấu, LDR, cán cân thanh toán, chỉ tiêu cơ bản, tiền mặt / M2) – khuôn số + có chọn kỳ cũ
+    không; câu Cục Thống kê T9/2026 (nhập khẩu, cán cân, vốn NSNN) còn hụt."""
+    import requests
+    from thi_truong import nso
+    g = lambda u: requests.get(u, headers={**UA, "Accept-Language": "vi"}, timeout=50).text   # noqa: E731
+    for d in ("ty-le-no-xau-trong-tong-du-no-tin-dung", "ty-le-du-no-cho-vay-so-voi-tong-tien-gui", "can-can-thanh-toan-quoc-te",
+              "thong-ke-mot-so-chi-tieu-co-ban", "tien-mat-luu-thong-tren-tong-phuong-tien-thanh-toan", "tong-phuong-tien-thanh-toan"):
+        u = "https://sbv.gov.vn/vi/" + d
+        try:
+            h = g(u)
+            t = nso.chu(h)
+            i = t.find("Tháng") if "Tháng" in t[2000:] else 0
+            i = max(t.find(" Tháng ", 1500), t.find(" Quý ", 1500), t.find(" Năm ", 1500), 0)
+            sel = re.findall(r"<select[^>]*name=\"([^\"]+)\"", h)
+            q = sorted(set(re.findall(r'href="([^"]*\?[^"]*(?:thang|nam|ky|period|date|year|month)[^"]*)"', h, re.I)))[:5]
+            print(f"✔ {d}: {len(t)} ký tự · select {sel[:4]} · liên kết kỳ {q}")
+            print(f"   {t[i:i + 900]}")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {d}: {type(e).__name__} {str(e)[:80]}")
+    ds = {f"{k:%Y-%m}": u for u, k, _ in nso.danh_sach(g, trang=1)}
+    if "2026-09" in ds:
+        tt = nso.chu(g(ds["2026-09"]))
+        for k in ("nhập khẩu hàng hóa tháng", "Cán cân thương mại hàng hóa tháng", "cán cân thương mại hàng hóa tháng",
+                  "Vốn đầu tư thực hiện từ nguồn ngân sách", "vốn đầu tư thực hiện từ nguồn ngân sách"):
+            for c in _quanh(tt, k, 2, 280):
+                print(f"   2026-09 [{k}] {c}")
+        print("   2026-09 đọc được:", {k: v for k, v in nso.doc(tt).items() if k in ("xk", "nk", "can_can", "nsnn", "nsnn_kh")})
+
+
 def main():
-    do_vn9()  # vòng 9: mã TradingView ECONOMICS chưa dùng · NHNN · câu Cục Thống kê còn hụt
+    do_vn10()  # vòng 10: trang thống kê NHNN (nợ xấu, LDR, BoP, chỉ tiêu cơ bản) · câu Cục Thống kê T9 còn hụt
     return 0
 
 
