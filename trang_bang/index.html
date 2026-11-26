@@ -91,6 +91,57 @@ main{max-width:1440px;margin:0 auto;padding:16px}
 .vm-cg{display:flex;gap:10px;flex-wrap:wrap;padding:4px 14px 10px;font-size:11.5px;color:var(--chu2)}
 .vm-cg i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}
 #vm-song{font-weight:600}
+/* Vĩ mô kiểu "Kinh tế vĩ mô" (25/11/2026): điểm nhấn · chủ đề · thẻ + xu hướng · nhịp kinh tế · lịch · bảng chỉ tiêu */
+.vm-dau{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.vm-tim{display:flex;align-items:center;gap:6px;background:var(--the);border:1px solid var(--vien);border-radius:8px;padding:0 10px;
+  min-width:260px;flex:0 1 360px}.vm-tim svg{width:15px;height:15px;color:var(--mo);flex:none}
+.vm-tim input{border:0;outline:0;background:none;font:inherit;font-size:13.5px;padding:8px 0;width:100%;color:var(--chu)}
+.vm-nhan{background:var(--the);border:1px solid var(--vien);border-radius:10px;padding:9px 14px;font-size:13.5px;line-height:1.55;
+  color:var(--chu2);margin-bottom:14px}.vm-nhan .nh{font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--mo);margin-right:6px}
+.vm-nhan b{color:var(--nhan-dam)}
+.vm-khung{display:grid;grid-template-columns:200px minmax(0,1fr);gap:16px;align-items:start}
+.vm-cd{background:var(--the);border:1px solid var(--vien);border-radius:10px;padding:8px;position:sticky;top:96px}
+.vm-cd h3{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mo);margin:4px 8px 6px;font-weight:650}
+.vm-cd button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:0;background:none;
+  padding:7px 9px;border-radius:7px;font:inherit;font-size:13.5px;color:var(--chu2);text-align:left;cursor:pointer}
+.vm-cd button:hover{background:var(--nen)}.vm-cd button[aria-current=true]{background:var(--nhan-nen);color:var(--nhan-dam);font-weight:650}
+.vm-cd button span{color:var(--mo);font-size:12px;font-variant-numeric:tabular-nums}
+.vm-tieu{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 2px 10px}.vm-tieu h2{margin:0;font-size:16px}
+.vm-tieu .nut{margin-left:auto}.vm-tieu .phu{color:var(--mo);font-size:12.5px}
+.vm-tq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.vm-o2{display:block;text-align:left;font:inherit;color:inherit;background:var(--the);border:1px solid var(--vien);border-left:3px solid #c9cfd6;
+  border-radius:9px;padding:9px 12px 8px;cursor:pointer;min-width:0}.vm-o2:hover{box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.vm-o2.tot{border-left-color:#2E7D32}.vm-o2.xau{border-left-color:#d1342b}
+.vm-o2 .d1,.vm-o2 .d2{display:flex;align-items:baseline;gap:6px}.vm-o2 .ten{font-size:12.5px;font-weight:600;color:var(--chu2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vm-o2 .ky{margin-left:auto;font-size:11.5px;color:var(--mo);white-space:nowrap}
+.vm-o2 .ky.cu,.vm-bang .cu{color:var(--dung)}.vm-o2 .gia{font-size:21px;font-weight:650}.vm-o2 .dv{font-size:11.5px;color:var(--mo)}
+.vm-o2 .doi{margin-left:auto;font-size:12.5px;font-weight:600;white-space:nowrap}.vm-o2 .vm-sp{display:block;width:100%;height:34px;margin:4px 0 2px}
+.vm-o2 .ghi{display:block;font-size:11.5px;color:var(--mo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vm-o2.tot .ghi{color:#2E7D32}.vm-o2.xau .ghi{color:#c0392b}
+.vm-nhip-the{margin-bottom:16px}.vm-nhip{display:grid;gap:3px;padding:8px 14px 4px;min-width:640px;font-size:12px}
+.vm-nhip .t{color:var(--chu2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+.vm-nhip .h{color:var(--mo);font-size:11px;text-align:center;white-space:nowrap}.vm-nhip .c{height:20px;border-radius:3px;background:#f3f5f7}
+.vm-nhip .v{text-align:right;color:var(--chu);font-variant-numeric:tabular-nums;white-space:nowrap}
+.vm-nhip .m-2,.vm-nhip-cg .m-2{background:#d1342b}.vm-nhip .m-1,.vm-nhip-cg .m-1{background:#f2a49c}
+.vm-nhip .m0,.vm-nhip-cg .m0{background:#e3e7eb}.vm-nhip .m1,.vm-nhip-cg .m1{background:#9fd3aa}.vm-nhip .m2,.vm-nhip-cg .m2{background:#2E7D32}
+.vm-nhip-cg{display:flex;gap:14px;flex-wrap:wrap;padding:4px 14px 12px;font-size:11.5px;color:var(--chu2)}
+.vm-nhip-cg i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.vm-lich{padding:4px 14px 12px}.vm-lich h4{display:flex;justify-content:space-between;margin:8px 0 4px;font-size:11.5px;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--mo);font-weight:650}.vm-lich h4 span{text-transform:none;letter-spacing:0;font-weight:500}
+.vm-lich .d{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;padding:7px 0;border-top:1px solid var(--luoi);font-size:13px;
+  cursor:default}.vm-lich .d[data-k],.vm-lich .d[data-cd]{cursor:pointer}.vm-lich .ng{font-weight:650}.vm-lich .ng small{display:block;font-weight:400;color:var(--mo);font-size:11px}
+.vm-lich .mo{display:block;color:var(--mo);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vm-lich b{color:var(--chu);font-weight:600}.vm-lich .moi{font-size:10.5px;font-weight:650;color:#1f6feb;background:#e7f0fe;border-radius:4px;padding:0 5px;margin-left:6px}
+.vm-bang td,.vm-bang th{padding:8px 12px}.vm-bang tbody tr{cursor:pointer}.vm-bang tbody tr.chon{background:var(--nhan-nen)}
+.vm-bang td.trai b{font-weight:600}.vm-bang .mo{display:block;font-size:11px;color:var(--mo);white-space:normal;max-width:330px}
+.vm-bt{padding:14px 18px}.vm-bt h3{margin:0 0 2px;font-size:16px}.vm-bt dl{margin:10px 0 0}.vm-bt dt{font-weight:650;color:var(--nhan-dam);
+  margin-top:10px;font-size:13px}.vm-bt dd{margin:3px 0 0;line-height:1.55;font-size:13.5px;color:var(--chu)}
+@media (max-width:1000px){.vm-tq{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:800px){.vm-khung{grid-template-columns:minmax(0,1fr)}.vm-cd{position:static;padding:4px}.vm-cd h3{display:none}
+  #vm-cd-ds{display:flex;overflow-x:auto;gap:4px;scrollbar-width:none}#vm-cd-ds::-webkit-scrollbar{display:none}
+  .vm-cd button{width:auto;white-space:nowrap;flex:none}.vm-tim{flex:1 1 100%;min-width:0}.vm-tieu .nut{margin-left:0}}
+@media (max-width:600px){.vm-o2 .gia{font-size:18px}.vm-o2 .doi{font-size:11.5px}.vm-o2{padding:8px 9px}.vm-bang td,.vm-bang th{padding:7px 6px}
+  .vm-bang .mo{display:none}}
 .vm-hh-boc{max-height:430px;overflow:auto}.vm-hh td,.vm-hh th{padding:6px 10px}.vm-hh thead th{cursor:default}
 .vm-hh tbody tr[data-k]{cursor:pointer}.vm-hh tbody tr.chon{background:var(--nhan-nen)}
 .vm-hh .lq{display:block;font-size:11px;color:var(--mo);white-space:normal;max-width:250px;line-height:1.35}
@@ -298,44 +349,77 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
     </div>
   </section>
   <section id="vm" hidden>
-    <div class="the" style="margin-bottom:16px">
-      <div class="khoi-dau"><h2>Vĩ mô · vàng · hàng hoá · lãi suất · tỷ giá</h2><span class="phu" id="vm-phu">Đang tải…</span>
-        <div class="nut" id="vm-ky"><button data-k="1">1 năm</button><button data-k="3" aria-pressed="true">3 năm</button><button data-k="5">5 năm</button><button data-k="0">Tất cả</button></div></div>
-      <div id="vm-the"></div>
+    <div class="vm-dau">
+      <label class="vm-tim"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="vm-tim" type="search" placeholder="Tìm chỉ tiêu (không cần dấu)…" aria-label="Tìm chỉ tiêu vĩ mô" autocomplete="off"></label>
+      <span class="phu" id="vm-phu">Đang tải…</span>
     </div>
-    <div class="luoi2">
-      <div class="the"><div class="khoi-dau"><h2>Vàng thế giới XAU/USD</h2><span class="phu" id="vm-xau-phu">USD/oz</span>
-        <div class="nut" id="vm-xau-k"><button data-k="ngay" aria-pressed="true">Ngày</button><button data-k="gio">Giờ (1 tháng)</button></div></div>
-        <div class="vm-bd" id="vm-bd-xau"></div></div>
-      <div class="the"><div class="khoi-dau"><h2>Vàng SJC và thế giới quy đổi</h2><span class="phu">triệu đồng / lượng</span></div>
-        <div class="vm-bd" id="vm-bd-sjc"></div><div class="vm-cg" id="vm-cg-sjc"></div></div>
+    <div class="vm-nhan" id="vm-nhan" hidden></div>
+    <div class="vm-khung">
+      <nav class="vm-cd" id="vm-cd" aria-label="Chủ đề vĩ mô"><h3>Chủ đề</h3><div id="vm-cd-ds"></div></nav>
+      <div class="vm-noi">
+        <div class="vm-tieu"><h2 id="vm-cd-ten">Tổng quan</h2><span class="phu" id="vm-cd-mo"></span>
+          <div class="nut" id="vm-ky"><button data-k="1">1 năm</button><button data-k="3" aria-pressed="true">3 năm</button><button data-k="5">5 năm</button><button data-k="0">Tất cả</button></div></div>
+        <div class="vm-p" data-cd="tq">
+          <div class="vm-tq" id="vm-tq"></div>
+          <div class="the vm-nhip-the"><div class="khoi-dau"><h2>Nhịp kinh tế</h2><span class="phu" id="vm-nhip-mo"></span></div>
+            <div class="bang-boc"><div class="vm-nhip" id="vm-nhip"></div></div>
+            <div class="vm-nhip-cg"><span><i class="m-2"></i>Xấu hơn nhiều</span><span><i class="m-1"></i>Xấu hơn</span><span><i class="m0"></i>Bình thường</span><span><i class="m1"></i>Tốt hơn</span><span><i class="m2"></i>Tốt hơn nhiều</span></div></div>
+          <div class="luoi2">
+            <div class="the"><div class="khoi-dau"><h2>Lịch công bố</h2><span class="phu">dự kiến theo lịch của nguồn</span></div><div class="vm-lich" id="vm-lich"></div></div>
+            <div class="the"><div class="khoi-dau"><h2>Thị trường thế giới</h2><span class="phu">chạm để xem chủ đề</span></div><div class="vm-lich" id="vm-tgn"></div></div>
+          </div>
+        </div>
+        <div class="vm-p" data-cd="ban_tin" hidden><div class="the vm-bt" id="vm-bt"></div></div>
+        <div class="vm-p" data-cd="bang" hidden>
+          <div class="the"><div class="khoi-dau"><h2 id="vm-ct-ten">Chỉ tiêu</h2><span class="phu" id="vm-ct-mo"></span></div>
+            <div class="vm-bd" id="vm-bd-ct"></div><div class="vm-cg" id="vm-ct-ghi"></div></div>
+          <div class="the"><div class="bang-boc"><table class="vm-bang"><thead><tr><th class="trai">Chỉ tiêu</th><th>Kỳ</th><th>Giá trị</th><th class="trai an-dt">Đơn vị</th><th>Kỳ trước</th><th>Cùng kỳ</th></tr></thead><tbody id="vm-bang"></tbody></table></div></div>
+        </div>
+        <div class="vm-p" data-cd="tang_truong" hidden>
+          <div class="the"><div class="khoi-dau"><h2>Tăng trưởng Việt Nam</h2><span class="phu">% so cùng kỳ</span></div>
+            <div class="vm-bd thap" id="vm-bd-vn"></div><div class="vm-cg" id="vm-cg-vn"></div></div>
+        </div>
+        <div class="vm-p" data-cd="tien_te" hidden>
+          <div class="the"><div class="khoi-dau"><h2>Lãi suất Việt Nam</h2><span class="phu">%/năm</span></div>
+            <div class="vm-bd" id="vm-bd-lsvn"></div><div class="vm-cg" id="vm-cg-lsvn"></div></div>
+        </div>
+        <div class="vm-p" data-cd="the_gioi" hidden>
+          <div class="luoi2">
+            <div class="the"><div class="khoi-dau"><h2>Lãi suất Mỹ</h2><span class="phu">%/năm</span></div>
+              <div class="vm-bd" id="vm-bd-my"></div><div class="vm-cg" id="vm-cg-my"></div></div>
+            <div class="the"><div class="khoi-dau"><h2>Lạm phát Mỹ và VIX</h2><span class="phu">% so cùng kỳ · VIX điểm (trục trái)</span></div>
+              <div class="vm-bd" id="vm-bd-myl"></div><div class="vm-cg" id="vm-cg-myl"></div></div>
+          </div>
+        </div>
+        <div class="vm-p" data-cd="vang" hidden>
+          <div class="the" style="margin-bottom:16px"><div id="vm-the"></div></div>
+          <div class="luoi2">
+            <div class="the"><div class="khoi-dau"><h2>Vàng thế giới XAU/USD</h2><span class="phu" id="vm-xau-phu">USD/oz</span>
+              <div class="nut" id="vm-xau-k"><button data-k="ngay" aria-pressed="true">Ngày</button><button data-k="gio">Giờ (1 tháng)</button></div></div>
+              <div class="vm-bd" id="vm-bd-xau"></div></div>
+            <div class="the"><div class="khoi-dau"><h2>Vàng SJC và thế giới quy đổi</h2><span class="phu">triệu đồng / lượng</span></div>
+              <div class="vm-bd" id="vm-bd-sjc"></div><div class="vm-cg" id="vm-cg-sjc"></div></div>
+          </div>
+          <div class="luoi2">
+            <div class="the"><div class="khoi-dau"><h2>Chênh SJC – thế giới</h2><span class="phu">triệu đồng / lượng</span></div>
+              <div class="vm-bd thap" id="vm-bd-chenh"></div></div>
+            <div class="the"><div class="khoi-dau"><h2>Tỷ giá USD/VND và chỉ số USD</h2><span class="phu">đồng · điểm (trục phải)</span></div>
+              <div class="vm-bd thap" id="vm-bd-tg"></div><div class="vm-cg" id="vm-cg-tg"></div></div>
+          </div>
+        </div>
+        <div class="vm-p" data-cd="hh" hidden>
+          <div class="luoi2" id="vm-hh-the">
+            <div class="the"><div class="khoi-dau"><h2>Hàng hoá thế giới</h2><span class="phu" id="vm-hh-phu">giá cuối · % thay đổi · chạm dòng để xem biểu đồ</span></div>
+              <div class="bang-boc vm-hh-boc"><table class="vm-hh"><thead><tr><th class="trai">Hàng hoá</th><th>Giá</th><th>Ngày</th><th>Tháng</th><th class="an-dt">Đầu năm</th><th>Năm</th></tr></thead><tbody id="vm-hh"></tbody></table></div></div>
+            <div class="the"><div class="khoi-dau"><h2 id="vm-hh-ten">Hàng hoá</h2><span class="phu" id="vm-hh-dv"></span>
+              <div class="nut" id="vm-hh-k"><button data-k="gia" aria-pressed="true">Giá</button><button data-k="pt">% cả nhóm</button></div></div>
+              <div class="vm-bd" id="vm-bd-hh"></div><div class="vm-cg" id="vm-cg-hh"></div></div>
+          </div>
+        </div>
+        <p class="phu" id="vm-ghi" style="padding:0 4px"></p>
+      </div>
     </div>
-    <div class="luoi2" id="vm-hh-the">
-      <div class="the"><div class="khoi-dau"><h2>Hàng hoá thế giới</h2><span class="phu" id="vm-hh-phu">giá cuối · % thay đổi · chạm dòng để xem biểu đồ</span></div>
-        <div class="bang-boc vm-hh-boc"><table class="vm-hh"><thead><tr><th class="trai">Hàng hoá</th><th>Giá</th><th>Ngày</th><th>Tháng</th><th class="an-dt">Đầu năm</th><th>Năm</th></tr></thead><tbody id="vm-hh"></tbody></table></div></div>
-      <div class="the"><div class="khoi-dau"><h2 id="vm-hh-ten">Hàng hoá</h2><span class="phu" id="vm-hh-dv"></span>
-        <div class="nut" id="vm-hh-k"><button data-k="gia" aria-pressed="true">Giá</button><button data-k="pt">% cả nhóm</button></div></div>
-        <div class="vm-bd" id="vm-bd-hh"></div><div class="vm-cg" id="vm-cg-hh"></div></div>
-    </div>
-    <div class="luoi2">
-      <div class="the"><div class="khoi-dau"><h2>Lãi suất Việt Nam</h2><span class="phu">%/năm</span></div>
-        <div class="vm-bd" id="vm-bd-lsvn"></div><div class="vm-cg" id="vm-cg-lsvn"></div></div>
-      <div class="the"><div class="khoi-dau"><h2>Lãi suất Mỹ</h2><span class="phu">%/năm</span></div>
-        <div class="vm-bd" id="vm-bd-my"></div><div class="vm-cg" id="vm-cg-my"></div></div>
-    </div>
-    <div class="luoi2">
-      <div class="the"><div class="khoi-dau"><h2>Chênh SJC – thế giới</h2><span class="phu">triệu đồng / lượng</span></div>
-        <div class="vm-bd thap" id="vm-bd-chenh"></div></div>
-      <div class="the"><div class="khoi-dau"><h2>Tỷ giá USD/VND và chỉ số USD</h2><span class="phu">đồng · điểm (trục phải)</span></div>
-        <div class="vm-bd thap" id="vm-bd-tg"></div><div class="vm-cg" id="vm-cg-tg"></div></div>
-    </div>
-    <div class="luoi2">
-      <div class="the"><div class="khoi-dau"><h2>Tăng trưởng Việt Nam</h2><span class="phu">% so cùng kỳ</span></div>
-        <div class="vm-bd thap" id="vm-bd-vn"></div><div class="vm-cg" id="vm-cg-vn"></div></div>
-      <div class="the"><div class="khoi-dau"><h2>Lạm phát Mỹ và VIX</h2><span class="phu">% so cùng kỳ · VIX điểm (trục trái)</span></div>
-        <div class="vm-bd thap" id="vm-bd-myl"></div><div class="vm-cg" id="vm-cg-myl"></div></div>
-    </div>
-    <p class="phu" id="vm-ghi" style="padding:0 4px"></p>
   </section>
 </main>
 <div class="goi-y" id="goi-y" role="tooltip"></div>
@@ -375,7 +459,7 @@ const sach_ma = s => [...new Set(String(s || "").toUpperCase().split(/[^A-Z0-9]+
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} })();
 function bao(t) { const b = document.createElement("div"); b.className = "bao"; b.textContent = t; document.body.appendChild(b); setTimeout(() => b.remove(), 3200); }
 function doi_td(ma) { TD = TD.includes(ma) ? TD.filter(x => x !== ma) : TD.concat([ma]); luu_td(); ve_tat(); }
-function luu_st() { try { const {tim, so_dong, ...x} = ST; localStorage.setItem("bang_tt", JSON.stringify(x)); } catch (e) {} }
+function luu_st() { try { const {tim, so_dong, vm_tim, ...x} = ST; localStorage.setItem("bang_tt", JSON.stringify(x)); } catch (e) {} }
 
 // ---------- định dạng ----------
 const nf = (v, n = 2) => v == null || !isFinite(v) ? "–" : v.toLocaleString("en-US", {minimumFractionDigits: n, maximumFractionDigits: n});
@@ -1109,17 +1193,21 @@ $("#quy-dau").onclick = e => { const th = e.target.closest("th[data-c]"); if (!t
   ST.quy_chieu = (ST.quy_sap || "ts") === c ? -(ST.quy_chieu || -1) : (c === "ten" ? 1 : -1); ST.quy_sap = c; luu_st(); ve_quy(); };
 $("#quy-loai").onclick = e => { const b = e.target.closest("button[data-l]"); if (!b) return; ST.quy_loai = b.dataset.l; luu_st(); ve_quy(); };
 
-// ---------- VĨ MÔ (25/11/2026) ----------
-// dữ liệu: canh-bao-mua thi_truong/vi_mo_web.py → <GOC>vi_mo/du_lieu.json (workflow Vi mo, 3 lần / ngày). Giá XAU/USD trực tiếp:
-// nguồn cho phép trình duyệt gọi (bộ dựng kiểm CORS → VM.d.song), 60 giây / lần khi tab đang mở.
-const VM = {d: null, bd: [], song: null, lw: null};
+// ---------- VĨ MÔ (25–26/11/2026) ----------
+// dữ liệu: canh-bao-mua thi_truong/vi_mo_web.py + vi_mo_kt.py → <GOC>vi_mo/du_lieu.json (+ chi_tieu.json lịch sử chỉ tiêu,
+// hang_hoa.json giá hàng hoá – tải khi cần; workflow Vi mo, 3 lần / ngày). Bố cục kiểu "Kinh tế vĩ mô": điểm nhấn · chủ đề ·
+// tổng quan (thẻ + xu hướng 24 kỳ, nhịp kinh tế, lịch công bố) · bản tin tháng · bảng chỉ tiêu theo chủ đề + biểu đồ lịch sử ·
+// vàng & tỷ giá · hàng hoá. Giá XAU/USD trực tiếp: nguồn cho phép trình duyệt gọi (VM.d.song), 60 giây / lần khi tab đang mở.
+const VM = {d: null, bd: [], song: null, lw: null, ls: null, hh: null, hh_ch: null, cu: null};
 const VM_MAU = {sjc_ban: "#d1342b", sjc_mua: "#f08a7e", tg_vnd: "#1f6feb", nhan_ban: "#b88a00", vn_dh: "#1B5E20",
   vn_lnh: "#43A047", vn_1n: "#1f6feb", vn_10n: "#9b3fd1", vn_cpi: "#d1342b", us_ff: "#1B5E20", us_tran: "#9aa3ad",
   us_2n: "#1f6feb", us_10n: "#9b3fd1", us_thuc10: "#d1342b", usdvnd: "#2E7D32", dxy: "#1f6feb", chenh: "#b88a00",
   us_sofr: "#0e9fb3", us_cpi: "#d1342b", us_vix: "#9aa3ad", vn_gdp: "#1B5E20", vn_sxcn: "#1f6feb", vn_banle: "#b88a00"};
 const VM_HH_MAU = ["#1f6feb", "#d1342b", "#2E7D32", "#9b3fd1", "#b88a00", "#0e9fb3", "#e8590c", "#5c6370", "#c2255c", "#5c940d",
   "#1864ab", "#862e9c"];
+const VM_BANG = ["tang_truong", "san_xuat", "gia", "tien_te", "thuong_mai", "tieu_dung", "lao_dong", "the_gioi", "tim"];
 const vm_so = (x, le = 2) => x == null || isNaN(x) ? "–" : Number(x).toLocaleString("vi-VN", {minimumFractionDigits: le, maximumFractionDigits: le});
+const vm_bo_dau = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 function vm_lw() {
   VM.lw = VM.lw || new Promise((ok, loi) => { if (window.LightweightCharts) return ok(window.LightweightCharts);
     const sc = document.createElement("script"); sc.src = GOC + "ma/lib/lightweight-charts.standalone.production.js?v=5.1.0";
@@ -1131,10 +1219,12 @@ async function vao_vm() {
     try { const r = await fetch(GOC + "vi_mo/du_lieu.json?t=" + Math.floor(Date.now() / 600000), {cache: "no-store"});
       if (!r.ok) throw new Error("HTTP " + r.status); VM.d = await r.json(); }
     catch (e) { $("#vm-phu").textContent = "Chưa có dữ liệu vĩ mô (" + e.message + ")"; return; }
+    try { VM.cu = JSON.parse(localStorage.getItem("vm_ky_da_xem") || "{}"); } catch (e) { VM.cu = {}; }
+    try { const x = {}; for (const r of VM.d.kt?.ct || []) x[r.k] = r.ky; localStorage.setItem("vm_ky_da_xem", JSON.stringify(x)); } catch (e) {}
   }
   ve_vm(); bat_song();
 }
-function vm_the() {
+function vm_the() {                                    // thẻ chủ đề Vàng & tỷ giá (vàng, bạc · dầu, tỷ giá)
   const d = VM.d, nh = d.nhom || {};
   const o = t => { const tang = t.doi > 0, giam = t.doi < 0;
     const doi = t.doi == null ? "" : `<span class="doi ${tang ? "t" : giam ? "g" : ""}">${t.doi > 0 ? "+" : ""}${vm_so(t.doi, 2)}${t.kieu_doi === "%" ? "%" : ""}</span>`;
@@ -1142,7 +1232,8 @@ function vm_the() {
     return `<div class="o" data-k="${t.k}" title="${(t.nguon || "").replace(/"/g, "&quot;")}"><div class="ten">${t.ten}</div>
       <div><span class="gia so" ${t.k === "xau" ? 'id="vm-xau-gia"' : ""}>${vm_so(t.gia, le)}</span>${doi}</div>
       <div class="phu">${t.dv}${t.ky ? " · so " + t.ky : ""} · ${t.luc ? (t.k === "xau" ? '<span id="vm-song">' + t.luc + "</span>" : t.luc) : t.ky_so || ngay_vn(t.ngay) + "/" + t.ngay.slice(0, 4)}</div></div>`; };
-  $("#vm-the").innerHTML = Object.entries(nh).map(([k, ten]) => { const ds = d.the.filter(t => t.nhom === k);
+  $("#vm-the").innerHTML = Object.entries(nh).filter(([k]) => ["vang", "hh", "ty_gia"].includes(k)).map(([k, ten]) => {
+    const ds = d.the.filter(t => t.nhom === k);
     return ds.length ? `<div class="vm-nhom"><h3>${ten}</h3><div class="vm-the">${ds.map(o).join("")}</div></div>` : ""; }).join("");
 }
 function vm_loc(d) {                                   // [[ngày, v]] → khoảng đang chọn (năm), dữ liệu LW
@@ -1166,37 +1257,163 @@ function vm_duong(ch, LW, k, trai, buoc) {
 function vm_cg(id, ks) {
   $(id).innerHTML = ks.filter(k => VM.d.chuoi[k]).map(k => `<span title="${(VM.d.chuoi[k].nguon || "").replace(/"/g, "&quot;")}"><i style="background:${VM_MAU[k]}"></i>${VM.d.chuoi[k].ten}</span>`).join("");
 }
+// ----- chỉ tiêu theo chủ đề
+const vm_ct = k => (VM.d?.kt?.ct || []).find(r => r.k === k);
+function vm_doi(x, kieu, dv) { if (x == null) return "–"; const s = (x > 0 ? "+" : "") + vm_so(x, 2);
+  return kieu === "%" ? s + "%" : kieu === "pt" ? s + " đpt" : s + " " + dv; }
+const vm_mau = (x, h) => x == null || !h || Math.abs(x) < 1e-9 ? "" : x * h > 0 ? "t" : "g";
+const vm_moi = r => VM.cu && VM.cu[r.k] && VM.cu[r.k] !== r.ky;          // kỳ mới so với lần xem trước
+function vm_spark(sp, tot) {
+  if (!sp || sp.length < 2) return "";
+  const lo = Math.min(...sp), hi = Math.max(...sp), w = 220, h = 34;
+  const x = i => (i / (sp.length - 1) * w).toFixed(1), y = v => (hi === lo ? h / 2 : h - 3 - (v - lo) / (hi - lo) * (h - 6)).toFixed(1);
+  const p = sp.map((v, i) => x(i) + "," + y(v)).join(" "), mau = tot > 0 ? "#2E7D32" : tot < 0 ? "#d1342b" : "#5c6370";
+  return `<svg class="vm-sp" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,${h} ${p} ${w},${h}" fill="${mau}" opacity=".10"/><polyline points="${p}" fill="none" stroke="${mau}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function vm_the2(r) {                                  // thẻ tổng quan: quý / lũy kế so cùng kỳ, còn lại so kỳ trước
+  const x = r.ts === "Q" || r.k === "vn_fdi" ? r.ck : r.kt;
+  return `<button type="button" class="vm-o2 ${r.tot > 0 ? "tot" : r.tot < 0 ? "xau" : ""}" data-k="${r.k}" title="${esc(r.ten + " · " + r.mo + (r.nguon ? " · " + r.nguon : ""))}">
+    <span class="d1"><span class="ten">${esc(r.ten)}</span><span class="ky${r.cu ? " cu" : ""}">${esc(r.ky)}</span></span>
+    <span class="d2"><span class="gia so">${vm_so(r.gt, r.le)}</span><span class="dv">${esc(r.dv)}</span><span class="doi so ${vm_mau(x, r.huong)}">${vm_doi(x, r.kieu, r.dv)}</span></span>
+    ${vm_spark(r.sp, r.tot)}<span class="ghi">${esc(r.ghi || "")}</span></button>`;
+}
+function vm_nhip() {                                   // nhịp kinh tế: chỉ tiêu tháng × 18 tháng, màu theo độ lệch so TB 5 năm
+  const n = VM.d.kt?.nhip; if (!n || !n.dong?.length) { $("#vm-nhip").innerHTML = '<p class="phu">Chưa đủ số liệu</p>'; return; }
+  const th = n.thang, cot = `minmax(150px,1.6fr) repeat(${th.length},minmax(14px,1fr)) 62px`;
+  const nhan = t => { const m = +t.slice(5, 7); return m === 1 ? t.slice(0, 4) : (m % 3 === 1 ? "T" + m : ""); };
+  $("#vm-nhip").style.gridTemplateColumns = cot;
+  $("#vm-nhip-mo").textContent = `${n.dong.length} chỉ tiêu tháng × ${th.length} tháng tới ${"T" + (+th[th.length - 1].slice(5, 7)) + "/" + th[th.length - 1].slice(0, 4)} · màu theo độ lệch so trung bình 5 năm, theo hướng tốt của chỉ tiêu`;
+  $("#vm-nhip").innerHTML = `<span></span>${th.map(t => `<span class="h">${nhan(t)}</span>`).join("")}<span class="h" style="text-align:right">Mới nhất</span>` +
+    n.dong.map(d => `<span class="t" title="${esc(d.ten)}">${esc(d.ten)}</span>` + d.o.map((m, i) => `<span class="c${m == null ? "" : " m" + m}" title="${esc(d.ten + " · T" + (+th[i].slice(5, 7)) + "/" + th[i].slice(0, 4))}"></span>`).join("") + `<span class="v">${esc(d.moi)}</span>`).join("");
+}
+function vm_lich() {
+  const l = VM.d.kt?.lich || {}, cd = Object.fromEntries((VM.d.kt?.ct || []).map(r => [r.k, r.cd]));
+  const moi = (VM.d.kt?.ct || []).filter(vm_moi).map(r => ({ngay: "", k: r.k, ten: r.ten, ky: r.ky, gt: vm_so(r.gt, r.le) + (r.dv === "%" ? "%" : " " + r.dv)}));
+  const vua = [...moi, ...(l.vua || []).filter(v => !moi.some(m => m.k === v.k))].slice(0, 6);
+  const d = (v, x) => `<div class="d" ${x}>${v}</div>`;
+  $("#vm-lich").innerHTML = `<h4>Vừa có số <span>từ lần xem trước · 10 ngày</span></h4>` + (vua.length ? vua.map(v => d(
+    `<span class="ng">${v.ngay ? ngay_vn(v.ngay) : "Mới"}<small>${esc(v.ky)}</small></span><span><b>${esc(v.ten)}</b>${moi.some(m => m.k === v.k) ? '<span class="moi">Mới</span>' : ""}<span class="mo">${esc(v.ky)}: ${esc(v.gt)}</span></span><span></span>`,
+    `data-k="${v.k}" data-cd="${cd[v.k] || ""}"`)).join("") : '<p class="phu">Chưa có số mới</p>') +
+    `<h4>Sắp công bố <span>dự kiến</span></h4>` + (l.sap || []).map(v => d(
+    `<span class="ng">${ngay_vn(v.ngay)}<small>${v.thu} · dự kiến</small></span><span><b>${esc(v.ten)}</b><span class="mo">${esc(v.mo)}</span></span><span class="phu">${esc(v.nguon)}</span>`, "")).join("");
+  const tg = ["xau", "bac", "brent", "dxy", "us_10n", "us_vix", "usdcny"].map(k => {
+    const t = VM.d.the.find(x => x.k === k), c = vm_ct(k);
+    if (c) return {k, ten: c.ten, gia: vm_so(c.gt, c.le) + " " + c.dv, doi: c.kt, kieu: c.kieu, cd: c.cd, h: c.huong, ky: c.ky};
+    if (t) return {k, ten: t.ten, gia: vm_so(t.gia, 2) + " " + t.dv, doi: t.doi, kieu: t.kieu_doi === "%" ? "%" : "pt", cd: t.nhom === "hh" ? "hh" : "vang", h: 0, ky: t.ky_so || ngay_vn(t.ngay)};
+    return null; }).filter(Boolean);
+  $("#vm-tgn").innerHTML = tg.map(v => d(`<span class="ng">${esc(v.ky)}</span><span><b>${esc(v.ten)}</b><span class="mo">${esc(v.gia)}</span></span><span class="so ${vm_mau(v.doi, v.h || 1)}">${vm_doi(v.doi, v.kieu, "")}</span>`,
+    `data-cd="${v.cd}" data-k="${v.k}"`)).join("");
+}
+function vm_ban_tin() {
+  const b = VM.d.kt?.ban_tin || {};
+  $("#vm-bt").innerHTML = `<h3>Bản tin ${esc((b.ky || "").toLowerCase())}</h3><p class="phu">Dựng tự động từ số liệu mới nhất của từng chỉ tiêu (kỳ ghi trong ngoặc) – tham khảo, không phải tín hiệu mua bán.</p>
+    <dl>${(b.muc || []).map(m => `<dt>${esc(m.tieu)}</dt><dd>${esc(m.cau)}</dd>`).join("")}</dl>`;
+}
+function vm_ds_bang(cd) {
+  const ct = VM.d.kt?.ct || [];
+  if (cd !== "tim") return ct.filter(r => r.cd === cd);
+  const q = vm_bo_dau(ST.vm_tim).trim(); if (!q) return [];
+  return ct.filter(r => vm_bo_dau(r.ten + " " + r.mo).includes(q));
+}
+function vm_bang(cd) {
+  const ds = vm_ds_bang(cd);
+  if (!ds.some(r => r.k === ST.vm_ct)) ST.vm_ct = ds[0]?.k;
+  $("#vm-bang").innerHTML = ds.length ? ds.map(r => `<tr data-k="${r.k}" class="${r.k === ST.vm_ct ? "chon" : ""}" title="${esc(r.ten + " · " + r.mo + (r.nguon ? " · nguồn: " + r.nguon : ""))}">
+      <td class="trai"><b>${esc(r.ten)}</b>${vm_moi(r) ? '<span class="nhan-san">mới</span>' : ""}<span class="mo">${esc(r.mo)}</span></td>
+      <td class="${r.cu ? "cu" : ""}">${esc(r.ky)}</td><td class="so"><b>${vm_so(r.gt, r.le)}</b></td><td class="trai an-dt" style="color:var(--mo)">${esc(r.dv)}</td>
+      <td class="so ${vm_mau(r.kt, r.huong)}">${vm_doi(r.kt, r.kieu, r.dv)}</td><td class="so ${vm_mau(r.ck, r.huong)}">${vm_doi(r.ck, r.kieu, r.dv)}</td></tr>`).join("")
+    : `<tr><td class="trai" colspan="6" style="color:var(--mo)">${cd === "tim" ? "Không thấy chỉ tiêu khớp" : "Chưa có số liệu"}</td></tr>`;
+}
+async function vm_ve_ct(LW) {                          // biểu đồ lịch sử chỉ tiêu đang chọn
+  const r = vm_ct(ST.vm_ct); if (!r) { $("#vm-ct-ten").textContent = "Chỉ tiêu"; return; }
+  $("#vm-ct-ten").textContent = r.ten; $("#vm-ct-mo").textContent = `${r.dv} · ${r.mo}`;
+  $("#vm-ct-ghi").innerHTML = `<span>${esc(r.ky)}: <b>${vm_so(r.gt, r.le)} ${esc(r.dv)}</b></span><span>kỳ trước ${vm_doi(r.kt, r.kieu, r.dv)}</span><span>cùng kỳ ${vm_doi(r.ck, r.kieu, r.dv)}</span>${r.ghi ? `<span>${esc(r.ghi)}</span>` : ""}<span>nguồn: ${esc(r.nguon || "")}</span>`;
+  if (!VM.ls) {
+    try { const q = await fetch(GOC + "vi_mo/chi_tieu.json?t=" + Math.floor(Date.now() / 600000), {cache: "no-store"});
+      if (!q.ok) throw new Error("HTTP " + q.status); VM.ls = await q.json(); }
+    catch (e) { $("#vm-ct-mo").textContent += " · chưa có lịch sử (" + e.message + ")"; return; }
+  }
+  if (VM.ct_ch) { try { VM.ct_ch.remove(); } catch (e) {} VM.bd = VM.bd.filter(c => c !== VM.ct_ch); VM.ct_ch = null; }
+  const d = vm_loc(VM.ls[r.k]); if (!d.length) return;
+  try {
+    const ch = vm_bd($("#vm-bd-ct"), LW); VM.ct_ch = ch;
+    if (r.kieu === "d") {                                        // cột: chỉ tiêu dạng chênh (cán cân, việc làm…)
+      const s = ch.addSeries(LW.HistogramSeries, {priceLineVisible: false});
+      s.setData(d.map(p => ({...p, color: p.value >= 0 ? (r.kieu === "d" ? "#2E7D32" : "#7fb38a") : "#d1342b"})));
+    } else {
+      const s = ch.addSeries(LW.AreaSeries, {lineColor: "#1f6feb", topColor: "rgba(31,111,235,.18)", bottomColor: "rgba(31,111,235,0)",
+        lineWidth: 2, priceLineVisible: false, pointMarkersVisible: r.ts !== "D" && d.length <= 40});
+      s.setData(d);
+    }
+    ch.timeScale().fitContent();
+  } catch (e) { console.error("vm ct", e); }
+}
 async function ve_vm() {
   const d = VM.d; if (!d) return;
-  $("#vm-phu").textContent = "cập nhật " + d.cap_nhat.slice(11, 16) + " " + ngay_vn(d.cap_nhat.slice(0, 10)) + " · rê / chạm thẻ để xem nguồn";
+  $("#vm-phu").textContent = "cập nhật " + d.cap_nhat.slice(11, 16) + " " + ngay_vn(d.cap_nhat.slice(0, 10));
   $("#vm-ghi").textContent = d.ghi_chu || "";
+  const kt = d.kt || {}, dn = kt.diem_nhan || [];
+  $("#vm-nhan").hidden = !dn.length;
+  $("#vm-nhan").innerHTML = '<span class="nh">ĐIỂM NHẤN</span>' + dn.map(([t, b]) => b ? `<b>${esc(t)}</b>` : esc(t)).join("");
+  const dem = {vang: d.the.filter(t => ["vang", "hh", "ty_gia"].includes(t.nhom)).length, hh: (d.hang_hoa || []).length,
+    ban_tin: (kt.ban_tin?.muc || []).length};
+  $("#vm-cd-ds").innerHTML = (kt.chu_de || []).map(c => `<button type="button" data-cd="${c.k}" title="${esc(c.mo)}">${esc(c.ten)}<span>${dem[c.k] ?? c.n ?? ""}</span></button>`).join("");
+  await ve_cd();
+}
+async function ve_cd() {                               // vẽ chủ đề đang chọn (hoặc kết quả tìm)
+  const d = VM.d; if (!d) return;
+  const ds = d.kt?.chu_de || [];
+  let cd = ST.vm_tim ? "tim" : (ST.vm_cd || "tq");
+  if (cd !== "tim" && !ds.some(c => c.k === cd)) cd = "tq";
+  const c = ds.find(x => x.k === cd) || {ten: "Kết quả tìm", mo: `chỉ tiêu khớp "${ST.vm_tim}"`};
+  $("#vm-cd-ten").textContent = c.ten; $("#vm-cd-mo").textContent = c.mo || "";
+  document.querySelectorAll("#vm-cd-ds button").forEach(b => b.setAttribute("aria-current", String(b.dataset.cd === cd)));
+  const bang = VM_BANG.includes(cd);
+  document.querySelectorAll("#vm .vm-p").forEach(p => p.hidden = !(p.dataset.cd === cd || (p.dataset.cd === "bang" && bang)));
+  $("#vm-ky").hidden = cd === "tq" || cd === "ban_tin";                 // không có biểu đồ theo khoảng
   document.querySelectorAll("#vm-ky button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === String(ST.vm_ky ?? 3))));
   document.querySelectorAll("#vm-xau-k button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === (ST.vm_xau || "ngay"))));
-  vm_the();
+  VM.bd.forEach(x => { try { x.remove(); } catch (e) {} }); VM.bd = []; VM.hh_ch = null; VM.ct_ch = null;
+  if (cd === "tq") { $("#vm-tq").innerHTML = (d.kt?.tq || []).map(k => vm_ct(k)).filter(Boolean).map(vm_the2).join("") || '<p class="phu">Chưa có số liệu</p>'; vm_nhip(); vm_lich(); return; }
+  if (cd === "ban_tin") { vm_ban_tin(); return; }
+  if (bang) vm_bang(cd);
+  if (cd === "vang") vm_the();
+  if (cd === "hh") vm_hh_bang();
   let LW; try { LW = await vm_lw(); } catch (e) { $("#vm-phu").textContent += " · không tải được thư viện biểu đồ"; return; }
-  VM.bd.forEach(c => { try { c.remove(); } catch (e) {} }); VM.bd = [];
-  try {                                               // vàng thế giới: nến ngày (khoảng đang chọn) / nến giờ 1 tháng
-    const ch = vm_bd($("#vm-bd-xau"), LW), gio = (ST.vm_xau || "ngay") === "gio";
-    const s = ch.addSeries(LW.CandlestickSeries, {upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false,
-      wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineVisible: true});
-    const k = +(ST.vm_ky ?? 3), cuoi = d.xau_nen.length ? Date.parse(d.xau_nen[d.xau_nen.length - 1][0]) : 0;
-    const moc = k ? new Date(cuoi - k * 365.25 * 864e5).toISOString().slice(0, 10) : "";
-    s.setData(gio ? d.xau_gio.map(r => ({time: r[0] + 7 * 3600, open: r[1], high: r[2], low: r[3], close: r[4]}))
-      : d.xau_nen.filter(r => r[0] >= moc).map(r => ({time: r[0], open: r[1], high: r[2], low: r[3], close: r[4]})));
-    $("#vm-xau-phu").textContent = "USD/oz · " + (gio ? (d.nguon_gio || "") + " · giờ VN" : (d.chuoi.xau?.nguon || ""));
-    VM.xau_s = s; ch.timeScale().fitContent();
-  } catch (e) { console.error("vm xau", e); }
   const nhieu = (id, ks, buoc = [], trai = []) => { try { const ch = vm_bd($(id), LW, trai.length);
     ks.forEach(k => vm_duong(ch, LW, k, trai.includes(k), buoc.includes(k))); ch.timeScale().fitContent(); }
     catch (e) { console.error("vm " + id, e); } };
-  nhieu("#vm-bd-sjc", ["sjc_ban", "sjc_mua", "tg_vnd"]); vm_cg("#vm-cg-sjc", ["sjc_ban", "sjc_mua", "tg_vnd"]);
-  nhieu("#vm-bd-lsvn", ["vn_dh", "vn_lnh", "vn_1n", "vn_10n", "vn_cpi"], ["vn_dh"]); vm_cg("#vm-cg-lsvn", ["vn_dh", "vn_lnh", "vn_1n", "vn_10n", "vn_cpi"]);
-  nhieu("#vm-bd-my", ["us_tran", "us_ff", "us_sofr", "us_2n", "us_10n", "us_thuc10"], ["us_tran"]); vm_cg("#vm-cg-my", ["us_tran", "us_ff", "us_sofr", "us_2n", "us_10n", "us_thuc10"]);
-  nhieu("#vm-bd-chenh", ["chenh"]);
-  nhieu("#vm-bd-tg", ["usdvnd", "dxy"], [], ["dxy"]); vm_cg("#vm-cg-tg", ["usdvnd", "dxy"]);
-  nhieu("#vm-bd-vn", ["vn_gdp", "vn_sxcn", "vn_banle"], ["vn_gdp"]); vm_cg("#vm-cg-vn", ["vn_gdp", "vn_sxcn", "vn_banle"]);
-  nhieu("#vm-bd-myl", ["us_cpi", "us_vix"], [], ["us_vix"]); vm_cg("#vm-cg-myl", ["us_cpi", "us_vix"]);
-  vm_hh_bang(); ve_hh(LW);
+  if (bang) await vm_ve_ct(LW);
+  if (cd === "tang_truong") { nhieu("#vm-bd-vn", ["vn_gdp", "vn_sxcn", "vn_banle"], ["vn_gdp"]); vm_cg("#vm-cg-vn", ["vn_gdp", "vn_sxcn", "vn_banle"]); }
+  if (cd === "tien_te") { nhieu("#vm-bd-lsvn", ["vn_dh", "vn_lnh", "vn_1n", "vn_10n", "vn_cpi"], ["vn_dh"]); vm_cg("#vm-cg-lsvn", ["vn_dh", "vn_lnh", "vn_1n", "vn_10n", "vn_cpi"]); }
+  if (cd === "the_gioi") {
+    nhieu("#vm-bd-my", ["us_tran", "us_ff", "us_sofr", "us_2n", "us_10n", "us_thuc10"], ["us_tran"]); vm_cg("#vm-cg-my", ["us_tran", "us_ff", "us_sofr", "us_2n", "us_10n", "us_thuc10"]);
+    nhieu("#vm-bd-myl", ["us_cpi", "us_vix"], [], ["us_vix"]); vm_cg("#vm-cg-myl", ["us_cpi", "us_vix"]);
+  }
+  if (cd === "vang") {
+    try {                                             // vàng thế giới: nến ngày (khoảng đang chọn) / nến giờ 1 tháng
+      const ch = vm_bd($("#vm-bd-xau"), LW), gio = (ST.vm_xau || "ngay") === "gio";
+      const s = ch.addSeries(LW.CandlestickSeries, {upColor: "#0f8a4a", downColor: "#d1342b", borderVisible: false,
+        wickUpColor: "#0f8a4a", wickDownColor: "#d1342b", priceLineVisible: true});
+      const k = +(ST.vm_ky ?? 3), cuoi = d.xau_nen.length ? Date.parse(d.xau_nen[d.xau_nen.length - 1][0]) : 0;
+      const moc = k ? new Date(cuoi - k * 365.25 * 864e5).toISOString().slice(0, 10) : "";
+      s.setData(gio ? d.xau_gio.map(r => ({time: r[0] + 7 * 3600, open: r[1], high: r[2], low: r[3], close: r[4]}))
+        : d.xau_nen.filter(r => r[0] >= moc).map(r => ({time: r[0], open: r[1], high: r[2], low: r[3], close: r[4]})));
+      $("#vm-xau-phu").textContent = "USD/oz · " + (gio ? (d.nguon_gio || "") + " · giờ VN" : (d.chuoi.xau?.nguon || ""));
+      ch.timeScale().fitContent();
+    } catch (e) { console.error("vm xau", e); }
+    nhieu("#vm-bd-sjc", ["sjc_ban", "sjc_mua", "tg_vnd"]); vm_cg("#vm-cg-sjc", ["sjc_ban", "sjc_mua", "tg_vnd"]);
+    nhieu("#vm-bd-chenh", ["chenh"]);
+    nhieu("#vm-bd-tg", ["usdvnd", "dxy"], [], ["dxy"]); vm_cg("#vm-cg-tg", ["usdvnd", "dxy"]);
+  }
+  if (cd === "hh") await ve_hh(LW);
+}
+function vm_chon(cd, k) {                              // chuyển chủ đề (+ chọn chỉ tiêu / hàng hoá)
+  ST.vm_tim = ""; $("#vm-tim").value = "";
+  ST.vm_cd = cd; if (k) { if (cd === "hh") { ST.vm_hh = k; ST.vm_hh_k = "gia"; } else ST.vm_ct = k; }
+  luu_st(); ve_cd();
+  const an = parseFloat(getComputedStyle(document.querySelector("header")).getPropertyValue("--an")) || 0;
+  if (scrollY > an + 40) scrollTo({top: an, behavior: "smooth"});
 }
 function vm_hh_bang() {                               // bảng hàng hoá theo nhóm; dòng đang chọn tô nền
   const d = VM.d, ds = d.hang_hoa || [];
@@ -1219,6 +1436,7 @@ async function ve_hh(LW) {                            // biểu đồ hàng hoá
     catch (e) { $("#vm-hh-dv").textContent = "chưa có chuỗi giá (" + e.message + ")"; return; }
   }
   LW = LW || await vm_lw();
+  if (ST.vm_cd !== "hh" || ST.vm_tim) return;                // đã chuyển chủ đề trong lúc tải
   if (VM.hh_ch) { try { VM.hh_ch.remove(); } catch (e) {} VM.bd = VM.bd.filter(c => c !== VM.hh_ch); VM.hh_ch = null; }
   const pt = (ST.vm_hh_k || "gia") === "pt", ks = pt ? ds.filter(x => x.nhom === r.nhom).map(x => x.k) : [r.k];
   $("#vm-hh-ten").textContent = pt ? (VM.d.nhom_hh?.[r.nhom] || "Hàng hoá") + " – % so đầu khoảng" : r.ten;
@@ -1245,15 +1463,23 @@ async function lay_song() {                           // giá XAU/USD trực ti�
 }
 function bat_song() { tat_song(); if (VM.d?.song) { lay_song(); VM.song = setInterval(lay_song, 60000); } }
 function tat_song() { if (VM.song) clearInterval(VM.song); VM.song = null; }
-$("#vm-ky").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_ky = +b.dataset.k; luu_st(); ve_vm(); };
-$("#vm-xau-k").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_xau = b.dataset.k; luu_st(); ve_vm(); };
+$("#vm-ky").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_ky = +b.dataset.k; luu_st(); ve_cd(); };
+$("#vm-xau-k").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_xau = b.dataset.k; luu_st(); ve_cd(); };
 $("#vm-hh").onclick = e => { const tr = e.target.closest("tr[data-k]"); if (!tr) return; ST.vm_hh = tr.dataset.k; luu_st(); vm_hh_bang(); ve_hh(); };
 $("#vm-hh-k").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_hh_k = b.dataset.k; luu_st(); vm_hh_bang(); ve_hh(); };
-$("#vm-the").onclick = e => {                          // chạm thẻ bạc / dầu → chọn ở bảng hàng hoá
+$("#vm-the").onclick = e => {                          // chạm thẻ bạc / dầu → chủ đề Hàng hoá, chọn loại đó
   const o = e.target.closest(".o[data-k]"); if (!o || !(VM.d?.hang_hoa || []).some(r => r.k === o.dataset.k)) return;
-  ST.vm_hh = o.dataset.k; ST.vm_hh_k = "gia"; luu_st(); vm_hh_bang(); ve_hh();
-  $("#vm-hh-the").scrollIntoView({behavior: "smooth", block: "start"}); };
-
+  vm_chon("hh", o.dataset.k); };
+$("#vm-cd-ds").onclick = e => { const b = e.target.closest("button[data-cd]"); if (b) vm_chon(b.dataset.cd); };
+$("#vm-tq").onclick = e => { const o = e.target.closest(".vm-o2[data-k]"); const r = o && vm_ct(o.dataset.k); if (r) vm_chon(r.cd, r.k); };
+$("#vm-bang").onclick = async e => { const tr = e.target.closest("tr[data-k]"); if (!tr) return; ST.vm_ct = tr.dataset.k; luu_st();
+  document.querySelectorAll("#vm-bang tr").forEach(x => x.classList.toggle("chon", x === tr));
+  await vm_ve_ct(await vm_lw()); if (scrollY > 200) $("#vm-ct-ten").scrollIntoView({behavior: "smooth", block: "center"}); };
+for (const id of ["#vm-lich", "#vm-tgn"]) $(id).onclick = e => { const x = e.target.closest(".d[data-cd]"); if (x && x.dataset.cd) vm_chon(x.dataset.cd, x.dataset.k); };
+$("#vm-tim").oninput = e => { ST.vm_tim = e.target.value; ve_cd(); };
+addEventListener("hashchange", () => {                  // #vi-mo/<chủ đề> khi trang đang mở
+  const m = location.hash.match(/^#vi-mo(?:\/([a-z_]+))?/); if (!m) return;
+  if (m[1]) ST.vm_cd = m[1]; ST.vm_tim = ""; if (ST.tab !== "vm") doi_tab("vm"); else ve_cd(); });
 // ---------- điều khiển ----------
 function doi_tab(t) {
   ST.tab = t; luu_st();
@@ -1337,7 +1563,8 @@ async function tai() {
 }
 document.querySelectorAll("#nd-kich button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.k === ST.kich)));
 $("#loc-tim").value = ST.tim;
-if (/^#vi-mo/.test(location.hash)) ST.tab = "vm";          // liên kết "Vĩ mô" từ trang Tổng hợp
+if (/^#vi-mo/.test(location.hash)) {                         // liên kết "Vĩ mô" từ trang Tổng hợp · #vi-mo/<chủ đề>
+  ST.tab = "vm"; const m = location.hash.match(/^#vi-mo\/([a-z_]+)/); if (m) ST.vm_cd = m[1]; }
 doi_tab(["loc", "quy", "vm"].includes(ST.tab) ? ST.tab : "tq");
 tai();
 setInterval(() => { if (!document.hidden) tai().then(ve_trang_thai); }, 10000);   // trong giờ: lượt ~30 giây; ngoài giờ: chỉ bản nền

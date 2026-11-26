@@ -274,6 +274,48 @@ def vix():
     raise ValueError("không có VIX")
 
 
+def world_bank(ma):
+    """World Bank API (năm) – Việt Nam."""
+    j = _get(f"https://api.worldbank.org/v2/country/VNM/indicator/{ma}?format=json&per_page=80", timeout=40).json()
+    return pd.Series({pd.Timestamp(f"{x['date']}-12-31"): float(x["value"]) for x in j[1]
+                      if x.get("value") is not None}).sort_index()
+
+
+def tai_kt(S, N):
+    """Chuỗi cho bảng chỉ tiêu theo chủ đề (vi_mo_kt.CHI_TIEU) → S["kt_<khoá>"], N["kt_<khoá>"]. Lỗi → đệm."""
+    from thi_truong import vi_mo_kt as KT
+    for k, _, ten, ng, *_r in KT.CHI_TIEU:
+        g = ng[3:] if ng.startswith("ld:") else ng
+        yy = g.startswith("yy:")
+        g = g[3:] if yy else g
+        loai, ma = g.split(":", 1)
+        x, n = None, None
+        if loai == "s":
+            x, n = S.get(ma), N.get(ma, "")
+            if isinstance(x, pd.DataFrame):
+                x = x["close"] if "close" in x else x.iloc[:, -1]
+        elif loai == "tv":
+            x, n = _thu("kt_" + ma, lambda m=ma: _tv("ECONOMICS:" + m, "1M")["close"])
+            n = n or f"TradingView ECONOMICS:{ma}"
+        elif loai == "wb":
+            x, n = _thu("wb_" + ma, world_bank, ma)
+            n = n or f"World Bank {ma}"
+        if x is None or not len(pd.Series(x).dropna()):
+            print(f"  ⚠ chỉ tiêu {ten}: không có số")
+            continue
+        if yy:
+            x = KT.so_cung_ky_pt(x, _r[3])
+            n = f"{n} (tính % so cùng kỳ)"
+        S["kt_" + k], N["kt_" + k] = x, n
+    # CPI so cùng kỳ: nối tháng mới từ CPI tháng/tháng (VNIRYY trễ 1 tháng) – kiểm 12 tháng trùng
+    if "kt_vn_cpi" in S and "kt_vn_cpi_mom" in S:
+        mr, n, lech = KT.mo_rong_cpi(S["kt_vn_cpi"], S["kt_vn_cpi_mom"])
+        print(f"  kiểm CPI so cùng kỳ: tính lại từ CPI tháng/tháng – 12 tháng trùng lệch lớn nhất "
+              f"{'–' if lech is None else f'{lech:.3f}'} điểm → nối {n} tháng mới")
+        if n:
+            S["kt_vn_cpi"], N["kt_vn_cpi"] = mr, N["kt_vn_cpi"] + f" + {n} tháng mới tính từ CPI tháng/tháng (VNIRMM)"
+
+
 def tai_hang_hoa():
     """→ ({khoá: Series}, {khoá: nguồn}, {khoá: so chéo (ngày, tương quan, lệch %)}). Nguồn đầu lỗi → nguồn sau → đệm."""
     S, N, K = {}, {}, {}
@@ -377,6 +419,7 @@ def tai_tat_ca():
     x, n = _thu("us_vix", vix)
     if x is not None:
         S["us_vix"], N["us_vix"] = x, n
+    tai_kt(S, N)
     hs, hn, hk = tai_hang_hoa()
     for k, x in hs.items():
         S["hh_" + k], N["hh_" + k] = x, hn[k]
@@ -559,7 +602,12 @@ def dung(S, N, P, bay_gio=None):
         T.append({"k": "vcb", "nhom": "ty_gia", "ten": "USD/VND Vietcombank (bán)", "gia": vcb["ban"], "dv": "đồng",
                   "doi": None, "kieu_doi": "%", "ky": "", "ngay": f"{bay_gio:%Y-%m-%d}",
                   "nguon": f"Vietcombank – mua {vcb['mua']:,.0f} · chuyển khoản {vcb['ck']:,.0f}".replace(",", ".")})
+    from thi_truong import vi_mo_kt as KT
+    ch = {k[3:]: v for k, v in S.items() if k.startswith("kt_")}
+    kt, kt_ls, kt_dem = KT.dung_kt(ch, {k[3:]: v for k, v in N.items() if k.startswith("kt_")},
+                                   pd.Timestamp(bay_gio.date()), P.get("kt_dem"))
     return {"cap_nhat": f"{bay_gio:%Y-%m-%d %H:%M}", "nhom": NHOM, "the": T, "chuoi": C, "xau_nen": nen, "xau_gio": gio,
+            "kt": kt, "kt_ls": kt_ls, "kt_dem": kt_dem,
             "nguon_gio": N.get("xau_gio", ""), "song": P.get("song"), "nhom_hh": NHOM_HH, "hang_hoa": bang,
             "hh_chuoi": hh_chuoi,
             "ghi_chu": "Tham khảo – không phải tín hiệu mua bán. Lãi suất / vĩ mô đã kiểm (backtest): không giúp canh mua bán "
@@ -572,8 +620,25 @@ def main(argv=None):
     p.add_argument("--ra", default=os.path.join("docs", "vi_mo"))
     a = p.parse_args(argv)
     S, N, P = tai_tat_ca()
+    f_dem = os.path.join(DEM, "kt_thay.json")                      # "vừa có số": ngày thấy kỳ mới của từng chỉ tiêu
+    try:
+        with open(f_dem, encoding="utf-8") as f:
+            P["kt_dem"] = json.load(f)
+    except (OSError, ValueError):
+        P["kt_dem"] = {}
     kq = dung(S, N, P)
     os.makedirs(a.ra, exist_ok=True)
+    os.makedirs(DEM, exist_ok=True)
+    with open(f_dem, "w", encoding="utf-8") as f:
+        json.dump(kq.pop("kt_dem"), f, ensure_ascii=False)
+    with open(os.path.join(a.ra, "chi_tieu.json"), "w", encoding="utf-8") as f:
+        json.dump(kq.pop("kt_ls"), f, ensure_ascii=False, separators=(",", ":"))
+    for r in kq["kt"]["ct"]:
+        print(f"  [{r['cd']}] {r['ten']}: {r['gt']} {r['dv']} ({r['ky']}) · kỳ trước {r['kt']} · cùng kỳ {r['ck']} · {r['ghi']}"
+              f" · {r['nguon']}" + (" · ⚠ CŨ" if r.get("cu") else ""))
+    print("  Điểm nhấn: " + "".join(t for t, _ in kq["kt"]["diem_nhan"]))
+    for m in kq["kt"]["ban_tin"]["muc"]:
+        print(f"  Bản tin – {m['tieu']}: {m['cau']}")
     hh = kq.pop("hh_chuoi")
     with open(os.path.join(a.ra, "hang_hoa.json"), "w", encoding="utf-8") as f:
         json.dump(hh, f, ensure_ascii=False, separators=(",", ":"))

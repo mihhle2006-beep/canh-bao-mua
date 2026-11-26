@@ -100,6 +100,8 @@ def _site(tmp_path, monkeypatch):
     (site / "vi_mo").mkdir()                                    # tab Vĩ mô đọc <GOC>vi_mo/du_lieu.json (GOC = "../" khi chạy cục bộ)
     vm = vi_mo_web.dung(*_mau(), bay_gio=datetime(2026, 11, 25, 22, 0, tzinfo=vi_mo_web.VN))
     (site / "vi_mo" / "hang_hoa.json").write_text(json.dumps(vm.pop("hh_chuoi")), encoding="utf-8")   # như main(): tách file
+    (site / "vi_mo" / "chi_tieu.json").write_text(json.dumps(vm.pop("kt_ls")), encoding="utf-8")
+    vm.pop("kt_dem")
     (site / "vi_mo" / "du_lieu.json").write_text(json.dumps(vm, ensure_ascii=False), encoding="utf-8")
     return site
 
@@ -116,7 +118,7 @@ TRANG = [
     "ma/index.html#loc||cho:500",
     "ma/index.html#danh-muc|#dm-mau|click:#dm-mau;cho:1500",     # Danh mục của tôi: danh mục mẫu → bảng, rủi ro, tỷ trọng gợi ý
     "bang/index.html||cho:800",                                 # Bảng thị trường
-    "bang/index.html||vm",                                      # Bảng thị trường – tab Vĩ mô (thẻ, 9 biểu đồ, bảng hàng hoá)
+    "bang/index.html||vm",                                      # Bảng thị trường – tab Vĩ mô (chủ đề, thẻ, nhịp, bảng, biểu đồ)
 ]
 
 
