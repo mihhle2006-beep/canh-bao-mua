@@ -172,3 +172,18 @@ def test_nhap_khau_khong_lay_tong_xuat_nhap():
          "liệu sơ bộ, cán cân thương mại hàng hóa tháng Chín xuất siêu 1,27 tỷ USD.")
     d = nso.doc(t)
     assert (d["xk"], d["nk"], d["can_can"], d["nk_yoy"]) == (59.48, 58.21, 1.27, 45.8)
+
+
+def test_bop_va_roa_nhnn():
+    h = ("<p>NĂM 2026 Quý II NĂM 2026 Đơn vị: Triệu USD</p><table><tr><td>A. Cán cân vãng lai</td><td>-11101</td></tr>"
+         "<tr><td>Đầu tư trực tiếp (ròng)</td><td>5900</td></tr><tr><td>Đầu tư gián tiếp (ròng)</td><td>-1505</td></tr>"
+         "<tr><td>D. Lỗi và Sai sót</td><td>9283</td></tr><tr><td>E. Cán cân tổng thể</td><td>81</td></tr></table>")
+    assert nso.bop(h) == [(pd.Timestamp("2026-04-01"), {"ca": -11101.0, "fdi": 5900.0, "fpi": -1505.0, "tong_the": 81.0})]
+    assert nso.bop("<p>trang lỗi</p>") == []
+    lk = ('<a href="https://sbv.gov.vn/vi/thong-ke-mot-so-chi-tieu-co-ban/-/asset_publisher/whgo/content/a"> THỐNG KÊ MỘT SỐ CHỈ TIÊU '
+          'CƠ BẢN ROA,ROE (Quý III/2026)</a><a href="https://sbv.gov.vn/vi/x/content/b">THỐNG KÊ MỘT SỐ CHỈ TIÊU CƠ BẢN (Đến thời '
+          'điểm 30/09/2026)</a><a href="https://sbv.gov.vn/vi/x/content/c">ROA,ROE (Quý II/2026)</a>')
+    assert [q for _, q in nso.bai_roa(lk)] == [pd.Timestamp("2026-07-01"), pd.Timestamp("2026-04-01")]
+    bai = ("<table><tr><td>Loại hình TCTD</td><td>ROA</td><td>ROE</td></tr><tr><td>(1)</td><td>(2)</td><td>(3)</td></tr>"
+           "<tr><td>NHTM Nhà Nước</td><td>0,92</td><td>13,77</td></tr><tr><td>Toàn hệ thống</td><td>1,02</td><td>11,44</td></tr></table>")
+    assert nso.roa_roe(bai) == (1.02, 11.44) and nso.roa_roe("<p>x</p>") is None

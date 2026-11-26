@@ -288,6 +288,38 @@ def m2(html):
     return out
 
 
+# ------------------------------------------------------------------ NHNN – cán cân thanh toán (quý mới nhất), ROA / ROE hệ thống
+NHNN_BOP = "https://sbv.gov.vn/vi/can-can-thanh-toan-quoc-te"     # dò 26/11/2026 (vi_mo_nguon.do_vn11)
+NHNN_CTCB = "https://sbv.gov.vn/vi/thong-ke-mot-so-chi-tieu-co-ban"
+_BOP = {"ca": "A. Cán cân vãng lai", "fdi": "Đầu tư trực tiếp (ròng)", "fpi": "Đầu tư gián tiếp (ròng)", "tong_the": "E. Cán cân tổng thể"}
+_QUY = {"I": 1, "II": 4, "III": 7, "IV": 10}
+
+
+def bop(html):
+    """Trang cán cân thanh toán → [(tháng đầu quý, {ca, fdi, fpi, tong_the: triệu USD})] (bảng chỉ có quý mới nhất)."""
+    t = chu(html)
+    q = re.search(r"Quý ([IV]+) NĂM (\d{4})", t)
+    if not q or q[1] not in _QUY:
+        return []
+    x = {k: float(m[1].replace(".", "")) for k, nhan in _BOP.items() if (m := re.search(re.escape(nhan) + r" (-?\d[\d.]*)", t))}
+    return [(pd.Timestamp(year=int(q[2]), month=_QUY[q[1]], day=1), x)] if x else []
+
+
+def bai_roa(html):
+    """Trang "Thống kê một số chỉ tiêu cơ bản" → [(đường dẫn bài ROA/ROE, tháng đầu quý)] theo chữ liên kết "ROA,ROE (Quý III/2026)"."""
+    out = []
+    for m in re.finditer(r'<a[^>]+href="(https://sbv\.gov\.vn/[^"]+)"[^>]*>\s*[^<]{0,80}ROA[^<]{0,20}Quý ([IV]+)/(\d{4})', html):
+        if m[2] in _QUY:
+            out.append((m[1], pd.Timestamp(year=int(m[3]), month=_QUY[m[2]], day=1)))
+    return out
+
+
+def roa_roe(html):
+    """Bài ROA/ROE theo loại hình TCTD → (ROA %, ROE %) dòng "Toàn hệ thống" | None."""
+    m = re.search(r"Loại hình TCTD ROA ROE.{0,800}?Toàn hệ thống (\d+,\d+) (\d+,\d+)", chu(html))
+    return (so(m[1]), so(m[2])) if m else None
+
+
 # ------------------------------------------------------------------ CafeF – tin vĩ mô (RSS)
 CAFEF_RSS = "https://cafef.vn/vi-mo-dau-tu.rss"
 
