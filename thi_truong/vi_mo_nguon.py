@@ -1120,8 +1120,41 @@ def do_vn15():
 #   (sụt giảm −63 → −40 %) nhưng rổ đường quá yếu – vẫn kém giữ VN-Index. Ghi chú trang sửa theo kết luận này.
 
 
+# Vòng 16 (chủ quỹ: "cải thiện bộ forecast… có chỉ số nào dùng được nữa không"): in GIÁ TRUNG BÌNH THÁNG 2010 → nay của các hàng
+# hoá đã gắn mã ngành (CAP12/13) + lãi suất / tín dụng TradingView ECONOMICS → chép về máy, kiểm dự phóng LNST (danh-muc ptcp/
+# du_phong) có / không điều chỉnh theo giá hàng hoá. Số công khai – không đọc danh mục.
+HH16 = [("hrc", "tv:COMEX:HRC1!"), ("quang_sat", "tv:SGX:FEF1!"), ("brent", "yf:BZ=F"), ("khi", "yf:NG=F"), ("than", "tv:ICEEUR:NCF1!"),
+        ("cao_su", "tv:SGX:TF1!"), ("ure", "tv:CBOT:UFV1!"), ("ure_tq", "tv:ZCE:UR1!"), ("duong", "yf:SB=F"), ("gao", "yf:ZR=F"),
+        ("heo", "yf:HE=F"), ("ngo", "yf:ZC=F"), ("dau_tuong", "yf:ZS=F"), ("bong", "yf:CT=F"), ("pta", "tv:ZCE:TA1!"),
+        ("bdi", "tv:INDEX:BDI"), ("dong", "yf:HG=F"), ("nhom", "yf:ALI=F"), ("vang", "yf:GC=F"), ("ca_phe", "yf:KC=F")]
+KT16 = "VNLTPS VNIBR VNBLR VNDR VNIPMM VNRSMM VNCC VNBC VNEXPP VNIMPP VNHPI".split()
+
+
+def do_vn16():
+    from thi_truong import vi_mo_web as W
+    for k, ng in HH16:
+        try:
+            s = W._lay(ng, "2010-01-01").dropna()
+            m = s.groupby(s.index.to_period("M")).mean()
+            print(f"HH16 {k} {m.index[0]} " + ",".join(f"{v:.5g}" for v in m.values), flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {k}: {type(e).__name__} {str(e)[:60]}", flush=True)
+    for ma in KT16:
+        try:
+            s = tv("ECONOMICS:" + ma, "1M").dropna()
+            print(f"KT16 {ma} {s.index[0]:%Y-%m} {s.index[-1]:%Y-%m} " + ",".join(f"{v:.5g}" for v in s.values[-200:]), flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {ma}: {type(e).__name__} {str(e)[:60]}", flush=True)
+
+
+# Vòng 17 (26/11/2026) – KẾT QUẢ kiểm ĐẶT TRƯỚC H2 (dự phóng LNST năm của web + điều chỉnh phần quý còn lại theo giá hàng hoá
+# đã có tới ngày dự phóng, 9 nhóm mã: HRC, Brent, cao su, urê, đường, gạo, heo, bông; β học 2013–2020, kiểm 2021–2025):
+# β +0,49 (t 1,95 – trượt B1), sai số trung vị 2021–25 gốc 24,6 % → điều chỉnh 25,2 % (xấu hơn), 4/5 năm, 5/8 nhóm → KHÔNG ĐẠT.
+# Giá hàng hoá không làm dự phóng LNST sát hơn (thông tin đã nằm trong các quý vừa công bố). Mã thử + bảng gốc đã xoá.
+
+
 def main():
-    do_vn15()  # vòng 15 (đã kết luận ở trên)
+    do_vn16()  # vòng 16 (dữ liệu tháng hàng hoá – kết luận vòng 17 ở trên)
     return 0
 
 

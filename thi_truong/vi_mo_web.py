@@ -334,6 +334,16 @@ def hh_theo_ma(bang, chuoi):
     return out
 
 
+NH_KT = ["vn_tin_dung", "vn_du_no", "vn_tg_dc", "vn_m2_ytd", "vn_roe_nh", "vn_roa_nh", "vn_dh", "vn_lnh", "vn_1n", "vn_10n"]
+
+
+def ngan_hang(kt):
+    """Chỉ tiêu tiền tệ / ngân hàng toàn hệ thống (bảng kt["ct"]) → file nhỏ cho khối "Ngân hàng – toàn hệ thống" ở Tra cứu mã."""
+    co = {r["k"]: r for r in kt.get("ct") or []}
+    giu = ("k", "ten", "dv", "ky", "ngay", "gt", "le", "kt", "ck", "kieu", "sp", "ghi", "nguon", "u", "cu")
+    return [{x: co[k].get(x) for x in giu} for k in NH_KT if k in co]
+
+
 def tai_nso(S, N, P):
     """Cục Thống kê (báo cáo tháng / quý – nhớ từng báo cáo đã đọc), NHNN (tín dụng – cộng dồn theo lượt), CafeF RSS (tin vĩ mô)."""
     from thi_truong import nso
@@ -807,6 +817,8 @@ def main(argv=None):
         json.dump(kq, f, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(a.ra, "hh_ma.json"), "w", encoding="utf-8") as f:      # Tra cứu mã: khối "Hàng hoá liên quan"
         json.dump(hh_theo_ma(kq["hang_hoa"], hh), f, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(a.ra, "ngan_hang.json"), "w", encoding="utf-8") as f:   # Tra cứu mã: khối "Ngân hàng – toàn hệ thống"
+        json.dump({"cap_nhat": kq["cap_nhat"], "ct": ngan_hang(kq["kt"])}, f, ensure_ascii=False, separators=(",", ":"))
     for r in kq["hang_hoa"]:
         print(f"  {r['ten']}: {r['gia']:,} {r['dv']} ({r['ngay']}) · ngày {r['d1']} % · tháng {r['m1']} % · năm {r['y1']} % · "
               f"{r['nguon']}" + (" · ⚠ CŨ" if r["cu"] else ""))
