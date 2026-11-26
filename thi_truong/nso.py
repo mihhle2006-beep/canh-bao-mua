@@ -129,11 +129,16 @@ MAU = {
     "fdi_th": (rf"[Vv]ốn đầu tư trực tiếp nước ngoài thực hiện tại Việt Nam [^.]{{0,80}}?(?:ước tính |ước )?đạt {_SO} tỷ USD",
                lambda g: so(g[0])),
     "fdi_dk": (rf"[Tt]ổng vốn đầu tư nước ngoài đăng ký vào Việt Nam [^.]{{0,160}}?đạt {_SO} tỷ USD", lambda g: so(g[0])),
-    # thu / chi NSNN lũy kế từ đầu năm (câu "…đạt X nghìn tỷ đồng, bằng Y% dự toán năm" – span không qua dấu chấm câu)
-    "thu_lk": (rf"[Tt]ổng thu ngân sách [Nn]hà nước [^.]*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán", lambda g: so(g[0])),
-    "thu_dt": (rf"[Tt]ổng thu ngân sách [Nn]hà nước [^.]*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán", lambda g: so(g[1])),
-    "chi_lk": (rf"chi ngân sách [Nn]hà nước [^.]*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán", lambda g: so(g[0])),
-    "chi_dt": (rf"chi ngân sách [Nn]hà nước [^.]*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán", lambda g: so(g[1])),
+    # thu / chi NSNN lũy kế từ đầu năm (câu "…đạt X nghìn tỷ đồng, bằng Y% dự toán năm" – span không qua dấu chấm câu, không
+    # vắt sang câu bên kia: tiêu đề "Thu, chi ngân sách Nhà nước Tổng thu …" từng làm chi bắt số của thu – báo cáo 10/2025)
+    "thu_lk": (rf"[Tt]ổng thu ngân sách [Nn]hà nước (?:(?!chi ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[0])),
+    "thu_dt": (rf"[Tt]ổng thu ngân sách [Nn]hà nước (?:(?!chi ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[1])),
+    "chi_lk": (rf"chi ngân sách [Nn]hà nước (?:(?!thu ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[0])),
+    "chi_dt": (rf"chi ngân sách [Nn]hà nước (?:(?!thu ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[1])),
     "dn_rut_lui": (rf"[Ss]ố doanh nghiệp rút lui khỏi thị trường là (?:gần |hơn |khoảng )?{_SO} nghìn doanh nghiệp",
                    lambda g: so(g[0]) * 1000),
     # báo cáo quý
@@ -218,7 +223,7 @@ def kiem(df):
     return df
 
 
-PHIEN = 3                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
+PHIEN = 4                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
 
 
 def tai_dem(lay, dem=None, trang=3):

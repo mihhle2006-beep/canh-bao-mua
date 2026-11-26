@@ -141,7 +141,7 @@ def test_thu_chi_ngan_sach_va_dn_rut_lui():
           "2026 ước đạt 2.187,3 nghìn tỷ đồng, bằng 86,5% dự toán năm và tăng 12,1%. Tổng chi ngân sách Nhà nước tháng Chín ước đạt "
           "256,8 nghìn tỷ đồng. Tính chung chín tháng năm 2026, chi ngân sách Nhà nước ước đạt 1.873,7 nghìn tỷ đồng, bằng 59,3% dự "
           "toán năm. Số doanh nghiệp rút lui khỏi thị trường là 172,0 nghìn doanh nghiệp, giảm 1,7%")
-    t6 = ("Tổng thu ngân sách Nhà nước tháng Sáu ước đạt 205,0 nghìn tỷ đồng, lũy kế tổng thu ngân sách Nhà nước sáu tháng đầu năm "
+    t6 = ("8. Thu, chi ngân sách Nhà nước Tổng thu ngân sách Nhà nước tháng Sáu ước đạt 205,0 nghìn tỷ đồng, lũy kế tổng thu ngân sách Nhà nước sáu tháng đầu năm "
           "2026 đạt 1.568,2 nghìn tỷ đồng, bằng 62,0% dự toán năm. Tổng chi ngân sách Nhà nước tháng Sáu ước đạt 292,3 nghìn tỷ "
           "đồng, lũy kế sáu tháng đầu năm 2026 đạt 1.149,1 nghìn tỷ đồng, bằng 36,4% dự toán năm")
     for t, kq in ((t9, (2187.3, 86.5, 1873.7, 59.3, 172000)), (t6, (1568.2, 62.0, 1149.1, 36.4, None))):
