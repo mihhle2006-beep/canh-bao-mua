@@ -715,8 +715,53 @@ def do_vn8():
                   "nhập khẩu hàng hóa tháng", "CPI bình quân", "Bình quân"):
             print(f"   {ky} [{k}] {_quanh(tt, k, 1, 300)}")
 
+TV9_VN = ("VNGDPQQ VNGDPPC VNLF VNYUR VNFI VNCPI VNCCPI VNIMPP VNEXPP VNM0 VNM1 VNM3 VNLTPS VNPSC VNBLR VNDR VNIBR VNCBBS VNCAG "
+          "VNED VNTOT VNCI VNREM VNGR VNGBV VNGREV VNGSPE VNGDGV VNIPMM VNEP VNSP VNCAR VNTVS VNBC VNCC VNCS VNRSMM VNCPIH VNHPI "
+          "VNCOR VNGFCFY VNSTR VNIM VNEX").split()
+TV9_TG = ("CNM2 CNEXPYY CNIMPYY CNBOT CNFER CNPPIYY USRSYY USIPYY USPCEPIYY USCCPI KREXPYY KRIMPYY TWEXPYY TWEXO JPEXPYY "
+          "INGDPYY IDGDPYY MYGDPYY PHGDPYY SGGDPYY THEXPYY").split()
+
+
+def do_vn9():
+    """Vòng 9 (26/11/2026, chủ quỹ: "thêm nguồn cho chỉ số vĩ mô"): mã TradingView ECONOMICS chưa dùng (VN + khu vực),
+    trang thống kê NHNN (M2 / tiền gửi / lãi suất), câu Cục Thống kê còn hụt (xuất khẩu T9, dầu thô, vốn NSNN, thu chi NSNN)."""
+    import requests
+    from thi_truong import nso
+    for ma in TV9_VN + TV9_TG:
+        try:
+            s = tv("ECONOMICS:" + ma, "1M").dropna()
+            print(f"✔ {ma}: {len(s)} kỳ {s.index[0]:%m/%Y}→{s.index[-1]:%m/%Y} · cuối {s.iloc[-1]:,.4g} · trước {s.iloc[-2]:,.4g}", flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {ma}: {type(e).__name__} {str(e)[:60]}", flush=True)
+    g = lambda u: requests.get(u, headers={**UA, "Accept-Language": "vi"}, timeout=50).text   # noqa: E731
+    try:
+        h = g(nso.NHNN_TD)
+        ln = sorted(set(re.findall(r'href="(https?://(?:www\.)?sbv\.gov\.vn/[^"#?]+)"', h)))
+        print(f"NHNN: {len(ln)} liên kết · " + " · ".join(u for u in ln if re.search(r"phuong-tien|tien-gui|lai-suat|thong-ke|ty-gia|"
+                                                                                     r"can-can|du-tru|tin-dung|cung-tien|m2", u)))
+        for u in ("https://sbv.gov.vn/tong-phuong-tien-thanh-toan", "https://sbv.gov.vn/tong-phuong-tien-thanh-toan-dttktt",
+                  "https://sbv.gov.vn/tien-gui-cua-khach-hang-dttktt", "https://sbv.gov.vn/lai-suat-binh-quan-lien-ngan-hang"):
+            try:
+                t = _chu(g(u))
+                print(f"   {u[20:]}: {len(t)} ký tự · {_quanh(t, 'Tháng', 1, 260) or t[:200]}")
+            except Exception as e:                                    # noqa: BLE001
+                print(f"   {u[20:]}: {type(e).__name__} {str(e)[:60]}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ NHNN: {type(e).__name__} {str(e)[:80]}")
+    ds = {f"{k:%Y-%m}": u for u, k, _ in nso.danh_sach(g, trang=2)}
+    for ky in ("2026-09", "2026-10", "2026-06"):
+        if ky not in ds:
+            print(f"   {ky}: không có báo cáo")
+            continue
+        tt = nso.chu(g(ds[ky]))
+        for k in ("xuất khẩu hàng hóa", "Kim ngạch xuất khẩu", "dầu thô", "ngân sách Nhà nước", "ngân sách nhà nước", "Tổng thu ngân sách",
+                  "Tổng chi ngân sách", "vận chuyển hàng hóa", "Điện sản xuất", "giải thể", "rút lui khỏi thị trường"):
+            for c in _quanh(tt, k, 2 if k in ("dầu thô", "ngân sách Nhà nước") else 1, 260):
+                print(f"   {ky} [{k}] {c}")
+
+
 def main():
-    do_vn8()  # vòng 8 đã kết luận (nso._gia); ô thu_nguon chạy lại để xem câu
+    do_vn9()  # vòng 9: mã TradingView ECONOMICS chưa dùng · NHNN · câu Cục Thống kê còn hụt
     return 0
 
 

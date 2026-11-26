@@ -129,6 +129,18 @@ MAU = {
     "fdi_th": (rf"[Vv]ốn đầu tư trực tiếp nước ngoài thực hiện tại Việt Nam [^.]{{0,80}}?(?:ước tính |ước )?đạt {_SO} tỷ USD",
                lambda g: so(g[0])),
     "fdi_dk": (rf"[Tt]ổng vốn đầu tư nước ngoài đăng ký vào Việt Nam [^.]{{0,160}}?đạt {_SO} tỷ USD", lambda g: so(g[0])),
+    # thu / chi NSNN lũy kế từ đầu năm (câu "…đạt X nghìn tỷ đồng, bằng Y% dự toán năm" – span không qua dấu chấm câu, không
+    # vắt sang câu bên kia: tiêu đề "Thu, chi ngân sách Nhà nước Tổng thu …" từng làm chi bắt số của thu – báo cáo 10/2025)
+    "thu_lk": (rf"[Tt]ổng thu ngân sách [Nn]hà nước (?:(?!chi ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[0])),
+    "thu_dt": (rf"[Tt]ổng thu ngân sách [Nn]hà nước (?:(?!chi ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[1])),
+    "chi_lk": (rf"chi ngân sách [Nn]hà nước (?:(?!thu ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[0])),
+    "chi_dt": (rf"chi ngân sách [Nn]hà nước (?:(?!thu ngân sách)[^.])*?đạt {_SO} nghìn tỷ đồng, bằng {_SO}% dự toán",
+               lambda g: so(g[1])),
+    "dn_rut_lui": (rf"[Ss]ố doanh nghiệp rút lui khỏi thị trường là (?:gần |hơn |khoảng )?{_SO} nghìn doanh nghiệp",
+                   lambda g: so(g[0]) * 1000),
     # báo cáo quý
     "gdp_nn": (rf"khu vực nông, lâm nghiệp và thủy sản tăng {_SO}%", lambda g: so(g[0])),
     "gdp_cn": (rf"khu vực công nghiệp và xây dựng tăng {_SO}%", lambda g: so(g[0])),
@@ -194,6 +206,9 @@ def kiem(df):
     for c in ("dn_moi", "dn_quay_lai", "dn_tam_ngung"):
         if c in df:
             df.loc[df[c] > 60000, c] = float("nan")                  # bắt nhầm số cộng dồn nhiều tháng
+    for c in ("thu_dt", "chi_dt"):
+        if c in df:
+            df.loc[(df[c] <= 0) | (df[c] > 150), c] = float("nan")     # % dự toán năm ngoài 0–150 → bắt nhầm câu
     for c in ("xk", "nk"):
         if c in df:
             df.loc[(df[c] < 5) | (df[c] > 150), c] = float("nan")
@@ -208,19 +223,19 @@ def kiem(df):
     return df
 
 
-PHIEN = 2                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
+PHIEN = 4                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
 
 
 def tai_dem(lay, dem=None, trang=3):
     """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới. → (df, dem)."""
-    dem = {u: v for u, v in (dem or {}).items() if v.get("_v") == PHIEN}   # bộ đọc đổi → đọc lại
+    dem = dict(dem or {})
     for url, ky, _ in danh_sach(lay, trang):
-        if url in dem:
-            continue
+        if dem.get(url, {}).get("_v") == PHIEN:
+            continue                                                 # bộ đọc đổi (PHIEN) → đọc lại
         try:
             d = doc(chu(lay(url)))
-        except Exception:                                            # noqa: BLE001 – lượt sau thử lại
-            continue
+        except Exception:                                            # noqa: BLE001 – lượt sau thử lại; giữ bản đọc cũ
+            continue                                                 # (26/11: đọc lại cả 40 báo cáo → trang chặn → mất hết)
         dem[url] = {**d, "_ky": f"{ky:%Y-%m}", "_v": PHIEN}
     hang = {}
     for v in dem.values():
@@ -255,6 +270,20 @@ def tin_dung(html):
             continue
         th, nam = ky[-1]
         out.append((pd.Timestamp(year=int(nam), month=int(th), day=1), so(so_[0]), so(so_[1])))
+    return out
+
+
+# ------------------------------------------------------------------ NHNN – tổng phương tiện thanh toán (M2), tiền gửi dân cư
+NHNN_M2 = "https://sbv.gov.vn/vi/tong-phuong-tien-thanh-toan"     # dò 26/11/2026 (vi_mo_nguon.do_vn9): chỉ tháng mới nhất
+
+
+def m2(html):
+    """Trang NHNN → [(tháng, M2 tỷ đồng, M2 tăng so cuối năm trước %, tiền gửi dân cư tăng %)]; kỳ = "Tháng M năm YYYY" gần nhất phía trước."""
+    t, out = chu(html), []
+    for m in re.finditer(rf"Tổng phương tiện thanh toán\W{{0,6}}{_SO} (-?[\d,]+).{{0,160}}?Tiền gửi của dân cư {_SO} (-?[\d,]+)", t):
+        ky = re.findall(r"[Tt]háng (\d{1,2}) năm (\d{4})", t[max(0, m.start() - 400):m.start()])
+        if ky:
+            out.append((pd.Timestamp(year=int(ky[-1][1]), month=int(ky[-1][0]), day=1), so(m[1]), so(m[2]), so(m[4])))
     return out
 
 

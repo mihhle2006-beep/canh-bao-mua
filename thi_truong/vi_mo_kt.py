@@ -24,14 +24,14 @@ import pandas as pd
 # (khoá, tên, mô tả)
 CHU_DE = [("tq", "Tổng quan", "12 chỉ số chính: số mới nhất, thay đổi, xu hướng 24 kỳ"),
           ("ban_tin", "Bản tin tháng", "tóm tắt số liệu tháng mới nhất – dựng tự động từ số liệu"),
-          ("tang_truong", "Tăng trưởng", "GDP theo quý, GDP năm, thu nhập đầu người, đầu tư, nợ công"),
-          ("san_xuat", "Sản xuất", "sản xuất công nghiệp, khai thác dầu thô"),
-          ("gia", "Lạm phát & giá", "CPI, lạm phát lõi, giá sản xuất, giá xăng"),
-          ("tien_te", "Tiền tệ & lãi suất", "lãi điều hành, liên ngân hàng, lợi suất TPCP, cung tiền, dự trữ ngoại hối, tỷ giá"),
-          ("thuong_mai", "Thương mại & vốn ngoại", "xuất nhập khẩu, cán cân thương mại, FDI, cán cân vãng lai"),
-          ("tieu_dung", "Tiêu dùng & du lịch", "bán lẻ, khách quốc tế"),
+          ("tang_truong", "Tăng trưởng", "GDP theo quý, GDP năm, thu nhập đầu người, đầu tư, thu chi ngân sách, nợ công"),
+          ("san_xuat", "Sản xuất", "sản xuất công nghiệp, doanh nghiệp thành lập / rút lui, khai thác dầu thô"),
+          ("gia", "Lạm phát & giá", "CPI, lạm phát lõi, lương thực – thực phẩm, giá sản xuất, giá xăng"),
+          ("tien_te", "Tiền tệ & lãi suất", "lãi điều hành, liên ngân hàng, lợi suất TPCP, tín dụng, cung tiền M2, tiền gửi, dự trữ ngoại hối, tỷ giá"),
+          ("thuong_mai", "Thương mại & vốn ngoại", "xuất nhập khẩu, cán cân thương mại, FDI, cán cân vãng lai, nợ nước ngoài"),
+          ("tieu_dung", "Tiêu dùng & du lịch", "bán lẻ, khách quốc tế, ô tô"),
           ("lao_dong", "Lao động & dân số", "thất nghiệp, lao động, thu nhập, lương tối thiểu, dân số"),
-          ("the_gioi", "Thế giới", "Mỹ, Trung Quốc, châu Âu, Nhật, Hàn Quốc, Thái Lan"),
+          ("the_gioi", "Thế giới", "Mỹ, Trung Quốc, châu Âu, Nhật, Hàn Quốc, Đài Loan, ASEAN"),
           ("vang", "Vàng & tỷ giá", "vàng thế giới, SJC, nhẫn, chênh lệch, tỷ giá – biểu đồ"),
           ("hh", "Hàng hoá", "22 hàng hoá thế giới – giá, % thay đổi, ngành VN liên quan")]
 
@@ -58,18 +58,28 @@ CHI_TIEU = [
      f"vốn đầu tư thực hiện từ ngân sách nhà nước · {TC}"),
     ("vn_nsnn_kh", "tang_truong", "Vốn NSNN lũy kế / kế hoạch năm", "ld:s:nso_nsnn_kh", "% KH", 1, "pt", "M", 1,
      f"cộng dồn từ đầu năm · {TC}"),
+    ("vn_thu_ns", "tang_truong", "Thu NSNN lũy kế / dự toán năm", "ld:s:nso_thu_dt", "% dự toán", 1, "pt", "M", 1,
+     f"tổng thu ngân sách nhà nước cộng dồn từ đầu năm · {TC}"),
+    ("vn_chi_ns", "tang_truong", "Chi NSNN lũy kế / dự toán năm", "ld:s:nso_chi_dt", "% dự toán", 1, "pt", "M", 0,
+     f"tổng chi ngân sách nhà nước cộng dồn từ đầu năm · {TC}"),
+    ("vn_can_doi_ns", "tang_truong", "Thu − chi NSNN (lũy kế)", "ld:s:nso_can_doi_ns", "nghìn tỷ đồng", 1, "d", "M", 1,
+     f"dương: thu vượt chi từ đầu năm · {TC}"),
     ("vn_no_cong", "tang_truong", "Nợ Chính phủ / GDP", "tv:VNGDG", "% GDP", 1, "pt", "Y", -1, "năm · TradingView ECONOMICS"),
     # Sản xuất
     ("vn_sxcn", "san_xuat", "Sản xuất công nghiệp (IIP)", "s:vn_sxcn", "%", 1, "pt", "M", 1, f"so cùng kỳ · tháng · {TC}"),
     ("vn_dn_moi", "san_xuat", "Doanh nghiệp thành lập mới", "s:nso_dn_moi", "doanh nghiệp", 1, "%", "M", 1, f"tháng · {TC}"),
     ("vn_dn_quay_lai", "san_xuat", "Doanh nghiệp quay lại hoạt động", "s:nso_dn_quay_lai", "doanh nghiệp", 1, "%", "M", 1,
      f"tháng · {TC}"),
+    ("vn_dn_rut_lui", "san_xuat", "Doanh nghiệp rút lui (lũy kế)", "ld:s:nso_dn_rut_lui", "doanh nghiệp", 1, "%", "M", -1,
+     f"tạm ngừng kinh doanh, chờ giải thể, giải thể – cộng dồn từ đầu năm · {TC}"),
     ("vn_dau_tho", "san_xuat", "Khai thác dầu thô", "tv:VNCOP", "nghìn thùng/ngày", 1e3, "%", "M", 0,
      "tháng · TradingView ECONOMICS"),
     # Lạm phát & giá
     ("vn_cpi", "gia", "Lạm phát (CPI YoY)", "s:vn_cpi", "%", 1, "pt", "M", -1, f"CPI so cùng kỳ · tháng · {TC}"),
     ("vn_cpi_mom", "gia", "Lạm phát (CPI MoM)", "tv:VNIRMM", "%", 1, "pt", "M", -1, f"CPI so tháng trước · {TC}"),
     ("vn_cpi_loi", "gia", "Lạm phát lõi", "s:vn_cpi_loi", "%", 1, "pt", "M", -1, f"so cùng kỳ · tháng · {TC}"),
+    ("vn_cpi_lttp", "gia", "Lạm phát lương thực – thực phẩm", "tv:VNFI", "%", 1, "pt", "M", -1,
+     f"so cùng kỳ · tháng · {TC} (TradingView ECONOMICS)"),
     ("vn_cpi_ytd", "gia", "CPI so tháng 12 năm trước", "s:nso_cpi_ytd", "%", 1, "pt", "M", -1, f"{TC} – báo cáo tháng"),
     ("vn_cpi_bq", "gia", "CPI bình quân từ đầu năm (YoY)", "s:nso_cpi_bq", "%", 1, "pt", "M", -1, f"{TC} – báo cáo tháng"),
     ("vn_lp_cb_bq", "gia", "Lạm phát cơ bản bình quân", "s:nso_lp_cb_bq", "%", 1, "pt", "M", -1, f"{TC} – báo cáo tháng"),
@@ -86,7 +96,11 @@ CHI_TIEU = [
     ("vn_tin_dung", "tien_te", "Tín dụng (tăng từ đầu năm)", "s:td_tang", "%", 1, "pt", "M", 0,
      "dư nợ tín dụng đối với nền kinh tế so cuối năm trước · NHNN"),
     ("vn_du_no", "tien_te", "Dư nợ tín dụng nền kinh tế", "s:td_tong", "nghìn tỷ đồng", 1e3, "%", "M", 0, "NHNN"),
-    ("vn_m2", "tien_te", "Cung tiền M2", "tv:VNM2", "nghìn tỷ đồng", 1e12, "%", "Y", 0, "năm · TradingView ECONOMICS"),
+    ("vn_m2_ytd", "tien_te", "Cung tiền M2 (tăng từ đầu năm)", "s:m2_tang", "%", 1, "pt", "M", 0,
+     "tổng phương tiện thanh toán so cuối năm trước · NHNN"),
+    ("vn_tg_dc", "tien_te", "Tiền gửi dân cư (tăng từ đầu năm)", "s:tgdc_tang", "%", 1, "pt", "M", 0,
+     "tiền gửi của dân cư tại các tổ chức tín dụng so cuối năm trước · NHNN"),
+    ("vn_m2", "tien_te", "Cung tiền M2 (cuối năm)", "tv:VNM2", "nghìn tỷ đồng", 1e12, "%", "Y", 0, "năm · TradingView ECONOMICS"),
     ("vn_dtnh", "tien_te", "Dự trữ ngoại hối", "s:vn_dtnh", "tỷ USD", 1e9, "%", "M", 1, "tháng · TradingView ECONOMICS"),
     ("usdvnd", "tien_te", "Tỷ giá USD/VND", "s:usdvnd", "đồng", 1, "%", "D", -1, "thị trường · ngày · Yahoo"),
     # Thương mại & vốn ngoại
@@ -98,6 +112,7 @@ CHI_TIEU = [
     ("vn_fdi_dk", "thuong_mai", "FDI đăng ký (tổng, lũy kế)", "ld:s:nso_fdi_dk", "tỷ USD", 1, "%", "M", 1,
      f"đăng ký mới + điều chỉnh + góp vốn mua cổ phần · cộng dồn năm · {TC}"),
     ("vn_ca", "thuong_mai", "Cán cân vãng lai", "tv:VNCA", "tỷ USD", 1e9, "d", "Q", 1, "quý · NHNN (TradingView ECONOMICS)"),
+    ("vn_no_nn", "thuong_mai", "Nợ nước ngoài", "tv:VNED", "tỷ USD", 1e9, "%", "Y", -1, "năm · TradingView ECONOMICS"),
     ("vn_ca_gdp", "thuong_mai", "Cán cân vãng lai / GDP", "wb:BN.CAB.XOKA.GD.ZS", "% GDP", 1, "pt", "Y", 1, "năm · World Bank"),
     ("vn_xk_gdp", "thuong_mai", "Xuất khẩu / GDP", "wb:NE.EXP.GNFS.ZS", "% GDP", 1, "pt", "Y", 0, "năm · World Bank"),
     # Tiêu dùng & du lịch
@@ -106,6 +121,7 @@ CHI_TIEU = [
     ("vn_ban_le_gt", "tieu_dung", "Tổng mức bán lẻ (tháng)", "s:nso_ban_le", "nghìn tỷ đồng", 1, "%", "M", 1,
      f"hàng hoá & dịch vụ tiêu dùng, giá hiện hành · {TC}"),
     ("vn_khach", "tieu_dung", "Khách quốc tế", "tv:VNTA", "nghìn lượt", 1e3, "%", "M", 1, f"tháng · {TC}"),
+    ("vn_oto", "tieu_dung", "Doanh số ô tô", "tv:VNCAR", "xe", 1, "%", "M", 1, "tháng · VAMA (TradingView ECONOMICS)"),
     # Lao động & dân số
     ("vn_that_nghiep", "lao_dong", "Tỷ lệ thất nghiệp", "tv:VNUR", "%", 1, "pt", "Y", -1, "năm · TradingView ECONOMICS"),
     ("vn_lao_dong", "lao_dong", "Lao động có việc làm", "tv:VNEMP", "triệu người", 1e6, "%", "Q", 1, f"quý · {TC}"),
@@ -119,6 +135,7 @@ CHI_TIEU = [
     ("us_cpi_loi", "the_gioi", "Mỹ – Lạm phát lõi", "tv:USCIR", "%", 1, "pt", "M", -1, "so cùng kỳ · tháng · BLS"),
     ("us_ur", "the_gioi", "Mỹ – Thất nghiệp", "tv:USUR", "%", 1, "pt", "M", -1, "tháng · BLS"),
     ("us_nfp", "the_gioi", "Mỹ – Việc làm phi nông nghiệp", "tv:USNFP", "nghìn", 1e3, "d", "M", 1, "thay đổi trong tháng · BLS"),
+    ("us_banle", "the_gioi", "Mỹ – Bán lẻ (YoY)", "tv:USRSYY", "%", 1, "pt", "M", 1, "cầu tiêu dùng – thị trường xuất khẩu lớn nhất của VN · tháng"),
     ("us_ff", "the_gioi", "Mỹ – Fed funds thực tế", "s:us_ff", "%/năm", 1, "pt", "D", 0, "ngày · NY Fed"),
     ("us_10n", "the_gioi", "Mỹ – Lợi suất 10 năm", "s:us_10n", "%/năm", 1, "pt", "D", 0, "ngày · Bộ Tài chính Mỹ"),
     ("us_vix", "the_gioi", "VIX – biến động S&P 500", "s:us_vix", "điểm", 1, "%", "D", -1, "ngày · CBOE"),
@@ -127,6 +144,9 @@ CHI_TIEU = [
     ("cn_cpi", "the_gioi", "Trung Quốc – Lạm phát", "tv:CNIRYY", "%", 1, "pt", "M", 0, "so cùng kỳ · tháng · NBS"),
     ("cn_sxcn", "the_gioi", "Trung Quốc – SXCN (YoY)", "tv:CNIPYY", "%", 1, "pt", "M", 1, "tháng · NBS"),
     ("cn_banle", "the_gioi", "Trung Quốc – Bán lẻ (YoY)", "tv:CNRSYY", "%", 1, "pt", "M", 1, "tháng · NBS"),
+    ("cn_xk", "the_gioi", "Trung Quốc – Xuất khẩu (YoY)", "tv:CNEXPYY", "%", 1, "pt", "M", 1, "theo USD · tháng · Hải quan TQ"),
+    ("cn_ppi", "the_gioi", "Trung Quốc – Giá sản xuất PPI (YoY)", "tv:CNPPIYY", "%", 1, "pt", "M", 0,
+     "giá đầu ra nhà máy – giá thép, hoá chất nhập khẩu · tháng · NBS"),
     ("cn_ls", "the_gioi", "Trung Quốc – Lãi suất LPR 1 năm", "tv:CNINTR", "%/năm", 1, "pt", "M", 0, "PBOC"),
     ("usdcny", "the_gioi", "USD/CNY", "s:usdcny", "tệ", 1, "%", "D", 0, "ngày · Yahoo"),
     ("eu_gdp", "the_gioi", "Châu Âu – GDP (YoY)", "tv:EUGDPYY", "%", 1, "pt", "Q", 1, "khu vực đồng euro · quý · Eurostat"),
@@ -139,12 +159,20 @@ CHI_TIEU = [
     ("kr_gdp", "the_gioi", "Hàn Quốc – GDP (YoY)", "tv:KRGDPYY", "%", 1, "pt", "Q", 1, "quý"),
     ("kr_cpi", "the_gioi", "Hàn Quốc – Lạm phát", "tv:KRIRYY", "%", 1, "pt", "M", -1, "tháng"),
     ("kr_ls", "the_gioi", "Hàn Quốc – Lãi suất BOK", "tv:KRINTR", "%/năm", 1, "pt", "M", 0, "BOK"),
+    ("kr_xk", "the_gioi", "Hàn Quốc – Xuất khẩu (YoY)", "tv:KREXPYY", "%", 1, "pt", "M", 1, "chỉ báo sớm thương mại châu Á · tháng"),
+    ("tw_xk", "the_gioi", "Đài Loan – Xuất khẩu (YoY)", "tv:TWEXPYY", "%", 1, "pt", "M", 1, "chu kỳ điện tử – bán dẫn · tháng"),
     ("th_gdp", "the_gioi", "Thái Lan – GDP (YoY)", "tv:THGDPYY", "%", 1, "pt", "Q", 1, "quý"),
     ("th_cpi", "the_gioi", "Thái Lan – Lạm phát", "tv:THIRYY", "%", 1, "pt", "M", -1, "tháng"),
     ("th_ls", "the_gioi", "Thái Lan – Lãi suất BOT", "tv:THINTR", "%/năm", 1, "pt", "M", 0, "BOT"),
+    ("id_gdp", "the_gioi", "Indonesia – GDP (YoY)", "tv:IDGDPYY", "%", 1, "pt", "Q", 1, "quý · ASEAN"),
+    ("my_gdp", "the_gioi", "Malaysia – GDP (YoY)", "tv:MYGDPYY", "%", 1, "pt", "Q", 1, "quý · ASEAN"),
+    ("ph_gdp", "the_gioi", "Philippines – GDP (YoY)", "tv:PHGDPYY", "%", 1, "pt", "Q", 1, "quý · ASEAN"),
+    ("sg_gdp", "the_gioi", "Singapore – GDP (YoY)", "tv:SGGDPYY", "%", 1, "pt", "Q", 1, "quý · ASEAN"),
 ]
 KHONG_CU = {"vn_luong_tt"}                     # đổi theo lần điều chỉnh (không định kỳ) – không gắn "cũ"
-HAN_CU = {"vn_tin_dung": 135, "vn_du_no": 135}                     # NHNN công bố tín dụng trễ ~3 tháng (T8 có vào cuối T11)
+HAN_CU = {"vn_tin_dung": 135, "vn_du_no": 135, "vn_m2_ytd": 135, "vn_tg_dc": 135,                     # NHNN công bố tín dụng trễ ~3 tháng (T8 có vào cuối T11)
+          "vn_dtnh": 135,                                            # dự trữ ngoại hối (IMF) trễ ~3 tháng
+          "vn_ca": 270}                                              # cán cân vãng lai quý: NHNN công bố ~5 tháng sau đầu quý
 TONG_QUAN = ["vn_gdp", "vn_cpi", "vn_cpi_loi", "vn_tin_dung", "vn_sxcn", "vn_banle", "vn_xk", "vn_bot", "vn_fdi", "vn_lnh",
              "vn_10n", "usdvnd"]
 # Mục tiêu năm 2026 (Nghị quyết Quốc hội về kế hoạch phát triển KT-XH 2026): GDP từ 10 %, CPI khoảng 4,5 %
@@ -279,6 +307,26 @@ def gon_ngay(s, nam=3):
 
 
 # ------------------------------------------------------------------ một chỉ tiêu
+_LK = [(r"TradingView ECONOMICS:(\w+)", "https://www.tradingview.com/symbols/ECONOMICS-{0}/"),
+       (r"TradingView ([A-Z]+):([\w!]+)", "https://www.tradingview.com/symbols/{0}-{1}/"),
+       (r"World Bank ([\w.]+)", "https://data.worldbank.org/indicator/{0}?locations=VN"),
+       (r"Cục Thống kê", "https://www.nso.gov.vn/bao-cao-tinh-hinh-kinh-te-xa-hoi-hang-thang/"),
+       (r"NHNN – dư nợ", "https://sbv.gov.vn/du-no-tin-dung-doi-voi-nen-kt-dttktt"),
+       (r"Yahoo ([\w=.^-]+)", "https://finance.yahoo.com/quote/{0}"),
+       (r"BLS", "https://www.bls.gov/cpi/"),
+       (r"HNX", "https://hnx.vn/trai-phieu/duong-cong-loi-suat.html")]
+
+
+def lien_ket(nguon):
+    """Tên nguồn → địa chỉ trang công bố gốc (mẫu đầu tiên khớp) | "" – trang Vĩ mô cho bấm mở nguồn."""
+    import re
+    for mau, u in _LK:
+        m = re.search(mau, nguon or "")
+        if m:
+            return u.format(*m.groups())
+    return ""
+
+
 def chi_tieu(spec, s, nguon="", hom_nay=None):
     """spec CHI_TIEU + chuỗi (đã chia đơn vị) → dict hàng bảng / thẻ."""
     k, cd, ten, ng, dv, _, kieu, ts, huong, mo = spec
@@ -305,7 +353,7 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
         sp = s.iloc[-24:].tolist()
     r = {"k": k, "cd": cd, "ten": ten, "mo": mo, "dv": dv, "ky": nhan_ky(d, ts, luy_ke), "ngay": f"{d:%Y-%m-%d}",
          "gt": round(v, 4), "le": _le(v, dv), "kt": kt, "ck": ck, "kieu": kieu, "ts": ts, "huong": huong,
-         "sp": [round(float(x), 4) for x in sp], "nguon": nguon, "ghi": "", "tot": 0}
+         "sp": [round(float(x), 4) for x in sp], "nguon": nguon, "u": lien_ket(nguon), "ghi": "", "tot": 0}
     if hom_nay is not None:
         han = HAN_CU.get(k) or {"D": 10, "M": 95, "Q": 150, "Y": 550}[ts]   # số tháng công bố trễ tới ~75 ngày sau ngày 1
         r["cu"] = (pd.Timestamp(hom_nay) - d).days > han and k not in KHONG_CU

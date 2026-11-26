@@ -268,7 +268,26 @@ def cpi_my():
 NSO_MOI = {"cpi_ytd": "nso_cpi_ytd", "cpi_bq": "nso_cpi_bq", "lp_cb_bq": "nso_lp_cb_bq", "vang_yoy": "nso_vang_yoy",
            "usd_yoy": "nso_usd_yoy", "nsnn": "nso_nsnn", "nsnn_kh": "nso_nsnn_kh", "dn_moi": "nso_dn_moi",
            "dn_quay_lai": "nso_dn_quay_lai", "fdi_dk": "nso_fdi_dk", "ban_le": "nso_ban_le", "gdp_nn": "nso_gdp_nn",
-           "gdp_cn": "nso_gdp_cn", "gdp_dv": "nso_gdp_dv"}
+           "gdp_cn": "nso_gdp_cn", "gdp_dv": "nso_gdp_dv", "thu_dt": "nso_thu_dt", "chi_dt": "nso_chi_dt",
+           "dn_rut_lui": "nso_dn_rut_lui"}
+
+
+def _nho_nhnn(ten, cot, doc, nhan):
+    """Bảng NHNN chỉ có tháng mới nhất → dồn vào DEM/<ten> qua các lượt; lỗi mạng → số đã nhớ. → DataFrame chỉ mục tháng."""
+    f = os.path.join(DEM, ten)
+    try:
+        cu = pd.read_csv(f, index_col=0, parse_dates=True)
+    except (OSError, ValueError):
+        cu = pd.DataFrame(columns=cot)
+    try:
+        moi = pd.DataFrame(doc(), columns=["ky", *cot]).set_index("ky")
+        x = pd.concat([cu[~cu.index.isin(moi.index)], moi]).sort_index()
+        os.makedirs(DEM, exist_ok=True)
+        x.to_csv(f)
+        return x
+    except Exception as e:                                            # noqa: BLE001 – NHNN lỗi → số đã nhớ
+        print(f"  ⚠ NHNN {nhan}: {type(e).__name__} {str(e)[:60]}")
+        return cu
 
 
 def tai_nso(S, N, P):
@@ -295,19 +314,17 @@ def tai_nso(S, N, P):
         if k in df and df[k].notna().any():
             S[ks], N[ks] = df[k].dropna(), "Cục Thống kê – báo cáo tình hình kinh tế – xã hội"
             print(f"    {k}: " + " · ".join(f"{d:%m/%y} {v:g}" for d, v in S[ks].iloc[-4:].items()))
-    # NHNN – tín dụng (trang chỉ có tháng mới nhất → nhớ dồn qua các lượt)
-    f = os.path.join(DEM, "tin_dung.csv")
-    try:
-        cu = pd.read_csv(f, index_col=0, parse_dates=True)
-    except (OSError, ValueError):
-        cu = pd.DataFrame(columns=["tong", "tang"])
-    try:
-        moi = pd.DataFrame([(t, a, b) for t, a, b in nso.tin_dung(lay(nso.NHNN_TD))], columns=["ky", "tong", "tang"]).set_index("ky")
-        td = pd.concat([cu[~cu.index.isin(moi.index)], moi]).sort_index()
-        td.to_csv(f)
-    except Exception as e:                                            # noqa: BLE001 – NHNN lỗi → số đã nhớ
-        print(f"  ⚠ NHNN tín dụng: {type(e).__name__} {str(e)[:60]}")
-        td = cu
+    if {"thu_lk", "chi_lk"} <= set(df):                               # thu − chi lũy kế cùng báo cáo
+        cd = (df.thu_lk - df.chi_lk).dropna()
+        if len(cd):
+            S["nso_can_doi_ns"], N["nso_can_doi_ns"] = cd, "Cục Thống kê – báo cáo tình hình kinh tế – xã hội"
+    # NHNN – tín dụng, M2 (trang chỉ có tháng mới nhất → nhớ dồn qua các lượt)
+    td = _nho_nhnn("tin_dung.csv", ["tong", "tang"], lambda: nso.tin_dung(lay(nso.NHNN_TD)), "tín dụng")
+    m2 = _nho_nhnn("m2.csv", ["m2", "m2_tang", "tgdc_tang"], lambda: nso.m2(lay(nso.NHNN_M2)), "M2")
+    if len(m2):
+        S["m2_tang"], S["tgdc_tang"] = m2["m2_tang"].astype(float), m2["tgdc_tang"].astype(float)
+        N["m2_tang"] = N["tgdc_tang"] = "NHNN – tổng phương tiện thanh toán và tiền gửi của khách hàng"
+        print(f"  NHNN M2: {len(m2)} tháng · cuối {m2.index[-1]:%m/%Y} tăng {m2['m2_tang'].iloc[-1]}% so cuối năm trước")
     if len(td):
         S["td_tang"], S["td_tong"] = td["tang"].astype(float), td["tong"].astype(float)
         N["td_tang"] = N["td_tong"] = "NHNN – dư nợ tín dụng đối với nền kinh tế"

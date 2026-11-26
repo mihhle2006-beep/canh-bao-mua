@@ -115,6 +115,13 @@ def test_tai_dem_chi_doc_bao_cao_moi():
     nso.tai_dem(lay, cu, trang=1)
     assert u10 in da                                                 # đệm của bộ đọc cũ → đọc lại
 
+    def loi(u):                                                      # trang chặn khi đọc lại → giữ bản đọc cũ
+        if u == nso.DS:
+            return f'<a href="{u10}">a</a> <a href="{u9}">b</a>'
+        raise OSError("429")
+    df3, dem3 = nso.tai_dem(loi, cu, trang=1)
+    assert set(dem3) == {u10, u9} and df3.loc["2026-10-01", "cpi_yoy"] == 5.08
+
 
 def test_tin_dung_nhnn():
     mau = "<table><tr><td>Tháng</td></tr><tr><td>TỔNG CỘNG</td><td></td><td></td></tr></table>"
@@ -133,3 +140,26 @@ def test_tin_rss():
     assert t == [{"t": "NHNN giữ nguyên lãi suất & tỷ giá", "u": "https://cafef.vn/a-188.chn", "d": "2026-11-25 10:15"},
                  {"t": "Không ngày", "u": "https://cafef.vn/b.chn", "d": ""}]
     assert len(nso.tin_rss(xml, so_tin=1)) == 1
+
+
+def test_thu_chi_ngan_sach_va_dn_rut_lui():
+    """Câu thu / chi NSNN lũy kế 3 kiểu (T6: "lũy kế … đạt", T9: "Tính chung … ước đạt", T10: chữ thường) – bỏ qua số tháng đứng trước."""
+    t9 = ("Tổng thu ngân sách Nhà nước tháng Chín ước đạt 162,7 nghìn tỷ đồng. Lũy kế tổng thu ngân sách Nhà nước chín tháng năm "
+          "2026 ước đạt 2.187,3 nghìn tỷ đồng, bằng 86,5% dự toán năm và tăng 12,1%. Tổng chi ngân sách Nhà nước tháng Chín ước đạt "
+          "256,8 nghìn tỷ đồng. Tính chung chín tháng năm 2026, chi ngân sách Nhà nước ước đạt 1.873,7 nghìn tỷ đồng, bằng 59,3% dự "
+          "toán năm. Số doanh nghiệp rút lui khỏi thị trường là 172,0 nghìn doanh nghiệp, giảm 1,7%")
+    t6 = ("8. Thu, chi ngân sách Nhà nước Tổng thu ngân sách Nhà nước tháng Sáu ước đạt 205,0 nghìn tỷ đồng, lũy kế tổng thu ngân sách Nhà nước sáu tháng đầu năm "
+          "2026 đạt 1.568,2 nghìn tỷ đồng, bằng 62,0% dự toán năm. Tổng chi ngân sách Nhà nước tháng Sáu ước đạt 292,3 nghìn tỷ "
+          "đồng, lũy kế sáu tháng đầu năm 2026 đạt 1.149,1 nghìn tỷ đồng, bằng 36,4% dự toán năm")
+    for t, kq in ((t9, (2187.3, 86.5, 1873.7, 59.3, 172000)), (t6, (1568.2, 62.0, 1149.1, 36.4, None))):
+        d = nso.doc(t)
+        assert tuple(d.get(k) for k in ("thu_lk", "thu_dt", "chi_lk", "chi_dt", "dn_rut_lui")) == kq
+
+
+def test_m2_nhnn():
+    h = ('<h3>Tổng phương tiện thanh toán và Tiền gửi của khách hàng tại TCTD Tháng 8 năm 2026</h3><table>'
+         '<tr><td>Tổng phương tiện thanh toán (*)</td><td>20.774.696</td><td>6,84</td></tr>'
+         '<tr><td>- Tiền gửi của các TCKT</td><td>6.337.186</td><td>2,54</td></tr>'
+         '<tr><td>- Tiền gửi của dân cư</td><td>11.434.266</td><td>10,63</td></tr></table>')
+    assert nso.m2(h) == [(pd.Timestamp("2026-08-01"), 20774696.0, 6.84, 10.63)]
+    assert nso.m2("<p>Trang lỗi</p>") == []
