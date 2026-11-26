@@ -29,7 +29,7 @@ header{background:linear-gradient(135deg,#43A047,var(--nhan-dam));color:#fff;pos
 header h1{text-shadow:0 1px 2px rgba(0,60,20,.35)}header .gg input{border-color:transparent;color:var(--chu)}header .gg ul{color:var(--chu)}
 .dau{max-width:1440px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:16px;min-height:52px;flex-wrap:wrap}
 .dau h1{font-size:17px;margin:0;font-weight:650;white-space:nowrap}
-.tab{display:flex;gap:2px;align-self:stretch}
+.tab{display:flex;gap:2px;align-self:stretch}.tab>*{flex:none;white-space:nowrap}   /* chữ tab không xuống dòng (tab co lại → "Tổng / quan") */
 .tab button{background:none;border:0;border-bottom:3px solid transparent;padding:0 12px;font-weight:500;color:#e8f5e9}
 .tab button[aria-selected=true]{color:#fff;font-weight:650;border-bottom-color:#fff}
 .tab a{display:flex;align-items:center;border-bottom:3px solid transparent;padding:0 12px;font-weight:500;color:#e8f5e9;text-decoration:none}
@@ -37,7 +37,9 @@ header h1{text-shadow:0 1px 2px rgba(0,60,20,.35)}header .gg input{border-color:
 .tt-phien{margin-left:auto;color:#e8f5e9;font-size:12.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cham{width:8px;height:8px;border-radius:50%;background:var(--mo);display:inline-block}
 .cham.song{background:#b9f6ca;box-shadow:0 0 0 3px #ffffff40}
-.tt-phien a{color:#fff;text-decoration:none;font-weight:500}
+.lk{order:5;display:flex;gap:14px;font-size:12.5px}.lk a{color:#fff;text-decoration:none;font-weight:500;white-space:nowrap}
+.lk a:hover{text-decoration:underline}.chi-dt{display:none}
+@media (min-width:1200px){.dau{flex-wrap:nowrap}.gg{flex:1 1 240px;max-width:300px}.tt-phien{flex:0 1 215px;line-height:1.3;flex-wrap:nowrap}.lk{flex:none}}
 /* ô tìm mã kiểu Google (gợi ý mã · tên) → trang Tra cứu mã */
 .gg{position:relative;flex:0 1 280px;min-width:180px}
 .gg input{width:100%;box-sizing:border-box;font:inherit;font-size:14px;height:34px;border:1px solid #dfe1e5;border-radius:17px;
@@ -73,13 +75,23 @@ main{max-width:1440px;margin:0 auto;padding:16px}
   .cs .phu{grid-column:1;text-align:left;margin-top:0}
   .cs .gia{font-size:17px}
   .an-dt{display:none}
-  .tt-phien{margin-left:0;width:100%;padding-bottom:6px}
-  .dau{gap:10px}.tab button,.tab a{padding:0 8px}
+  /* điện thoại (26/11/2026, chủ quỹ: "phần trên cùng xấu"): dòng 1 tên + 2 nút nhỏ · dòng 2 trạng thái phiên 1 dòng · tab 1 hàng
+     không xuống chữ (trước: tab co lại → "Tổng / quan" 2 dòng, link rơi thành dòng riêng) */
+  .dau{gap:4px 10px;padding-top:8px}.dau h1{font-size:18px}
+  .lk{order:0;margin-left:auto;gap:6px}.chi-dt{display:inline}
+  .lk a{font-size:12.5px;padding:3px 10px;border-radius:14px;background:#ffffff24;border:1px solid #ffffff4d}
+  .lk a:hover{text-decoration:none}
+  .tt-phien{margin-left:0;width:100%;font-size:12px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
+  #trang-thai{overflow:hidden;text-overflow:ellipsis}
+  .tab button,.tab a{flex:0 0 auto;white-space:nowrap;padding:0 7px;font-size:14.5px}
   /* điện thoại: tên + trạng thái phiên cuộn đi, TAB + Ô TÌM dính trên cùng (~90px, như Tra cứu mã) – thanh xanh dính ở mép trên
      để Safari iOS tô xanh vùng thanh trạng thái (trước: thanh đầu cuộn hết → nội dung trôi dưới thanh trạng thái, bị làm mờ) */
   header{position:sticky;top:calc(-1 * var(--an, 0px))}
-  .tt-phien{order:1}.dau .tab{order:2;flex:1 1 100%;overflow-x:auto;scrollbar-width:none}.dau .tab::-webkit-scrollbar{display:none}
+  .tt-phien{order:1}.dau .tab{order:2;flex:1 1 100%;height:42px;margin:2px -7px 0;justify-content:space-between;gap:0;
+    overflow-x:auto;scrollbar-width:none}.dau .tab::-webkit-scrollbar{display:none}
 }
+@media (max-width:374px){.dau h1{font-size:16px}.lk{gap:4px}.lk a{padding:2px 8px;font-size:12px}
+  .tab button,.tab a{padding:0 5px;font-size:13.5px}.dau .tab{margin:2px -5px 0}}
 .luoi2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;margin-bottom:16px}
 /* VĨ MÔ (25/11/2026): thẻ số liệu theo nhóm + biểu đồ Lightweight Charts (thư viện kèm trang Tra cứu mã) */
 .vm-nhom{padding:10px 14px 4px}.vm-nhom h3{margin:0 0 6px;font-size:13px;color:var(--chu2);font-weight:600}
@@ -257,6 +269,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
 <header>
   <div class="dau">
     <h1>Bảng thị trường</h1>
+    <nav class="lk" aria-label="Trang khác"><a href="../ma/">Tra cứu mã</a><a href="../"><span class="an-dt">Bảng tổng hợp</span><span class="chi-dt">Tổng hợp</span></a></nav>
     <div class="tab" role="tablist">
       <button role="tab" id="tab-tq" aria-selected="true" data-tab="tq">Tổng quan</button>
       <button role="tab" id="tab-loc" aria-selected="false" data-tab="loc">Lọc mã</button>
@@ -267,8 +280,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
     <div class="gg" id="tim-ma"><input placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu" maxlength="10"
       autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
       aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-    <div class="tt-phien"><span class="cham" id="cham"></span><span id="trang-thai">Đang tải…</span>
-      <a href="../ma/">Tra cứu mã</a><a href="../">Bảng tổng hợp</a></div>
+    <div class="tt-phien"><span class="cham" id="cham"></span><span id="trang-thai">Đang tải…</span></div>
   </div>
 </header>
 <main>
