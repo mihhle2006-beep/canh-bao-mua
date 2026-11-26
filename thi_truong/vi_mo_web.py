@@ -300,7 +300,7 @@ def _roa_moi(lay, nso, toi_da=8):
     for u, q in nso.bai_roa(lay(nso.NHNN_CTCB))[:toi_da]:
         if q in cu or any(q == x[0] for x in out):
             continue
-        r = nso.roa_roe(lay(u))
+        r = nso.roa_roe(lay(u), q)
         if r:
             out.append((q, *r))
     return out

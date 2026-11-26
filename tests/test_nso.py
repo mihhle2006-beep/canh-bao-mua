@@ -121,6 +121,9 @@ def test_tai_dem_chi_doc_bao_cao_moi():
         raise OSError("429")
     df3, dem3 = nso.tai_dem(loi, cu, trang=1)
     assert set(dem3) == {u10, u9} and df3.loc["2026-10-01", "cpi_yoy"] == 5.08
+    da.clear()
+    _, dem4 = nso.tai_dem(lay, cu, trang=1, toi_da=1)                   # tối đa 1 báo cáo / lượt: mới nhất đọc lại, cũ giữ
+    assert [u for u in da if u in (u10, u9)] == [u10] and dem4[u10]["_v"] == nso.PHIEN and dem4[u9]["_v"] == 1
 
 
 def test_tin_dung_nhnn():
@@ -187,3 +190,6 @@ def test_bop_va_roa_nhnn():
     bai = ("<table><tr><td>Loại hình TCTD</td><td>ROA</td><td>ROE</td></tr><tr><td>(1)</td><td>(2)</td><td>(3)</td></tr>"
            "<tr><td>NHTM Nhà Nước</td><td>0,92</td><td>13,77</td></tr><tr><td>Toàn hệ thống</td><td>1,02</td><td>11,44</td></tr></table>")
     assert nso.roa_roe(bai) == (1.02, 11.44) and nso.roa_roe("<p>x</p>") is None
+    bai += "<p>Ghi chú: Nguồn số liệu dựa trên Báo cáo tài chính Quý III/2026.</p>"
+    assert nso.roa_roe(bai, pd.Timestamp("2026-07-01")) == (1.02, 11.44)
+    assert nso.roa_roe(bai, pd.Timestamp("2026-04-01")) is None            # bài Q2 hiện bảng Q3 → bỏ

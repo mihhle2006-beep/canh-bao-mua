@@ -227,12 +227,16 @@ def kiem(df):
 PHIEN = 5                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
 
 
-def tai_dem(lay, dem=None, trang=3):
-    """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới. → (df, dem)."""
-    dem = dict(dem or {})
+def tai_dem(lay, dem=None, trang=3, toi_da=12):
+    """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới / đọc lại
+    khi bộ đọc đổi, tối đa toi_da báo cáo mỗi lượt (mới trước; phần còn lại giữ bản cũ, lượt sau đọc tiếp). → (df, dem)."""
+    dem, tai = dict(dem or {}), 0
     for url, ky, _ in danh_sach(lay, trang):
         if dem.get(url, {}).get("_v") == PHIEN:
             continue                                                 # bộ đọc đổi (PHIEN) → đọc lại
+        if tai >= toi_da:
+            break                                                    # 26/11: đọc lại ~40 báo cáo một lượt → trang chặn
+        tai += 1
         try:
             d = doc(chu(lay(url)))
         except Exception:                                            # noqa: BLE001 – lượt sau thử lại; giữ bản đọc cũ
@@ -314,10 +318,18 @@ def bai_roa(html):
     return out
 
 
-def roa_roe(html):
-    """Bài ROA/ROE theo loại hình TCTD → (ROA %, ROE %) dòng "Toàn hệ thống" | None."""
-    m = re.search(r"Loại hình TCTD ROA ROE.{0,800}?Toàn hệ thống (\d+,\d+) (\d+,\d+)", chu(html))
-    return (so(m[1]), so(m[2])) if m else None
+def roa_roe(html, quy=None):
+    """Bài ROA/ROE theo loại hình TCTD → (ROA %, ROE %) dòng "Toàn hệ thống" | None. quy: tháng đầu quý mong đợi – ghi chú
+    "Báo cáo tài chính Quý …" phải khớp (bài cũ có lúc hiện bảng quý mới nhất – lượt thử 26/11: Q2 ra đúng số Q3)."""
+    t = chu(html)
+    m = re.search(r"Loại hình TCTD ROA ROE.{0,800}?Toàn hệ thống (\d+,\d+) (\d+,\d+)", t)
+    if not m:
+        return None
+    if quy is not None:
+        q = re.search(r"[Bb]áo cáo tài chính Quý ([IV]+)/(\d{4})", t[m.end():m.end() + 400])
+        if not q or q[1] not in _QUY or pd.Timestamp(year=int(q[2]), month=_QUY[q[1]], day=1) != quy:
+            return None
+    return so(m[1]), so(m[2])
 
 
 # ------------------------------------------------------------------ CafeF – tin vĩ mô (RSS)
