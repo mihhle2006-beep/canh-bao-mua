@@ -59,26 +59,36 @@ for (const t of trang) {
           await pg.click(".sk-pnl [aria-label='Đóng']");
           await pg.waitForTimeout(400);
         }
-        else if (lenh === "vm") {                     // tab Vĩ mô: thẻ + 9 biểu đồ + bảng hàng hoá; đổi nến giờ / khoảng / hàng hoá / % nhóm
-          await pg.click("#tab-vm");
-          await pg.waitForSelector("#vm-the .o", {timeout: 8000});
-          for (const id of ["#vm-bd-xau", "#vm-bd-sjc", "#vm-bd-lsvn", "#vm-bd-my", "#vm-bd-chenh", "#vm-bd-tg", "#vm-bd-vn",
-                            "#vm-bd-myl", "#vm-bd-hh"])
+        else if (lenh === "vm") {                     // tab Vĩ mô: tổng quan (thẻ, nhịp, lịch) → chạm thẻ → bảng chủ đề + biểu đồ
+          await pg.click("#tab-vm");                  // → Vàng & tỷ giá (4 biểu đồ) → Hàng hoá (bảng, % nhóm) → Thế giới → tìm → bản tin
+          await pg.waitForSelector("#vm-tq .vm-o2", {timeout: 8000});
+          const n = await pg.$$eval("#vm-tq .vm-o2", e => e.length);
+          if (n < 8) throw new Error("Vĩ mô tổng quan thiếu thẻ: " + n);
+          if (await pg.$$eval("#vm-nhip .c[class*=m]", e => e.length) < 10) throw new Error("nhịp kinh tế không tô màu");
+          if (!(await pg.$eval("#vm-nhan", e => e.innerText)).includes("Lạm phát")) throw new Error("thiếu điểm nhấn");
+          if (await pg.$$eval("#vm-lich .d", e => e.length) < 2) throw new Error("thiếu lịch công bố");
+          await pg.click("#vm-tq .vm-o2[data-k=vn_cpi]"); await pg.waitForTimeout(600);
+          if (await pg.$eval("#vm-cd-ten", e => e.textContent) !== "Lạm phát & giá") throw new Error("chạm thẻ CPI không mở chủ đề giá");
+          await pg.waitForSelector("#vm-bd-ct canvas", {timeout: 5000, state: "attached"});
+          if (await pg.$eval("#vm-bang tr.chon", e => e.dataset.k) !== "vn_cpi") throw new Error("bảng không chọn CPI");
+          await pg.click("#vm-cd-ds button[data-cd=vang]"); await pg.waitForTimeout(500);
+          for (const id of ["#vm-bd-xau", "#vm-bd-sjc", "#vm-bd-chenh", "#vm-bd-tg"])
             await pg.waitForSelector(id + " canvas", {timeout: 8000, state: "attached"});
-          const n = await pg.$$eval("#vm-the .o", e => e.length);
-          if (n < 8) throw new Error("tab Vĩ mô thiếu thẻ: " + n);
-          const hh = await pg.$$eval("#vm-hh tr[data-k]", e => e.length);
-          if (hh < 3) throw new Error("bảng hàng hoá thiếu dòng: " + hh);
+          if (await pg.$$eval("#vm-the .o", e => e.length) < 5) throw new Error("thiếu thẻ vàng / tỷ giá");
           await pg.click("#vm-xau-k button[data-k=gio]"); await pg.waitForTimeout(400);
           await pg.click("#vm-ky button[data-k='0']"); await pg.waitForTimeout(400);
-          await pg.waitForSelector("#vm-bd-xau canvas", {timeout: 5000, state: "attached"});
-          await pg.click("#vm-hh tr[data-k]:last-child"); await pg.waitForTimeout(400);
-          const chon = await pg.$eval("#vm-hh tr.chon", e => e.dataset.k), ten = await pg.$eval("#vm-hh-ten", e => e.textContent);
-          if (!chon || !ten || ten === "Hàng hoá") throw new Error("chọn hàng hoá không đổi biểu đồ: " + chon + " / " + ten);
-          await pg.click("#vm-hh-k button[data-k=pt]"); await pg.waitForTimeout(400);
+          await pg.click("#vm-the .o[data-k=bac]"); await pg.waitForTimeout(600);
+          if (await pg.$eval("#vm-hh tr.chon", e => e.dataset.k) !== "bac") throw new Error("chạm thẻ bạc không chọn bạc ở bảng hàng hoá");
           await pg.waitForSelector("#vm-bd-hh canvas", {timeout: 5000, state: "attached"});
-          await pg.click("#vm-the .o[data-k=bac]"); await pg.waitForTimeout(400);
-          if (await pg.$eval("#vm-hh tr.chon", e => e.dataset.k) !== "bac") throw new Error("chạm thẻ bạc không chọn bạc ở bảng");
+          await pg.click("#vm-hh tr[data-k]:last-child"); await pg.waitForTimeout(400);
+          await pg.click("#vm-hh-k button[data-k=pt]"); await pg.waitForTimeout(400);
+          await pg.click("#vm-cd-ds button[data-cd=the_gioi]"); await pg.waitForTimeout(500);
+          for (const id of ["#vm-bd-my", "#vm-bd-myl"]) await pg.waitForSelector(id + " canvas", {timeout: 5000, state: "attached"});
+          await pg.fill("#vm-tim", "lam phat"); await pg.waitForTimeout(400);
+          if (await pg.$$eval("#vm-bang tr[data-k]", e => e.length) < 2) throw new Error("tìm 'lam phat' (không dấu) không ra chỉ tiêu");
+          await pg.fill("#vm-tim", ""); await pg.click("#vm-cd-ds button[data-cd=ban_tin]"); await pg.waitForTimeout(300);
+          if ((await pg.$$eval("#vm-bt dd", e => e.length)) < 2) throw new Error("bản tin tháng trống");
+          await pg.click("#vm-cd-ds button[data-cd=tq]"); await pg.waitForTimeout(300);
         }
         else if (lenh === "sk") {                     // rê chuột / chạm vào bong bóng sự kiện đầu tiên → hộp chi tiết phải hiện
           await pg.waitForTimeout(800);

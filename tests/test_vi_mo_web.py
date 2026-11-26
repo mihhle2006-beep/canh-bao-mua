@@ -36,6 +36,22 @@ def _mau():
          "us_cpi": pd.Series([3.0, 3.2, 2.9], index=pd.to_datetime(["2026-08-01", "2026-09-01", "2026-10-01"])),
          "us_vix": _gia(2000, 18.0, seed=12)}
     N = {"xau": "Stooq", "sjc": "vang.today", "vn_10n": "HNX từ 2014", "hh_bac": "TradingView OANDA:XAGUSD"}
+    th = pd.date_range("2018-01-01", "2026-10-01", freq="MS")
+    rng = np.random.default_rng(42)
+    for k, mu in (("vn_cpi", 3.5), ("vn_cpi_loi", 3.0), ("vn_sxcn", 8.0), ("vn_banle", 9.0), ("vn_lnh", 4.0), ("vn_dh", 4.5)):
+        S["kt_" + k] = pd.Series(mu + rng.normal(0, 1, len(th)).cumsum() * 0.2, th)
+    for k, mu in (("vn_xk", 35e9), ("vn_khach", 1.2e6), ("vn_dtnh", 85e9)):
+        S["kt_" + k] = pd.Series(mu * (1 + rng.normal(0, 0.05, len(th)).cumsum() * 0.1), th)
+    S["kt_vn_bot"] = pd.Series(rng.normal(1e9, 2e9, len(th)), th)
+    S["kt_vn_fdi"] = pd.Series([d.month * 2.2e9 for d in th], th)
+    q = pd.date_range("2018-03-01", "2026-09-01", freq="3MS")
+    S["kt_vn_gdp"] = pd.Series(6.5 + rng.normal(0, 0.5, len(q)), q)
+    S["kt_us_gdp"] = pd.Series(2.0 + rng.normal(0, 0.5, len(q)), q)
+    S["kt_vn_10n"] = S["vn_10n"]
+    S["kt_usdvnd"] = S["usdvnd"]
+    S["kt_vn_gdp_usd"] = pd.Series([3e11 + i * 2e10 for i in range(10)], pd.date_range("2016-12-31", periods=10, freq="YE"))
+    for k in [x for x in S if x.startswith("kt_")]:
+        N[k] = "nguồn mẫu"
     P = {"gia_ngay": 3600.0, "gia_ngay_luc": datetime(2026, 11, 25, 21, 50, tzinfo=V.VN), "so_cheo": {"bac": (700, 0.95, 1.0)},
          "vcb": {"mua": 25610.0, "ck": 25640.0, "ban": 26020.0},
          "song": {"url": "https://api.gold-api.com/price/XAU", "kieu": "gold_api", "gia": 3600.0}}
