@@ -58,7 +58,7 @@ HANG_HOA = [
     ("cao_su", "ns", "Cao su TSR20 (SGX)", "US cent/kg", ["tv:SGX:TF1!"], "GVR, PHR, DPR, DRI"),
     ("gao", "ns", "Gạo thô (CBOT)", "USD/cwt", ["yf:ZR=F"], "LTG, TAR"),
     ("duong", "ns", "Đường thô", "US cent/lb", ["yf:SB=F"],
-     "SBT, LSS, QNS – đường tăng 3 tháng → nhóm này thường vượt VN-Index tháng sau (kiểm 2012–2026)"),
+     "SBT, LSS, QNS – đi theo giá đường; backtest mua theo đường (2012–2026, có phí) vẫn kém giữ VN-Index → không dùng làm lệnh"),
     ("bong", "ns", "Bông", "US cent/lb", ["yf:CT=F"], "dệt may: TCM, STK, MSH"),
     ("ngo", "ns", "Ngô", "US cent/giạ", ["yf:ZC=F"], "thức ăn chăn nuôi: DBC, BAF"),
     ("dau_tuong", "ns", "Đậu tương", "US cent/giạ", ["yf:ZS=F"], "thức ăn chăn nuôi: DBC, BAF"),

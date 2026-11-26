@@ -1113,8 +1113,15 @@ def do_vn15():
     print(f"  → C1 {'ĐẠT' if c1 else 'KHÔNG'} · C2 {c2}/4 {'ĐẠT' if c2 == 4 else 'KHÔNG'}")
 
 
+# Vòng 15 – KẾT QUẢ (178 tháng 2012–2026, sau phí; CAGR / biến động / Sharpe / sụt giảm): giữ luôn SBT+LSS 7,3 / 32,4 / 0,38 / −63 % ·
+#   VN-Index 11,4 / 19,9 / 0,64 / −44 % · k=1 6,2 / 25,6 / 0,36 / −63 % · k=3 9,6 / 25,4 / 0,49 / −40 % (giữ 43 % số tháng, 47 lần vào/ra)
+#   · k=6 8,2 / 24,5 / 0,44 / −46 %. Đoạn k=3 vs giữ luôn: 2012–15 +71/+38 · 2016–19 +26/−4 · 2020–22 +46/+19 · 2023–26 +23/+81.
+#   → C1 KHÔNG (Sharpe < VN-Index, k=1 < giữ luôn) · C2 3/4 KHÔNG (thua 2023–26) → KHÔNG đề xuất. Tín hiệu đường làm rổ đỡ tệ hơn
+#   (sụt giảm −63 → −40 %) nhưng rổ đường quá yếu – vẫn kém giữ VN-Index. Ghi chú trang sửa theo kết luận này.
+
+
 def main():
-    do_vn15()  # vòng 15: backtest chiến lược đường → SBT + LSS
+    do_vn15()  # vòng 15 (đã kết luận ở trên)
     return 0
 
 
