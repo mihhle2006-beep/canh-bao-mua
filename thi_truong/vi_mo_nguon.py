@@ -1147,8 +1147,69 @@ def do_vn16():
             print(f"✘ {ma}: {type(e).__name__} {str(e)[:60]}", flush=True)
 
 
+# Vòng 17 – kiểm H2 ĐẶT TRƯỚC (26/11): dự phóng LNST năm của web (lũy kế + quý còn lại = cùng kỳ năm trước) có sát hơn khi nhân
+# phần còn lại R (> 0) với exp(β·x), x = dấu × ln(giá TB tháng mốc + tháng trước ÷ giá TB quý gần nhất đã công bố)? β học 2013–2020,
+# kiểm 2021–2025. ĐẠT khi cả 4: B1 β > 0 & t ≥ 2 · B2 trung vị sai số 2021–25 thấp hơn gốc · B3 ≥ 4/5 năm · B4 ≥ 2/3 nhóm (≥ 10 qs).
+# Bảng gốc _thu_dp16.csv = số BCTC công khai (danh-muc ptcp/du_phong, kho BCTC) – xoá sau khi kết luận.
+NHOM17 = {"hrc": ("tv:COMEX:HRC1!", +1, "HPG HSG NKG"), "brent": ("yf:BZ=F", +1, "GAS PVS PVD BSR PLX"),
+          "cao_su": ("tv:SGX:TF1!", +1, "GVR PHR DPR"), "ure": ("tv:CBOT:UFV1!", +1, "DPM DCM"), "duong": ("yf:SB=F", +1, "SBT LSS QNS"),
+          "gao": ("yf:ZR=F", +1, "LTG TAR"), "heo": ("yf:HE=F", +1, "DBC BAF"), "bong": ("yf:CT=F", -1, "TCM MSH")}
+
+
+def do_vn17():
+    import os
+    from thi_truong import vi_mo_web as W
+    df = pd.read_csv(os.path.join(os.path.dirname(__file__), "_thu_dp16.csv"))
+    nhom = {m: (k, ng, dau) for k, (ng, dau, ds) in NHOM17.items() for m in ds.split()}
+    gia = {}
+    for k, (ng, dau, ds) in NHOM17.items():
+        if ds:
+            s = W._lay(ng, "2011-01-01").dropna()
+            gia[k] = s.groupby(s.index.to_period("M")).mean()
+    xs = []
+    for r in df.itertuples():
+        k, _, dau = nhom[r.ma]
+        g = gia[k]
+        qy, qq = (r.nam, r.k) if r.k else (r.nam - 1, 4)
+        pq = [g.get(pd.Period(f"{qy}-{qq * 3 - i:02d}", "M")) for i in range(3)]
+        m = pd.Period(f"{r.nam}-{r.moc:02d}", "M")
+        pm = [g.get(m), g.get(m - 1)]
+        ok = all(v is not None and v == v and v > 0 for v in pq + pm)
+        xs.append(dau * np.log(np.mean(pm) / np.mean(pq)) if ok else np.nan)
+    df["x"], df["nhom"] = xs, [nhom[m][0] for m in df.ma]
+    df["R"], df["Ra"] = df.web - df.ytd, df.thuc - df.ytd
+    hoc = df[(df.nam <= 2020) & (df.R > 0) & (df.Ra > 0) & df.x.notna()]
+    y, x = np.log(hoc.Ra / hoc.R), hoc.x
+    X = np.column_stack([np.ones(len(x)), x])
+    b, *_ = np.linalg.lstsq(X, y, rcond=None)
+    e = y - X @ b
+    se = np.sqrt(e.var(ddof=2) * np.linalg.inv(X.T @ X)[1, 1])
+    beta, t = b[1], b[1] / se
+    print(f"\n=== H2: β {beta:+.3f} (t {t:+.2f}, n {len(hoc)}, hệ số chặn {b[0]:+.3f}) · tương quan x–sai lệch {np.corrcoef(x, y)[0, 1]:+.3f}")
+    df["adj"] = np.where((df.R > 0) & df.x.notna(), df.ytd + df.R * np.exp(beta * df.x.fillna(0)), df.web)
+    df["e0"], df["e1"] = (df.web / df.thuc - 1).abs() * 100, (df.adj / df.thuc - 1).abs() * 100
+    oos = df[(df.nam >= 2021) & (df.thuc > 0)]
+    nm = oos.groupby("nam")[["e0", "e1"]].median()
+    nh = oos.groupby("nhom")[["e0", "e1"]].median().assign(n=oos.groupby("nhom").size())
+    B1, B2 = beta > 0 and t >= 2, oos.e1.median() < oos.e0.median()
+    B3 = int((nm.e1 < nm.e0).sum())
+    du = nh[nh.n >= 10]
+    B4 = int((du.e1 < du.e0).sum())
+    print(f"học 2013–20 (cả mẫu): gốc {df[df.nam <= 2020].e0.median():.1f} % → điều chỉnh {df[df.nam <= 2020].e1.median():.1f} %")
+    print(f"kiểm 2021–25: gốc {oos.e0.median():.1f} % → điều chỉnh {oos.e1.median():.1f} % · n {len(oos)}")
+    print("theo năm:\n" + nm.round(1).T.to_string())
+    print("theo nhóm:\n" + nh.round(1).T.to_string())
+    print("theo k:\n" + oos.groupby("k")[["e0", "e1"]].median().round(1).T.to_string())
+    print(f"B1 {B1} · B2 {B2} · B3 {B3}/5 · B4 {B4}/{len(du)} → {'ĐẠT' if B1 and B2 and B3 >= 4 and B4 * 3 >= 2 * len(du) else 'KHÔNG ĐẠT'}")
+    for k in NHOM17:                                                  # β riêng nhóm (chỉ tham khảo, không dùng chọn)
+        h = hoc[hoc.nhom == k]
+        if len(h) >= 15:
+            bb = np.polyfit(h.x, np.log(h.Ra / h.R), 1)[0]
+            print(f"  β riêng {k}: {bb:+.3f} (n {len(h)})")
+
+
 def main():
-    do_vn16()
+    do_vn17()
     return 0
 
 
