@@ -261,7 +261,7 @@ tbody tr{background:var(--the)}
 .sao[aria-pressed=true]{color:#e0a800}
 .lk-ma{color:inherit;text-decoration:none}.lk-ma:hover{color:var(--nhan);text-decoration:underline}
 .td-the{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;align-items:stretch}
-.wl{width:100%;border-collapse:collapse;font-size:13px}.wl th{font-weight:500;color:var(--chu2);font-size:12px;padding:4px 8px;text-align:right}.wl td{padding:6px 8px;text-align:right;border-top:1px solid var(--vien)}.wl .trai{text-align:left}.wl tbody tr{cursor:pointer}.wl tbody tr:hover{background:var(--nen)}.wl .ten{display:block;font-size:11px;color:var(--mo);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wl2{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;align-items:start}.wl{width:100%;border-collapse:collapse;font-size:13px}.wl th{font-weight:500;color:var(--chu2);font-size:12px;padding:4px 8px;text-align:right}.wl td{padding:6px 8px;text-align:right;border-top:1px solid var(--vien)}.wl .trai{text-align:left}.wl tbody tr{cursor:pointer}.wl tbody tr:hover{background:var(--nen)}.wl .ten{display:block;font-size:11px;color:var(--mo);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .quy b{font-weight:600}.quy-ct{width:100%;border-collapse:collapse;font-size:12.5px;margin:4px 0}.quy-ct td,.quy-ct th{padding:3px 8px;text-align:right;border-top:1px solid var(--vien)}.quy-ct .trai{text-align:left}.quy-ct .vach{display:inline-block;height:8px;border-radius:4px;background:var(--nhan);vertical-align:middle;margin-right:6px;opacity:.55}
 .quy>tbody>tr>td:first-child,.quy .dtn-mo td{white-space:normal}.quy .dtn-mo .phu{white-space:normal}
 .quy .ngan{display:none}
@@ -541,6 +541,9 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&
   const di = m => { m = (m || "").trim().toUpperCase(); if (/^[A-Z0-9]{2,10}$/.test(m)) location.href = GOC + "ma/#" + encodeURIComponent(m); };
   inp.addEventListener("input", goi);
   inp.addEventListener("focus", () => inp.select());
+  document.addEventListener("keydown", e => {                 // phím tắt: / → ô tìm mã (như Tra cứu mã)
+    if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.matches?.("input,textarea,select,[contenteditable]") && inp.offsetParent) {
+      e.preventDefault(); inp.focus(); } });
   inp.addEventListener("blur", () => setTimeout(dong, 120));
   inp.addEventListener("keydown", e => {
     if ((e.key === "ArrowDown" || e.key === "ArrowUp") && kq.length) { e.preventDefault(); i = (i + (e.key === "ArrowDown" ? 1 : -1) + kq.length) % kq.length; ve(); }
@@ -703,11 +706,13 @@ function ve_theo_doi() {
   const tang = co_gia.filter(r => r.pt > 0).length, giam = co_gia.filter(r => r.pt < 0).length;
   const tb = co_gia.length ? co_gia.reduce((a, r) => a + r.pt, 0) / co_gia.length : null;
   $("#td-tom").innerHTML = `${ma.length} mã · <span class="t">${tang} tăng</span> · <span class="g">${giam} giảm</span>${tb != null ? ` · TB <span class="${lop(tb)}">${dau(tb)}%</span>` : ""}`;
-  $("#td-ds").innerHTML = `<table class="wl"><thead><tr><th class="trai">Mã</th><th>Giá</th><th>±%</th><th>GTGD tỷ</th><th class="an-dt">NN tỷ</th><th class="an-dt">Mua CĐ</th></tr></thead><tbody>${
-    ds.map(r => `<tr data-ma="${esc(r.ma)}"><td class="trai"><b>${esc(r.ma)}</b><span class="ten">${esc((D.ten || {})[r.ma] || "")}</span></td>
+  const bang = d => `<table class="wl"><thead><tr><th class="trai">Mã</th><th>Giá</th><th>±%</th><th>GTGD tỷ</th><th class="an-dt">NN tỷ</th><th class="an-dt">Mua CĐ</th></tr></thead><tbody>${
+    d.map(r => `<tr data-ma="${esc(r.ma)}"><td class="trai"><b>${esc(r.ma)}</b><span class="ten">${esc((D.ten || {})[r.ma] || "")}</span></td>
       <td class="so ${lop_gia(r)}">${r.gia == null ? "–" : nf(r.gia)}</td><td class="so ${lop_gia(r)}">${r.pt == null ? "–" : dau(r.pt) + "%"}</td>
       <td class="so">${r.gt == null ? "–" : nf(r.gt, 1)}</td><td class="so an-dt ${lop(r.nn)}">${r.nn == null ? "–" : dau(r.nn, 1)}</td>
       <td class="so an-dt">${r.mcd == null ? "–" : nf(r.mcd, 0) + "%"}</td></tr>`).join("")}</tbody></table>`;
+  const n2 = Math.ceil(ds.length / 2);                       // màn rộng: 2 bảng cạnh nhau (1 bảng trải 1.400 px – mắt phải chạy xa)
+  $("#td-ds").innerHTML = innerWidth >= 1100 && ds.length > 5 ? `<div class="wl2">${bang(ds.slice(0, n2))}${bang(ds.slice(n2))}</div>` : bang(ds);
 }
 // ---------- mã ở Tổng quan: bấm → phân tích mã (Tra cứu mã) · rê chuột → ảnh nhanh biểu đồ (giá ngày 3 tháng) ----------
 function mo_ma(ma) { location.href = GOC + "ma/#" + encodeURIComponent(ma); }

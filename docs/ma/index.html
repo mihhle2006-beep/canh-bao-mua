@@ -60,6 +60,7 @@ header.dau .gg input{border-color:transparent;color:var(--chu)}header.dau .gg ul
 body.o-dau .dau-trong .gg{display:none}
 .lien{margin-left:auto;display:flex;gap:12px;font-size:13px;flex-wrap:wrap}
 main{max-width:1200px;margin:0 auto;padding:14px 16px 40px}
+@media (min-width:1600px){main,.dau-trong{max-width:1440px}}          /* màn lớn: bảng / biểu đồ rộng hơn (trước bỏ trống ~360px mỗi bên ở 1920px) */
 .the{background:var(--the);border:1px solid var(--vien);border-radius:12px;margin-bottom:14px}
 .khoi-dau{display:flex;align-items:baseline;gap:10px;padding:12px 14px;border-bottom:1px solid var(--luoi);flex-wrap:wrap}
 .khoi-dau h2{font-size:15px;margin:0;font-weight:650}
@@ -734,7 +735,7 @@ function live_cs(ma) {                                             // chỉ số
 }
 const tb = a => { const x = a.filter(v => v != null && isFinite(v)); return x.length ? x.reduce((s, v) => s + v, 0) / x.length : null; };
 const trung_vi = a => { const x = a.filter(v => v != null && isFinite(v)).sort((p, q) => p - q); return x.length ? (x.length % 2 ? x[(x.length - 1) / 2] : (x[x.length / 2 - 1] + x[x.length / 2]) / 2) : null; };
-const W_RONG = () => innerWidth < 700 ? 400 : Math.max(640, Math.min(1100, innerWidth - 140));   // biểu đồ hết khung
+const W_RONG = () => innerWidth < 700 ? 400 : Math.max(640, Math.min(innerWidth >= 1600 ? 1340 : 1100, innerWidth - 140));   // biểu đồ hết khung
 const MAU = ["#2E7D32", "#1f6feb", "#e8710a", "#9b3fd1", "#0e9fb3", "#d1342b", "#7a8494"];
 
 async function lay(u, bat_buoc = true) {
