@@ -641,8 +641,52 @@ def do_vn5():
             print(f"✘ MBS {u}: {type(e).__name__} {str(e)[:80]}")
 
 
+def do_vn6():
+    """Vòng 6: PMI (thông cáo S&P – câu chỉ số), NHNN (dòng tổng + kỳ của từng bảng), NSO (trang 2 danh sách, câu thất nghiệp,
+    xuất khẩu các tháng)."""
+    import requests
+    g = lambda u, **k: requests.get(u, headers={**UA, "Accept-Language": "vi,en;q=0.8"}, timeout=50, **k)   # noqa: E731
+    try:
+        t = g("https://www.pmi.spglobal.com/Public/Release/PressReleases?language=en").text
+        kh = re.findall(r'releaseDate">(.*?)</span>\s*<span class="releaseTitle">(.*?)</span>\s*<span class="greenListItem">'
+                        r'<a href="([^"]+)"', t, re.S)
+        vn = [(a.replace("&nbsp;", " "), b, c) for a, b, c in kh if "Vietnam" in b]
+        print(f"✔ S&P: {len(kh)} thông cáo · Vietnam: {vn}")
+        for d, ten, u in vn[:2]:
+            tt = _chu(g(u).text)
+            print(f"   [{ten}] {len(tt)} chữ: {_quanh(tt, 'PMI', 5, 220)}")
+            so_pmi = re.findall(r'\b([4-6]\d[,.]\d)\b', tt)[:12]
+            print(f"   số dạng xx,x / xx.x: {so_pmi}")
+        trang2 = g("https://www.pmi.spglobal.com/Public/Release/PressReleases?language=en&page=2").text
+        print(f"   trang 2: {len(re.findall('Vietnam', trang2))} lần Vietnam")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ S&P: {type(e).__name__} {str(e)[:80]}")
+    try:
+        t = g("https://sbv.gov.vn/du-no-tin-dung-doi-voi-nen-kt-dttktt").text
+        for i, b in enumerate(re.findall(r"<table.*?</table>", t, re.S)):
+            hang = [[_chu(c).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", r, re.S)] for r in re.findall(r"<tr.*?</tr>", b, re.S)]
+            print(f"✔ NHNN bảng {i}: {hang[:3]} … {hang[-3:]}")
+        tt = _chu(t)
+        ky_bang = re.findall(r'[Tt]háng \d{1,2} [Nn]ăm \d{4}', tt)[:6]
+        print(f"   kỳ: {ky_bang} · {_quanh(tt, 'Tổng', 3, 150)}")
+        for u in re.findall(r'href="([^"]*du-no-tin-dung[^"]*)"', t)[:6]:
+            print(f"   link: {u}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ NHNN: {type(e).__name__} {str(e)[:80]}")
+    try:
+        for u in ("https://www.nso.gov.vn/bao-cao-tinh-hinh-kinh-te-xa-hoi-hang-thang/page/2/",
+                  "https://www.nso.gov.vn/bao-cao-tinh-hinh-kinh-te-xa-hoi-hang-thang/?paged=2"):
+            r = g(u)
+            print(f"   NSO {r.status_code} {u}: {len(re.findall('kinh-te-xa-hoi-(?:thang|quy)', r.text))} link")
+        t9 = _chu(g("https://www.nso.gov.vn/bai-top/2026/09/bao-cao-tinh-hinh-kinh-te-xa-hoi-thang-tam-va-8-thang-nam-2026/").text)
+        for k in ("thất nghiệp", "xuất khẩu hàng hóa tháng", "Xuất khẩu hàng hóa", "IIP", "khách quốc tế đến"):
+            print(f"   T8 [{k}] {_quanh(t9, k, 2, 220)}")
+    except Exception as e:                                            # noqa: BLE001
+        print(f"✘ NSO: {type(e).__name__} {str(e)[:80]}")
+
+
 def main():
-    do_vn5()
+    do_vn6()
     return 0
 
 
