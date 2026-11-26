@@ -685,8 +685,41 @@ def do_vn6():
         print(f"✘ NSO: {type(e).__name__} {str(e)[:80]}")
 
 
+def do_vn7():
+    """Vòng 7: Cục Thống kê – danh sách sâu bao nhiêu trang, slug báo cáo cũ, câu bán lẻ / doanh nghiệp / xuất khẩu bị hụt."""
+    import requests
+    from thi_truong import nso
+    g = lambda u: requests.get(u, headers={**UA, "Accept-Language": "vi"}, timeout=50).text   # noqa: E731
+    for p in range(1, 13):
+        u = nso.DS if p == 1 else f"{nso.DS}page/{p}/"
+        try:
+            t = g(u)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"   trang {p}: {type(e).__name__}")
+            break
+        ds = sorted(set(re.findall(r'href="(https://www\.nso\.gov\.vn/[^"]+)"', t)))
+        bc = [x for x in ds if "kinh-te-xa-hoi" in x]
+        ky = [nso.ky_tu_url(x)[0] for x in bc]
+        print(f"   trang {p}: {len(t)} ký tự · {len(bc)} link KT-XH · kỳ {[f'{k:%m/%y}' if k is not None else '?' for k in ky]}")
+        for x, k in zip(bc, ky):
+            if k is None:
+                print(f"      không ra kỳ: {x}")
+    df, dem = nso.tai_dem(g, {}, trang=12)
+    print(f"✔ đọc {len(dem)} báo cáo · {df.index.min():%m/%Y}–{df.index.max():%m/%Y}")
+    can = ("cpi_yoy", "xk", "nk", "can_can", "ban_le", "dn_moi", "nsnn", "nsnn_kh", "fdi_dk", "vang_yoy", "lp_cb_bq")
+    for u, v in sorted(dem.items(), key=lambda kv: kv[1]["_ky"]):
+        thieu = [k for k in can if k not in v]
+        print(f"   {v['_ky']} · {len(v) - 1} khoá · thiếu {thieu} · {u[-70:]}")
+    cot = [c for c in ("xk", "xk_yoy", "nk", "can_can", "ban_le", "ban_le_yoy", "dn_moi", "dn_quay_lai", "nsnn", "gdp_nn") if c in df]
+    print(df[cot].to_string())
+    for u, v in sorted(dem.items(), key=lambda kv: kv[1]["_ky"], reverse=True)[:4]:
+        tt = nso.chu(g(u))
+        for k in ("Tổng mức bán lẻ", "doanh nghiệp thành lập mới", "xuất khẩu hàng hóa", "ngân sách Nhà nước tháng"):
+            print(f"   {v['_ky']} [{k}] {_quanh(tt, k, 2, 260)}")
+
+
 def main():
-    do_vn6()
+    do_vn7()
     return 0
 
 

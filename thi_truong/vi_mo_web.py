@@ -319,7 +319,7 @@ def tai_nso(S, N, P):
 
 
 def noi_nso(S, N, P):
-    """So chéo Cục Thống kê ↔ TradingView (in log) + nối THÁNG MỚI cho xuất / nhập khẩu (TradingView trễ ~3 tháng)."""
+    """So chéo Cục Thống kê ↔ TradingView (in log) + nối THÁNG MỚI cho xuất / nhập khẩu / cán cân (TradingView trễ ~3 tháng)."""
     from thi_truong.vi_mo_kt import theo_thang
     df = P.get("nso")
     if df is None or not len(df):
@@ -332,7 +332,7 @@ def noi_nso(S, N, P):
         if len(x):
             print(f"  kiểm Cục Thống kê ↔ TradingView {k}: {len(x)} tháng trùng · lệch lớn nhất "
                   f"{(x.iloc[:, 0] - x.iloc[:, 1]).abs().max():.3f}")
-    for k, ks in (("xk", "kt_vn_xk"), ("nk", "kt_vn_nk")):
+    for k, ks in (("xk", "kt_vn_xk"), ("nk", "kt_vn_nk"), ("can_can", "kt_vn_bot")):
         if k not in df or ks not in S:
             continue
         tv = theo_thang(S[ks])

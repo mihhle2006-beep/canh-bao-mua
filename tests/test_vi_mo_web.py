@@ -188,14 +188,17 @@ def test_yahoo_ngay_theo_gio_san(monkeypatch):
 
 def test_noi_nso_chi_them_thang_moi_cho_xuat_nhap_khau(capsys):
     th = pd.date_range("2026-01-01", "2026-07-01", freq="MS")
-    S = {"kt_vn_xk": pd.Series(40e9, th), "kt_vn_nk": pd.Series(38e9, th), "kt_vn_cpi": pd.Series(4.0, th)}
+    S = {"kt_vn_xk": pd.Series(40e9, th), "kt_vn_nk": pd.Series(38e9, th), "kt_vn_cpi": pd.Series(4.0, th),
+         "kt_vn_bot": pd.Series(2e9, th)}
     N = {"kt_vn_xk": "TradingView"}
-    df = pd.DataFrame({"xk": [41.0, 50.0, 52.0], "nk": [39.0, 45.0, float("nan")], "cpi_yoy": [4.01, 4.5, 4.6]},
+    df = pd.DataFrame({"xk": [41.0, 50.0, 52.0], "nk": [39.0, 45.0, float("nan")], "cpi_yoy": [4.01, 4.5, 4.6],
+                       "can_can": [2.0, 5.0, float("nan")]},
                       index=pd.to_datetime(["2026-07-01", "2026-08-01", "2026-09-01"]))
     V.noi_nso(S, N, {"nso": df})
     xk = S["kt_vn_xk"]
     assert xk.loc["2026-07-01"] == 40e9 and xk.loc["2026-09-01"] == 52e9 and len(xk) == 9      # tháng trùng giữ TradingView
     assert len(S["kt_vn_nk"]) == 8 and "2 tháng mới: Cục Thống kê" in N["kt_vn_xk"]
+    assert S["kt_vn_bot"].loc["2026-08-01"] == 5e9 and len(S["kt_vn_bot"]) == 8
     out = capsys.readouterr().out
     assert "kiểm Cục Thống kê ↔ TradingView xk: 1 tháng trùng · lệch lớn nhất 1.000" in out and "cpi_yoy: 1 tháng" in out
     V.noi_nso(S, N, {})                                                                         # không có báo cáo → không đổi
