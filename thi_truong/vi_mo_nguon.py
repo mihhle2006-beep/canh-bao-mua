@@ -815,8 +815,108 @@ def do_vn11():
         print(f"   {d}: số đầu tiên sau đầu trang ở {j} · {t[max(0, j - 500):j + 500] if j >= 0 else t[3000:3600]}")
 
 
+TQ12 = ("SHFE:RB1! SHFE:HC1! DCE:I1! DCE:J1! DCE:JM1! SHFE:RU1! ZCE:SR1! ZCE:CF1! ZCE:UR1! DCE:M1! DCE:C1! DCE:LH1! DCE:V1! "
+        "DCE:L1! DCE:PP1! SHFE:AL1! SHFE:CU1! INE:SC1! ZCE:TA1! INDEX:BDI TVC:BDI").split()
+# Hàng hoá → rổ mã ngành, dấu (+1: giá bán ra của ngành · −1: chi phí đầu vào). ĐẶT TRƯỚC khi chạy (26/11/2026).
+CAP12 = [("hrc", "tv:COMEX:HRC1!", +1, "HPG HSG NKG"), ("thep_tq", "tv:SHFE:RB1!", +1, "HPG HSG NKG"),
+         ("quang_sat", "tv:SGX:FEF1!", +1, "HPG HSG NKG"), ("brent", "yf:BZ=F", +1, "GAS PVS PVD BSR PLX"),
+         ("khi", "yf:NG=F", +1, "GAS"), ("than", "tv:ICEEUR:NCF1!", +1, "TVD NBC"), ("cao_su", "tv:SGX:TF1!", +1, "GVR PHR DPR"),
+         ("cao_su_tq", "tv:SHFE:RU1!", +1, "GVR PHR DPR"), ("ure", "tv:CBOT:UFV1!", +1, "DPM DCM"), ("ure_tq", "tv:ZCE:UR1!", +1, "DPM DCM"),
+         ("duong", "yf:SB=F", +1, "SBT LSS QNS"), ("gao", "yf:ZR=F", +1, "LTG TAR"), ("heo", "yf:HE=F", +1, "DBC BAF"),
+         ("heo_tq", "tv:DCE:LH1!", +1, "DBC BAF"), ("ngo", "yf:ZC=F", -1, "DBC BAF"), ("dau_tuong", "yf:ZS=F", -1, "DBC BAF"),
+         ("bong", "yf:CT=F", -1, "TCM MSH"), ("pvc_tq", "tv:DCE:V1!", -1, "BMP NTP")]
+
+
+def thang(s):
+    """Chuỗi ngày → giá cuối tháng (chỉ mục ngày 1 của tháng)."""
+    s = pd.Series(s).dropna()
+    m = s.groupby(s.index.to_period("M")).last()
+    m.index = m.index.to_timestamp()
+    return m
+
+
+def thu_tin_hieu(c, b, vni, dau, ky=3, chia="2020-01-01"):
+    """c, b, vni: giá cuối tháng (hàng hoá, rổ ngành, VN-Index). Tín hiệu cuối tháng t: dau × lợi suất ky tháng của c > 0 → giữ rổ
+    tháng t+1, ngược lại giữ VN-Index. → dict theo đoạn ("is" < chia ≤ "oos"): số tháng, tương quan cùng tháng / tháng sau,
+    chênh lợi suất vượt VNI tháng có – không tín hiệu (%/tháng, t), lợi thế so luôn giữ rổ (%/năm)."""
+    x = pd.concat({"c": c, "b": b, "v": vni}, axis=1).dropna()
+    rc, rb, rv = x.c.pct_change(), x.b.pct_change(), x.v.pct_change()
+    vuot = (rb - rv)                                                   # rổ vượt VN-Index trong tháng
+    tin = (dau * x.c.pct_change(ky) > 0).astype(float)
+    d = pd.DataFrame({"rc": rc, "vuot": vuot, "vuot_sau": vuot.shift(-1), "tin": tin}).dropna()
+    out = {}
+    for ten, k in (("is", d[d.index < chia]), ("oos", d[d.index >= chia])):
+        on, off = k.vuot_sau[k.tin > 0], k.vuot_sau[k.tin == 0]
+        ch = on.mean() - off.mean() if len(on) > 2 and len(off) > 2 else float("nan")
+        se = (on.var(ddof=1) / len(on) + off.var(ddof=1) / len(off)) ** 0.5 if len(on) > 2 and len(off) > 2 else float("nan")
+        out[ten] = {"n": len(k), "cung": k.rc.corr(k.vuot), "sau": (dau * k.rc).corr(k.vuot_sau),
+                    "chenh": ch * 100, "t": ch / se if se else float("nan"),
+                    "loi_the": ((k.tin * k.vuot_sau).mean() - k.vuot_sau.mean()) * 1200}
+    return out
+
+
+def dat12(r):
+    """Tiêu chí đặt trước: chênh > 0 cả 2 đoạn, OOS t ≥ 1,5 và lợi thế OOS ≥ +3 %/năm."""
+    i, o = r["is"], r["oos"]
+    return bool(i["chenh"] > 0 and o["chenh"] > 0 and o["t"] >= 1.5 and o["loi_the"] >= 3)
+
+
+def _gia_dai(thu, ma):
+    """du_lieu/gia_dai/<MÃ>.json (bản sao lưu Tra cứu mã: d0 + g bước ngày + c đã điều chỉnh) → Series."""
+    j = json.load(open(f"{thu}/du_lieu/gia_dai/{ma}.json", encoding="utf-8"))
+    d = pd.Timestamp(j["d0"]) + pd.to_timedelta(np.cumsum(j["g"]), unit="D")
+    return pd.Series(j["c"], index=d)
+
+
+def do_vn12():
+    """Vòng 12 (chủ quỹ: "kiếm thêm nguồn" + "giá hàng hoá so tương quan ngành có giúp mua bán không"): mã hàng hoá Trung Quốc /
+    cước tàu trên TradingView; thử tín hiệu hàng hoá → rổ mã ngành (CAP12, tiêu chí dat12 đặt trước)."""
+    import subprocess
+    import tempfile
+    import requests
+    from thi_truong import vi_mo_web as W
+    for ma in TQ12:
+        try:
+            s = tv(ma, "1D").dropna()
+            print(f"✔ {ma}: {len(s)} phiên {s.index[0]:%m/%Y}→{s.index[-1]:%d/%m/%Y} · cuối {s.iloc[-1]:,.6g}", flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"✘ {ma}: {type(e).__name__} {str(e)[:50]}", flush=True)
+    thu = tempfile.mkdtemp()
+    f = f"{thu}/d.tar.zst"
+    with requests.get("https://github.com/mihhle2006-beep/canh-bao-mua/releases/download/sao-luu-tra-cuu/du_lieu.tar.zst",
+                      stream=True, timeout=120) as r:
+        r.raise_for_status()
+        with open(f, "wb") as fp:
+            for k in r.iter_content(1 << 20):
+                fp.write(k)
+    mas = sorted({m for *_, ds in CAP12 for m in ds.split()})
+    subprocess.run(["tar", "--zstd", "-xf", f, "-C", thu, "du_lieu/chi_so/VNINDEX.json",
+                    *[f"du_lieu/gia_dai/{m}.json" for m in mas]], check=False)
+    j = json.load(open(f"{thu}/du_lieu/chi_so/VNINDEX.json", encoding="utf-8"))
+    vni = thang(pd.Series(j["c"], index=pd.Timestamp(j["d0"]) + pd.to_timedelta(np.cumsum(j["g"]), unit="D")))
+    gia = {}
+    for m in mas:
+        try:
+            gia[m] = thang(_gia_dai(thu, m))
+        except Exception as e:                                        # noqa: BLE001
+            print(f"  ✘ {m}: {e}")
+    print(f"\n=== Hàng hoá → rổ ngành (tháng, vượt VN-Index; IS < 2020 ≤ OOS) · đạt = chênh>0 cả 2 đoạn, OOS t≥1,5, lợi thế OOS ≥ +3%/năm ===")
+    for k, ng, dau, ds in CAP12:
+        try:
+            c = thang(W._lay(ng, "2010-01-01"))
+            r = pd.concat([gia[m].pct_change() for m in ds.split() if m in gia], axis=1).mean(axis=1, skipna=True)
+            b = (1 + r.fillna(0)).cumprod()[r.notna().cumsum() > 0]
+            x = thu_tin_hieu(c, b, vni, dau)
+            i, o = x["is"], x["oos"]
+            print(f"  {'ĐẠT ' if dat12(x) else '  – '}{k:11s} {dau:+d} [{ds}] · cùng tháng {i['cung']:+.2f}/{o['cung']:+.2f} · tháng sau "
+                  f"{i['sau']:+.2f}/{o['sau']:+.2f} · chênh {i['chenh']:+.2f}%/{o['chenh']:+.2f}% (t {i['t']:+.1f}/{o['t']:+.1f}) · lợi thế "
+                  f"{i['loi_the']:+.1f}/{o['loi_the']:+.1f} %/năm · {i['n']}+{o['n']} tháng", flush=True)
+        except Exception as e:                                        # noqa: BLE001
+            print(f"  ✘ {k}: {type(e).__name__} {str(e)[:80]}", flush=True)
+
+
 def main():
-    do_vn11()  # vòng 11: khuôn số các bảng NHNN (BoP đủ dòng, chỉ tiêu cơ bản, nợ xấu, LDR)
+    do_vn12()  # vòng 12: hàng hoá Trung Quốc / cước tàu · thử tín hiệu hàng hoá → rổ mã ngành
     return 0
 
 
