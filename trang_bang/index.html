@@ -158,7 +158,11 @@ main{max-width:1440px;margin:0 auto;padding:16px}
   .vm-o2 .d2{flex-wrap:wrap;gap:0 5px}.vm-o2 .dv{white-space:nowrap}.vm-o2 .ghi{white-space:normal;line-height:1.3}
   .vm-o2 .gia{font-size:18px}.vm-o2 .doi{font-size:11.5px}.vm-o2{padding:8px 9px}.vm-bang td,.vm-bang th{padding:7px 6px}
   .vm-bang .mo{display:none}}
-.vm-hh-boc{max-height:430px;overflow:auto}.vm-hh td,.vm-hh th{padding:6px 10px}.vm-hh thead th{cursor:default}
+#vm-bd-hh{height:400px}@media (max-width:600px){#vm-bd-hh{height:300px}}
+@media (min-width:901px){#vm-hh-the{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}}
+#vm-cg-hh button{border:0;background:none;padding:2px 4px;border-radius:6px;font:inherit;color:var(--chu2)}
+#vm-cg-hh button:hover{background:var(--nen)}#vm-cg-hh button.chon{color:var(--chu);font-weight:650}#vm-cg-hh button.chon i{height:4px}
+.vm-hh-boc{max-height:470px;overflow:auto}.vm-hh td,.vm-hh th{padding:6px 10px}.vm-hh thead th{cursor:default}
 .vm-hh tbody tr[data-k]{cursor:pointer}.vm-hh tbody tr.chon{background:var(--nhan-nen)}
 .vm-hh .lq{display:block;font-size:11px;color:var(--mo);white-space:normal;max-width:250px;line-height:1.35}
 .vm-hh tr.nhom td{background:var(--nen);color:var(--chu2);font-weight:650;font-size:12px;cursor:default;padding:5px 10px}
@@ -276,7 +280,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coa
 /* ===== GIAO DIỆN 26/11/2026 – cùng bộ với Tra cứu mã: thẻ nổi nhẹ · tab dạng viên (chỉ hình thức) ===== */
 :root{--vien:#dfeae2;--luoi:#edf3ef;--bong:0 1px 2px rgba(16,42,24,.05),0 2px 10px -3px rgba(16,42,24,.08);
   --bong-noi:0 2px 4px rgba(16,42,24,.06),0 12px 28px -8px rgba(16,42,24,.18)}
-html,body{-webkit-font-smoothing:antialiased}
+html,body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
 body{background:radial-gradient(1100px 420px at 50% -120px,#dff0e3 0%,rgba(223,240,227,0) 70%) no-repeat,var(--nen)}
 header{background:linear-gradient(100deg,#123f1a 0%,#1B5E20 32%,#2E7D32 72%,#43A047 100%);
   box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 18px -6px rgba(16,60,24,.45)}
@@ -290,13 +294,19 @@ header{background:linear-gradient(100deg,#123f1a 0%,#1B5E20 32%,#2E7D32 72%,#43A
 .khoi-dau h2{letter-spacing:-.1px}
 th{letter-spacing:.05em}
 tbody tr:hover td{background:#f3f8f4}
+/* NÚT CHUYỂN TRANG (cùng kiểu Tra cứu mã / Bảng tổng hợp): Thị trường | Tra cứu mã | Tổng hợp – trang đang ở tô trắng */
+.chuyen{display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.chuyen a{padding:4px 12px;border-radius:999px;color:#e8f5e9;font-size:12.5px;font-weight:550;white-space:nowrap;text-decoration:none}
+.chuyen a:hover{background:rgba(255,255,255,.14);color:#fff;text-decoration:none}
+.chuyen a[aria-current=page]{background:#fff;color:#1B5E20;font-weight:650;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+@media (max-width:600px){.lk.chuyen{gap:2px}.lk.chuyen a{background:none;border:0;padding:3px 10px;font-size:12px}.lk.chuyen a[aria-current]{display:none}}
 </style>
 </head>
 <body>
 <header>
   <div class="dau">
     <h1>Bảng thị trường</h1>
-    <nav class="lk" aria-label="Trang khác"><a href="../ma/">Tra cứu mã</a><a href="../"><span class="an-dt">Bảng tổng hợp</span><span class="chi-dt">Tổng hợp</span></a></nav>
+    <nav class="lk chuyen" aria-label="Chuyển trang"><a href="#" aria-current="page" title="Bảng giá trong phiên, bản đồ nhiệt, lọc mã, vĩ mô">Thị trường</a><a href="../ma/" title="Tra cứu từng mã: biểu đồ, tài chính, định giá">Tra cứu mã</a><a href="../" title="Tín hiệu của bot: sức khoẻ thị trường, danh sách mua, khuyến nghị đã gửi">Tổng hợp</a></nav>
     <div class="tab" role="tablist">
       <button role="tab" id="tab-tq" aria-selected="true" data-tab="tq">Tổng quan</button>
       <button role="tab" id="tab-loc" aria-selected="false" data-tab="loc">Lọc mã</button>
@@ -470,6 +480,9 @@ const URL_DL = "du_lieu.json";
 // TRANG RIÊNG (10/11/2026): bảng chạy ở cả canh-bao-mua/thi_truong/ (cũ) lẫn repo riêng bang-thi-truong/ (Pages nhỏ, cập
 // nhật 2'). Cùng gốc github.io → Tra cứu mã / Tổng hợp / ảnh nhanh biểu đồ ở canh-bao-mua; localStorage (danh sách theo dõi) dùng chung.
 const GOC = /\.github\.io$/.test(location.hostname) && !/\/canh-bao-mua\//.test(location.pathname) ? "/canh-bao-mua/" : "../";
+// phông Inter (SIL OFL) để ở repo canh-bao-mua docs/ma/lib – cùng site, không tải phông ngoài; lỗi → phông hệ thống
+try { [["inter-vi", "U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB"], ["inter-latin", "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"]]
+  .forEach(([f, r]) => document.fonts.add(new FontFace("Inter", `url(${GOC}ma/lib/${f}.woff2) format("woff2")`, {weight: "400 800", unicodeRange: r, display: "swap"}))); } catch (e) {}
 if (GOC !== "../") document.querySelectorAll('a[href^="../"]').forEach(x => x.setAttribute("href", GOC + x.getAttribute("href").slice(3)));
 const $ = s => document.querySelector(s);
 const MAU = {tang: "#0f8a4a", giam: "#d1342b", dung: "#b88a00", luoi: "#edf0f4", truc: "#7a8494", chu: "#1d2430"};
@@ -1244,7 +1257,7 @@ const VM_MAU = {sjc_ban: "#d1342b", sjc_mua: "#f08a7e", tg_vnd: "#1f6feb", nhan_
   vn_lnh: "#43A047", vn_1n: "#1f6feb", vn_10n: "#9b3fd1", vn_cpi: "#d1342b", us_ff: "#1B5E20", us_tran: "#9aa3ad",
   us_2n: "#1f6feb", us_10n: "#9b3fd1", us_thuc10: "#d1342b", usdvnd: "#2E7D32", dxy: "#1f6feb", chenh: "#b88a00",
   us_sofr: "#0e9fb3", us_cpi: "#d1342b", us_vix: "#9aa3ad", vn_gdp: "#1B5E20", vn_sxcn: "#1f6feb", vn_banle: "#b88a00"};
-const VM_HH_MAU = ["#1f6feb", "#d1342b", "#2E7D32", "#9b3fd1", "#b88a00", "#0e9fb3", "#e8590c", "#5c6370", "#c2255c", "#5c940d",
+const VM_HH_MAU = ["#1f6feb", "#d1342b", "#0b7285", "#9b3fd1", "#b88a00", "#0e9fb3", "#e8590c", "#5c6370", "#c2255c", "#5c940d",
   "#1864ab", "#862e9c"];
 const VM_BANG = ["tang_truong", "san_xuat", "gia", "tien_te", "thuong_mai", "tieu_dung", "lao_dong", "the_gioi", "tim"];
 const vm_so = (x, le = 2) => x == null || isNaN(x) ? "–" : Number(x).toLocaleString("vi-VN", {minimumFractionDigits: le, maximumFractionDigits: le});
@@ -1493,13 +1506,20 @@ async function ve_hh(LW) {                            // biểu đồ hàng hoá
   $("#vm-hh-dv").textContent = pt ? "% · đậm: " + r.ten : r.dv + " · " + r.nguon;
   try {
     const ch = vm_bd($("#vm-bd-hh"), LW); VM.hh_ch = ch;
-    ks.forEach((k, i) => { const dd = vm_loc(VM.hh[k]); if (!dd.length) return; const g0 = dd[0].value;
-      const s = ch.addSeries(LW.LineSeries, {color: pt ? VM_HH_MAU[i % VM_HH_MAU.length] : "#1f6feb", lineWidth: k === r.k ? 3 : 1,
-        priceLineVisible: !pt, title: ""});
-      s.setData(pt ? dd.map(p => ({time: p.time, value: g0 ? (p.value / g0 - 1) * 100 : 0})) : dd); });
+    // 26/11/2026: % cả nhóm – loại đang chọn đậm 3px + nhãn giá trị, loại khác mảnh & nhạt (trước: 11 đường cùng đậm nhạt, nhãn đè nhau);
+    // giá – vùng tô nhạt, xanh khi tăng / đỏ khi giảm trong khoảng đang xem
+    const mo = (hex, a) => `rgba(${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)},${a})`;
+    [...ks.filter(k => k !== r.k), r.k].forEach(k => {                  // loại đang chọn vẽ sau cùng → nằm trên
+      const dd = vm_loc(VM.hh[k]); if (!dd.length) return; const g0 = dd[0].value, chon = k === r.k;
+      if (pt) ch.addSeries(LW.LineSeries, {color: chon ? "#1B5E20" : mo(VM_HH_MAU[ks.indexOf(k) % VM_HH_MAU.length], .45),
+        lineWidth: chon ? 3 : 1, priceLineVisible: false, lastValueVisible: chon, crosshairMarkerVisible: chon, title: ""})
+        .setData(dd.map(p => ({time: p.time, value: g0 ? (p.value / g0 - 1) * 100 : 0})));
+      else { const m = dd[dd.length - 1].value >= g0 ? "#0f8a4a" : "#d1342b";
+        ch.addSeries(LW.AreaSeries, {lineColor: m, topColor: mo(m, .22), bottomColor: mo(m, 0), lineWidth: 2, priceLineVisible: false,
+          title: ""}).setData(dd); } });
     ch.timeScale().fitContent();
   } catch (e) { console.error("vm hh", e); }
-  $("#vm-cg-hh").innerHTML = pt ? ks.map((k, i) => `<span><i style="background:${VM_HH_MAU[i % VM_HH_MAU.length]}"></i>${esc(ds.find(x => x.k === k).ten)}</span>`).join("") : "";
+  $("#vm-cg-hh").innerHTML = pt ? ks.map((k, i) => `<button type="button" data-k="${k}"${k === r.k ? ' class="chon"' : ""}><i style="background:${k === r.k ? "#1B5E20" : VM_HH_MAU[i % VM_HH_MAU.length]}"></i>${esc(ds.find(x => x.k === k).ten)}</button>`).join("") : "";
 }
 async function lay_song() {                           // giá XAU/USD trực tiếp (nguồn cho phép trình duyệt gọi)
   const s = VM.d?.song; if (!s || document.hidden || ST.tab !== "vm") return;
@@ -1516,6 +1536,7 @@ function tat_song() { if (VM.song) clearInterval(VM.song); VM.song = null; }
 $("#vm-ky").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_ky = +b.dataset.k; luu_st(); ve_cd(); };
 $("#vm-xau-k").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_xau = b.dataset.k; luu_st(); ve_cd(); };
 $("#vm-hh").onclick = e => { const tr = e.target.closest("tr[data-k]"); if (!tr) return; ST.vm_hh = tr.dataset.k; luu_st(); vm_hh_bang(); ve_hh(); };
+$("#vm-cg-hh").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_hh = b.dataset.k; luu_st(); vm_hh_bang(); ve_hh(); };
 $("#vm-hh-k").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; ST.vm_hh_k = b.dataset.k; luu_st(); vm_hh_bang(); ve_hh(); };
 $("#vm-the").onclick = e => {                          // chạm thẻ bạc / dầu → chủ đề Hàng hoá, chọn loại đó
   const o = e.target.closest(".o[data-k]"); if (!o || !(VM.d?.hang_hoa || []).some(r => r.k === o.dataset.k)) return;
