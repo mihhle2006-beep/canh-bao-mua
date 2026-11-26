@@ -1017,8 +1017,15 @@ def do_vn14():
             print(f"  ✘ {k}: {type(e).__name__} {str(e)[:80]}", flush=True)
 
 
+# Vòng 14 – KẾT QUẢ (tương quan IS/OOS · ngày |z|>2: trong phiên mở→đóng IS/OOS):
+#   A ĐẠT: Brent → dầu khí +0,22/+0,26 (trong phiên −0,15/+0,09 % – đã vào giá mở cửa) · WTI +0,25/+0,15 · đường → SBT/LSS/QNS
+#   +0,02/+0,17 (trong phiên +0,20/+0,43 %, t 1,5/2,9 → B ĐẠT) · than → TVD/NBC 0,00/+0,16 (trong phiên +0,68 % t 1,9) · S&P 500 →
+#   VN-Index +0,21/+0,23 (OOS trong phiên ĐẢO −0,61 % t −4,5, IS +0,05 – không bền) · VIX −0,20/−0,14, DXY −0,05/−0,11 (ngược dấu).
+#   KHÔNG: HRC, đồng, cao su, urê, heo (|tương quan| ≤ 0,05). → canh_bao/dem_qua: tin trước phiên khi biến động mạnh (thông tin).
+
+
 def main():
-    do_vn14()  # vòng 14: biến động đêm qua → phiên VN sau (khe mở cửa / trong phiên)
+    do_vn14()  # vòng 14 (đã kết luận ở trên)
     return 0
 
 
