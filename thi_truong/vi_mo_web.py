@@ -290,6 +290,22 @@ def _nho_nhnn(ten, cot, doc, nhan):
         return cu
 
 
+def _roa_moi(lay, nso, toi_da=8):
+    """Bài ROA/ROE (liên kết ở trang Thống kê một số chỉ tiêu cơ bản) chưa nhớ → [(quý, ROA, ROE)]; quý đã có trong roa.csv bỏ qua."""
+    try:
+        cu = set(pd.read_csv(os.path.join(DEM, "roa.csv"), index_col=0, parse_dates=True).index)
+    except (OSError, ValueError):
+        cu = set()
+    out = []
+    for u, q in nso.bai_roa(lay(nso.NHNN_CTCB))[:toi_da]:
+        if q in cu or any(q == x[0] for x in out):
+            continue
+        r = nso.roa_roe(lay(u), q)
+        if r:
+            out.append((q, *r))
+    return out
+
+
 def tai_nso(S, N, P):
     """Cục Thống kê (báo cáo tháng / quý – nhớ từng báo cáo đã đọc), NHNN (tín dụng – cộng dồn theo lượt), CafeF RSS (tin vĩ mô)."""
     from thi_truong import nso
@@ -325,6 +341,18 @@ def tai_nso(S, N, P):
         S["m2_tang"], S["tgdc_tang"] = m2["m2_tang"].astype(float), m2["tgdc_tang"].astype(float)
         N["m2_tang"] = N["tgdc_tang"] = "NHNN – tổng phương tiện thanh toán và tiền gửi của khách hàng"
         print(f"  NHNN M2: {len(m2)} tháng · cuối {m2.index[-1]:%m/%Y} tăng {m2['m2_tang'].iloc[-1]}% so cuối năm trước")
+    bp = _nho_nhnn("bop.csv", ["ca", "fdi", "fpi", "tong_the"],
+                   lambda: [(k, x.get("ca"), x.get("fdi"), x.get("fpi"), x.get("tong_the")) for k, x in nso.bop(lay(nso.NHNN_BOP))], "BoP")
+    for c in ("fdi", "fpi", "tong_the"):
+        if c in bp and bp[c].notna().any():
+            S["bop_" + c], N["bop_" + c] = bp[c].dropna().astype(float), "NHNN – cán cân thanh toán quốc tế"
+    if len(bp):
+        print(f"  NHNN BoP: {len(bp)} quý · cuối {bp.index[-1]:%m/%Y} · " + " · ".join(f"{c} {bp[c].iloc[-1]}" for c in bp))
+    nh = _nho_nhnn("roa.csv", ["roa", "roe"], lambda: _roa_moi(lay, nso), "ROA/ROE")
+    if len(nh):
+        S["nh_roa"], S["nh_roe"] = nh["roa"].astype(float), nh["roe"].astype(float)
+        N["nh_roa"] = N["nh_roe"] = "NHNN – thống kê một số chỉ tiêu cơ bản (ROA, ROE)"
+        print("  NHNN ROA/ROE: " + " · ".join(f"{d:%m/%y} {a:g}/{b:g}" for d, a, b in nh[["roa", "roe"]].itertuples()))
     if len(td):
         S["td_tang"], S["td_tong"] = td["tang"].astype(float), td["tong"].astype(float)
         N["td_tang"] = N["td_tong"] = "NHNN – dư nợ tín dụng đối với nền kinh tế"

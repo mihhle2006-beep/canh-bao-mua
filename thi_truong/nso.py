@@ -105,8 +105,9 @@ MAU = {
     "xk": (rf"(?:[Kk]im ngạch )?[Xx]uất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
     "xk_yoy": (rf"(?:[Kk]im ngạch )?[Xx]uất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
                rf"{_SO}% so với cùng kỳ", lambda g: dau(g[3], g[4])),
-    "nk": (rf"[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
-    "nk_yoy": (rf"[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
+    # (?<!xuất, ): bỏ câu "Tổng kim ngạch xuất, nhập khẩu hàng hóa tháng Chín đạt 117,69 tỷ USD" (báo cáo 09/2026 – tổng 2 chiều)
+    "nk": (rf"(?<!xuất, )[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
+    "nk_yoy": (rf"(?<!xuất, )[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
                rf"{_SO}% so với cùng kỳ", lambda g: dau(g[3], g[4])),
     "can_can": (rf"[Cc]án cân thương mại hàng hóa {_THANG} (?:ước tính |ước )?(xuất siêu|nhập siêu) {_SO} tỷ USD",
                 lambda g: so(g[1]) * (1 if g[0] == "xuất siêu" else -1)),
@@ -223,15 +224,19 @@ def kiem(df):
     return df
 
 
-PHIEN = 4                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
+PHIEN = 5                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
 
 
-def tai_dem(lay, dem=None, trang=3):
-    """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới. → (df, dem)."""
-    dem = dict(dem or {})
+def tai_dem(lay, dem=None, trang=3, toi_da=12):
+    """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới / đọc lại
+    khi bộ đọc đổi, tối đa toi_da báo cáo mỗi lượt (mới trước; phần còn lại giữ bản cũ, lượt sau đọc tiếp). → (df, dem)."""
+    dem, tai = dict(dem or {}), 0
     for url, ky, _ in danh_sach(lay, trang):
         if dem.get(url, {}).get("_v") == PHIEN:
             continue                                                 # bộ đọc đổi (PHIEN) → đọc lại
+        if tai >= toi_da:
+            break                                                    # 26/11: đọc lại ~40 báo cáo một lượt → trang chặn
+        tai += 1
         try:
             d = doc(chu(lay(url)))
         except Exception:                                            # noqa: BLE001 – lượt sau thử lại; giữ bản đọc cũ
@@ -285,6 +290,46 @@ def m2(html):
         if ky:
             out.append((pd.Timestamp(year=int(ky[-1][1]), month=int(ky[-1][0]), day=1), so(m[1]), so(m[2]), so(m[4])))
     return out
+
+
+# ------------------------------------------------------------------ NHNN – cán cân thanh toán (quý mới nhất), ROA / ROE hệ thống
+NHNN_BOP = "https://sbv.gov.vn/vi/can-can-thanh-toan-quoc-te"     # dò 26/11/2026 (vi_mo_nguon.do_vn11)
+NHNN_CTCB = "https://sbv.gov.vn/vi/thong-ke-mot-so-chi-tieu-co-ban"
+_BOP = {"ca": "A. Cán cân vãng lai", "fdi": "Đầu tư trực tiếp (ròng)", "fpi": "Đầu tư gián tiếp (ròng)", "tong_the": "E. Cán cân tổng thể"}
+_QUY = {"I": 1, "II": 4, "III": 7, "IV": 10}
+
+
+def bop(html):
+    """Trang cán cân thanh toán → [(tháng đầu quý, {ca, fdi, fpi, tong_the: triệu USD})] (bảng chỉ có quý mới nhất)."""
+    t = chu(html)
+    q = re.search(r"Quý ([IV]+) NĂM (\d{4})", t)
+    if not q or q[1] not in _QUY:
+        return []
+    x = {k: float(m[1].replace(".", "")) for k, nhan in _BOP.items() if (m := re.search(re.escape(nhan) + r" (-?\d[\d.]*)", t))}
+    return [(pd.Timestamp(year=int(q[2]), month=_QUY[q[1]], day=1), x)] if x else []
+
+
+def bai_roa(html):
+    """Trang "Thống kê một số chỉ tiêu cơ bản" → [(đường dẫn bài ROA/ROE, tháng đầu quý)] theo chữ liên kết "ROA,ROE (Quý III/2026)"."""
+    out = []
+    for m in re.finditer(r'<a[^>]+href="(https://sbv\.gov\.vn/[^"]+)"[^>]*>\s*[^<]{0,80}ROA[^<]{0,20}Quý ([IV]+)/(\d{4})', html):
+        if m[2] in _QUY:
+            out.append((m[1], pd.Timestamp(year=int(m[3]), month=_QUY[m[2]], day=1)))
+    return out
+
+
+def roa_roe(html, quy=None):
+    """Bài ROA/ROE theo loại hình TCTD → (ROA %, ROE %) dòng "Toàn hệ thống" | None. quy: tháng đầu quý mong đợi – ghi chú
+    "Báo cáo tài chính Quý …" phải khớp (bài cũ có lúc hiện bảng quý mới nhất – lượt thử 26/11: Q2 ra đúng số Q3)."""
+    t = chu(html)
+    m = re.search(r"Loại hình TCTD ROA ROE.{0,800}?Toàn hệ thống (\d+,\d+) (\d+,\d+)", t)
+    if not m:
+        return None
+    if quy is not None:
+        q = re.search(r"[Bb]áo cáo tài chính Quý ([IV]+)/(\d{4})", t[m.end():m.end() + 400])
+        if not q or q[1] not in _QUY or pd.Timestamp(year=int(q[2]), month=_QUY[q[1]], day=1) != quy:
+            return None
+    return so(m[1]), so(m[2])
 
 
 # ------------------------------------------------------------------ CafeF – tin vĩ mô (RSS)

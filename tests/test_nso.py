@@ -121,6 +121,9 @@ def test_tai_dem_chi_doc_bao_cao_moi():
         raise OSError("429")
     df3, dem3 = nso.tai_dem(loi, cu, trang=1)
     assert set(dem3) == {u10, u9} and df3.loc["2026-10-01", "cpi_yoy"] == 5.08
+    da.clear()
+    _, dem4 = nso.tai_dem(lay, cu, trang=1, toi_da=1)                   # tối đa 1 báo cáo / lượt: mới nhất đọc lại, cũ giữ
+    assert [u for u in da if u in (u10, u9)] == [u10] and dem4[u10]["_v"] == nso.PHIEN and dem4[u9]["_v"] == 1
 
 
 def test_tin_dung_nhnn():
@@ -163,3 +166,30 @@ def test_m2_nhnn():
          '<tr><td>- Tiền gửi của dân cư</td><td>11.434.266</td><td>10,63</td></tr></table>')
     assert nso.m2(h) == [(pd.Timestamp("2026-08-01"), 20774696.0, 6.84, 10.63)]
     assert nso.m2("<p>Trang lỗi</p>") == []
+
+
+def test_nhap_khau_khong_lay_tong_xuat_nhap():
+    t = ("Tổng kim ngạch xuất, nhập khẩu hàng hóa tháng Chín đạt 117,69 tỷ USD, tăng 7,3% so với tháng trước. Kim ngạch xuất khẩu "
+         "hàng hóa tháng Chín đạt 59,48 tỷ USD, tăng 8,5% so với tháng trước và tăng 39,1% so với cùng kỳ năm trước. Kim ngạch nhập "
+         "khẩu hàng hóa tháng Chín đạt 58,21 tỷ USD, tăng 6,0% so với tháng trước và tăng 45,8% so với cùng kỳ năm trước. Theo số "
+         "liệu sơ bộ, cán cân thương mại hàng hóa tháng Chín xuất siêu 1,27 tỷ USD.")
+    d = nso.doc(t)
+    assert (d["xk"], d["nk"], d["can_can"], d["nk_yoy"]) == (59.48, 58.21, 1.27, 45.8)
+
+
+def test_bop_va_roa_nhnn():
+    h = ("<p>NĂM 2026 Quý II NĂM 2026 Đơn vị: Triệu USD</p><table><tr><td>A. Cán cân vãng lai</td><td>-11101</td></tr>"
+         "<tr><td>Đầu tư trực tiếp (ròng)</td><td>5900</td></tr><tr><td>Đầu tư gián tiếp (ròng)</td><td>-1505</td></tr>"
+         "<tr><td>D. Lỗi và Sai sót</td><td>9283</td></tr><tr><td>E. Cán cân tổng thể</td><td>81</td></tr></table>")
+    assert nso.bop(h) == [(pd.Timestamp("2026-04-01"), {"ca": -11101.0, "fdi": 5900.0, "fpi": -1505.0, "tong_the": 81.0})]
+    assert nso.bop("<p>trang lỗi</p>") == []
+    lk = ('<a href="https://sbv.gov.vn/vi/thong-ke-mot-so-chi-tieu-co-ban/-/asset_publisher/whgo/content/a"> THỐNG KÊ MỘT SỐ CHỈ TIÊU '
+          'CƠ BẢN ROA,ROE (Quý III/2026)</a><a href="https://sbv.gov.vn/vi/x/content/b">THỐNG KÊ MỘT SỐ CHỈ TIÊU CƠ BẢN (Đến thời '
+          'điểm 30/09/2026)</a><a href="https://sbv.gov.vn/vi/x/content/c">ROA,ROE (Quý II/2026)</a>')
+    assert [q for _, q in nso.bai_roa(lk)] == [pd.Timestamp("2026-07-01"), pd.Timestamp("2026-04-01")]
+    bai = ("<table><tr><td>Loại hình TCTD</td><td>ROA</td><td>ROE</td></tr><tr><td>(1)</td><td>(2)</td><td>(3)</td></tr>"
+           "<tr><td>NHTM Nhà Nước</td><td>0,92</td><td>13,77</td></tr><tr><td>Toàn hệ thống</td><td>1,02</td><td>11,44</td></tr></table>")
+    assert nso.roa_roe(bai) == (1.02, 11.44) and nso.roa_roe("<p>x</p>") is None
+    bai += "<p>Ghi chú: Nguồn số liệu dựa trên Báo cáo tài chính Quý III/2026.</p>"
+    assert nso.roa_roe(bai, pd.Timestamp("2026-07-01")) == (1.02, 11.44)
+    assert nso.roa_roe(bai, pd.Timestamp("2026-04-01")) is None            # bài Q2 hiện bảng Q3 → bỏ

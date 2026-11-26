@@ -27,8 +27,8 @@ CHU_DE = [("tq", "Tổng quan", "12 chỉ số chính: số mới nhất, thay �
           ("tang_truong", "Tăng trưởng", "GDP theo quý, GDP năm, thu nhập đầu người, đầu tư, thu chi ngân sách, nợ công"),
           ("san_xuat", "Sản xuất", "sản xuất công nghiệp, doanh nghiệp thành lập / rút lui, khai thác dầu thô"),
           ("gia", "Lạm phát & giá", "CPI, lạm phát lõi, lương thực – thực phẩm, giá sản xuất, giá xăng"),
-          ("tien_te", "Tiền tệ & lãi suất", "lãi điều hành, liên ngân hàng, lợi suất TPCP, tín dụng, cung tiền M2, tiền gửi, dự trữ ngoại hối, tỷ giá"),
-          ("thuong_mai", "Thương mại & vốn ngoại", "xuất nhập khẩu, cán cân thương mại, FDI, cán cân vãng lai, nợ nước ngoài"),
+          ("tien_te", "Tiền tệ & lãi suất", "lãi điều hành, liên ngân hàng, lợi suất TPCP, tín dụng, cung tiền M2, tiền gửi, ROA / ROE ngân hàng, dự trữ ngoại hối, tỷ giá"),
+          ("thuong_mai", "Thương mại & vốn ngoại", "xuất nhập khẩu, cán cân thương mại, FDI, vốn gián tiếp, cán cân thanh toán, cán cân vãng lai, nợ nước ngoài"),
           ("tieu_dung", "Tiêu dùng & du lịch", "bán lẻ, khách quốc tế, ô tô"),
           ("lao_dong", "Lao động & dân số", "thất nghiệp, lao động, thu nhập, lương tối thiểu, dân số"),
           ("the_gioi", "Thế giới", "Mỹ, Trung Quốc, châu Âu, Nhật, Hàn Quốc, Đài Loan, ASEAN"),
@@ -100,6 +100,10 @@ CHI_TIEU = [
      "tổng phương tiện thanh toán so cuối năm trước · NHNN"),
     ("vn_tg_dc", "tien_te", "Tiền gửi dân cư (tăng từ đầu năm)", "s:tgdc_tang", "%", 1, "pt", "M", 0,
      "tiền gửi của dân cư tại các tổ chức tín dụng so cuối năm trước · NHNN"),
+    ("vn_roa_nh", "tien_te", "ROA hệ thống ngân hàng", "s:nh_roa", "%", 1, "pt", "Q", 1,
+     "lợi nhuận / tổng tài sản theo báo cáo tài chính quý · toàn hệ thống TCTD · NHNN"),
+    ("vn_roe_nh", "tien_te", "ROE hệ thống ngân hàng", "s:nh_roe", "%", 1, "pt", "Q", 1,
+     "lợi nhuận / vốn chủ sở hữu theo báo cáo tài chính quý · toàn hệ thống TCTD · NHNN"),
     ("vn_m2", "tien_te", "Cung tiền M2 (cuối năm)", "tv:VNM2", "nghìn tỷ đồng", 1e12, "%", "Y", 0, "năm · TradingView ECONOMICS"),
     ("vn_dtnh", "tien_te", "Dự trữ ngoại hối", "s:vn_dtnh", "tỷ USD", 1e9, "%", "M", 1, "tháng · TradingView ECONOMICS"),
     ("usdvnd", "tien_te", "Tỷ giá USD/VND", "s:usdvnd", "đồng", 1, "%", "D", -1, "thị trường · ngày · Yahoo"),
@@ -112,6 +116,12 @@ CHI_TIEU = [
     ("vn_fdi_dk", "thuong_mai", "FDI đăng ký (tổng, lũy kế)", "ld:s:nso_fdi_dk", "tỷ USD", 1, "%", "M", 1,
      f"đăng ký mới + điều chỉnh + góp vốn mua cổ phần · cộng dồn năm · {TC}"),
     ("vn_ca", "thuong_mai", "Cán cân vãng lai", "tv:VNCA", "tỷ USD", 1e9, "d", "Q", 1, "quý · NHNN (TradingView ECONOMICS)"),
+    ("vn_fpi", "thuong_mai", "Đầu tư gián tiếp nước ngoài (ròng)", "s:bop_fpi", "tỷ USD", 1e3, "d", "Q", 1,
+     "cổ phiếu, trái phiếu – vốn vào trừ vốn ra trong quý · cán cân thanh toán · NHNN"),
+    ("vn_fdi_rong", "thuong_mai", "FDI ròng (cán cân thanh toán)", "s:bop_fdi", "tỷ USD", 1e3, "d", "Q", 1,
+     "vốn FDI vào trừ đầu tư ra nước ngoài trong quý · NHNN"),
+    ("vn_bop", "thuong_mai", "Cán cân thanh toán tổng thể", "s:bop_tong_the", "tỷ USD", 1e3, "d", "Q", 1,
+     "dương: ngoại tệ vào ròng – đỡ tỷ giá, tăng dự trữ · quý · NHNN"),
     ("vn_no_nn", "thuong_mai", "Nợ nước ngoài", "tv:VNED", "tỷ USD", 1e9, "%", "Y", -1, "năm · TradingView ECONOMICS"),
     ("vn_ca_gdp", "thuong_mai", "Cán cân vãng lai / GDP", "wb:BN.CAB.XOKA.GD.ZS", "% GDP", 1, "pt", "Y", 1, "năm · World Bank"),
     ("vn_xk_gdp", "thuong_mai", "Xuất khẩu / GDP", "wb:NE.EXP.GNFS.ZS", "% GDP", 1, "pt", "Y", 0, "năm · World Bank"),
@@ -172,7 +182,7 @@ CHI_TIEU = [
 KHONG_CU = {"vn_luong_tt"}                     # đổi theo lần điều chỉnh (không định kỳ) – không gắn "cũ"
 HAN_CU = {"vn_tin_dung": 135, "vn_du_no": 135, "vn_m2_ytd": 135, "vn_tg_dc": 135,                     # NHNN công bố tín dụng trễ ~3 tháng (T8 có vào cuối T11)
           "vn_dtnh": 135,                                            # dự trữ ngoại hối (IMF) trễ ~3 tháng
-          "vn_ca": 270}                                              # cán cân vãng lai quý: NHNN công bố ~5 tháng sau đầu quý
+          "vn_ca": 270, "vn_fpi": 270, "vn_fdi_rong": 270, "vn_bop": 270, "vn_roa_nh": 240, "vn_roe_nh": 240}                                              # cán cân vãng lai quý: NHNN công bố ~5 tháng sau đầu quý
 TONG_QUAN = ["vn_gdp", "vn_cpi", "vn_cpi_loi", "vn_tin_dung", "vn_sxcn", "vn_banle", "vn_xk", "vn_bot", "vn_fdi", "vn_lnh",
              "vn_10n", "usdvnd"]
 # Mục tiêu năm 2026 (Nghị quyết Quốc hội về kế hoạch phát triển KT-XH 2026): GDP từ 10 %, CPI khoảng 4,5 %
