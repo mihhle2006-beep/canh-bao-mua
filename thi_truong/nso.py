@@ -228,14 +228,14 @@ PHIEN = 4                                                             # tăng kh
 
 def tai_dem(lay, dem=None, trang=3):
     """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới. → (df, dem)."""
-    dem = {u: v for u, v in (dem or {}).items() if v.get("_v") == PHIEN}   # bộ đọc đổi → đọc lại
+    dem = dict(dem or {})
     for url, ky, _ in danh_sach(lay, trang):
-        if url in dem:
-            continue
+        if dem.get(url, {}).get("_v") == PHIEN:
+            continue                                                 # bộ đọc đổi (PHIEN) → đọc lại
         try:
             d = doc(chu(lay(url)))
-        except Exception:                                            # noqa: BLE001 – lượt sau thử lại
-            continue
+        except Exception:                                            # noqa: BLE001 – lượt sau thử lại; giữ bản đọc cũ
+            continue                                                 # (26/11: đọc lại cả 40 báo cáo → trang chặn → mất hết)
         dem[url] = {**d, "_ky": f"{ky:%Y-%m}", "_v": PHIEN}
     hang = {}
     for v in dem.values():

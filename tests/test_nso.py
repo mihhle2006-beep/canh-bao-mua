@@ -115,6 +115,13 @@ def test_tai_dem_chi_doc_bao_cao_moi():
     nso.tai_dem(lay, cu, trang=1)
     assert u10 in da                                                 # đệm của bộ đọc cũ → đọc lại
 
+    def loi(u):                                                      # trang chặn khi đọc lại → giữ bản đọc cũ
+        if u == nso.DS:
+            return f'<a href="{u10}">a</a> <a href="{u9}">b</a>'
+        raise OSError("429")
+    df3, dem3 = nso.tai_dem(loi, cu, trang=1)
+    assert set(dem3) == {u10, u9} and df3.loc["2026-10-01", "cpi_yoy"] == 5.08
+
 
 def test_tin_dung_nhnn():
     mau = "<table><tr><td>Tháng</td></tr><tr><td>TỔNG CỘNG</td><td></td><td></td></tr></table>"
