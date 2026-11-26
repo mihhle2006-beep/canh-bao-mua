@@ -1024,8 +1024,97 @@ def do_vn14():
 #   KHÔNG: HRC, đồng, cao su, urê, heo (|tương quan| ≤ 0,05). → canh_bao/dem_qua: tin trước phiên khi biến động mạnh (thông tin).
 
 
+# Vòng 15 (chủ quỹ: "có làm được backtest chưa") – BACKTEST chiến lược đường, ĐẶT TRƯỚC khi chạy:
+#   cuối tháng: đường (Yahoo SB=F) k tháng tăng → phiên đầu tháng sau MUA ATO SBT + LSS (chia đều, QNS bỏ – UPCoM), giữ cả tháng;
+#   không thì tiền mặt (0 %). Phí mua 0,35 % (0,15 môi giới + 0,2 trượt), bán 0,45 % (+0,1 thuế). Giá mở cửa đã điều chỉnh.
+#   C1: k=3 CAGR > giữ luôn SBT+LSS VÀ Sharpe > giữ luôn và > VN-Index; k=1, k=6 cũng CAGR > giữ luôn.
+#   C2: k=3 lợi suất > giữ luôn ở 4/4 đoạn 2012–15 · 2016–19 · 2020–22 · 2023–26. Chỉ đề xuất khi đạt cả C1 + C2.
+DOAN15 = [("2012", "2015"), ("2016", "2019"), ("2020", "2022"), ("2023", "2026")]
+
+
+def mo_dau_thang(o):
+    """Giá mở cửa ngày → giá mở cửa PHIÊN ĐẦU mỗi tháng (chỉ mục ngày 1)."""
+    o = pd.Series(o).dropna()
+    m = o.groupby(o.index.to_period("M")).first()
+    m.index = m.index.to_timestamp()
+    return m
+
+
+def bt_tin_hieu(r_ro, tin, mua=0.0035, ban=0.0045):
+    """r_ro: lợi suất tháng của rổ (mở cửa đầu tháng → đầu tháng sau, chỉ mục = tháng nắm giữ); tin: 1/0 cho tháng nắm giữ (đã biết
+    trước khi mở cửa). → lợi suất tháng của chiến lược sau phí (vào: trừ phí mua tháng đó; ra: trừ phí bán ở tháng đầu tiên không giữ)."""
+    x = pd.DataFrame({"r": r_ro, "t": tin}).dropna()
+    t_truoc = x.t.shift(1).fillna(0)
+    out = x.t * x.r - mua * ((x.t == 1) & (t_truoc == 0)) - ban * ((x.t == 0) & (t_truoc == 1))
+    return out
+
+
+def chi_so_bt(r):
+    """Lợi suất tháng → (CAGR %, biến động năm %, Sharpe, sụt giảm lớn nhất %)."""
+    r = pd.Series(r).dropna()
+    if len(r) < 6:
+        return (float("nan"),) * 4
+    g = (1 + r).cumprod()
+    cagr = g.iloc[-1] ** (12 / len(r)) - 1
+    vol = r.std(ddof=1) * 12 ** 0.5
+    return round(cagr * 100, 1), round(vol * 100, 1), round(r.mean() * 12 / vol, 2) if vol else float("nan"), round((g / g.cummax() - 1).min() * 100, 1)
+
+
+def do_vn15():
+    import subprocess
+    import tempfile
+    import requests
+    from thi_truong import vi_mo_web as W
+    thu = tempfile.mkdtemp()
+    f = f"{thu}/d.tar.zst"
+    with requests.get("https://github.com/mihhle2006-beep/canh-bao-mua/releases/download/sao-luu-tra-cuu/du_lieu.tar.zst",
+                      stream=True, timeout=120) as r:
+        r.raise_for_status()
+        with open(f, "wb") as fp:
+            for k in r.iter_content(1 << 20):
+                fp.write(k)
+    mas = ["SBT", "LSS"]
+    subprocess.run(["tar", "--zstd", "-xf", f, "-C", thu, "du_lieu/chi_so/VNINDEX.json", *[f"du_lieu/gia_dai/{m}.json" for m in mas],
+                    *[f"du_lieu/gia/{m}.json" for m in mas]], check=False)
+
+    def mo(p):
+        j = json.load(open(p, encoding="utf-8"))
+        return mo_dau_thang(pd.Series(j["o"], index=pd.Timestamp(j["d0"]) + pd.to_timedelta(np.cumsum(j["g"]), unit="D"), dtype=float))
+    vni = mo(f"{thu}/du_lieu/chi_so/VNINDEX.json")
+    rv = (vni.shift(-1) / vni - 1).dropna()
+    ro = pd.concat([(lambda x: x.shift(-1) / x - 1)(mo(f"{thu}/du_lieu/gia_dai/{m}.json")) for m in mas], axis=1).mean(axis=1).dropna()
+    ro, rv = ro[ro.index >= "2012-01-01"], rv[rv.index >= "2012-01-01"]
+    for m in mas:
+        try:
+            j = json.load(open(f"{thu}/du_lieu/gia/{m}.json", encoding="utf-8"))
+            gt = pd.Series(j["gt"][-250:], dtype=float)
+            print(f"  thanh khoản {m}: GTGD trung vị 250 phiên {gt.median():.1f} tỷ/phiên (thấp nhất 10 % phiên: {gt.quantile(.1):.1f} tỷ)")
+        except Exception as e:                                        # noqa: BLE001
+            print(f"  thanh khoản {m}: {e}")
+    c = thang(W._lay("yf:SB=F", "2010-01-01"))
+    print("\n=== BACKTEST đường → SBT + LSS (tháng, mua ATO đầu tháng, phí mua 0,35 % · bán 0,45 %) ===")
+    print(f"  giữ luôn SBT+LSS: CAGR/biến động/Sharpe/sụt giảm {chi_so_bt(ro)} · VN-Index {chi_so_bt(rv)} · {len(ro)} tháng")
+    kq = {}
+    for k in (1, 3, 6):
+        tin = (c.pct_change(k) > 0).astype(float)
+        tin.index = tin.index + pd.offsets.MonthBegin(1)                 # tín hiệu cuối tháng m → giữ tháng m+1
+        r = bt_tin_hieu(ro, tin.reindex(ro.index))
+        kq[k] = r
+        n_lenh = int(((tin.reindex(ro.index).fillna(0).diff().abs()) > 0).sum())
+        print(f"  k={k}: {chi_so_bt(r)} · giữ {tin.reindex(ro.index).mean() * 100:.0f} % số tháng · {n_lenh} lần vào/ra")
+    bh, st = chi_so_bt(ro), {k: chi_so_bt(v) for k, v in kq.items()}
+    c1 = st[3][0] > bh[0] and st[3][2] > bh[2] and st[3][2] > chi_so_bt(rv)[2] and st[1][0] > bh[0] and st[6][0] > bh[0]
+    doan = []
+    for a_, b_ in DOAN15:
+        s3, sb, sv = (x[(x.index >= f"{a_}-01-01") & (x.index <= f"{b_}-12-31")] for x in (kq[3], ro, rv))
+        doan.append(((1 + s3).prod() - 1, (1 + sb).prod() - 1, (1 + sv).prod() - 1))
+        print(f"  {a_}–{b_}: chiến lược {doan[-1][0] * 100:+.0f} % · giữ luôn {doan[-1][1] * 100:+.0f} % · VN-Index {doan[-1][2] * 100:+.0f} %")
+    c2 = sum(x[0] > x[1] for x in doan)
+    print(f"  → C1 {'ĐẠT' if c1 else 'KHÔNG'} · C2 {c2}/4 {'ĐẠT' if c2 == 4 else 'KHÔNG'}")
+
+
 def main():
-    do_vn14()  # vòng 14 (đã kết luận ở trên)
+    do_vn15()  # vòng 15: backtest chiến lược đường → SBT + LSS
     return 0
 
 
