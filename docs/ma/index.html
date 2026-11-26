@@ -613,9 +613,12 @@ a.chip:hover{background:var(--nhan-nen);box-shadow:0 1px 3px rgba(46,125,50,.18)
 .chuyen a[aria-current=page]{background:#fff;color:#1B5E20;font-weight:650;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .dau-trong .gg{flex:1 1 220px}.lien{margin-left:auto}header.dau .lien a{padding:5px 8px}
 body.o-dau .dau-trong .lien{display:none}body.o-dau .chuyen{margin-left:auto}      /* trang đầu: ô công cụ thay hàng chữ */
-@media (max-width:600px){.dau-trong .chuyen{margin-left:auto}.chuyen a{padding:3px 10px;font-size:12px}.chuyen a[aria-current]{display:none}
-  .dau-trong .lien{order:2;flex:1 1 100%;margin:0 -12px;padding:0 12px}.dau-trong .gg{order:3}
-}
+/* điện thoại: 2 hàng – [logo · ô tìm] / [mục trong trang (cuộn ngang) · nút chuyển trang]; trang đầu 1 hàng [logo + tên · nút chuyển] */
+@media (max-width:600px){.dau-trong .gg{order:1;flex:1 1 calc(100% - 50px);min-width:0}
+  .dau-trong .lien{order:2;flex:1 1 150px;min-width:0;margin:0}.dau-trong .chuyen{order:3;margin-left:0}
+  .chuyen a{padding:3px 10px;font-size:12px}.chuyen a[aria-current]{display:none}
+  body:not(.o-dau) .dau-trong h1 .chu{display:none}body.o-dau .chuyen{margin-left:auto}}
+@media (min-width:601px){.tab a{padding:9px 8px}}      /* 15 tab vừa 1 hàng 1200px (trước thiếu ~50px → "Hệ thống" bị cắt) */
 /* trang đầu: tiêu đề + ô tìm + ô công cụ, lưới thẻ xếp khít kiểu masonry */
 .dau-chinh{padding:26px 0 16px}
 .dau-chinh h2{font-size:30px;font-weight:750;letter-spacing:-.8px;margin:0 0 14px;
@@ -650,7 +653,7 @@ body.o-dau .dau-trong .lien{display:none}body.o-dau .chuyen{margin-left:auto}   
 </head>
 <body>
 <header class="dau"><div class="dau-trong">
-  <h1><a href="#"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/></svg></span>Tra cứu mã</a></h1>
+  <h1><a href="#"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/></svg></span><span class="chu">Tra cứu mã</span></a></h1>
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
