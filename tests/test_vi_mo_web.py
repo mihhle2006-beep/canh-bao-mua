@@ -212,3 +212,20 @@ def test_dung_kt_co_tin_va_bao_cao():
     h = {r["k"]: r for r in kq["kt"]["ct"]}
     assert h["vn_tin_dung"]["gt"] == 10.19 and h["vn_tin_dung"]["cd"] == "tien_te" and "vn_tin_dung" in kq["kt"]["tq"]
     assert h["vn_vang_cs"]["kt"] == 8.3
+
+
+def test_hh_theo_ma_tach_ma_tu_cot_lq():
+    from thi_truong.vi_mo_web import hh_theo_ma
+    bang = [{"k": "hrc", "ten": "Thép HRC", "dv": "USD/tấn", "gia": 900, "ngay": "2026-11-25", "d1": 1.2, "m1": -3, "ytd": 5, "y1": 8,
+             "lq": "thép: HPG, HSG, NKG"},
+            {"k": "duong", "ten": "Đường", "dv": "c/lb", "gia": 18, "ngay": "2026-11-25", "d1": 0, "m1": 1, "ytd": 2, "y1": 3,
+             "lq": "SBT, LSS, QNS – backtest (2012–2026) vẫn kém VN-Index"},
+            {"k": "nhom", "ten": "Nhôm", "dv": "USD/tấn", "gia": 2500, "ngay": "2026-11-25", "lq": "nhôm định hình"},
+            {"k": "quang", "ten": "Quặng sắt", "dv": "USD/tấn", "gia": 90, "ngay": "2026-11-25", "lq": "thép: HPG, HPG"}]
+    d = pd.date_range("2025-06-01", "2026-11-25", freq="D")
+    chuoi = {"hrc": [[f"{x:%Y-%m-%d}", 800 + i] for i, x in enumerate(d)]}
+    m = hh_theo_ma(bang, chuoi)
+    assert set(m) == {"HPG", "HSG", "NKG", "SBT", "LSS", "QNS"}                  # "VN" (2 chữ), nhôm (không mã) bỏ
+    assert [x["k"] for x in m["HPG"]] == ["hrc", "quang"]                        # không lặp HPG 2 lần cùng hàng hoá
+    sp = m["HPG"][0]["sp"]
+    assert 52 <= len(sp) <= 54 and sp[-1] == 800 + len(d) - 1 and m["SBT"][0]["sp"] == []
