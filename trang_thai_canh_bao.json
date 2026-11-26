@@ -139,7 +139,7 @@
   },
   "FRT": {
    "ngay": "2026-11-26",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "PLX": {
@@ -185,7 +185,7 @@
   },
   "IDC": {
    "ngay": "2026-11-26",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "HAH": {
@@ -275,7 +275,7 @@
   },
   "HUT": {
    "ngay": "2026-11-26",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "TPB": {
@@ -290,7 +290,7 @@
   },
   "VRE": {
    "ngay": "2026-11-26",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "KHG": {
@@ -300,7 +300,7 @@
   },
   "HDG": {
    "ngay": "2026-11-26",
-   "trang_thai": "CHỜ",
+   "trang_thai": "BỎ",
    "da_bao": []
   },
   "VC3": {
@@ -337,7 +337,7 @@
     "Mã": "DXG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "10.45–10.80",
-    "Giá": 10.3,
+    "Giá": 10.25,
     "Trạng thái": "BỎ",
     "Lý do": "chạm cắt lỗ 10.32 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
@@ -347,7 +347,7 @@
     "Mã": "KHG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "4.42–4.58",
-    "Giá": 4.32,
+    "Giá": 4.23,
     "Trạng thái": "BỎ",
     "Lý do": "chạm cắt lỗ 4.39 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
@@ -367,9 +367,9 @@
     "Mã": "HDG",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "16.15–16.70",
-    "Giá": 16.25,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 16.05,
+    "Trạng thái": "BỎ",
+    "Lý do": "đóng cửa 16.05 ngoài vùng – không đặt ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
@@ -377,9 +377,9 @@
     "Mã": "IDC",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "34.15–35.80",
-    "Giá": 34.2,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 33.9,
+    "Trạng thái": "BỎ",
+    "Lý do": "đóng cửa 33.90 ngoài vùng – không đặt ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
@@ -387,9 +387,9 @@
     "Mã": "FRT",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "142.00–148.00",
-    "Giá": 142.1,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 140.0,
+    "Trạng thái": "BỎ",
+    "Lý do": "đóng cửa 140.00 ngoài vùng – không đặt ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
@@ -397,7 +397,7 @@
     "Mã": "KDH",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "14.70–15.35",
-    "Giá": 14.25,
+    "Giá": 14.0,
     "Trạng thái": "BỎ",
     "Lý do": "chạm cắt lỗ 14.43 trong phiên – huỷ lệnh ATC vào trễ",
     "Giờ": "",
@@ -407,9 +407,9 @@
     "Mã": "VRE",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "23.10–24.15",
-    "Giá": 23.15,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 22.8,
+    "Trạng thái": "BỎ",
+    "Lý do": "đóng cửa 22.80 ngoài vùng – không đặt ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    },
@@ -417,9 +417,9 @@
     "Mã": "HUT",
     "Nhóm": "VÀO NHƯ LỆNH MỚI",
     "Vùng": "12.15–12.70",
-    "Giá": 12.1,
-    "Trạng thái": "CHỜ",
-    "Lý do": "vào trễ – chỉ đặt lệnh ATC cuối phiên",
+    "Giá": 12.0,
+    "Trạng thái": "BỎ",
+    "Lý do": "đóng cửa 12.00 ngoài vùng – không đặt ATC vào trễ",
     "Giờ": "",
     "Giá mua": null
    }
