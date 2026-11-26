@@ -83,20 +83,20 @@ MAU = {
     "usd_mom": (rf"Chỉ số giá đô la Mỹ {_THANG} {_TG} {_SO}% so với tháng trước", lambda g: dau(g[0], g[1])),
     "usd_yoy": (rf"Chỉ số giá đô la Mỹ {_THANG} {_TG} {_SO}% so với tháng trước; {_TG} {_SO}% so với cùng kỳ",
                 lambda g: dau(g[2], g[3])),
-    "iip_yoy": (rf"Chỉ số sản xuất toàn ngành công nghiệp \(IIP\) {_THANG} (?:ước tính |ước )?{_TG} {_SO}% so với tháng trước "
+    "iip_yoy": (rf"Chỉ số sản xuất (?:toàn ngành )?công nghiệp \(IIP\) {_THANG} (?:ước tính |ước )?{_TG} {_SO}% so với tháng trước "
                 rf"và {_TG} {_SO}% so với cùng kỳ", lambda g: dau(g[2], g[3])),
     "ban_le": (rf"Tổng mức bán lẻ hàng hóa và doanh thu dịch vụ tiêu dùng theo giá hiện hành {_THANG} (?:ước tính |ước )?đạt "
                rf"{_SO} nghìn tỷ đồng", lambda g: so(g[0])),
     "ban_le_yoy": (rf"Tổng mức bán lẻ hàng hóa và doanh thu dịch vụ tiêu dùng theo giá hiện hành {_THANG} (?:ước tính |ước )?đạt "
                    rf"{_SO} nghìn tỷ đồng, {_TG} {_SO}% so với tháng trước và {_TG} {_SO}% so với cùng kỳ",
                    lambda g: dau(g[3], g[4])),
-    "xk": (rf"Xuất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
-    "xk_yoy": (rf"Xuất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
+    "xk": (rf"(?:[Kk]im ngạch )?[Xx]uất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
+    "xk_yoy": (rf"(?:[Kk]im ngạch )?[Xx]uất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
                rf"{_SO}% so với cùng kỳ", lambda g: dau(g[3], g[4])),
     "nk": (rf"[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
     "nk_yoy": (rf"[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
                rf"{_SO}% so với cùng kỳ", lambda g: dau(g[3], g[4])),
-    "can_can": (rf"cán cân thương mại hàng hóa {_THANG} (?:ước tính |ước )?(xuất siêu|nhập siêu) {_SO} tỷ USD",
+    "can_can": (rf"[Cc]án cân thương mại hàng hóa {_THANG} (?:ước tính |ước )?(xuất siêu|nhập siêu) {_SO} tỷ USD",
                 lambda g: so(g[1]) * (1 if g[0] == "xuất siêu" else -1)),
     "nsnn": (rf"Vốn đầu tư thực hiện từ nguồn ngân sách [Nn]hà nước {_THANG} (?:ước tính |ước )?đạt {_SO} nghìn tỷ đồng",
              lambda g: so(g[0])),
@@ -112,7 +112,7 @@ MAU = {
                     lambda g: so(g[0]) * (1000 if g[1] else 1)),
     "dn_tam_ngung": (r"có (?:gần |hơn |khoảng )?([\d.,]+) (nghìn )?doanh nghiệp đăng ký tạm ngừng kinh doanh",
                      lambda g: so(g[0]) * (1000 if g[1] else 1)),
-    "khach": (rf"[Kk]hách quốc tế đến nước ta {_THANG} (?:ước tính |ước )?đạt (?:gần |hơn )?{_SO} (triệu |nghìn )?lượt",
+    "khach": (rf"[Kk]hách quốc tế đến nước ta (?:{_THANG} )?(?:ước tính |ước )?đạt (?:gần |hơn )?{_SO} (triệu |nghìn )?lượt",
               lambda g: so(g[0]) * (1e6 if g[1] == "triệu " else 1e3 if g[1] == "nghìn " else 1)),
     "fdi_th": (rf"[Vv]ốn đầu tư trực tiếp nước ngoài thực hiện tại Việt Nam [^.]{{0,80}}?(?:ước tính |ước )?đạt {_SO} tỷ USD",
                lambda g: so(g[0])),
@@ -152,3 +152,100 @@ def tai(lay, trang=3, so_bc=24):
         if d:
             hang.setdefault(ky, {}).update({k: v for k, v in d.items() if k not in hang.get(ky, {})})
     return pd.DataFrame.from_dict(hang, orient="index").sort_index()
+
+
+QUY = ("gdp_yoy", "gdp_nn", "gdp_cn", "gdp_dv", "that_nghiep")
+
+
+def kiem(df):
+    """Bỏ số tự mâu thuẫn: số quý ở tháng không phải cuối quý; doanh nghiệp > 60 nghìn / tháng; xuất khẩu − nhập khẩu phải = cán cân (± 0,1 tỷ USD) – lệch thì bỏ cả 3 của tháng đó; xuất / nhập khẩu
+    ngoài 5–150 tỷ USD (bắt nhầm số quý / lũy kế) thì bỏ."""
+    df = df.copy()
+    quy = [c for c in QUY if c in df]
+    if quy:
+        df.loc[~df.index.month.isin([3, 6, 9, 12]), quy] = float("nan")   # số quý chỉ ở báo cáo tháng 3 / 6 / 9 / 12
+    for c in ("dn_moi", "dn_quay_lai", "dn_tam_ngung"):
+        if c in df:
+            df.loc[df[c] > 60000, c] = float("nan")                  # bắt nhầm số cộng dồn nhiều tháng
+    for c in ("xk", "nk"):
+        if c in df:
+            df.loc[(df[c] < 5) | (df[c] > 150), c] = float("nan")
+    if {"xk", "nk", "can_can"} <= set(df):
+        sai = (df.xk - df.nk - df.can_can).abs() > 0.1
+        df.loc[sai, ["xk", "nk", "can_can", "xk_yoy", "nk_yoy"] if "xk_yoy" in df else ["xk", "nk", "can_can"]] = float("nan")
+    if "nk" not in df and {"xk", "can_can"} <= set(df):
+        df["nk"] = df.xk - df.can_can                               # nhập khẩu = xuất khẩu − cán cân (cùng báo cáo)
+    elif {"xk", "can_can"} <= set(df):
+        thieu = df.nk.isna() & df.xk.notna() & df.can_can.notna()
+        df.loc[thieu, "nk"] = (df.xk - df.can_can)[thieu]
+    return df
+
+
+def tai_dem(lay, dem=None, trang=3):
+    """Như tai() nhưng nhớ kết quả từng báo cáo (dict url → {khoá: giá trị, "_ky": "YYYY-MM"}) – chỉ tải báo cáo mới. → (df, dem)."""
+    dem = dict(dem or {})
+    for url, ky, _ in danh_sach(lay, trang):
+        if url in dem:
+            continue
+        try:
+            d = doc(chu(lay(url)))
+        except Exception:                                            # noqa: BLE001 – lượt sau thử lại
+            continue
+        dem[url] = {**d, "_ky": f"{ky:%Y-%m}"}
+    hang = {}
+    for v in dem.values():
+        ky = pd.Timestamp(v["_ky"] + "-01")
+        for k, x in v.items():
+            if k != "_ky" and k not in hang.setdefault(ky, {}):
+                hang[ky][k] = x
+    df = pd.DataFrame.from_dict(hang, orient="index").sort_index()
+    return kiem(df), dem
+
+
+# ------------------------------------------------------------------ NHNN – dư nợ tín dụng đối với nền kinh tế
+NHNN_TD = "https://sbv.gov.vn/du-no-tin-dung-doi-voi-nen-kt-dttktt"
+
+
+def tin_dung(html):
+    """Trang NHNN → [(tháng, tổng dư nợ tỷ đồng, tăng so cuối năm trước %)] (mọi bảng có số thật + dòng TỔNG CỘNG; kỳ là
+    "Tháng M năm YYYY" gần nhất phía trước bảng)."""
+    out = []
+    for m in re.finditer(r"<table.*?</table>", html, re.S):
+        b = m.group(0)
+        hang = [[chu(c).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", r, re.S)] for r in re.findall(r"<tr.*?</tr>", b, re.S)]
+        tong = next((h for h in hang if any(x.upper() == "TỔNG CỘNG" for x in h)), None)
+        if not tong:
+            continue
+        so_ = [x for x in tong if re.fullmatch(r"-?[\d.]+(?:,\d+)?", x)]
+        if len(so_) < 2:
+            continue                                                  # bảng mẫu (chưa điền số)
+        truoc = chu(html[max(0, m.start() - 3000):m.start()]) + " " + chu(b[:600])
+        ky = re.findall(r"[Tt]háng (\d{1,2}) [Nn]ăm (\d{4})", truoc)
+        if not ky:
+            continue
+        th, nam = ky[-1]
+        out.append((pd.Timestamp(year=int(nam), month=int(th), day=1), so(so_[0]), so(so_[1])))
+    return out
+
+
+# ------------------------------------------------------------------ CafeF – tin vĩ mô (RSS)
+CAFEF_RSS = "https://cafef.vn/vi-mo-dau-tu.rss"
+
+
+def tin_rss(xml, so_tin=10):
+    """RSS → [{"t": tiêu đề, "u": đường dẫn, "d": "YYYY-MM-DD HH:MM"}] (chỉ đường dẫn https)."""
+    out = []
+    for it in re.findall(r"<item>(.*?)</item>", xml, re.S):
+        t = re.search(r"<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>", it, re.S)
+        u = re.search(r"<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</link>", it, re.S)
+        d = re.search(r"<pubDate>(.*?)</pubDate>", it, re.S)
+        if not (t and u) or not u.group(1).strip().startswith("https://"):
+            continue
+        try:
+            ngay = pd.Timestamp(d.group(1).strip()).tz_convert("Asia/Ho_Chi_Minh").strftime("%Y-%m-%d %H:%M") if d else ""
+        except (ValueError, TypeError):
+            ngay = ""
+        out.append({"t": _html.unescape(t.group(1)).strip(), "u": u.group(1).strip(), "d": ngay})
+        if len(out) >= so_tin:
+            break
+    return out

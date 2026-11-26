@@ -124,3 +124,11 @@ def test_dung_kt_day_du():
     assert "lớn nhất từ T11/2019" in chu
     assert any(m["tieu"] == "Giá cả" for m in kt["ban_tin"]["muc"]) and set(ls) == set(h)
     assert all(ls[k][i][0] < ls[k][i + 1][0] for k in ls for i in range(len(ls[k]) - 1))
+
+
+def test_hut_ky_lien_truoc_khong_so_ky_truoc():
+    s = pd.Series([10.0, 12.0, 15.0], index=pd.to_datetime(["2026-07-01", "2026-08-01", "2026-10-01"]))   # hụt T9
+    r = KT.chi_tieu(SPEC["vn_nsnn"], s, "", "2026-11-26")
+    assert r["ky"] == "T10/2026" and r["kt"] is None
+    r = KT.chi_tieu(SPEC["vn_nsnn"], s.iloc[:2], "", "2026-09-20")
+    assert r["kt"] == round((12 / 10 - 1) * 100, 2)

@@ -265,6 +265,85 @@ def cpi_my():
     raise ValueError("không có CPI Mỹ")
 
 
+NSO_MOI = {"cpi_ytd": "nso_cpi_ytd", "cpi_bq": "nso_cpi_bq", "lp_cb_bq": "nso_lp_cb_bq", "vang_yoy": "nso_vang_yoy",
+           "usd_yoy": "nso_usd_yoy", "nsnn": "nso_nsnn", "nsnn_kh": "nso_nsnn_kh", "dn_moi": "nso_dn_moi",
+           "dn_quay_lai": "nso_dn_quay_lai", "fdi_dk": "nso_fdi_dk", "ban_le": "nso_ban_le", "gdp_nn": "nso_gdp_nn",
+           "gdp_cn": "nso_gdp_cn", "gdp_dv": "nso_gdp_dv"}
+
+
+def tai_nso(S, N, P):
+    """Cục Thống kê (báo cáo tháng / quý – nhớ từng báo cáo đã đọc), NHNN (tín dụng – cộng dồn theo lượt), CafeF RSS (tin vĩ mô)."""
+    from thi_truong import nso
+    lay = lambda u: _get(u, timeout=40, headers={"Accept-Language": "vi"}).text   # noqa: E731
+    f = os.path.join(DEM, "nso.json")
+    try:
+        with open(f, encoding="utf-8") as fp:
+            dem = json.load(fp)
+    except (OSError, ValueError):
+        dem = {}
+    df, dem = nso.tai_dem(lay, dem, trang=3)
+    os.makedirs(DEM, exist_ok=True)
+    with open(f, "w", encoding="utf-8") as fp:
+        json.dump(dem, fp, ensure_ascii=False)
+    P["nso"] = df
+    if len(df):
+        print(f"  Cục Thống kê: {len(dem)} báo cáo đã đọc · {df.index[0]:%m/%Y}–{df.index[-1]:%m/%Y} · "
+              + ", ".join(f"{k} {df[k].notna().sum()}" for k in df.columns))
+        moi = max(dem.items(), key=lambda kv: kv[1].get("_ky", ""))
+        P["nso_moi"] = {"u": moi[0], "ky": moi[1]["_ky"]}
+    for k, ks in NSO_MOI.items():
+        if k in df and df[k].notna().any():
+            S[ks], N[ks] = df[k].dropna(), "Cục Thống kê – báo cáo tình hình kinh tế – xã hội"
+            print(f"    {k}: " + " · ".join(f"{d:%m/%y} {v:g}" for d, v in S[ks].iloc[-4:].items()))
+    # NHNN – tín dụng (trang chỉ có tháng mới nhất → nhớ dồn qua các lượt)
+    f = os.path.join(DEM, "tin_dung.csv")
+    try:
+        cu = pd.read_csv(f, index_col=0, parse_dates=True)
+    except (OSError, ValueError):
+        cu = pd.DataFrame(columns=["tong", "tang"])
+    try:
+        moi = pd.DataFrame([(t, a, b) for t, a, b in nso.tin_dung(lay(nso.NHNN_TD))], columns=["ky", "tong", "tang"]).set_index("ky")
+        td = pd.concat([cu[~cu.index.isin(moi.index)], moi]).sort_index()
+        td.to_csv(f)
+    except Exception as e:                                            # noqa: BLE001 – NHNN lỗi → số đã nhớ
+        print(f"  ⚠ NHNN tín dụng: {type(e).__name__} {str(e)[:60]}")
+        td = cu
+    if len(td):
+        S["td_tang"], S["td_tong"] = td["tang"].astype(float), td["tong"].astype(float)
+        N["td_tang"] = N["td_tong"] = "NHNN – dư nợ tín dụng đối với nền kinh tế"
+        print(f"  NHNN tín dụng: {len(td)} tháng · cuối {td.index[-1]:%m/%Y} tăng {td['tang'].iloc[-1]}% so cuối năm trước")
+    try:
+        P["tin"] = nso.tin_rss(lay(nso.CAFEF_RSS), 10)
+    except Exception as e:                                            # noqa: BLE001
+        print(f"  ⚠ CafeF RSS: {type(e).__name__} {str(e)[:60]}")
+
+
+def noi_nso(S, N, P):
+    """So chéo Cục Thống kê ↔ TradingView (in log) + nối THÁNG MỚI cho xuất / nhập khẩu (TradingView trễ ~3 tháng)."""
+    from thi_truong.vi_mo_kt import theo_thang
+    df = P.get("nso")
+    if df is None or not len(df):
+        return
+    for k, ks, he in (("cpi_yoy", "kt_vn_cpi", 1), ("gdp_yoy", "kt_vn_gdp", 1), ("can_can", "kt_vn_bot", 1e9), ("xk", "kt_vn_xk", 1e9),
+                      ("nk", "kt_vn_nk", 1e9), ("fdi_th", "kt_vn_fdi", 1e9), ("ban_le_yoy", "kt_vn_banle", 1)):
+        if k not in df or ks not in S:
+            continue
+        x = pd.concat([df[k], theo_thang(S[ks]) / he], axis=1, join="inner").dropna()
+        if len(x):
+            print(f"  kiểm Cục Thống kê ↔ TradingView {k}: {len(x)} tháng trùng · lệch lớn nhất "
+                  f"{(x.iloc[:, 0] - x.iloc[:, 1]).abs().max():.3f}")
+    for k, ks in (("xk", "kt_vn_xk"), ("nk", "kt_vn_nk")):
+        if k not in df or ks not in S:
+            continue
+        tv = theo_thang(S[ks])
+        moi = df[k].dropna()
+        moi = moi[moi.index > tv.index[-1]] * 1e9
+        if len(moi):
+            S[ks] = pd.concat([tv, moi]).sort_index()
+            N[ks] = N.get(ks, "") + f" + {len(moi)} tháng mới: Cục Thống kê (sơ bộ)"
+            print(f"  nối {ks}: {len(moi)} tháng mới tới {moi.index[-1]:%m/%Y} (Cục Thống kê)")
+
+
 def vix():
     for ng in ("tv:TVC:VIX", "yf:^VIX"):                             # kiểm 25/11: TVC:VIX ↔ ^VIX tương quan 1,00 cùng ngày
         try:
@@ -453,7 +532,9 @@ def tai_tat_ca():
     except Exception as e:                                            # noqa: BLE001
         print(f"  ⚠ Vietcombank: {type(e).__name__} {str(e)[:60]}")
     P["song"] = kiem_song()
+    tai_nso(S, N, P)                                                  # Cục Thống kê + NHNN + tin → S["nso_*"], S["td_*"]
     tai_kt(S, N)                                                      # SAU cùng: dùng lại chuỗi đã tải ở trên ("s:…")
+    noi_nso(S, N, P)
     return S, N, P
 
 
@@ -606,6 +687,10 @@ def dung(S, N, P, bay_gio=None):
     ch = {k[3:]: v for k, v in S.items() if k.startswith("kt_")}
     kt, kt_ls, kt_dem = KT.dung_kt(ch, {k[3:]: v for k, v in N.items() if k.startswith("kt_")},
                                    pd.Timestamp(bay_gio.date()), P.get("kt_dem"))
+    kt["tin"] = P.get("tin") or []
+    if P.get("nso_moi"):
+        y, m = P["nso_moi"]["ky"].split("-")
+        kt["bao_cao"] = {"u": P["nso_moi"]["u"], "ten": f"Báo cáo tình hình kinh tế – xã hội tháng {int(m)}/{y}", "nguon": "Cục Thống kê"}
     return {"cap_nhat": f"{bay_gio:%Y-%m-%d %H:%M}", "nhom": NHOM, "the": T, "chuoi": C, "xau_nen": nen, "xau_gio": gio,
             "kt": kt, "kt_ls": kt_ls, "kt_dem": kt_dem,
             "nguon_gio": N.get("xau_gio", ""), "song": P.get("song"), "nhom_hh": NHOM_HH, "hang_hoa": bang,

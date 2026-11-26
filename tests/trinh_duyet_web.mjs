@@ -67,6 +67,7 @@ for (const t of trang) {
           if (await pg.$$eval("#vm-nhip .c[class*=m]", e => e.length) < 10) throw new Error("nhịp kinh tế không tô màu");
           if (!(await pg.$eval("#vm-nhan", e => e.innerText)).includes("Lạm phát")) throw new Error("thiếu điểm nhấn");
           if (await pg.$$eval("#vm-lich .d", e => e.length) < 2) throw new Error("thiếu lịch công bố");
+          if (await pg.$$eval("#vm-tin a.d[href^='https://'][target=_blank]", e => e.length) < 2) throw new Error("thiếu tin vĩ mô / báo cáo gốc");
           await pg.click("#vm-tq .vm-o2[data-k=vn_cpi]"); await pg.waitForTimeout(600);
           if (await pg.$eval("#vm-cd-ten", e => e.textContent) !== "Lạm phát & giá") throw new Error("chạm thẻ CPI không mở chủ đề giá");
           await pg.waitForSelector("#vm-bd-ct canvas", {timeout: 5000, state: "attached"});
@@ -88,6 +89,7 @@ for (const t of trang) {
           if (await pg.$$eval("#vm-bang tr[data-k]", e => e.length) < 2) throw new Error("tìm 'lam phat' (không dấu) không ra chỉ tiêu");
           await pg.fill("#vm-tim", ""); await pg.click("#vm-cd-ds button[data-cd=ban_tin]"); await pg.waitForTimeout(300);
           if ((await pg.$$eval("#vm-bt dd", e => e.length)) < 2) throw new Error("bản tin tháng trống");
+          if (!(await pg.$$eval("#vm-bt a[href^='https://']", e => e.length))) throw new Error("bản tin thiếu đường dẫn báo cáo gốc");
           await pg.click("#vm-cd-ds button[data-cd=tq]"); await pg.waitForTimeout(300);
         }
         else if (lenh === "sk") {                     // rê chuột / chạm vào bong bóng sự kiện đầu tiên → hộp chi tiết phải hiện
