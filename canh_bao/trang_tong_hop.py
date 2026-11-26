@@ -325,6 +325,13 @@ nav{position:sticky;top:0;z-index:5;background:var(--nen);flex-wrap:nowrap;overf
 -webkit-overflow-scrolling:touch;margin:4px -12px;padding:8px 12px}   /* điện thoại: 1 hàng cuộn ngang, dính trên cùng */
 nav::-webkit-scrollbar{display:none}nav a{white-space:nowrap;flex:none}
 section{padding:12px;margin:12px 0}.luoi-the{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+/* giao diện 26/11/2026 – cùng bộ với Tra cứu mã / Bảng thị trường: thẻ nổi nhẹ (chỉ hình thức) */
+body{-webkit-font-smoothing:antialiased}
+header{background:linear-gradient(100deg,#123f1a 0%,#1B5E20 32%,#2E7D32 72%,#43A047 100%);
+box-shadow:0 8px 24px -10px rgba(16,60,24,.5)}header h1{letter-spacing:-.3px}
+section{border-color:#dfeae2;border-radius:14px;box-shadow:0 1px 2px rgba(16,42,24,.05),0 2px 10px -3px rgba(16,42,24,.08)}
+section h2{letter-spacing:-.1px}.the{border-color:#d3e6d6;border-radius:12px}
+nav a{transition:background .12s,border-color .12s}th{letter-spacing:.03em}
 """
 
 
