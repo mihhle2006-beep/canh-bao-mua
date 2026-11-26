@@ -571,11 +571,76 @@ svg.spark{width:64px;height:20px;display:block;margin-left:auto}
 .dm-thanh em{font-style:normal;text-align:right;color:var(--chu2)}
 .dm-pp{padding:8px 14px 0}.dm-chon{background:var(--tang-nen)}.dm-ghi{padding:6px 14px 12px;margin:0}
 @media (max-width:700px){.dm-hai{grid-template-columns:minmax(0,1fr)}.dm-form input,.dm-form input[name=ma]{width:calc(50% - 4px)}}
+/* ===== GIAO DIỆN 26/11/2026: thẻ nổi nhẹ · thanh đầu tràn hết bề ngang · nút dạng viên =====
+   chỉ đổi hình thức – không đổi dữ liệu / logic; cùng bộ token với Bảng thị trường (trang_bang) */
+:root{--vien:#dfeae2;--luoi:#edf3ef;--bong:0 1px 2px rgba(16,42,24,.05),0 2px 10px -3px rgba(16,42,24,.08);
+  --bong-noi:0 2px 4px rgba(16,42,24,.06),0 12px 28px -8px rgba(16,42,24,.18);--bo:14px}
+html,body{-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1100px 420px at 50% -120px,#dff0e3 0%,rgba(223,240,227,0) 70%) no-repeat,var(--nen)}
+header.dau{background:linear-gradient(100deg,#123f1a 0%,#1B5E20 32%,#2E7D32 72%,#43A047 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 18px -6px rgba(16,60,24,.45)}
+.dau-trong h1 a{display:inline-flex;align-items:center;gap:8px;letter-spacing:-.2px}
+.dau-trong h1 .logo{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.16);display:grid;place-items:center;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+header.dau .lien{gap:2px}
+header.dau .lien a{padding:5px 10px;border-radius:999px;transition:background .15s}
+header.dau .lien a:hover{background:rgba(255,255,255,.12)}
+header.dau .lien a.dang{background:rgba(255,255,255,.2);text-decoration:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+@media (min-width:701px){header.dau{margin-right:-44px;padding-right:44px}}   /* thanh đầu phủ cả cột công cụ bên phải (trước hụt 44px), nội dung vẫn thẳng cột với thân trang */
+.the{border-radius:var(--bo);box-shadow:var(--bong)}
+.khoi-dau h2{letter-spacing:-.1px}
+.nut{background:#eef3ef;border-radius:10px;padding:3px}
+.nut button{border-radius:7px;transition:background .12s,color .12s}
+.nut button:hover{color:var(--chu)}
+.nut button[aria-pressed=true]{box-shadow:0 1px 2px rgba(16,42,24,.12),0 0 0 1px rgba(16,42,24,.04)}
+th{background:#f7faf8;color:#6b7686;font-size:11px;letter-spacing:.05em}
+tbody tr{transition:background .1s}tbody tr:hover td{background:#f3f8f4}
+.chip{transition:border-color .12s,background .12s,box-shadow .12s}
+a.chip:hover{background:var(--nhan-nen);box-shadow:0 1px 3px rgba(46,125,50,.18)}
+.ma-dau{border-radius:var(--bo);box-shadow:var(--bong)}
+.ma-ten h2{letter-spacing:-.4px}.ma-gia .lon{letter-spacing:-.6px}
+.tab a{border-radius:8px 8px 0 0;transition:color .12s,background .12s}.tab a:hover{background:var(--nhat);color:var(--chu)}
+.gg input{border-color:#dbe4de}
+.gg-lon input{height:54px;font-size:17px;border-radius:27px;border:1px solid #d3e2d7;box-shadow:0 2px 10px -2px rgba(16,60,24,.12)}
+.gg-lon.mo input{border-radius:27px 27px 0 0}.gg-lon .xoa{height:54px}
+/* trang đầu: tiêu đề lớn + ô tìm + ô công cụ, lưới thẻ xếp khít kiểu masonry */
+.dau-chinh{padding:46px 0 24px}
+.dau-chinh .nhan-tren{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--nhan);
+  background:#fff;border:1px solid var(--vien);border-radius:999px;padding:3px 12px;margin-bottom:14px;box-shadow:var(--bong)}
+.dau-chinh h2{font-size:38px;font-weight:750;letter-spacing:-1px;margin:0 0 8px;
+  background:linear-gradient(100deg,#123f1a,#2E7D32 55%,#43A047);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dau-chinh .loi{color:var(--chu2);font-size:15px;margin:0 0 24px}
+.cong-cu{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 22px}
+.cong-cu a{display:flex;align-items:center;gap:10px;background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:10px 12px;
+  color:var(--chu);box-shadow:var(--bong);transition:transform .15s,box-shadow .15s,border-color .15s}
+.cong-cu a:hover{text-decoration:none;transform:translateY(-2px);box-shadow:var(--bong-noi);border-color:#b9d8bf}
+.cong-cu .ic{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff}
+.cong-cu a>span:last-child{min-width:0}.cong-cu b{display:block;font-size:13.5px;font-weight:650;white-space:nowrap}
+.cong-cu small{display:block;font-size:11.5px;color:var(--mo);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs-o{box-shadow:var(--bong);transition:transform .15s,box-shadow .15s}.cs-o:hover{transform:translateY(-2px);box-shadow:var(--bong-noi)}
+.luoi-dau{display:block;columns:3 340px;column-gap:14px}
+.luoi-dau>.the{display:block;break-inside:avoid;margin:0 0 14px;width:100%}
+.the.o-dau{position:relative;overflow:hidden;padding:16px 16px 14px;transition:box-shadow .15s}
+.the.o-dau::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#2E7D32,#66BB6A)}
+.the.o-dau:hover{box-shadow:var(--bong-noi)}
+.o-tieu h3{font-size:15px;letter-spacing:-.1px}
+@media (max-width:600px){.dau-chinh{padding:24px 0 16px}.dau-chinh h2{font-size:28px}.dau-chinh .loi{font-size:13.5px;margin-bottom:16px}
+  .gg-lon input{height:48px}.gg-lon .xoa{height:48px}
+  .cong-cu{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:16px}
+  .cong-cu a{flex-direction:column;gap:6px;padding:10px 2px 8px;text-align:center}.cong-cu small{display:none}
+  .cong-cu b{font-size:11.5px;font-weight:600;white-space:normal;line-height:1.2}
+  .dai-cs{display:flex;overflow-x:auto;scrollbar-width:none;gap:8px;margin:0 -16px 14px;padding:2px 16px 6px;scroll-snap-type:x mandatory}
+  .dai-cs::-webkit-scrollbar{display:none}.cs-o{flex:0 0 138px;scroll-snap-align:start}}
+/* đầu trang mã: vạch màu trên cùng + giá lớn hơn */
+.ma-dau{overflow:visible}.ma-dau::before{content:"";display:block;height:3px;border-radius:var(--bo) var(--bo) 0 0;
+  background:linear-gradient(90deg,#1B5E20,#43A047 60%,#A5D6A7)}
+.ma-gia .lon{font-size:32px;font-weight:750}
+.khoi-dau{padding:13px 16px}.khoi-dau h2{font-size:15.5px}
 </style>
 </head>
 <body>
 <header class="dau"><div class="dau-trong">
-  <h1><a href="#">Tra cứu mã</a></h1>
+  <h1><a href="#"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/></svg></span>Tra cứu mã</a></h1>
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
@@ -591,6 +656,14 @@ svg.spark{width:64px;height:20px;display:block;margin-left:auto}
 <script>
 "use strict";
 const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json";
+// ô công cụ ở trang đầu: [địa chỉ, tên, mô tả ngắn, màu nền biểu tượng, nét SVG 24×24]
+const CONG_CU = [["#bieu-do", "Biểu đồ", "nến · chỉ báo · công cụ vẽ", "#2E7D32", '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'],
+  ["#loc", "Lọc KQKD", "lọc cơ bản & kỹ thuật", "#1f6feb", '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>'],
+  ["#nganh", "Ngành", "bội số · dòng tiền", "#e8710a", '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'],
+  ["#lich", "Lịch sự kiện", "cổ tức · ĐHCĐ · KQKD", "#9b3fd1", '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'],
+  ["#rrg", "RRG", "xoay vòng sức mạnh", "#0e9fb3", '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>'],
+  ["#danh-muc", "Danh mục", "lãi lỗ · rủi ro · tỷ trọng", "#b88a00", '<path d="M3 7h18v13H3zM8 7V4h8v3"/>'],
+  ["../../bang-thi-truong/", "Thị trường", "bảng giá · bản đồ nhiệt", "#d1342b", '<path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/>']];
 const TAB = [["tong-quan", "Tổng quan"], ["tin", "Tin tức"], ["ho-so", "Hồ sơ"], ["lanh-dao", "Lãnh đạo"], ["co-dong", "Cổ đông"],
   ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["phan-tich", "Phân tích"], ["ky-thuat", "Kỹ thuật"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
   ["bao-cao", "Báo cáo CTCK"], ["tai-lieu", "Tài liệu"], ["he-thong", "Hệ thống"]];
@@ -4241,10 +4314,11 @@ function hien_dau() {
   const cs_dai = (MKT?.chi_so || []).filter(x => x.ma !== "VN30F1M").map(x => { const p = x.pt != null ? x.pt / 100 : null;
     return `<a class="cs-o" href="../../bang-thi-truong/"><span class="n">${esc(x.ten)}</span><b>${so(x.gia, 2)}</b><span class="${mau(p)}">${x.td > 0 ? "+" : ""}${so(x.td, 2)} (${pt(p, 2)})</span></a>`; }).join("");
   const m = META.canslim?.m;
-  let h = `<div class="dau-chinh"><h2>Tra cứu mã</h2><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
+  let h = `<div class="dau-chinh"><span class="nhan-tren">${so(DS.length, 0)} mã HOSE · HNX · UPCoM</span><h2>Tra cứu mã</h2>
+    <p class="loi">Giá, tài chính, cổ đông, định giá, CANSLIM, xếp hạng VGM – trong một ô tìm</p><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
     placeholder="Nhập mã cổ phiếu – VD V, HPG" aria-label="Tìm mã cổ phiếu" maxlength="10" autocomplete="off"
-    spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-    <p>${DS.length} mã HOSE · HNX · UPCoM – giá, tài chính, cổ đông, định giá, CANSLIM, xếp hạng VGM</p></div>`
+    spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div></div>`
+    + `<nav class="cong-cu" aria-label="Công cụ">${CONG_CU.map(([u, t, p, mau_ic, d]) => `<a href="${u}"><span class="ic" style="background:${mau_ic}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg></span><span><b>${t}</b><small>${p}</small></span></a>`).join("")}</nav>`
     + (cs_dai ? `<div class="dai-cs">${cs_dai}</div>` : "") + `<div class="luoi-dau">`;
   h += o("Danh sách theo dõi", `lưu trong trình duyệt này · bấm "+ Theo dõi" ở trang mã`, [...TD].sort());
   h += o("Danh mục đang giữ", "", [...GIU].sort());

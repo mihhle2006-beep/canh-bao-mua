@@ -273,6 +273,23 @@ tbody tr{background:var(--the)}
 .bao{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d2430;color:#fff;padding:8px 14px;border-radius:8px;
   font-size:13px;z-index:60;box-shadow:0 4px 14px #0003}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}@media (pointer:coarse){input,textarea,select{font-size:16px!important}}
+/* ===== GIAO DIỆN 26/11/2026 – cùng bộ với Tra cứu mã: thẻ nổi nhẹ · tab dạng viên (chỉ hình thức) ===== */
+:root{--vien:#dfeae2;--luoi:#edf3ef;--bong:0 1px 2px rgba(16,42,24,.05),0 2px 10px -3px rgba(16,42,24,.08);
+  --bong-noi:0 2px 4px rgba(16,42,24,.06),0 12px 28px -8px rgba(16,42,24,.18)}
+html,body{-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1100px 420px at 50% -120px,#dff0e3 0%,rgba(223,240,227,0) 70%) no-repeat,var(--nen)}
+header{background:linear-gradient(100deg,#123f1a 0%,#1B5E20 32%,#2E7D32 72%,#43A047 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 18px -6px rgba(16,60,24,.45)}
+.the{border-radius:14px;box-shadow:var(--bong)}
+.cs .the{transition:transform .15s,box-shadow .15s}.cs .the:hover{transform:translateY(-2px);box-shadow:var(--bong-noi)}
+.cs .the[aria-pressed=true]{box-shadow:0 0 0 1px var(--nhan),var(--bong)}
+.cs .gia{letter-spacing:-.3px}
+.nut{background:#eef3ef;border-radius:10px;padding:3px}
+.nut button{border-radius:7px;transition:background .12s,color .12s}.nut button:hover{color:var(--chu)}
+.nut button[aria-pressed=true]{box-shadow:0 1px 2px rgba(16,42,24,.12),0 0 0 1px rgba(16,42,24,.04)}
+.khoi-dau h2{letter-spacing:-.1px}
+th{letter-spacing:.05em}
+tbody tr:hover td{background:#f3f8f4}
 </style>
 </head>
 <body>
