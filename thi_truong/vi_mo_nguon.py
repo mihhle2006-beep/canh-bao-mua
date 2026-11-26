@@ -1153,8 +1153,16 @@ def do_vn16():
 # Giá hàng hoá không làm dự phóng LNST sát hơn (thông tin đã nằm trong các quý vừa công bố). Mã thử + bảng gốc đã xoá.
 
 
+def do_vn18():
+    """Vòng 18: ROA / ROE NHNN theo quý (đệm roa.csv) – xem số là quy năm hay lũy kế từ đầu năm (so sánh với ROE mã trên web)."""
+    import os
+    from thi_truong import vi_mo_web as W
+    f = os.path.join(W.DEM, "roa.csv")
+    print(open(f, encoding="utf-8").read() if os.path.exists(f) else "không có " + f, flush=True)
+
+
 def main():
-    do_vn16()  # vòng 16 (dữ liệu tháng hàng hoá – kết luận vòng 17 ở trên)
+    do_vn18()
     return 0
 
 
