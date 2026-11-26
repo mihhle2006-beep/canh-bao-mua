@@ -300,9 +300,9 @@ def _nho_nhnn(ten, cot, doc, nhan):
 
 
 def _roa_moi(lay, nso, toi_da=8):
-    """Bài ROA/ROE (liên kết ở trang Thống kê một số chỉ tiêu cơ bản) chưa nhớ → [(quý, ROA, ROE)]; quý đã có trong roa.csv bỏ qua."""
+    """Bài ROA/ROE (liên kết ở trang Thống kê một số chỉ tiêu cơ bản) chưa nhớ → [(quý, ROA, ROE)]; quý đã có trong roa_q.csv bỏ qua."""
     try:
-        cu = set(pd.read_csv(os.path.join(DEM, "roa.csv"), index_col=0, parse_dates=True).index)
+        cu = set(pd.read_csv(os.path.join(DEM, "roa_q.csv"), index_col=0, parse_dates=True).index)
     except (OSError, ValueError):
         cu = set()
     out = []
@@ -386,7 +386,7 @@ def tai_nso(S, N, P):
             S["bop_" + c], N["bop_" + c] = bp[c].dropna().astype(float), "NHNN – cán cân thanh toán quốc tế"
     if len(bp):
         print(f"  NHNN BoP: {len(bp)} quý · cuối {bp.index[-1]:%m/%Y} · " + " · ".join(f"{c} {bp[c].iloc[-1]}" for c in bp))
-    nh = _nho_nhnn("roa.csv", ["roa", "roe"], lambda: _roa_moi(lay, nso), "ROA/ROE")
+    nh = _nho_nhnn("roa_q.csv", ["roa", "roe"], lambda: _roa_moi(lay, nso), "ROA/ROE")
     if len(nh):
         S["nh_roa"], S["nh_roe"] = nh["roa"].astype(float), nh["roe"].astype(float)
         N["nh_roa"] = N["nh_roe"] = "NHNN – thống kê một số chỉ tiêu cơ bản (ROA, ROE)"

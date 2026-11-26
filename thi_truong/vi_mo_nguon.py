@@ -1154,11 +1154,18 @@ def do_vn16():
 
 
 def do_vn18():
-    """Vòng 18: ROA / ROE NHNN theo quý (đệm roa.csv) – xem số là quy năm hay lũy kế từ đầu năm (so sánh với ROE mã trên web)."""
-    import os
-    from thi_truong import vi_mo_web as W
-    f = os.path.join(W.DEM, "roa.csv")
-    print(open(f, encoding="utf-8").read() if os.path.exists(f) else "không có " + f, flush=True)
+    """Vòng 18: ROA / ROE NHNN – bài mới nhất: số toàn hệ thống + ghi chú (quy năm hay lũy kế từ đầu năm?) + mọi bài còn liên kết."""
+    from thi_truong import nso
+    from thi_truong.vi_mo_web import _get
+    lay = lambda u: _get(u, timeout=40, headers={"Accept-Language": "vi"}).text   # noqa: E731
+    ds = nso.bai_roa(lay(nso.NHNN_CTCB))
+    for i, (u, q) in enumerate(ds[:8]):
+        h = lay(u)
+        print(f"{q:%Y-%m} → {nso.roa_roe(h, q)} (không kiểm quý: {nso.roa_roe(h)})", flush=True)
+        if i == 0:
+            t = nso.chu(h)
+            k = t.find("Loại hình TCTD")
+            print("  …" + t[max(0, k - 300):k + 900], flush=True)
 
 
 def main():
