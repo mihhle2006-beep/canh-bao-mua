@@ -105,8 +105,9 @@ MAU = {
     "xk": (rf"(?:[Kk]im ngạch )?[Xx]uất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
     "xk_yoy": (rf"(?:[Kk]im ngạch )?[Xx]uất khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
                rf"{_SO}% so với cùng kỳ", lambda g: dau(g[3], g[4])),
-    "nk": (rf"[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
-    "nk_yoy": (rf"[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
+    # (?<!xuất, ): bỏ câu "Tổng kim ngạch xuất, nhập khẩu hàng hóa tháng Chín đạt 117,69 tỷ USD" (báo cáo 09/2026 – tổng 2 chiều)
+    "nk": (rf"(?<!xuất, )[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD", lambda g: so(g[0])),
+    "nk_yoy": (rf"(?<!xuất, )[Nn]hập khẩu hàng hóa {_THANG} (?:ước tính |ước )?đạt {_SO} tỷ USD, {_TG} {_SO}% so với tháng trước và {_TG} "
                rf"{_SO}% so với cùng kỳ", lambda g: dau(g[3], g[4])),
     "can_can": (rf"[Cc]án cân thương mại hàng hóa {_THANG} (?:ước tính |ước )?(xuất siêu|nhập siêu) {_SO} tỷ USD",
                 lambda g: so(g[1]) * (1 if g[0] == "xuất siêu" else -1)),
@@ -223,7 +224,7 @@ def kiem(df):
     return df
 
 
-PHIEN = 4                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
+PHIEN = 5                                                             # tăng khi sửa MAU / _gia → đệm cũ đọc lại
 
 
 def tai_dem(lay, dem=None, trang=3):

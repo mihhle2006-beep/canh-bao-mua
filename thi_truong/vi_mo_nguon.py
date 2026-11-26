@@ -790,8 +790,33 @@ def do_vn10():
         print("   2026-09 đọc được:", {k: v for k, v in nso.doc(tt).items() if k in ("xk", "nk", "can_can", "nsnn", "nsnn_kh")})
 
 
+def do_vn11():
+    """Vòng 11: khuôn số các bảng NHNN – cán cân thanh toán (đủ dòng), chỉ tiêu cơ bản / ROA-ROE / an toàn vốn (liên kết + bảng),
+    nợ xấu, LDR (vùng quanh số %)."""
+    import requests
+    from thi_truong import nso
+    g = lambda u: requests.get(u, headers={**UA, "Accept-Language": "vi"}, timeout=50).text   # noqa: E731
+    B = "https://sbv.gov.vn/vi/"
+    t = nso.chu(g(B + "can-can-thanh-toan-quoc-te"))
+    i = t.find("A. Cán cân vãng lai")
+    print("BoP:", t[max(0, i - 60):i + 1700])
+    h = g(B + "thong-ke-mot-so-chi-tieu-co-ban")
+    t = nso.chu(h)
+    for m in re.finditer(r'<a[^>]+href="([^"]+)"[^>]*>\s*([^<]{0,90}(?:ROA|AN TOÀN VỐN|CHỈ TIÊU CƠ BẢN)[^<]{0,60})<', h):
+        print("   liên kết:", m.group(2).strip()[:90], "→", m.group(1)[:140])
+    for k in ("Tổng tài sản", "ROA", "Tỷ lệ an toàn vốn", "Tỷ lệ cấp tín dụng"):
+        j = t.find(k, 2500)
+        if j >= 0:
+            print(f"   [{k}] {t[max(0, j - 150):j + 900]}")
+    for d in ("ty-le-no-xau-trong-tong-du-no-tin-dung", "ty-le-du-no-cho-vay-so-voi-tong-tien-gui"):
+        t = nso.chu(g(B + d))
+        ks = [m.start() for m in re.finditer(r"\d,\d+ ?%|\d+,\d+", t)]
+        j = next((x for x in ks if x > 3000), -1)
+        print(f"   {d}: số đầu tiên sau đầu trang ở {j} · {t[max(0, j - 500):j + 500] if j >= 0 else t[3000:3600]}")
+
+
 def main():
-    do_vn10()  # vòng 10: trang thống kê NHNN (nợ xấu, LDR, BoP, chỉ tiêu cơ bản) · câu Cục Thống kê T9 còn hụt
+    do_vn11()  # vòng 11: khuôn số các bảng NHNN (BoP đủ dòng, chỉ tiêu cơ bản, nợ xấu, LDR)
     return 0
 
 

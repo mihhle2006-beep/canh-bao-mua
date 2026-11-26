@@ -163,3 +163,12 @@ def test_m2_nhnn():
          '<tr><td>- Tiền gửi của dân cư</td><td>11.434.266</td><td>10,63</td></tr></table>')
     assert nso.m2(h) == [(pd.Timestamp("2026-08-01"), 20774696.0, 6.84, 10.63)]
     assert nso.m2("<p>Trang lỗi</p>") == []
+
+
+def test_nhap_khau_khong_lay_tong_xuat_nhap():
+    t = ("Tổng kim ngạch xuất, nhập khẩu hàng hóa tháng Chín đạt 117,69 tỷ USD, tăng 7,3% so với tháng trước. Kim ngạch xuất khẩu "
+         "hàng hóa tháng Chín đạt 59,48 tỷ USD, tăng 8,5% so với tháng trước và tăng 39,1% so với cùng kỳ năm trước. Kim ngạch nhập "
+         "khẩu hàng hóa tháng Chín đạt 58,21 tỷ USD, tăng 6,0% so với tháng trước và tăng 45,8% so với cùng kỳ năm trước. Theo số "
+         "liệu sơ bộ, cán cân thương mại hàng hóa tháng Chín xuất siêu 1,27 tỷ USD.")
+    d = nso.doc(t)
+    assert (d["xk"], d["nk"], d["can_can"], d["nk_yoy"]) == (59.48, 58.21, 1.27, 45.8)
