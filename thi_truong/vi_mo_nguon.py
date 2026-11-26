@@ -927,8 +927,13 @@ CAP13 = [("bdi", "tv:INDEX:BDI", +1, "HAH VOS VSC GMD PVT"), ("duong_tq", "tv:ZC
          ("bdi_k1", "tv:INDEX:BDI", +1, "HAH VOS VSC GMD PVT", 1)]
 
 
+# Vòng 13 – KẾT QUẢ: đường → SBT/LSS/QNS BỀN (chênh > 0 cả 2 đoạn ở khung 1 / 3 / 6 tháng: IS +1,3 / +3,9 / +0,8, OOS +2,3 / +2,4 /
+# +1,9 %/tháng; đường ZCE cùng chiều +3,2 / +0,9) – OOS t chỉ 1,2–1,5. BDI → HAH/VOS/VSC/GMD/PVT không đạt (OOS lợi thế −9,1 %/năm,
+# khung 1 tháng âm); bông / PTA / urê ZCE không đạt. → hiển thị ghi chú ở trang, KHÔNG đưa vào lệnh (chưa hỏi chủ quỹ).
+
+
 def main():
-    do_vn12(CAP13, do_tq=False)  # vòng 13: cước tàu BDI → vận tải biển, ZCE, độ bền cặp đường
+    do_vn12(CAP13, do_tq=False)  # vòng 13 (đã kết luận ở trên) – ô thu_nguon chạy lại để xem
     return 0
 
 

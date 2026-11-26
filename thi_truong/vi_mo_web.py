@@ -36,7 +36,8 @@ SONG = [("https://api.gold-api.com/price/XAU", "gold_api"),
         ("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", "swissquote")]
 NHOM = {"vang": "Vàng", "hh": "Bạc · dầu", "ls_vn": "Lãi suất Việt Nam", "vn": "Kinh tế Việt Nam", "my": "Mỹ",
         "ty_gia": "Tỷ giá"}
-NHOM_HH = {"kl": "Kim loại", "nl": "Năng lượng", "ns": "Nông sản · phân bón"}
+NHOM_HH = {"kl": "Kim loại", "nl": "Năng lượng", "ns": "Nông sản · phân bón", "tq": "Trung Quốc (sàn Trịnh Châu)",
+           "vt": "Cước tàu biển"}
 # Hàng hoá: (khoá, nhóm, tên, đơn vị, nguồn theo thứ tự ưu tiên – "tv:MÃ" TradingView / "yf:MÃ" Yahoo, ngành / mã VN liên quan).
 # Kim loại quý: giá giao ngay (như XAU); còn lại hợp đồng tương lai gần nhất (nối liên tục – có bước nhảy nhỏ khi đổi kỳ hạn).
 # Dò 25/11/2026 (vi_mo_nguon): bỏ LBMA (403), Stooq (trả HTML), Yahoo RC=F (rỗng), MTF=F (than Rotterdam, ngừng 12/2025).
@@ -56,13 +57,20 @@ HANG_HOA = [
     ("arabica", "ns", "Cà phê Arabica (New York)", "US cent/lb", ["yf:KC=F"], ""),
     ("cao_su", "ns", "Cao su TSR20 (SGX)", "US cent/kg", ["tv:SGX:TF1!"], "GVR, PHR, DPR, DRI"),
     ("gao", "ns", "Gạo thô (CBOT)", "USD/cwt", ["yf:ZR=F"], "LTG, TAR"),
-    ("duong", "ns", "Đường thô", "US cent/lb", ["yf:SB=F"], "SBT, LSS, QNS"),
+    ("duong", "ns", "Đường thô", "US cent/lb", ["yf:SB=F"],
+     "SBT, LSS, QNS – đường tăng 3 tháng → nhóm này thường vượt VN-Index tháng sau (kiểm 2012–2026)"),
     ("bong", "ns", "Bông", "US cent/lb", ["yf:CT=F"], "dệt may: TCM, STK, MSH"),
     ("ngo", "ns", "Ngô", "US cent/giạ", ["yf:ZC=F"], "thức ăn chăn nuôi: DBC, BAF"),
     ("dau_tuong", "ns", "Đậu tương", "US cent/giạ", ["yf:ZS=F"], "thức ăn chăn nuôi: DBC, BAF"),
     ("lua_mi", "ns", "Lúa mì", "US cent/giạ", ["yf:ZW=F"], ""),
     ("heo", "ns", "Heo nạc (Mỹ)", "US cent/lb", ["yf:HE=F"], "DBC, BAF"),
     ("ure", "ns", "Urê (vịnh Mỹ)", "USD/tấn ngắn", ["tv:CBOT:UFV1!"], "phân bón: DPM, DCM"),
+    # dò 26/11/2026 (vi_mo_nguon vòng 12): TradingView có sàn Trịnh Châu (ZCE) + BDI; không có Thượng Hải / Đại Liên
+    ("ure_tq", "tq", "Urê (Trịnh Châu)", "CNY/tấn", ["tv:ZCE:UR1!"], "phân bón: DPM, DCM – giá TQ sát hơn giá Mỹ"),
+    ("duong_tq", "tq", "Đường trắng (Trịnh Châu)", "CNY/tấn", ["tv:ZCE:SR1!"], "SBT, LSS, QNS"),
+    ("bong_tq", "tq", "Bông (Trịnh Châu)", "CNY/tấn", ["tv:ZCE:CF1!"], "dệt may: TCM, STK, MSH"),
+    ("pta", "tq", "Xơ PTA (Trịnh Châu)", "CNY/tấn", ["tv:ZCE:TA1!"], "sợi polyester: STK"),
+    ("bdi", "vt", "Cước tàu hàng rời Baltic (BDI)", "điểm", ["tv:INDEX:BDI"], "vận tải biển: HAH, VOS, VSC, PVT"),
 ]
 THE_HH = ("bac", "brent", "wti")              # thẻ đầu trang (nhóm "Bạc · dầu"); đủ 22 loại ở bảng Hàng hoá
 # Kinh tế VN (TradingView ECONOMICS, theo tháng / quý): (khoá, mã, tên, đơn vị, chia, kiểu đổi, kỳ so). Đã kiểm 15 kỳ cuối
