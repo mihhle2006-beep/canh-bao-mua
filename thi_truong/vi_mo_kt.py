@@ -434,16 +434,15 @@ def diem_nhan(h, ch):
              [f" (cùng kỳ {so_vn(q, 2)}%)" if q is not None else "", 0])
     b = h.get("vn_bot")
     if b:
-        s = ch["vn_bot"]
-        v = b["gt"]
-        n = 0                                                         # số tháng liền trước có xuất (nhập) siêu NHỎ hơn
-        for x in reversed(s.iloc[:-1].tolist()):
-            if (x < v) if v >= 0 else (x > v):
-                n += 1
-            else:
-                break
-        them([("Xuất siêu " if v >= 0 else "Nhập siêu ") + "", 0], [so_vn(abs(v), 2) + " tỷ USD", 1],
-             [f" ({b['ky']})" + (f" — lớn nhất {n + 1} tháng" if n >= 5 else ""), 0])
+        s = _s(ch["vn_bot"])
+        v, truoc = b["gt"], _s(ch["vn_bot"]).iloc[:-1]
+        hon = truoc[(truoc >= v) if v >= 0 else (truoc <= v)]          # tháng gần nhất có xuất (nhập) siêu lớn hơn
+        if not len(hon):
+            mo = f" — kỷ lục (số liệu từ {s.index[0].year})" if len(truoc) >= 24 else ""
+        else:
+            t = hon.index[-1]
+            mo = f" — lớn nhất từ T{t.month}/{t.year}" if (truoc.index[-1] - t).days > 150 else ""
+        them([("Xuất siêu " if v >= 0 else "Nhập siêu "), 0], [so_vn(abs(v), 2) + " tỷ USD", 1], [f" ({b['ky']})" + mo, 0])
     f = h.get("vn_fdi")
     if f:
         them(["FDI giải ngân " + f["ky"] + " ", 0], [so_vn(f["gt"], 2) + " tỷ USD", 1],

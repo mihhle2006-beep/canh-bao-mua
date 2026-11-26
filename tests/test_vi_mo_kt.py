@@ -118,6 +118,9 @@ def test_dung_kt_day_du():
     assert h["vn_bot"]["gt"] == 7.31 and h["vn_bot"]["dv"] == "tỷ USD"       # chia đơn vị
     assert kt["tq"][:2] == ["vn_gdp", "vn_cpi"] and {c["k"] for c in kt["chu_de"]} >= {"tq", "gia", "the_gioi", "hh"}
     chu = "".join(t for t, _ in kt["diem_nhan"])
-    assert "Lạm phát 4,93%" in chu and "Xuất siêu" in chu and "lớn nhất" in chu and "GDP Q3/2026" in chu
+    assert "Lạm phát 4,93%" in chu and "Xuất siêu 7,31 tỷ USD" in chu and "kỷ lục (số liệu từ 2019)" in chu and "GDP Q3/2026" in chu
+    ch["vn_bot"].iloc[10] = 9e9                                      # có tháng lớn hơn trước đó → "lớn nhất từ T…"
+    chu = "".join(t for t, _ in KT.dung_kt(ch, {}, pd.Timestamp("2026-11-26"), {})[0]["diem_nhan"])
+    assert "lớn nhất từ T11/2019" in chu
     assert any(m["tieu"] == "Giá cả" for m in kt["ban_tin"]["muc"]) and set(ls) == set(h)
     assert all(ls[k][i][0] < ls[k][i + 1][0] for k in ls for i in range(len(ls[k]) - 1))
