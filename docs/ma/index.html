@@ -356,8 +356,8 @@ a.chip:hover{border-color:var(--nhan);text-decoration:none}
 @media (max-width:600px){.loc-bo{grid-template-columns:1fr 1fr;padding:10px;gap:8px}}
 .cuoi{color:var(--mo);font-size:12px;margin:18px 0}
 .hh-ghi{margin:0;padding:8px 14px 12px;font-size:12px;color:var(--mo)}#hh-lq svg{display:block;margin-left:auto}
-#hh-lq td.trai .m{display:block;font-size:11.5px;font-weight:400}
-@media (max-width:600px){#hh-lq th:nth-child(6),#hh-lq td:nth-child(6){display:none}#hh-lq td,#hh-lq th{padding:6px 5px}#hh-lq td.trai{white-space:normal}}
+#hh-lq td.trai .m,#nh-he td .m{display:block;font-size:11.5px;font-weight:400}#nh-he svg{display:block;margin-left:auto}#cv-ctck .hh-ghi svg{float:right;margin:0 0 4px 10px}
+@media (max-width:600px){#hh-lq th:nth-child(6),#hh-lq td:nth-child(6),#nh-he th:nth-child(5),#nh-he td:nth-child(5){display:none}#hh-lq td,#hh-lq th,#nh-he td,#nh-he th{padding:6px 5px}#hh-lq td.trai,#nh-he td.trai{white-space:normal}}
 .sub{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
 .sub button{border:1px solid var(--vien);background:var(--the);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--chu2)}
 .sub button[aria-pressed=true]{background:var(--nhan);border-color:var(--nhan);color:#fff;font-weight:600}
@@ -2820,8 +2820,9 @@ function tong_quan(ma, k) {
     o_so("ROE", r.ts?.chi_so?.ROE ? pt(r.ts.chi_so.ROE.v, 1, false) : "–") + o_so("PEG", r.peg ? so(r.peg, 2) : "–") + `</div>`).replace('<div class="the">', '<div class="cot"><div class="the">') +
     diem_nhan(ma, k, x, gn) + `</div>` +
     the("Góc hệ thống", "kỹ thuật · dòng tiền · định giá", goc_he_thong(ma, k, x, gn)) + `</div>`;
-  h += so_sanh_nganh(ma) + `<div id="hh-lq" data-ma="${esc(ma)}"></div>`;
-  setTimeout(() => ve_hh_lq(ma), 0);                        // khối điền sau khi Tổng quan đã vào trang
+  const la_nh = r.suc_khoe?.loai === "NH" || !!n.cs?.netInterestMargin;
+  h += so_sanh_nganh(ma) + `<div id="hh-lq" data-ma="${esc(ma)}"></div>` + (la_nh ? `<div id="nh-he" data-ma="${esc(ma)}"></div>` : `<div id="cv-ctck" data-ma="${esc(ma)}"></div>`);
+  setTimeout(() => { ve_hh_lq(ma); if (la_nh) ve_nh_he(ma, k); else ve_cv_ctck(ma); }, 0);   // khối điền sau khi Tổng quan đã vào trang
   const ho = n.sz?.linh_vuc || ct.ho_so;
   if (ho) h += the("Giới thiệu", `<a href="#${esc(ma)}/ho-so">hồ sơ đầy đủ</a>`, `<div class="than van">${esc(ho.slice(0, 700))}${ho.length > 700 ? "…" : ""}</div>`);
   return h;
@@ -2829,14 +2830,14 @@ function tong_quan(ma, k) {
 // ---------------------------------------------------------------- HÀNG HOÁ LIÊN QUAN (Tổng quan): ../vi_mo/hh_ma.json – workflow Vi mo
 // (thi_truong/vi_mo_web.hh_theo_ma). Kiểm 2012–2026 (thi_truong/vi_mo_nguon vòng 12–15): đi cùng cổ phiếu ngành nhưng không báo trước.
 let HH_MA_P = null;
+const tia = (sp, mau_co) => { if (!sp || sp.length < 2) return "";   // đường nhỏ xu hướng (mặc định xanh lên / đỏ xuống)
+  const lo = Math.min(...sp), hi = Math.max(...sp), w = 96, ht = 26, d = hi - lo || 1;
+  const xy = sp.map((v, i) => `${(i / (sp.length - 1) * w).toFixed(1)},${(ht - 2 - (v - lo) / d * (ht - 4)).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${w} ${ht}" width="${w}" height="${ht}" aria-hidden="true"><polyline points="${xy}" fill="none" stroke="${mau_co || (sp[sp.length - 1] >= sp[0] ? "#0f8a4a" : "#d1342b")}" stroke-width="1.5"/></svg>`; };
 async function ve_hh_lq(ma) {
   HH_MA_P = HH_MA_P || lay("../vi_mo/hh_ma.json", false).then(j => j || {}).catch(() => ({}));
   const ds = (await HH_MA_P)[ma], el = $("#hh-lq");
   if (!ds?.length || !el || el.dataset.ma !== ma) return;
-  const tia = sp => { if (!sp || sp.length < 2) return "";
-    const lo = Math.min(...sp), hi = Math.max(...sp), w = 96, ht = 26, d = hi - lo || 1;
-    const xy = sp.map((v, i) => `${(i / (sp.length - 1) * w).toFixed(1)},${(ht - 2 - (v - lo) / d * (ht - 4)).toFixed(1)}`).join(" ");
-    return `<svg viewBox="0 0 ${w} ${ht}" width="${w}" height="${ht}" aria-hidden="true"><polyline points="${xy}" fill="none" stroke="${sp[sp.length - 1] >= sp[0] ? "#0f8a4a" : "#d1342b"}" stroke-width="1.5"/></svg>`; };
   const p = v => `<td class="${mau(v)}">${pt(v == null ? null : v / 100, 1)}</td>`;
   el.innerHTML = the("Hàng hoá liên quan", `giá thế giới · <a href="../../bang-thi-truong/#vi-mo">Vĩ mô › Hàng hoá</a>`,
     `<div class="bang-boc"><table><thead><tr><th class="trai">Hàng hoá</th><th>Giá</th><th>Ngày</th><th>Tháng</th><th>Năm</th><th>1 năm</th></tr></thead><tbody>` +
@@ -2844,6 +2845,46 @@ async function ve_hh_lq(ma) {
       p(r.d1) + p(r.m1) + p(r.y1) + `<td>${tia(r.sp)}</td></tr>`).join("") + `</tbody></table></div>` +
     `<p class="hh-ghi">Kiểm 2012–2026: giá hàng hoá đi cùng cổ phiếu ngành (giải thích được biến động) nhưng KHÔNG báo trước để mua bán; ` +
     `biến động đêm qua phần lớn đã vào giá mở cửa phiên sáng. Giá ngày ${esc((ds[0].ngay || "").split("-").reverse().join("/"))}.</p>`);
+}
+// ---------------------------------------------------------------- NGÂN HÀNG – TOÀN HỆ THỐNG (Tổng quan mã ngân hàng): ../vi_mo/ngan_hang.json
+// (thi_truong/vi_mo_web.ngan_hang – NHNN tín dụng / M2 / tiền gửi / ROA–ROE, lãi suất điều hành, liên ngân hàng, TPCP HNX) + so ROE / ROA của mã.
+let NH_P = null;
+async function ve_nh_he(ma, k) {
+  NH_P = NH_P || lay("../vi_mo/ngan_hang.json", false).then(j => j || {}).catch(() => ({}));
+  const j = await NH_P, ds = j.ct || [], el = $("#nh-he");
+  if (!ds.length || !el || el.dataset.ma !== ma) return;
+  const doi = (x, kieu) => x == null ? "–" : (x > 0 ? "+" : "") + so(x, 2) + (kieu === "%" ? "%" : " đpt");
+  const he = Object.fromEntries(ds.map(r => [r.k, r])), cs = k.n?.cs || {}, L = (cs.ky || []).length;
+  const ma_cs = key => L && cs[key]?.[L - 1] != null ? cs[key][L - 1] * 100 : null;
+  const ss = [["ROE", ma_cs("roe"), he.vn_roe_nh], ["ROA", ma_cs("roa"), he.vn_roa_nh]].filter(([, v, h]) => v != null && h)
+    .map(([t, v, h]) => `${t} <b>${esc(ma)}</b> ${so(v, 2)} % (${esc(cs.ky[L - 1])}) · toàn hệ thống ${so(h.gt, 2)} % (${esc(h.ky)}) → ` +
+      `<b class="${v >= h.gt ? "t" : "g"}">${v >= h.gt ? "cao hơn" : "thấp hơn"} ${so(Math.abs(v - h.gt), 2)} đpt</b>`).join("<br>");
+  el.innerHTML = the("Ngân hàng – toàn hệ thống", `NHNN · HNX · <a href="../../bang-thi-truong/#vi-mo">Vĩ mô › Tiền tệ</a>`,
+    (ss ? `<p class="nhan-xet" style="margin:0;padding:10px 14px 4px">${ss}</p>` : "") +
+    `<div class="bang-boc"><table><thead><tr><th class="trai">Chỉ tiêu</th><th>Mới nhất</th><th>So kỳ trước</th><th>Cùng kỳ</th><th>Xu hướng</th></tr></thead><tbody>` +
+    ds.map(r => `<tr${r.cu ? ' class="m" title="Số liệu cũ – nguồn chưa cập nhật"' : ""}><td class="trai"><b>${esc(r.ten)}</b>${/^%/.test(r.dv) ? "" : ` <small class="m">${esc(r.dv)}</small>`}` +
+      `${r.ghi ? `<span class="m">${esc(r.ghi)}</span>` : ""}</td><td><b>${so(r.gt, r.le ?? 2)}</b><span class="m">${esc(r.ky)}</span></td><td>${doi(r.kt, r.kieu)}</td><td>${doi(r.ck, r.kieu)}</td>` +
+      `<td>${tia(r.sp, "#1f6feb")}</td></tr>`).join("") + `</tbody></table></div>` +
+    `<p class="hh-ghi">Số toàn hệ thống công bố trễ (tín dụng / M2 ~ 2–3 tháng, ROA–ROE ~ 1 quý). Đã kiểm: lãi suất / vĩ mô không giúp canh mua bán cổ phiếu; ` +
+    `dự phóng LNST ngân hàng (tab Định giá) nhân các quý còn lại theo ½ tốc độ tăng lũy kế – sát hơn cách lấy nguyên cùng kỳ (kiểm 2016–2025).</p>`);
+}
+// ---------------------------------------------------------------- CHỨNG KHOÁN – DƯ NỢ CHO VAY TOÀN NGÀNH (Tổng quan mã CTCK): du_lieu/cho_vay_ctck.json
+// (danh-muc ptcp/web_tra_cuu.cho_vay_ctck – CĐKT "Các khoản cho vay" = margin + ứng trước, các CTCK niêm yết; tăng trưởng tính trên cùng tập CTCK).
+let CV_P = null;
+async function ve_cv_ctck(ma) {
+  CV_P = CV_P || lay(DL + "cho_vay_ctck.json", false).then(j => j || {}).catch(() => ({}));
+  const j = await CV_P, m = j.ma?.[ma], el = $("#cv-ctck");
+  if (!m || !j.ky?.length || !el || el.dataset.ma !== ma) return;
+  const L = j.ky.length, q = k => `Q${k.slice(-1)}/${k.slice(0, 4)}`, i = j.ky.indexOf(m[0]), tp = i >= 0 && j.tong[i] ? m[1] / j.tong[i] : null;
+  const p = v => `<td class="${mau(v)}">${pt(v == null ? null : v / 100, 1)}</td>`;
+  el.innerHTML = the("Chứng khoán – dư nợ cho vay toàn ngành", `margin + ứng trước · ${j.n[L - 1]} CTCK niêm yết · BCTC quý`,
+    `<p class="nhan-xet" style="margin:0;padding:10px 14px 4px"><b>${esc(ma)}</b> cho vay ${so(m[1], 0)} tỷ (${q(m[0])})` +
+    (m[2] != null ? ` · so cùng kỳ <b class="${mau(m[2])}">${pt(m[2] / 100, 1)}</b>` : "") + (tp != null ? ` · thị phần ${pt(tp, 1, false)} toàn ngành` : "") + `</p>` +
+    `<div class="bang-boc"><table><thead><tr><th class="trai">Quý</th><th>Toàn ngành (tỷ)</th><th>So quý trước</th><th>So cùng kỳ</th><th>Số CTCK</th></tr></thead><tbody>` +
+    j.ky.slice(-8).reverse().map((k, x) => { const t = L - 1 - x;
+      return `<tr><td class="trai">${q(k)}</td><td><b>${so(j.tong[t], 0)}</b></td>${p(j.qoq[t])}${p(j.yoy[t])}<td>${j.n[t]}</td></tr>`; }).join("") +
+    `</tbody></table></div><p class="hh-ghi">${tia(j.tong, "#1f6feb")}Toàn ngành từ ${q(j.ky[0])} tới ${q(j.ky[L - 1])}. Dư nợ cho vay = CĐKT "Các khoản cho vay" ` +
+    `(chủ yếu margin). Tăng trưởng chỉ cộng CTCK có số ở cả 2 kỳ (mã mới niêm yết không làm nhảy số). Thước đo đòn bẩy của thị trường – tham khảo, chưa kiểm làm tín hiệu mua bán.</p>`);
 }
 // ---------------------------------------------------------------- ĐIỂM NHẤN (Tổng quan): điểm mạnh · cần lưu ý + mạng nhện 6 trụ – kiểu "phân tích
 // nhanh" của Simplize. 6 trụ = thẻ điểm tab Phân tích (pt_tinh, cần BCTC năm → tải sau, lưu k.pt6); giá / dòng tiền tính ngay từ chuỗi giá.
@@ -3996,7 +4037,7 @@ function the_du_phong(ma, k, g) {               // dự phóng LNST mẹ: đồn
     `<td class="trai">${url(b[3]) ? `<a href="${url(b[3])}" target="_blank" rel="noopener">PDF</a>` : ""}</td></tr>`).join("");
   return the(tieu, `tỷ đồng · báo cáo CTCK ${n_lui} ngày tới ${ngay_vn(DP.cap_nhat)} · 4 quý gần nhất ${ty(d.ltm)}`,
     `<div class="bang-boc" id="dp-ctck"><table><thead><tr><th class="trai">Năm</th><th>Đồng thuận CTCK</th><th>Hệ thống</th><th>Kết hợp ½–½</th><th>So 4 quý gần nhất</th><th>P/E dự phóng</th></tr></thead><tbody>${dong}</tbody></table></div>` +
-    `<p class="nhan-xet">Đồng thuận = trung vị dự phóng các CTCK · Hệ thống = lũy kế đã công bố (${esc(d.k)} quý) + các quý còn lại lấy cùng kỳ năm trước, năm sau = 4 quý gần nhất · ` +
+    `<p class="nhan-xet">Đồng thuận = trung vị dự phóng các CTCK · Hệ thống = lũy kế đã công bố (${esc(d.k)} quý) + các quý còn lại lấy cùng kỳ năm trước${d.tang ? " × (1 + ½ tốc độ tăng lũy kế so cùng kỳ) – cách riêng cho ngân hàng, kiểm 2016–2025 sai số 20 → 15 % khi mới có 1 quý" : ""}, năm sau = 4 quý gần nhất · ` +
     `Kết hợp = ½ đồng thuận + ½ hệ thống (sát thực tế hơn từng bên) · P/E dự phóng = vốn hoá ÷ LNST kết hợp. Ngân hàng / CTCK / bảo hiểm: báo cáo chỉ có LNTT → LNST ước = LNTT × 0,8 (ghi "LNTT×0,8"). Số đọc tự động từ PDF – bấm PDF xem bản gốc. Chỉ để tham khảo, không dùng cho cờ rẻ / đắt.</p>` +
     (bc ? `<div class="bang-boc"><table><thead><tr><th class="trai">Ngày</th><th class="trai">CTCK</th>${nam.map(y => `<th>${esc(y)}</th>`).join("")}<th class="trai">Báo cáo</th></tr></thead><tbody>${bc}</tbody></table></div>` : ""));
 }

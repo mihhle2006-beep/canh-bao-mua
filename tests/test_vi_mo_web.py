@@ -229,3 +229,11 @@ def test_hh_theo_ma_tach_ma_tu_cot_lq():
     assert [x["k"] for x in m["HPG"]] == ["hrc", "quang"]                        # không lặp HPG 2 lần cùng hàng hoá
     sp = m["HPG"][0]["sp"]
     assert 52 <= len(sp) <= 54 and sp[-1] == 800 + len(d) - 1 and m["SBT"][0]["sp"] == []
+
+
+def test_ngan_hang_loc_chi_tieu_tien_te_theo_thu_tu():
+    kt = {"ct": [{"k": "vn_cpi", "ten": "CPI"}, {"k": "vn_10n", "ten": "TPCP 10N", "gt": 3.4, "sp": [1, 2], "kieu": "pt"},
+                 {"k": "vn_tin_dung", "ten": "Tín dụng", "gt": 9.8, "cu": True}]}
+    r = V.ngan_hang(kt)
+    assert [x["k"] for x in r] == ["vn_tin_dung", "vn_10n"] and r[1]["sp"] == [1, 2] and r[0]["cu"] is True
+    assert V.ngan_hang({}) == []
