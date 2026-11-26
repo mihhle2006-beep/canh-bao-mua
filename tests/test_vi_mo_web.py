@@ -54,7 +54,13 @@ def _mau():
         N[k] = "nguồn mẫu"
     P = {"gia_ngay": 3600.0, "gia_ngay_luc": datetime(2026, 11, 25, 21, 50, tzinfo=V.VN), "so_cheo": {"bac": (700, 0.95, 1.0)},
          "vcb": {"mua": 25610.0, "ck": 25640.0, "ban": 26020.0},
-         "song": {"url": "https://api.gold-api.com/price/XAU", "kieu": "gold_api", "gia": 3600.0}}
+         "song": {"url": "https://api.gold-api.com/price/XAU", "kieu": "gold_api", "gia": 3600.0},
+         "tin": [{"t": "NHNN giữ nguyên lãi suất điều hành", "u": "https://cafef.vn/a.chn", "d": "2026-11-25 10:15"}],
+         "nso_moi": {"u": "https://www.nso.gov.vn/bai-top/2026/11/bao-cao-thang-muoi/", "ky": "2026-10"}}
+    S["td_tang"] = pd.Series([9.0, 10.19], index=pd.to_datetime(["2026-07-01", "2026-08-01"]))
+    S["nso_vang_yoy"] = pd.Series([40.0, 48.3], index=pd.to_datetime(["2026-09-01", "2026-10-01"]))
+    S["kt_vn_tin_dung"], S["kt_vn_vang_cs"] = S["td_tang"], S["nso_vang_yoy"]
+    N["kt_vn_tin_dung"] = N["kt_vn_vang_cs"] = "nguồn mẫu"
     return S, N, P
 
 
@@ -178,3 +184,31 @@ def test_yahoo_ngay_theo_gio_san(monkeypatch):
     monkeypatch.setitem(sys.modules, "yfinance", gia)
     assert [f"{d:%Y-%m-%d}" for d in V._yf("VND=X").index] == ["2026-07-01", "2026-07-02"]
     assert V._yf("VND=X", khung="60m", ky="1mo").index[0] == pd.Timestamp("2026-06-30 23:00")
+
+
+def test_noi_nso_chi_them_thang_moi_cho_xuat_nhap_khau(capsys):
+    th = pd.date_range("2026-01-01", "2026-07-01", freq="MS")
+    S = {"kt_vn_xk": pd.Series(40e9, th), "kt_vn_nk": pd.Series(38e9, th), "kt_vn_cpi": pd.Series(4.0, th),
+         "kt_vn_bot": pd.Series(2e9, th)}
+    N = {"kt_vn_xk": "TradingView"}
+    df = pd.DataFrame({"xk": [41.0, 50.0, 52.0], "nk": [39.0, 45.0, float("nan")], "cpi_yoy": [4.01, 4.5, 4.6],
+                       "can_can": [2.0, 5.0, float("nan")]},
+                      index=pd.to_datetime(["2026-07-01", "2026-08-01", "2026-09-01"]))
+    V.noi_nso(S, N, {"nso": df})
+    xk = S["kt_vn_xk"]
+    assert xk.loc["2026-07-01"] == 40e9 and xk.loc["2026-09-01"] == 52e9 and len(xk) == 9      # tháng trùng giữ TradingView
+    assert len(S["kt_vn_nk"]) == 8 and "2 tháng mới: Cục Thống kê" in N["kt_vn_xk"]
+    assert S["kt_vn_bot"].loc["2026-08-01"] == 5e9 and len(S["kt_vn_bot"]) == 8
+    out = capsys.readouterr().out
+    assert "kiểm Cục Thống kê ↔ TradingView xk: 1 tháng trùng · lệch lớn nhất 1.000" in out and "cpi_yoy: 1 tháng" in out
+    V.noi_nso(S, N, {})                                                                         # không có báo cáo → không đổi
+    assert len(S["kt_vn_xk"]) == 9
+
+
+def test_dung_kt_co_tin_va_bao_cao():
+    S, N, P = _mau()
+    kq = V.dung(S, N, P, bay_gio=datetime(2026, 11, 25, 22, 0, tzinfo=V.VN))
+    assert kq["kt"]["tin"][0]["u"].startswith("https://") and kq["kt"]["bao_cao"]["ten"].endswith("tháng 10/2026")
+    h = {r["k"]: r for r in kq["kt"]["ct"]}
+    assert h["vn_tin_dung"]["gt"] == 10.19 and h["vn_tin_dung"]["cd"] == "tien_te" and "vn_tin_dung" in kq["kt"]["tq"]
+    assert h["vn_vang_cs"]["kt"] == 8.3

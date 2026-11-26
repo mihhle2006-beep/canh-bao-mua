@@ -7,6 +7,9 @@ theo độ lệch so trung bình 5 năm và hướng tốt của chỉ tiêu) ·
 
 Thuần (không mạng) – vi_mo_web tải chuỗi rồi gọi dung_kt(). Nguồn đã dò + kiểm 25/11/2026 (thi_truong/vi_mo_nguon.do_vn):
   TradingView ECONOMICS (gốc Cục Thống kê / NHNN / Hải quan …) – ngày nến đã sửa (lai_suat.TV_BU_GIO); World Bank (năm).
+  Cục Thống kê – báo cáo tình hình KT-XH tháng / quý (thi_truong/nso: chỉ số giá vàng / USD, CPI so tháng 12 / bình quân, vốn
+  NSNN, doanh nghiệp, FDI đăng ký, GDP 3 khu vực; nối tháng mới cho xuất / nhập khẩu khi TradingView trễ); NHNN – tín dụng.
+  KHÔNG dùng PMI (S&P Global cấm phát lại số liệu khi chưa được phép – ghi trong thông cáo).
   KHÔNG dùng: IMF (403), PMI VN (không có mã), tín dụng (không có nguồn mở), GDP theo ngành của TradingView (đổi năm gốc
   Q1/2026 – giá trị nhảy +35 %, so cùng kỳ sai), VNGBV (ngân sách – số 2024 bất thường), VNDIR / VNCCI (ngừng 2023 / 2021).
   Bỏ chỉ số CPI / CPI giao thông của TradingView (đổi năm gốc 2026 – so cùng kỳ ra −9,6 %, kiểm 26/11/2026).
@@ -48,15 +51,30 @@ CHI_TIEU = [
      "theo sức mua tương đương · năm · World Bank"),
     ("vn_gfcf", "tang_truong", "Tích luỹ tài sản cố định", "tv:VNGFCF", "nghìn tỷ đồng", 1e12, "%", "Y", 1,
      "giá hiện hành · năm · TradingView ECONOMICS"),
+    ("vn_gdp_nn", "tang_truong", "GDP nông, lâm, thủy sản (YoY)", "s:nso_gdp_nn", "%", 1, "pt", "Q", 1, f"quý · {TC} – báo cáo quý"),
+    ("vn_gdp_cn", "tang_truong", "GDP công nghiệp – xây dựng (YoY)", "s:nso_gdp_cn", "%", 1, "pt", "Q", 1, f"quý · {TC} – báo cáo quý"),
+    ("vn_gdp_dv", "tang_truong", "GDP dịch vụ (YoY)", "s:nso_gdp_dv", "%", 1, "pt", "Q", 1, f"quý · {TC} – báo cáo quý"),
+    ("vn_nsnn", "tang_truong", "Giải ngân vốn NSNN (tháng)", "s:nso_nsnn", "nghìn tỷ đồng", 1, "%", "M", 1,
+     f"vốn đầu tư thực hiện từ ngân sách nhà nước · {TC}"),
+    ("vn_nsnn_kh", "tang_truong", "Vốn NSNN lũy kế / kế hoạch năm", "ld:s:nso_nsnn_kh", "% KH", 1, "pt", "M", 1,
+     f"cộng dồn từ đầu năm · {TC}"),
     ("vn_no_cong", "tang_truong", "Nợ Chính phủ / GDP", "tv:VNGDG", "% GDP", 1, "pt", "Y", -1, "năm · TradingView ECONOMICS"),
     # Sản xuất
     ("vn_sxcn", "san_xuat", "Sản xuất công nghiệp (IIP)", "s:vn_sxcn", "%", 1, "pt", "M", 1, f"so cùng kỳ · tháng · {TC}"),
+    ("vn_dn_moi", "san_xuat", "Doanh nghiệp thành lập mới", "s:nso_dn_moi", "doanh nghiệp", 1, "%", "M", 1, f"tháng · {TC}"),
+    ("vn_dn_quay_lai", "san_xuat", "Doanh nghiệp quay lại hoạt động", "s:nso_dn_quay_lai", "doanh nghiệp", 1, "%", "M", 1,
+     f"tháng · {TC}"),
     ("vn_dau_tho", "san_xuat", "Khai thác dầu thô", "tv:VNCOP", "nghìn thùng/ngày", 1e3, "%", "M", 0,
      "tháng · TradingView ECONOMICS"),
     # Lạm phát & giá
     ("vn_cpi", "gia", "Lạm phát (CPI YoY)", "s:vn_cpi", "%", 1, "pt", "M", -1, f"CPI so cùng kỳ · tháng · {TC}"),
     ("vn_cpi_mom", "gia", "Lạm phát (CPI MoM)", "tv:VNIRMM", "%", 1, "pt", "M", -1, f"CPI so tháng trước · {TC}"),
     ("vn_cpi_loi", "gia", "Lạm phát lõi", "s:vn_cpi_loi", "%", 1, "pt", "M", -1, f"so cùng kỳ · tháng · {TC}"),
+    ("vn_cpi_ytd", "gia", "CPI so tháng 12 năm trước", "s:nso_cpi_ytd", "%", 1, "pt", "M", -1, f"{TC} – báo cáo tháng"),
+    ("vn_cpi_bq", "gia", "CPI bình quân từ đầu năm (YoY)", "s:nso_cpi_bq", "%", 1, "pt", "M", -1, f"{TC} – báo cáo tháng"),
+    ("vn_lp_cb_bq", "gia", "Lạm phát cơ bản bình quân", "s:nso_lp_cb_bq", "%", 1, "pt", "M", -1, f"{TC} – báo cáo tháng"),
+    ("vn_vang_cs", "gia", "Chỉ số giá vàng (YoY)", "s:nso_vang_yoy", "%", 1, "pt", "M", 0, f"{TC} – báo cáo tháng"),
+    ("vn_usd_cs", "gia", "Chỉ số giá đô la Mỹ (YoY)", "s:nso_usd_yoy", "%", 1, "pt", "M", -1, f"{TC} – báo cáo tháng"),
     ("vn_ppi", "gia", "Giá sản xuất (PPI, YoY)", "yy:tv:VNPPI", "%", 1, "pt", "Q", 0, f"tính từ chỉ số PPI · quý · {TC}"),
     ("vn_xang", "gia", "Giá xăng", "tv:VNGASP", "USD/lít", 1, "%", "M", -1, "tháng · TradingView ECONOMICS"),
     ("vn_lp_nam", "gia", "Lạm phát năm", "wb:FP.CPI.TOTL.ZG", "%", 1, "pt", "Y", -1, "năm · World Bank"),
@@ -65,6 +83,9 @@ CHI_TIEU = [
     ("vn_lnh", "tien_te", "Lãi suất liên ngân hàng", "s:vn_lnh", "%/năm", 1, "pt", "M", -1, "NHNN · tháng"),
     ("vn_1n", "tien_te", "Lợi suất TPCP 1 năm", "s:vn_1n", "%/năm", 1, "pt", "D", 0, "HNX – đường cong lợi suất · ngày"),
     ("vn_10n", "tien_te", "Lợi suất TPCP 10 năm", "s:vn_10n", "%/năm", 1, "pt", "D", 0, "HNX – đường cong lợi suất · ngày"),
+    ("vn_tin_dung", "tien_te", "Tín dụng (tăng từ đầu năm)", "s:td_tang", "%", 1, "pt", "M", 0,
+     "dư nợ tín dụng đối với nền kinh tế so cuối năm trước · NHNN"),
+    ("vn_du_no", "tien_te", "Dư nợ tín dụng nền kinh tế", "s:td_tong", "nghìn tỷ đồng", 1e3, "%", "M", 0, "NHNN"),
     ("vn_m2", "tien_te", "Cung tiền M2", "tv:VNM2", "nghìn tỷ đồng", 1e12, "%", "Y", 0, "năm · TradingView ECONOMICS"),
     ("vn_dtnh", "tien_te", "Dự trữ ngoại hối", "s:vn_dtnh", "tỷ USD", 1e9, "%", "M", 1, "tháng · TradingView ECONOMICS"),
     ("usdvnd", "tien_te", "Tỷ giá USD/VND", "s:usdvnd", "đồng", 1, "%", "D", -1, "thị trường · ngày · Yahoo"),
@@ -74,12 +95,16 @@ CHI_TIEU = [
     ("vn_bot", "thuong_mai", "Cán cân thương mại", "s:vn_bot", "tỷ USD", 1e9, "d", "M", 1, "hàng hoá · tháng · Hải quan"),
     ("vn_fdi", "thuong_mai", "FDI giải ngân (lũy kế)", "ld:s:vn_fdi", "tỷ USD", 1e9, "%", "M", 1,
      f"cộng dồn từ đầu năm · tháng · {TC}"),
+    ("vn_fdi_dk", "thuong_mai", "FDI đăng ký (tổng, lũy kế)", "ld:s:nso_fdi_dk", "tỷ USD", 1, "%", "M", 1,
+     f"đăng ký mới + điều chỉnh + góp vốn mua cổ phần · cộng dồn năm · {TC}"),
     ("vn_ca", "thuong_mai", "Cán cân vãng lai", "tv:VNCA", "tỷ USD", 1e9, "d", "Q", 1, "quý · NHNN (TradingView ECONOMICS)"),
     ("vn_ca_gdp", "thuong_mai", "Cán cân vãng lai / GDP", "wb:BN.CAB.XOKA.GD.ZS", "% GDP", 1, "pt", "Y", 1, "năm · World Bank"),
     ("vn_xk_gdp", "thuong_mai", "Xuất khẩu / GDP", "wb:NE.EXP.GNFS.ZS", "% GDP", 1, "pt", "Y", 0, "năm · World Bank"),
     # Tiêu dùng & du lịch
     ("vn_banle", "tieu_dung", "Bán lẻ (YoY)", "s:vn_banle", "%", 1, "pt", "M", 1,
      f"tổng mức bán lẻ hàng hoá & dịch vụ so cùng kỳ · tháng · {TC}"),
+    ("vn_ban_le_gt", "tieu_dung", "Tổng mức bán lẻ (tháng)", "s:nso_ban_le", "nghìn tỷ đồng", 1, "%", "M", 1,
+     f"hàng hoá & dịch vụ tiêu dùng, giá hiện hành · {TC}"),
     ("vn_khach", "tieu_dung", "Khách quốc tế", "tv:VNTA", "nghìn lượt", 1e3, "%", "M", 1, f"tháng · {TC}"),
     # Lao động & dân số
     ("vn_that_nghiep", "lao_dong", "Tỷ lệ thất nghiệp", "tv:VNUR", "%", 1, "pt", "Y", -1, "năm · TradingView ECONOMICS"),
@@ -119,7 +144,8 @@ CHI_TIEU = [
     ("th_ls", "the_gioi", "Thái Lan – Lãi suất BOT", "tv:THINTR", "%/năm", 1, "pt", "M", 0, "BOT"),
 ]
 KHONG_CU = {"vn_luong_tt"}                     # đổi theo lần điều chỉnh (không định kỳ) – không gắn "cũ"
-TONG_QUAN = ["vn_gdp", "vn_cpi", "vn_cpi_loi", "vn_sxcn", "vn_banle", "vn_xk", "vn_bot", "vn_fdi", "vn_khach", "vn_lnh",
+HAN_CU = {"vn_tin_dung": 135, "vn_du_no": 135}                     # NHNN công bố tín dụng trễ ~3 tháng (T8 có vào cuối T11)
+TONG_QUAN = ["vn_gdp", "vn_cpi", "vn_cpi_loi", "vn_tin_dung", "vn_sxcn", "vn_banle", "vn_xk", "vn_bot", "vn_fdi", "vn_lnh",
              "vn_10n", "usdvnd"]
 # Mục tiêu năm 2026 (Nghị quyết Quốc hội về kế hoạch phát triển KT-XH 2026): GDP từ 10 %, CPI khoảng 4,5 %
 MUC_TIEU = {"vn_gdp": (10.0, "tăng"), "vn_cpi": (4.5, "trần")}
@@ -264,6 +290,9 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
         s = theo_thang(s)
     d, v = s.index[-1], float(s.iloc[-1])
     q_truoc = float(s.iloc[-2]) if len(s) > 1 else None
+    if q_truoc is not None and ts in ("M", "Q") and \
+            s.index[-2] < d - pd.DateOffset(months=1 if ts == "M" else 3) - pd.Timedelta(days=20):
+        q_truoc = None                                               # hụt kỳ liền trước (nguồn đọc từ chữ) → không so
     if luy_ke and d.month == 1:
         q_truoc = None                                               # lũy kế năm: tháng 1 là đầu kỳ mới
     kt = doi(v, q_truoc, kieu)
@@ -278,7 +307,7 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
          "gt": round(v, 4), "le": _le(v, dv), "kt": kt, "ck": ck, "kieu": kieu, "ts": ts, "huong": huong,
          "sp": [round(float(x), 4) for x in sp], "nguon": nguon, "ghi": "", "tot": 0}
     if hom_nay is not None:
-        han = {"D": 10, "M": 95, "Q": 150, "Y": 550}[ts]               # số tháng công bố trễ tới ~75 ngày sau ngày 1
+        han = HAN_CU.get(k) or {"D": 10, "M": 95, "Q": 150, "Y": 550}[ts]   # số tháng công bố trễ tới ~75 ngày sau ngày 1
         r["cu"] = (pd.Timestamp(hom_nay) - d).days > han and k not in KHONG_CU
     # ghi chú + tốt / xấu
     if k in MUC_TIEU:
@@ -305,7 +334,7 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
         w = s[s.index >= d - pd.DateOffset(years=1)]
         le = _le(v, dv)
         r["ghi"] = f"1 năm: {so_vn(w.min(), le)}–{so_vn(w.max(), le)}"
-    elif ts in ("M", "Q") and len(s) > 4:
+    elif ts in ("M", "Q") and len(s) > (12 if ts == "M" else 4):   # đủ 12 tháng / 4 quý trước mới so trung bình
         n = 12 if ts == "M" else 4
         tb = float(s.iloc[-1 - n:-1].mean())
         r["ghi"] = ("Trên" if v > tb else "Dưới" if v < tb else "Bằng") + \
@@ -522,9 +551,10 @@ def ban_tin(h):
 
 
 # ------------------------------------------------------------------ gom
-def dung_kt(ch, nguon, hom_nay, dem_thay=None):
+def dung_kt(ch, nguon, hom_nay, dem_thay=None, ck_chinh=None):
     """ch: {khoá chỉ tiêu: Series (đơn vị gốc)} · nguon: {khoá: chữ} → (dict "kt" cho trang, {khoá: [[ngày, v]]} lịch sử,
-    đệm "vừa có số" mới)."""
+    đệm "vừa có số" mới). ck_chinh: {khoá: Series % so cùng kỳ CƠ QUAN CÔNG BỐ} – có số đúng tháng cuối thì thay "cùng kỳ" tự tính
+    (năm trước đã điều chỉnh: tự tính trên số sơ bộ cũ lệch vài điểm)."""
     spec = {x[0]: x for x in CHI_TIEU}
     hang, h, lich_su, chia = [], {}, {}, {}
     for k, x in spec.items():
@@ -534,6 +564,12 @@ def dung_kt(ch, nguon, hom_nay, dem_thay=None):
         s = _s(s) / x[5]
         chia[k] = s
         r = chi_tieu(x, s, nguon.get(k, ""), hom_nay)
+        c = (ck_chinh or {}).get(k)
+        if r and c is not None and len(c) and x[6] == "%":
+            c = theo_thang(c) if x[7] == "M" else _s(c)
+            d = pd.Timestamp(r["ngay"])
+            if d in c.index:
+                r["ck"], r["ck_chinh"] = round(float(c[d]), 2), True
         if r:
             hang.append(r)
             h[k] = r

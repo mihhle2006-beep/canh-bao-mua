@@ -124,3 +124,24 @@ def test_dung_kt_day_du():
     assert "lớn nhất từ T11/2019" in chu
     assert any(m["tieu"] == "Giá cả" for m in kt["ban_tin"]["muc"]) and set(ls) == set(h)
     assert all(ls[k][i][0] < ls[k][i + 1][0] for k in ls for i in range(len(ls[k]) - 1))
+
+
+def test_hut_ky_lien_truoc_khong_so_ky_truoc():
+    s = pd.Series([10.0, 12.0, 15.0], index=pd.to_datetime(["2026-07-01", "2026-08-01", "2026-10-01"]))   # hụt T9
+    r = KT.chi_tieu(SPEC["vn_nsnn"], s, "", "2026-11-26")
+    assert r["ky"] == "T10/2026" and r["kt"] is None
+    r = KT.chi_tieu(SPEC["vn_nsnn"], s.iloc[:2], "", "2026-09-20")
+    assert r["kt"] == round((12 / 10 - 1) * 100, 2)
+
+
+def test_cung_ky_chinh_thuc_thay_so_tu_tinh():
+    th = pd.date_range("2025-01-01", "2026-10-01", freq="MS")
+    xk = pd.Series(40e9, th)
+    xk.iloc[-1] = 64.67e9
+    kt, _, _ = KT.dung_kt({"vn_xk": xk}, {}, pd.Timestamp("2026-11-26"), {},
+                          {"vn_xk": pd.Series([51.4], index=pd.to_datetime(["2026-10-01"]))})
+    r = kt["ct"][0]
+    assert r["ck"] == 51.4 and r["ck_chinh"] is True                 # số Cục Thống kê công bố, không phải 61,7 tự tính
+    kt, _, _ = KT.dung_kt({"vn_xk": xk}, {}, pd.Timestamp("2026-11-26"), {},
+                          {"vn_xk": pd.Series([20.0], index=pd.to_datetime(["2026-09-01"]))})
+    assert kt["ct"][0]["ck"] == round((64.67 / 40 - 1) * 100, 2)     # không đúng tháng → giữ số tự tính
