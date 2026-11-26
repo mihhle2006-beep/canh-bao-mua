@@ -1331,13 +1331,13 @@ function vm_bang(cd) {
   $("#vm-bang").innerHTML = ds.length ? ds.map(r => `<tr data-k="${r.k}" class="${r.k === ST.vm_ct ? "chon" : ""}" title="${esc(r.ten + " · " + r.mo + (r.nguon ? " · nguồn: " + r.nguon : ""))}">
       <td class="trai"><b>${esc(r.ten)}</b>${vm_moi(r) ? '<span class="nhan-san">mới</span>' : ""}<span class="mo">${esc(r.mo)}</span></td>
       <td class="${r.cu ? "cu" : ""}">${esc(r.ky)}</td><td class="so"><b>${vm_so(r.gt, r.le)}</b></td><td class="trai an-dt" style="color:var(--mo)">${esc(r.dv)}</td>
-      <td class="so ${vm_mau(r.kt, r.huong)}">${vm_doi(r.kt, r.kieu, r.dv)}</td><td class="so ${vm_mau(r.ck, r.huong)}">${vm_doi(r.ck, r.kieu, r.dv)}</td></tr>`).join("")
+      <td class="so ${vm_mau(r.kt, r.huong)}">${vm_doi(r.kt, r.kieu, r.dv)}</td><td class="so ${vm_mau(r.ck, r.huong)}"${r.ck_chinh ? ' title="số cơ quan thống kê công bố"' : ""}>${vm_doi(r.ck, r.kieu, r.dv)}</td></tr>`).join("")
     : `<tr><td class="trai" colspan="6" style="color:var(--mo)">${cd === "tim" ? "Không thấy chỉ tiêu khớp" : "Chưa có số liệu"}</td></tr>`;
 }
 async function vm_ve_ct(LW) {                          // biểu đồ lịch sử chỉ tiêu đang chọn
   const r = vm_ct(ST.vm_ct); if (!r) { $("#vm-ct-ten").textContent = "Chỉ tiêu"; return; }
   $("#vm-ct-ten").textContent = r.ten; $("#vm-ct-mo").textContent = `${r.dv} · ${r.mo}`;
-  $("#vm-ct-ghi").innerHTML = `<span>${esc(r.ky)}: <b>${vm_so(r.gt, r.le)} ${esc(r.dv)}</b></span><span>kỳ trước ${vm_doi(r.kt, r.kieu, r.dv)}</span><span>cùng kỳ ${vm_doi(r.ck, r.kieu, r.dv)}</span>${r.ghi ? `<span>${esc(r.ghi)}</span>` : ""}<span>nguồn: ${esc(r.nguon || "")}</span>`;
+  $("#vm-ct-ghi").innerHTML = `<span>${esc(r.ky)}: <b>${vm_so(r.gt, r.le)} ${esc(r.dv)}</b></span><span>kỳ trước ${vm_doi(r.kt, r.kieu, r.dv)}</span><span>cùng kỳ ${vm_doi(r.ck, r.kieu, r.dv)}${r.ck_chinh ? " (công bố)" : ""}</span>${r.ghi ? `<span>${esc(r.ghi)}</span>` : ""}<span>nguồn: ${esc(r.nguon || "")}</span>`;
   if (!VM.ls) {
     try { const q = await fetch(GOC + "vi_mo/chi_tieu.json?t=" + Math.floor(Date.now() / 600000), {cache: "no-store"});
       if (!q.ok) throw new Error("HTTP " + q.status); VM.ls = await q.json(); }

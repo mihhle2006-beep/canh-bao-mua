@@ -685,8 +685,11 @@ def dung(S, N, P, bay_gio=None):
                   "nguon": f"Vietcombank – mua {vcb['mua']:,.0f} · chuyển khoản {vcb['ck']:,.0f}".replace(",", ".")})
     from thi_truong import vi_mo_kt as KT
     ch = {k[3:]: v for k, v in S.items() if k.startswith("kt_")}
+    df = P.get("nso")
+    ck = {k: df[c].dropna() for k, c in (("vn_xk", "xk_yoy"), ("vn_nk", "nk_yoy"), ("vn_ban_le_gt", "ban_le_yoy"),
+                                           ("vn_nsnn", "nsnn_yoy")) if df is not None and c in df}
     kt, kt_ls, kt_dem = KT.dung_kt(ch, {k[3:]: v for k, v in N.items() if k.startswith("kt_")},
-                                   pd.Timestamp(bay_gio.date()), P.get("kt_dem"))
+                                   pd.Timestamp(bay_gio.date()), P.get("kt_dem"), ck)
     kt["tin"] = P.get("tin") or []
     if P.get("nso_moi"):
         y, m = P["nso_moi"]["ky"].split("-")

@@ -551,9 +551,10 @@ def ban_tin(h):
 
 
 # ------------------------------------------------------------------ gom
-def dung_kt(ch, nguon, hom_nay, dem_thay=None):
+def dung_kt(ch, nguon, hom_nay, dem_thay=None, ck_chinh=None):
     """ch: {khoá chỉ tiêu: Series (đơn vị gốc)} · nguon: {khoá: chữ} → (dict "kt" cho trang, {khoá: [[ngày, v]]} lịch sử,
-    đệm "vừa có số" mới)."""
+    đệm "vừa có số" mới). ck_chinh: {khoá: Series % so cùng kỳ CƠ QUAN CÔNG BỐ} – có số đúng tháng cuối thì thay "cùng kỳ" tự tính
+    (năm trước đã điều chỉnh: tự tính trên số sơ bộ cũ lệch vài điểm)."""
     spec = {x[0]: x for x in CHI_TIEU}
     hang, h, lich_su, chia = [], {}, {}, {}
     for k, x in spec.items():
@@ -563,6 +564,12 @@ def dung_kt(ch, nguon, hom_nay, dem_thay=None):
         s = _s(s) / x[5]
         chia[k] = s
         r = chi_tieu(x, s, nguon.get(k, ""), hom_nay)
+        c = (ck_chinh or {}).get(k)
+        if r and c is not None and len(c) and x[6] == "%":
+            c = theo_thang(c) if x[7] == "M" else _s(c)
+            d = pd.Timestamp(r["ngay"])
+            if d in c.index:
+                r["ck"], r["ck_chinh"] = round(float(c[d]), 2), True
         if r:
             hang.append(r)
             h[k] = r
