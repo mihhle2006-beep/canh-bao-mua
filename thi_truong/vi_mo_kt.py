@@ -9,6 +9,7 @@ Thuần (không mạng) – vi_mo_web tải chuỗi rồi gọi dung_kt(). Ngu�
   TradingView ECONOMICS (gốc Cục Thống kê / NHNN / Hải quan …) – ngày nến đã sửa (lai_suat.TV_BU_GIO); World Bank (năm).
   KHÔNG dùng: IMF (403), PMI VN (không có mã), tín dụng (không có nguồn mở), GDP theo ngành của TradingView (đổi năm gốc
   Q1/2026 – giá trị nhảy +35 %, so cùng kỳ sai), VNGBV (ngân sách – số 2024 bất thường), VNDIR / VNCCI (ngừng 2023 / 2021).
+  Bỏ chỉ số CPI / CPI giao thông của TradingView (đổi năm gốc 2026 – so cùng kỳ ra −9,6 %, kiểm 26/11/2026).
   CPI so cùng kỳ: TradingView VNIRYY trễ 1 tháng → nối tháng mới bằng chuỗi CPI tháng/tháng (VNIRMM) khi 12 tháng trùng lệch
   ≤ 0,1 điểm (in log).
 Tham khảo – không phải tín hiệu mua bán.
@@ -56,8 +57,6 @@ CHI_TIEU = [
     ("vn_cpi", "gia", "Lạm phát (CPI YoY)", "s:vn_cpi", "%", 1, "pt", "M", -1, f"CPI so cùng kỳ · tháng · {TC}"),
     ("vn_cpi_mom", "gia", "Lạm phát (CPI MoM)", "tv:VNIRMM", "%", 1, "pt", "M", -1, f"CPI so tháng trước · {TC}"),
     ("vn_cpi_loi", "gia", "Lạm phát lõi", "s:vn_cpi_loi", "%", 1, "pt", "M", -1, f"so cùng kỳ · tháng · {TC}"),
-    ("vn_cpi_cs", "gia", "CPI (chỉ số)", "tv:VNCPI", "điểm", 1, "%", "M", -1, f"tháng · {TC}"),
-    ("vn_cpi_gt", "gia", "CPI giao thông (YoY)", "yy:tv:VNCPIT", "%", 1, "pt", "M", 0, f"tính từ chỉ số CPI giao thông · {TC}"),
     ("vn_ppi", "gia", "Giá sản xuất (PPI, YoY)", "yy:tv:VNPPI", "%", 1, "pt", "Q", 0, f"tính từ chỉ số PPI · quý · {TC}"),
     ("vn_xang", "gia", "Giá xăng", "tv:VNGASP", "USD/lít", 1, "%", "M", -1, "tháng · TradingView ECONOMICS"),
     ("vn_lp_nam", "gia", "Lạm phát năm", "wb:FP.CPI.TOTL.ZG", "%", 1, "pt", "Y", -1, "năm · World Bank"),
@@ -119,6 +118,7 @@ CHI_TIEU = [
     ("th_cpi", "the_gioi", "Thái Lan – Lạm phát", "tv:THIRYY", "%", 1, "pt", "M", -1, "tháng"),
     ("th_ls", "the_gioi", "Thái Lan – Lãi suất BOT", "tv:THINTR", "%/năm", 1, "pt", "M", 0, "BOT"),
 ]
+KHONG_CU = {"vn_luong_tt"}                     # đổi theo lần điều chỉnh (không định kỳ) – không gắn "cũ"
 TONG_QUAN = ["vn_gdp", "vn_cpi", "vn_cpi_loi", "vn_sxcn", "vn_banle", "vn_xk", "vn_bot", "vn_fdi", "vn_khach", "vn_lnh",
              "vn_10n", "usdvnd"]
 # Mục tiêu năm 2026 (Nghị quyết Quốc hội về kế hoạch phát triển KT-XH 2026): GDP từ 10 %, CPI khoảng 4,5 %
@@ -278,8 +278,8 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
          "gt": round(v, 4), "le": _le(v, dv), "kt": kt, "ck": ck, "kieu": kieu, "ts": ts, "huong": huong,
          "sp": [round(float(x), 4) for x in sp], "nguon": nguon, "ghi": "", "tot": 0}
     if hom_nay is not None:
-        han = {"D": 10, "M": 75, "Q": 150, "Y": 550}[ts]
-        r["cu"] = (pd.Timestamp(hom_nay) - d).days > han
+        han = {"D": 10, "M": 95, "Q": 150, "Y": 550}[ts]               # số tháng công bố trễ tới ~75 ngày sau ngày 1
+        r["cu"] = (pd.Timestamp(hom_nay) - d).days > han and k not in KHONG_CU
     # ghi chú + tốt / xấu
     if k in MUC_TIEU:
         mt, loai = MUC_TIEU[k]

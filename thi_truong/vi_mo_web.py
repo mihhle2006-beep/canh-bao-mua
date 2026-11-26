@@ -419,7 +419,6 @@ def tai_tat_ca():
     x, n = _thu("us_vix", vix)
     if x is not None:
         S["us_vix"], N["us_vix"] = x, n
-    tai_kt(S, N)
     hs, hn, hk = tai_hang_hoa()
     for k, x in hs.items():
         S["hh_" + k], N["hh_" + k] = x, hn[k]
@@ -454,6 +453,7 @@ def tai_tat_ca():
     except Exception as e:                                            # noqa: BLE001
         print(f"  ⚠ Vietcombank: {type(e).__name__} {str(e)[:60]}")
     P["song"] = kiem_song()
+    tai_kt(S, N)                                                      # SAU cùng: dùng lại chuỗi đã tải ở trên ("s:…")
     return S, N, P
 
 
