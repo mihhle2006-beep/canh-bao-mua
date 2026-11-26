@@ -2857,7 +2857,7 @@ async function ve_nh_he(ma, k) {
   const he = Object.fromEntries(ds.map(r => [r.k, r])), cs = k.n?.cs || {}, L = (cs.ky || []).length;
   const ma_cs = key => L && cs[key]?.[L - 1] != null ? cs[key][L - 1] * 100 : null;
   const ss = [["ROE", ma_cs("roe"), he.vn_roe_nh], ["ROA", ma_cs("roa"), he.vn_roa_nh]].filter(([, v, h]) => v != null && h)
-    .map(([t, v, h]) => `${t} <b>${esc(ma)}</b> ${so(v, 2)} % (${esc(cs.ky[L - 1])}) · toàn hệ thống ${so(h.gt, 2)} % (${esc(h.ky)}) → ` +
+    .map(([t, v, h]) => `${t} <b>${esc(ma)}</b> ${so(v, 2)} % (${esc(cs.ky[L - 1])}) · toàn hệ thống ${so(h.gt, 2)} %/năm (${esc(h.ky)}, quy năm) → ` +
       `<b class="${v >= h.gt ? "t" : "g"}">${v >= h.gt ? "cao hơn" : "thấp hơn"} ${so(Math.abs(v - h.gt), 2)} đpt</b>`).join("<br>");
   el.innerHTML = the("Ngân hàng – toàn hệ thống", `NHNN · HNX · <a href="../../bang-thi-truong/#vi-mo">Vĩ mô › Tiền tệ</a>`,
     (ss ? `<p class="nhan-xet" style="margin:0;padding:10px 14px 4px">${ss}</p>` : "") +

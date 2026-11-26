@@ -1168,6 +1168,11 @@ def do_vn18():
             print("  …" + t[max(0, k - 300):k + 900], flush=True)
 
 
+
+# Vòng 18 – KẾT QUẢ: NHNN chỉ còn số bài mới nhất (Q3/2026: ROA 1,02 · ROE 11,44; NHTM Nhà nước ROE 13,77) – liên kết bài Q2 hiện
+# bảng Q3 (đệm cũ roa.csv đã ghi nhầm Q2 = Q3 → đổi sang roa_q.csv). Số là LŨY KẾ từ đầu năm (Q2/2024 NHTM Nhà nước ROE 8,76 % =
+# nửa năm) → vi_mo_web quy năm × 12 / số tháng trước khi so với ROE từng mã.
+
 def main():
     do_vn18()
     return 0
