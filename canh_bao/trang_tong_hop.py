@@ -326,12 +326,23 @@ nav{position:sticky;top:0;z-index:5;background:var(--nen);flex-wrap:nowrap;overf
 nav::-webkit-scrollbar{display:none}nav a{white-space:nowrap;flex:none}
 section{padding:12px;margin:12px 0}.luoi-the{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
 /* giao diện 26/11/2026 – cùng bộ với Tra cứu mã / Bảng thị trường: thẻ nổi nhẹ (chỉ hình thức) */
-body{-webkit-font-smoothing:antialiased}
+@font-face{font-family:Inter;font-style:normal;font-weight:400 800;font-display:swap;src:url("ma/lib/inter-vi.woff2") format("woff2");unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB}
+@font-face{font-family:Inter;font-style:normal;font-weight:400 800;font-display:swap;src:url("ma/lib/inter-latin.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 header{background:linear-gradient(100deg,#123f1a 0%,#1B5E20 32%,#2E7D32 72%,#43A047 100%);
 box-shadow:0 8px 24px -10px rgba(16,60,24,.5)}header h1{letter-spacing:-.3px}
 section{border-color:#dfeae2;border-radius:14px;box-shadow:0 1px 2px rgba(16,42,24,.05),0 2px 10px -3px rgba(16,42,24,.08)}
 section h2{letter-spacing:-.1px}.the{border-color:#d3e6d6;border-radius:12px}
 nav a{transition:background .12s,border-color .12s}th{letter-spacing:.03em}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}header>div{flex:1 1 auto}
+nav a.ngoai{border-style:dashed;color:var(--mo)}nav a.ngoai:hover{color:var(--nhan)}
+.chuyen{display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+text-shadow:none;margin:0;position:static;overflow:visible}
+.chuyen a{padding:4px 12px;border-radius:999px;color:#e8f5e9;font-size:12.5px;font-weight:550;white-space:nowrap;text-decoration:none;
+border:0;background:none}
+.chuyen a:hover{background:rgba(255,255,255,.14);color:#fff}
+.chuyen a[aria-current=page]{background:#fff;color:#1B5E20;font-weight:650;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+@media (max-width:560px){.chuyen a[aria-current]{display:none}.chuyen a{padding:3px 10px;font-size:12px}}
 """
 
 
@@ -349,17 +360,20 @@ def tao(path=None, giu=None, bay_gio=None, kq_bt=None):
         muc.insert(0, ("danh-muc", "💼 Danh mục thật (riêng tư)", _khoi_rieng(giu)))
     nav = "".join(f'<a href="#{i}">{_e(t)}</a>' for i, t, _ in muc)
     if not giu:                                            # bản công khai (docs/) – cùng site Pages với bảng thị trường
-        nav += ('<a href="../bang-thi-truong/">Bảng thị trường</a><a href="../bang-thi-truong/#vi-mo">Vĩ mô</a>'
-                '<a href="ma/">Tra cứu mã</a><a href="ma/#bieu-do">Biểu đồ</a>')
+        nav += ('<a class="ngoai" href="ma/#bieu-do">Biểu đồ ↗</a>'
+                '<a class="ngoai" href="../bang-thi-truong/#vi-mo">Vĩ mô ↗</a>')
+    # nút chuyển trang – cùng kiểu Bảng thị trường / Tra cứu mã (bản riêng không có: mở từ file, không cùng site)
+    chuyen = "" if giu else ('<nav class="chuyen" aria-label="Chuyển trang"><a href="../bang-thi-truong/">Thị trường</a>'
+                             '<a href="ma/">Tra cứu mã</a><a href="./" aria-current="page">Tổng hợp</a></nav>')
     lop = {"danh-muc": ' class="rieng"'}
     than = "".join(f'<section id="{i}"{lop.get(i, "")}><h2>{_e(t)}</h2>{k}</section>' for i, t, k in muc)
     trang = (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
              f'<meta name="viewport" content="width=device-width,initial-scale=1">'
              f'<link rel="icon" href="{FAVICON}">'
              f'<title>Bảng tổng hợp{" (riêng)" if giu else ""}</title><style>{CSS}</style></head><body><main>'
-             f'<header><h1>Bảng tổng hợp cảnh báo</h1><p>Cập nhật '
+             f'<header><div><h1>Bảng tổng hợp cảnh báo</h1><p>Cập nhật '
              f'{f"{luc:%H:%M %d/%m/%Y}" if luc is not None else "–"} (giờ VN)'
-             f'{" · bản RIÊNG – không chia sẻ" if giu else ""}</p></header><nav>{nav}</nav>{than}'
+             f'{" · bản RIÊNG – không chia sẻ" if giu else ""}</p></div>{chuyen}</header><nav>{nav}</nav>{than}'
              f'<footer>Công cụ tham khảo – không phải khuyến nghị đầu tư.</footer></main></body></html>')
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:

@@ -575,7 +575,10 @@ svg.spark{width:64px;height:20px;display:block;margin-left:auto}
    chỉ đổi hình thức – không đổi dữ liệu / logic; cùng bộ token với Bảng thị trường (trang_bang) */
 :root{--vien:#dfeae2;--luoi:#edf3ef;--bong:0 1px 2px rgba(16,42,24,.05),0 2px 10px -3px rgba(16,42,24,.08);
   --bong-noi:0 2px 4px rgba(16,42,24,.06),0 12px 28px -8px rgba(16,42,24,.18);--bo:14px}
-html,body{-webkit-font-smoothing:antialiased}
+/* phông Inter (SIL OFL – lib/LICENSE-inter.txt) để ngay trong repo: chỉ tải file cùng site, mất mạng vẫn có (sw.js lưu) */
+@font-face{font-family:Inter;font-style:normal;font-weight:400 800;font-display:swap;src:url("lib/inter-vi.woff2") format("woff2");unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB}
+@font-face{font-family:Inter;font-style:normal;font-weight:400 800;font-display:swap;src:url("lib/inter-latin.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+html,body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
 body{background:radial-gradient(1100px 420px at 50% -120px,#dff0e3 0%,rgba(223,240,227,0) 70%) no-repeat,var(--nen)}
 header.dau{background:linear-gradient(100deg,#123f1a 0%,#1B5E20 32%,#2E7D32 72%,#43A047 100%);
   box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 18px -6px rgba(16,60,24,.45)}
@@ -603,14 +606,21 @@ a.chip:hover{background:var(--nhan-nen);box-shadow:0 1px 3px rgba(46,125,50,.18)
 .gg input{border-color:#dbe4de}
 .gg-lon input{height:54px;font-size:17px;border-radius:27px;border:1px solid #d3e2d7;box-shadow:0 2px 10px -2px rgba(16,60,24,.12)}
 .gg-lon.mo input{border-radius:27px 27px 0 0}.gg-lon .xoa{height:54px}
-/* trang đầu: tiêu đề lớn + ô tìm + ô công cụ, lưới thẻ xếp khít kiểu masonry */
-.dau-chinh{padding:46px 0 24px}
-.dau-chinh .nhan-tren{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--nhan);
-  background:#fff;border:1px solid var(--vien);border-radius:999px;padding:3px 12px;margin-bottom:14px;box-shadow:var(--bong)}
-.dau-chinh h2{font-size:38px;font-weight:750;letter-spacing:-1px;margin:0 0 8px;
+/* NÚT CHUYỂN TRANG (cùng kiểu 3 trang): Thị trường | Tra cứu mã | Tổng hợp – trang đang ở tô trắng; mục TRONG trang ở .lien */
+.chuyen{margin-left:auto;display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);flex:none}
+.chuyen a{padding:4px 12px;border-radius:999px;color:#e8f5e9;font-size:12.5px;font-weight:550;white-space:nowrap}
+.chuyen a:hover{background:rgba(255,255,255,.14);color:#fff;text-decoration:none}
+.chuyen a[aria-current=page]{background:#fff;color:#1B5E20;font-weight:650;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.dau-trong .gg{flex:1 1 220px}.lien{margin-left:auto}header.dau .lien a{padding:5px 8px}
+body.o-dau .dau-trong .lien{display:none}body.o-dau .chuyen{margin-left:auto}      /* trang đầu: ô công cụ thay hàng chữ */
+@media (max-width:600px){.dau-trong .chuyen{margin-left:auto}.chuyen a{padding:3px 10px;font-size:12px}.chuyen a[aria-current]{display:none}
+  .dau-trong .lien{order:2;flex:1 1 100%;margin:0 -12px;padding:0 12px}.dau-trong .gg{order:3}
+}
+/* trang đầu: tiêu đề + ô tìm + ô công cụ, lưới thẻ xếp khít kiểu masonry */
+.dau-chinh{padding:26px 0 16px}
+.dau-chinh h2{font-size:30px;font-weight:750;letter-spacing:-.8px;margin:0 0 14px;
   background:linear-gradient(100deg,#123f1a,#2E7D32 55%,#43A047);-webkit-background-clip:text;background-clip:text;color:transparent}
-.dau-chinh .loi{color:var(--chu2);font-size:15px;margin:0 0 24px}
-.cong-cu{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 22px}
+.cong-cu{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 16px}
 .cong-cu a{display:flex;align-items:center;gap:10px;background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:10px 12px;
   color:var(--chu);box-shadow:var(--bong);transition:transform .15s,box-shadow .15s,border-color .15s}
 .cong-cu a:hover{text-decoration:none;transform:translateY(-2px);box-shadow:var(--bong-noi);border-color:#b9d8bf}
@@ -624,9 +634,9 @@ a.chip:hover{background:var(--nhan-nen);box-shadow:0 1px 3px rgba(46,125,50,.18)
 .the.o-dau::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#2E7D32,#66BB6A)}
 .the.o-dau:hover{box-shadow:var(--bong-noi)}
 .o-tieu h3{font-size:15px;letter-spacing:-.1px}
-@media (max-width:600px){.dau-chinh{padding:24px 0 16px}.dau-chinh h2{font-size:28px}.dau-chinh .loi{font-size:13.5px;margin-bottom:16px}
+@media (max-width:600px){.dau-chinh{padding:16px 0 12px}.dau-chinh h2{font-size:24px;margin-bottom:10px}.dau-chinh p{font-size:12px;margin-top:10px}
   .gg-lon input{height:48px}.gg-lon .xoa{height:48px}
-  .cong-cu{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:16px}
+  .cong-cu{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:16px}
   .cong-cu a{flex-direction:column;gap:6px;padding:10px 2px 8px;text-align:center}.cong-cu small{display:none}
   .cong-cu b{font-size:11.5px;font-weight:600;white-space:normal;line-height:1.2}
   .dai-cs{display:flex;overflow-x:auto;scrollbar-width:none;gap:8px;margin:0 -16px 14px;padding:2px 16px 6px;scroll-snap-type:x mandatory}
@@ -644,7 +654,8 @@ a.chip:hover{background:var(--nhan-nen);box-shadow:0 1px 3px rgba(46,125,50,.18)
   <div class="gg" id="tim-dau"><input id="o-tim" placeholder="Nhập mã – VD HPG" aria-label="Tìm mã cổ phiếu"
     maxlength="10" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button"
     aria-label="Xoá">×</button><ul role="listbox"></ul></div>
-  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#danh-muc">Danh mục</a><a href="#loc">Lọc KQKD</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="../../bang-thi-truong/">Thị trường</a><a href="../">Tổng hợp</a><a id="nut-otp" hidden href="https://github.com/mihhle2006-beep/danh-muc/actions/workflows/dat_lenh.yml" target="_blank" rel="noopener" title="Mở trang chạy workflow trên GitHub → bấm Run workflow → app DNSE hiện Smart OTP để duyệt (đã có mã hôm nay thì không hỏi lại)">Lấy mã DNSE</a></div>
+  <div class="lien"><a href="#bieu-do">Biểu đồ</a><a href="#loc">Lọc cổ phiếu</a><a href="#nganh">Ngành</a><a href="#lich">Lịch sự kiện</a><a href="#rrg">RRG</a><a href="#danh-muc">Danh mục của tôi</a><a id="nut-otp" hidden href="https://github.com/mihhle2006-beep/danh-muc/actions/workflows/dat_lenh.yml" target="_blank" rel="noopener" title="Mở trang chạy workflow trên GitHub → bấm Run workflow → app DNSE hiện Smart OTP để duyệt (đã có mã hôm nay thì không hỏi lại)">Lấy mã DNSE</a></div>
+  <nav class="chuyen" aria-label="Chuyển trang"><a href="../../bang-thi-truong/" title="Bảng giá trong phiên, bản đồ nhiệt, lọc mã, vĩ mô">Thị trường</a><a href="#" aria-current="page" title="Tra cứu từng mã: biểu đồ, tài chính, định giá">Tra cứu mã</a><a href="../" title="Tín hiệu của bot: sức khoẻ thị trường, danh sách mua, khuyến nghị đã gửi">Tổng hợp</a></nav>
 </div></header>
 <main>
   <div id="noi-dung"><div class="trong">Đang tải dữ liệu…</div></div>
@@ -656,14 +667,13 @@ a.chip:hover{background:var(--nhan-nen);box-shadow:0 1px 3px rgba(46,125,50,.18)
 <script>
 "use strict";
 const DL = "du_lieu/", TT = "../thi_truong/du_lieu.json";
-// ô công cụ ở trang đầu: [địa chỉ, tên, mô tả ngắn, màu nền biểu tượng, nét SVG 24×24]
+// ô công cụ ở trang đầu: [địa chỉ, tên, mô tả ngắn, màu nền biểu tượng, nét SVG 24×24] – Thị trường / Tổng hợp ở nút chuyển trang
 const CONG_CU = [["#bieu-do", "Biểu đồ", "nến · chỉ báo · công cụ vẽ", "#2E7D32", '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'],
-  ["#loc", "Lọc KQKD", "lọc cơ bản & kỹ thuật", "#1f6feb", '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>'],
+  ["#loc", "Lọc cổ phiếu", "theo KQKD & kỹ thuật", "#1f6feb", '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>'],
   ["#nganh", "Ngành", "bội số · dòng tiền", "#e8710a", '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'],
   ["#lich", "Lịch sự kiện", "cổ tức · ĐHCĐ · KQKD", "#9b3fd1", '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'],
-  ["#rrg", "RRG", "xoay vòng sức mạnh", "#0e9fb3", '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>'],
-  ["#danh-muc", "Danh mục", "lãi lỗ · rủi ro · tỷ trọng", "#b88a00", '<path d="M3 7h18v13H3zM8 7V4h8v3"/>'],
-  ["../../bang-thi-truong/", "Thị trường", "bảng giá · bản đồ nhiệt", "#d1342b", '<path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/>']];
+  ["#rrg", "RRG", "mã nào đang mạnh lên", "#0e9fb3", '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>'],
+  ["#danh-muc", "Danh mục của tôi", "lãi lỗ · rủi ro · tỷ trọng", "#b88a00", '<path d="M3 7h18v13H3zM8 7V4h8v3"/>']];
 const TAB = [["tong-quan", "Tổng quan"], ["tin", "Tin tức"], ["ho-so", "Hồ sơ"], ["lanh-dao", "Lãnh đạo"], ["co-dong", "Cổ đông"],
   ["co-tuc", "Cổ tức"], ["tai-chinh", "Tài chính"], ["phan-tich", "Phân tích"], ["ky-thuat", "Kỹ thuật"], ["chi-so", "Chỉ số"], ["dinh-gia", "Định giá"], ["lich-su", "Lịch sử giá"],
   ["bao-cao", "Báo cáo CTCK"], ["tai-lieu", "Tài liệu"], ["he-thong", "Hệ thống"]];
@@ -4314,10 +4324,10 @@ function hien_dau() {
   const cs_dai = (MKT?.chi_so || []).filter(x => x.ma !== "VN30F1M").map(x => { const p = x.pt != null ? x.pt / 100 : null;
     return `<a class="cs-o" href="../../bang-thi-truong/"><span class="n">${esc(x.ten)}</span><b>${so(x.gia, 2)}</b><span class="${mau(p)}">${x.td > 0 ? "+" : ""}${so(x.td, 2)} (${pt(p, 2)})</span></a>`; }).join("");
   const m = META.canslim?.m;
-  let h = `<div class="dau-chinh"><span class="nhan-tren">${so(DS.length, 0)} mã HOSE · HNX · UPCoM</span><h2>Tra cứu mã</h2>
-    <p class="loi">Giá, tài chính, cổ đông, định giá, CANSLIM, xếp hạng VGM – trong một ô tìm</p><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
+  let h = `<div class="dau-chinh"><h2>Tra cứu mã</h2><div class="gg gg-lon" id="tim-lon"><input id="o-tim-lon"
     placeholder="Nhập mã cổ phiếu – VD V, HPG" aria-label="Tìm mã cổ phiếu" maxlength="10" autocomplete="off"
-    spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div></div>`
+    spellcheck="false" role="combobox" aria-autocomplete="list"><button class="xoa" type="button" aria-label="Xoá">×</button><ul role="listbox"></ul></div>
+    <p>${so(DS.length, 0)} mã HOSE · HNX · UPCoM – giá, tài chính, cổ đông, định giá, CANSLIM, xếp hạng VGM</p></div>`
     + `<nav class="cong-cu" aria-label="Công cụ">${CONG_CU.map(([u, t, p, mau_ic, d]) => `<a href="${u}"><span class="ic" style="background:${mau_ic}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg></span><span><b>${t}</b><small>${p}</small></span></a>`).join("")}</nav>`
     + (cs_dai ? `<div class="dai-cs">${cs_dai}</div>` : "") + `<div class="luoi-dau">`;
   h += o("Danh sách theo dõi", `lưu trong trình duyệt này · bấm "+ Theo dõi" ở trang mã`, [...TD].sort());

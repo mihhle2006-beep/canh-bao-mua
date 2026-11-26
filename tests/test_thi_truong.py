@@ -264,6 +264,9 @@ def test_trang_tra_cuu_khong_tai_ngoai():
     import re
     h = open("docs/ma/index.html", encoding="utf-8").read()
     assert "<script src" not in h and "@import" not in h and "fonts.googleapis" not in h
+    assert 'src:url("lib/inter-vi.woff2")' in h and 'src:url("lib/inter-latin.woff2")' in h       # phông Inter để trong repo
+    assert all(open("docs/ma/lib/" + f, "rb").read(4) == b"wOF2" for f in ("inter-vi.woff2", "inter-latin.woff2"))
+    assert "SIL Open Font License" in open("docs/ma/lib/LICENSE-inter.txt", encoding="utf-8").read()
     ngoai = set(re.findall(r'\.src = "(https://[^"/]+)', h))                 # script tải động ngoài: chỉ SheetJS
     assert ngoai == {"https://cdnjs.cloudflare.com"}, ngoai
     assert 'sc.src = "lib/lightweight-charts.standalone.production.js?v=' in h       # biểu đồ: thư viện kèm trang (?v= đổi bản)
