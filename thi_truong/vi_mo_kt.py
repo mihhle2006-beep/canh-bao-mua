@@ -144,7 +144,9 @@ CHI_TIEU = [
     ("th_ls", "the_gioi", "Thái Lan – Lãi suất BOT", "tv:THINTR", "%/năm", 1, "pt", "M", 0, "BOT"),
 ]
 KHONG_CU = {"vn_luong_tt"}                     # đổi theo lần điều chỉnh (không định kỳ) – không gắn "cũ"
-HAN_CU = {"vn_tin_dung": 135, "vn_du_no": 135}                     # NHNN công bố tín dụng trễ ~3 tháng (T8 có vào cuối T11)
+HAN_CU = {"vn_tin_dung": 135, "vn_du_no": 135,                     # NHNN công bố tín dụng trễ ~3 tháng (T8 có vào cuối T11)
+          "vn_dtnh": 135,                                            # dự trữ ngoại hối (IMF) trễ ~3 tháng
+          "vn_ca": 270}                                              # cán cân vãng lai quý: NHNN công bố ~5 tháng sau đầu quý
 TONG_QUAN = ["vn_gdp", "vn_cpi", "vn_cpi_loi", "vn_tin_dung", "vn_sxcn", "vn_banle", "vn_xk", "vn_bot", "vn_fdi", "vn_lnh",
              "vn_10n", "usdvnd"]
 # Mục tiêu năm 2026 (Nghị quyết Quốc hội về kế hoạch phát triển KT-XH 2026): GDP từ 10 %, CPI khoảng 4,5 %
@@ -279,6 +281,26 @@ def gon_ngay(s, nam=3):
 
 
 # ------------------------------------------------------------------ một chỉ tiêu
+_LK = [(r"TradingView ECONOMICS:(\w+)", "https://www.tradingview.com/symbols/ECONOMICS-{0}/"),
+       (r"TradingView ([A-Z]+):([\w!]+)", "https://www.tradingview.com/symbols/{0}-{1}/"),
+       (r"World Bank ([\w.]+)", "https://data.worldbank.org/indicator/{0}?locations=VN"),
+       (r"Cục Thống kê", "https://www.nso.gov.vn/bao-cao-tinh-hinh-kinh-te-xa-hoi-hang-thang/"),
+       (r"NHNN – dư nợ", "https://sbv.gov.vn/du-no-tin-dung-doi-voi-nen-kt-dttktt"),
+       (r"Yahoo ([\w=.^-]+)", "https://finance.yahoo.com/quote/{0}"),
+       (r"BLS", "https://www.bls.gov/cpi/"),
+       (r"HNX", "https://hnx.vn/trai-phieu/duong-cong-loi-suat.html")]
+
+
+def lien_ket(nguon):
+    """Tên nguồn → địa chỉ trang công bố gốc (mẫu đầu tiên khớp) | "" – trang Vĩ mô cho bấm mở nguồn."""
+    import re
+    for mau, u in _LK:
+        m = re.search(mau, nguon or "")
+        if m:
+            return u.format(*m.groups())
+    return ""
+
+
 def chi_tieu(spec, s, nguon="", hom_nay=None):
     """spec CHI_TIEU + chuỗi (đã chia đơn vị) → dict hàng bảng / thẻ."""
     k, cd, ten, ng, dv, _, kieu, ts, huong, mo = spec
@@ -305,7 +327,7 @@ def chi_tieu(spec, s, nguon="", hom_nay=None):
         sp = s.iloc[-24:].tolist()
     r = {"k": k, "cd": cd, "ten": ten, "mo": mo, "dv": dv, "ky": nhan_ky(d, ts, luy_ke), "ngay": f"{d:%Y-%m-%d}",
          "gt": round(v, 4), "le": _le(v, dv), "kt": kt, "ck": ck, "kieu": kieu, "ts": ts, "huong": huong,
-         "sp": [round(float(x), 4) for x in sp], "nguon": nguon, "ghi": "", "tot": 0}
+         "sp": [round(float(x), 4) for x in sp], "nguon": nguon, "u": lien_ket(nguon), "ghi": "", "tot": 0}
     if hom_nay is not None:
         han = HAN_CU.get(k) or {"D": 10, "M": 95, "Q": 150, "Y": 550}[ts]   # số tháng công bố trễ tới ~75 ngày sau ngày 1
         r["cu"] = (pd.Timestamp(hom_nay) - d).days > han and k not in KHONG_CU

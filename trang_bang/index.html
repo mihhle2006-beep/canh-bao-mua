@@ -1390,7 +1390,7 @@ function vm_bang(cd) {
 async function vm_ve_ct(LW) {                          // biểu đồ lịch sử chỉ tiêu đang chọn
   const r = vm_ct(ST.vm_ct); if (!r) { $("#vm-ct-ten").textContent = "Chỉ tiêu"; return; }
   $("#vm-ct-ten").textContent = r.ten; $("#vm-ct-mo").textContent = `${r.dv} · ${r.mo}`;
-  $("#vm-ct-ghi").innerHTML = `<span>${esc(r.ky)}: <b>${vm_so(r.gt, r.le)} ${esc(r.dv)}</b></span><span>kỳ trước ${vm_doi(r.kt, r.kieu, r.dv)}</span><span>cùng kỳ ${vm_doi(r.ck, r.kieu, r.dv)}${r.ck_chinh ? " (công bố)" : ""}</span>${r.ghi ? `<span>${esc(r.ghi)}</span>` : ""}<span>nguồn: ${esc(r.nguon || "")}</span>`;
+  $("#vm-ct-ghi").innerHTML = `<span>${esc(r.ky)}: <b>${vm_so(r.gt, r.le)} ${esc(r.dv)}</b></span><span>kỳ trước ${vm_doi(r.kt, r.kieu, r.dv)}</span><span>cùng kỳ ${vm_doi(r.ck, r.kieu, r.dv)}${r.ck_chinh ? " (công bố)" : ""}</span>${r.ghi ? `<span>${esc(r.ghi)}</span>` : ""}<span>nguồn: ${/^https:\/\//.test(r.u || "") ? `<a href="${esc(r.u)}" target="_blank" rel="noopener noreferrer">${esc(r.nguon || "")} ↗</a>` : esc(r.nguon || "")}</span>`;
   if (!VM.ls) {
     try { const q = await fetch(GOC + "vi_mo/chi_tieu.json?t=" + Math.floor(Date.now() / 600000), {cache: "no-store"});
       if (!q.ok) throw new Error("HTTP " + q.status); VM.ls = await q.json(); }

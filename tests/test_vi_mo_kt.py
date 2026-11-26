@@ -145,3 +145,13 @@ def test_cung_ky_chinh_thuc_thay_so_tu_tinh():
     kt, _, _ = KT.dung_kt({"vn_xk": xk}, {}, pd.Timestamp("2026-11-26"), {},
                           {"vn_xk": pd.Series([20.0], index=pd.to_datetime(["2026-09-01"]))})
     assert kt["ct"][0]["ck"] == round((64.67 / 40 - 1) * 100, 2)     # không đúng tháng → giữ số tự tính
+
+
+def test_lien_ket_nguon_goc():
+    assert KT.lien_ket("TradingView ECONOMICS:VNGDPYY") == "https://www.tradingview.com/symbols/ECONOMICS-VNGDPYY/"
+    assert KT.lien_ket("TradingView ECONOMICS:VNEXP + 2 tháng mới: Cục Thống kê (sơ bộ)").endswith("ECONOMICS-VNEXP/")
+    assert KT.lien_ket("TradingView TVC:VIX") == "https://www.tradingview.com/symbols/TVC-VIX/"
+    assert KT.lien_ket("World Bank NY.GDP.MKTP.CD") == "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=VN"
+    assert KT.lien_ket("Cục Thống kê – báo cáo tình hình kinh tế – xã hội").startswith("https://www.nso.gov.vn/")
+    assert KT.lien_ket("Yahoo VND=X") == "https://finance.yahoo.com/quote/VND=X"
+    assert KT.lien_ket("chính thức") == "" and KT.lien_ket("") == ""
