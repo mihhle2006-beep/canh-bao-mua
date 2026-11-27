@@ -108,6 +108,42 @@ def cap_nhat(thu_muc, ma, res, bay_gio):
     return len(tg)
 
 
+def va_gia_ngay(thu_muc, ma, han):
+    """gia/<MÃ>.json thiếu các phiên gần đây (tra_cuu_dn xoay vòng – mỗi mã vài ngày mới tới lượt → biểu đồ nhảy cóc từ phiên cuối
+    tới nến hôm nay) → thêm nến NGÀY gộp từ nến 5' của các ngày < han (phiên chưa đóng: trang tự thêm nến tạm): mở = nến đầu,
+    cao / thấp, đóng = nến cuối, KL cộng, GT ≈ Σ KL × giá. Khối ngoại / thoả thuận để trống (% sở hữu giữ mức cũ); lượt xoay vòng sau tải Vietcap đè lên
+    (noi_gia: ngày mới đè ngày trùng). → số phiên đã thêm."""
+    pg = os.path.join(thu_muc, "gia", f"{ma}.json")
+    try:
+        with open(pg, encoding="utf-8") as f:
+            g = json.load(f)
+        with open(os.path.join(thu_muc, "phut", "5", f"{ma}.json"), encoding="utf-8") as f:
+            t, o, h, l_, c, v = giai_ma(json.load(f))
+    except (OSError, ValueError, KeyError, TypeError):
+        return 0
+    if not g.get("d") or not t:
+        return 0
+    ngay = {}
+    for i, s in enumerate(t):
+        d = datetime.fromtimestamp(s, VN).strftime("%Y-%m-%d")
+        if g["d"][-1] < d < han:
+            ngay.setdefault(d, []).append(i)
+    n = len(g["d"])
+    for d, ix in sorted(ngay.items()):
+        moi = {"d": d, "o": o[ix[0]], "h": max(h[i] for i in ix), "l": min(l_[i] for i in ix), "c": c[ix[-1]], "c0": c[ix[-1]],
+               "v": sum(v[i] for i in ix), "gt": round(sum(v[i] * c[i] for i in ix) / 1e6, 2)}
+        for k, a in g.items():
+            if isinstance(a, list) and len(a) == n:
+                a.append(moi.get(k, a[-1] if k == "nn_pt" else None))     # % sở hữu NN: giữ mức phiên trước
+        n += 1
+    if ngay:
+        tam = pg + ".tam"
+        with open(tam, "w", encoding="utf-8") as f:
+            json.dump(g, f, ensure_ascii=False, separators=(",", ":"))
+        os.replace(tam, pg)
+    return len(ngay)
+
+
 def ma_them(them="", them_file=None, tin_hieu=None, bo_loc=None):
     """Mã thêm: chuỗi "A,B" + file một dòng "A,B" (mã đang giữ) + du_lieu.json Bảng thị trường (tin_hieu.ma) + ma_mua_bo_loc.json."""
     from . import ma_them as _them
@@ -152,6 +188,11 @@ def main(argv=None):
             so = list(ex.map(lambda m: cap_nhat(a.ra, m, res, bay_gio), ds))
         co[res] = sorted(m for m, n in zip(ds, so) if n)
         print(f"Nến {res}': {len(co[res])}/{len(ds)} mã")
+    if not a.trong_phien:                                  # lịch sử ngày còn thiếu phiên (mã chưa tới lượt xoay vòng) → vá từ nến 5'
+        bay = datetime.now(VN)                             # từ 15:00 phiên hôm nay đã đóng (ATC 14:45) → gộp cả hôm nay
+        han = (bay + timedelta(days=1 if bay.hour >= 15 else 0)).strftime("%Y-%m-%d")
+        so = [va_gia_ngay(a.ra, m, han) for m in co["5"]]
+        print(f"Vá nến ngày từ nến 5': {sum(1 for x in so if x)} mã · {sum(so)} phiên")
     if a.trong_phien:                                      # trong phiên: giữ file / danh sách mã khác (dựng hằng ngày)
         try:
             cu = json.load(open(os.path.join(a.ra, "phut", "ds.json"), encoding="utf-8"))

@@ -44,6 +44,7 @@ API = "https://api.github.com"
 LICH = [
     ("loc_quy_b.yml", "7 6 * * 1-5", {}, 180),
     ("tra_cuu_web.yml", "41 6 * * 1-6", {}, 300),
+    ("tra_cuu_web.yml", "45 15 * * 1-5", {"sau_phien": "true"}, 120),  # lượt nhẹ sau phiên: ghép nến ngày cho biểu đồ
     ("canh_bao.yml", "43 6 * * 1-5", {"vong": "sang"}, 240),          # vòng sáng tự gọi vòng chiều → danh mục → tổng kết
     ("canh_bao.yml", "53 10 * * 1-5", {"vong": "chieu"}, 200),        # dự phòng: xếp hàng sau vòng sáng
     ("canh_bao.yml", "20 15 * * 1-5", {"che_do": "tong_ket"}, 120),   # dự phòng: đã gửi thì không gửi lặp

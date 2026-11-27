@@ -74,3 +74,24 @@ def test_trong_phien_chi_noi_ma_chon_va_giu_ma_khac(tmp_path, monkeypatch):
     assert "CU" in ds["1"] and "TTT" in ds["5"]
     monkeypatch.setattr("thi_truong.ma_them", lambda: [])
     assert P.ma_them("", str(tmp_path / "khong_co.txt"), str(tmp_path / "khong.json"), None) == []
+
+
+def test_va_gia_ngay_tu_nen_5_phut(tmp_path):
+    from datetime import datetime
+    (tmp_path / "gia").mkdir()
+    (tmp_path / "phut" / "5").mkdir(parents=True)
+    g = {"d": ["2026-11-23"], "o": [10.0], "h": [10.5], "l": [9.8], "c": [10.2], "c0": [10.2], "v": [1000], "gt": [0.01],
+         "nn": [0.5], "nn_pt": [3.1]}
+    (tmp_path / "gia" / "VIC.json").write_text(json.dumps(g))
+    s = lambda d, gio: int(datetime.fromisoformat(f"{d}T{gio}:00+07:00").timestamp())          # noqa: E731
+    t = [s("2026-11-23", "14:45"), s("2026-11-24", "09:15"), s("2026-11-24", "14:45"), s("2026-11-26", "09:15"),
+         s("2026-11-26", "14:45"), s("2026-11-27", "09:15")]
+    o, h, l_, c, v = [10.2, 10.3, 10.6, 10.9, 11.0, 11.2], [10.3, 10.8, 10.7, 11.1, 11.3, 11.4], \
+        [10.1, 10.2, 10.4, 10.8, 10.9, 11.1], [10.2, 10.6, 10.5, 11.0, 11.2, 11.3], [5, 100, 200, 300, 400, 9]
+    (tmp_path / "phut" / "5" / "VIC.json").write_text(json.dumps(P.ma_hoa(t, o, h, l_, c, v)))
+    assert P.va_gia_ngay(str(tmp_path), "VIC", "2026-11-27") == 2          # 24 và 26 (23 đã có, 27 = hôm nay chưa đóng)
+    r = json.loads((tmp_path / "gia" / "VIC.json").read_text())
+    assert r["d"] == ["2026-11-23", "2026-11-24", "2026-11-26"]
+    assert r["o"][1:] == [10.3, 10.9] and r["h"][1:] == [10.8, 11.3] and r["l"][1:] == [10.2, 10.8] and r["c"][1:] == [10.5, 11.2]
+    assert r["v"][1:] == [300, 700] and r["nn"] == [0.5, None, None] and r["nn_pt"] == [3.1, 3.1, 3.1]
+    assert P.va_gia_ngay(str(tmp_path), "VIC", "2026-11-27") == 0          # chạy lại không thêm trùng
