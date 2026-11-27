@@ -26,13 +26,15 @@ FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox
            "stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
 
 
+IN_A4 = ("@media print{@page{size:A4 landscape;margin:8mm}body{background:#fff}main{max-width:none;margin:0;padding:0}"
+         "header nav,body>main>nav{display:none}section{break-inside:avoid-page}h2{break-after:avoid}tr{break-inside:avoid}"
+         "thead{display:table-header-group}img,svg{max-width:100%}}")
+
+
 def a4(trang):
-    """Khổ A4 ngang (ptcp/kho_a4.py của danh-muc); thiếu ptcp → giữ nguyên trang."""
-    try:
-        from ptcp.kho_a4 import boc
-    except ImportError:
-        return trang
-    return boc(trang)
+    """Màn hình: cuộn liền một mạch (chủ quỹ 27/11/2026 – trước chia tờ A4 bằng ptcp/kho_a4 → khoảng trắng lớn giữa các tờ);
+    in / lưu PDF: khổ A4 ngang, mỗi mục không bị cắt ngang trang (CSS @media print)."""
+    return trang.replace("</style>", IN_A4 + "</style>", 1)
 
 
 def _f(x, le=2, dau=False):

@@ -37,6 +37,7 @@ def test_trang_cong_khai_khong_lo_danh_muc(tmp_path, monkeypatch):
     assert p == C.FILE_TRANG and "FPT" in s and "1.712,30" in s and "&lt;ngày&gt;" in s
     assert "Danh mục thật" not in s and "giả lập" not in s
     assert "Độ chính xác" not in s and "chinh-xac" not in s              # 06/11/2026: không đưa độ chính xác lên web
+    assert "@page{size:A4 landscape" in s and "a4-trang" not in s         # 27/11/2026: màn hình cuộn liền, chỉ khi in mới A4
     vt = {"ma": "XYZ", "so_cp": 1000, "gia_von": 20}
     p2 = TH.tao(giu=[(vt, {"gia": 22, "lai_lo_pct": 10, "cat_lo": 19, "muc": "GIU"}, {"du": True})])
     s2 = open(p2, encoding="utf-8").read()
