@@ -574,6 +574,8 @@ svg.spark{width:64px;height:20px;display:block;margin-left:auto}
 .dm-thanh span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dm-thanh b{height:8px;border-radius:4px;background:var(--tang);opacity:.75}
 .dm-thanh em{font-style:normal;text-align:right;color:var(--chu2)}
 .dm-pp{padding:8px 14px 0}.dm-chon{background:var(--tang-nen)}.dm-ghi{padding:6px 14px 12px;margin:0}
+td.dm-nhan{white-space:normal;min-width:7em}
+@media (max-width:600px){.dm-khac{display:none}td.dm-lenh{white-space:normal;min-width:6.5em}}  /* điện thoại: chỉ cột cách đang chọn – cột "Cân lại" không bị đẩy khỏi màn hình */
 @media (max-width:700px){.dm-hai{grid-template-columns:minmax(0,1fr)}.dm-form input,.dm-form input[name=ma]{width:calc(50% - 4px)}}
 /* ===== GIAO DIỆN 26/11/2026: thẻ nổi nhẹ · thanh đầu tràn hết bề ngang · nút dạng viên =====
    chỉ đổi hình thức – không đổi dữ liệu / logic; cùng bộ token với Bảng thị trường (trang_bang) */
@@ -5050,8 +5052,15 @@ const KHOA_DM = "dm_cua_toi";
 let DM = (() => { try { return (JSON.parse(localStorage.getItem(KHOA_DM) || "[]") || []).filter(x => MA_OK(x?.ma) && x.kl > 0); } catch (e) { return []; } })();
 const dm_luu = () => { try { localStorage.setItem(KHOA_DM, JSON.stringify(DM)); } catch (e) {} };
 const DM_ST = {pp: "gmv", luot: 0};
-// [mã, tên, Sharpe trung vị backtest vòng 2 (2.000 danh mục ngẫu nhiên, 01/2016 → 11/2026, phí + thuế)]
-const DM_PP = [["n", "1/N chia đều", "0,33"], ["rp", "Risk Parity", "0,36"], ["hrp", "HRP", "0,38"], ["gmv", "GMV Σ tương quan hằng · trần 40%", "0,42*"]];
+const DM_PP = [["n", "1/N chia đều"], ["rp", "Risk Parity"], ["hrp", "HRP"], ["gmv", "GMV"]];
+// TỶ TRỌNG THEO SỐ MÃ (danh-muc bt_phan_bo vòng 8, 27/11/2026, luật đặt trước): 300 danh mục ngẫu nhiên / cỡ (top 150 GTGD),
+// 01/2016 → 11/2026, cân đầu tháng, phí + thuế, đúng công thức trang này. GMV Σ tương quan hằng tốt nhất mọi cỡ; trần = trần CHẶT
+// NHẤT vẫn tương đương GMV không trần (3 mã trần 40 % kém rõ: 0,31 vs 0,36). Cỡ: [trần GMV, Sharpe trung vị {pp}]
+const DM_CO = {2: [1, {n: "0,23", rp: "0,26", hrp: "0,26", gmv: "0,29"}], 3: [0.5, {n: "0,28", rp: "0,33", hrp: "0,34", gmv: "0,34"}],
+  4: [0.4, {n: "0,30", rp: "0,34", hrp: "0,38", gmv: "0,37"}], 5: [0.3, {n: "0,31", rp: "0,35", hrp: "0,38", gmv: "0,38"}],
+  6: [0.3, {n: "0,31", rp: "0,34", hrp: "0,38", gmv: "0,39"}], 8: [0.3, {n: "0,31", rp: "0,36", hrp: "0,41", gmv: "0,43"}],
+  10: [0.3, {n: "0,33", rp: "0,38", hrp: "0,42", gmv: "0,46"}], 15: [0.3, {n: "0,33", rp: "0,38", hrp: "0,45", gmv: "0,52"}]};
+const dm_co = n => Object.keys(DM_CO).map(Number).filter(k => k <= n).pop() || 2;     // cỡ đã kiểm gần nhất phía dưới
 function dm_them(ma, kl, gv) {                          // trùng mã → cộng KL, giá vốn bình quân
   ma = String(ma || "").trim().toUpperCase(); kl = Math.round(+kl); gv = +String(gv ?? "").replace(",", ".");
   if (!MA_OK(ma) || !(kl > 0)) return false;
@@ -5228,18 +5237,20 @@ async function hien_dm() {
     const tuan = []; for (let i = chung.length - 1; i >= 0 && tuan.length <= 156; i -= 5) tuan.unshift(chung[i]);
     if (tuan.length >= 27) {
       const R = tuan.slice(1).map((d, i) => co.map(z => z.m.get(d) / z.m.get(tuan[i]) - 1)), S = dm_lw_cc(R);
-      const W = {n: co.map(() => 1 / co.length), rp: dm_rp(S), hrp: dm_hrp(S), gmv: dm_gmv(S, 0.4)};
+      const cz = dm_co(co.length), [tran, srz] = DM_CO[cz];
+      const W = {n: co.map(() => 1 / co.length), rp: dm_rp(S), hrp: dm_hrp(S), gmv: dm_gmv(S, tran)};
+      const ten_pp = k_ => k_ === "gmv" ? (tran < 1 ? `GMV · trần ${Math.round(tran * 100)}%` : "GMV") : DM_PP.find(p => p[0] === k_)[1];
       const bd_pp = w => Math.sqrt(dm_mv(S, w).reduce((s, v, i) => s + v * w[i], 0) * 52);
       const tg = co.reduce((s, z) => s + z.gt, 0), wn = co.map(z => z.gt / tg), wc = W[DM_ST.pp] || W.gmv;
       const lenh = co.map((z, i) => { const lech = wn[i] - wc[i], cp = Math.round((wc[i] - wn[i]) * tg / (z.gia * 1000) / 100) * 100;
-        return `<tr><td class="trai"><b>${esc(z.ma)}</b></td><td>${pt(wn[i], 1, false)}</td>${DM_PP.map(([k_]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${pt(W[k_][i], 1, false)}</td>`).join("")}
-          <td class="trai">${Math.abs(lech) <= 0.05 || !cp ? `<span class="m">giữ (lệch ${pt(-lech, 1)})</span>` : `<b class="${cp > 0 ? "t" : "g"}">${cp > 0 ? "Mua" : "Bán"} ${so(Math.abs(cp), 0)} CP</b> <span class="m nho">≈ ${dm_ty(Math.abs(cp) * z.gia * 1000)}</span>`}</td></tr>`; }).join("");
-      h += the("Tỷ trọng gợi ý", `${tuan.length - 1} tuần lợi suất · Σ co Ledoit–Wolf về tương quan hằng · chỉ giao dịch mã lệch quá ±5 điểm %`,
-        `<div class="dm-pp"><span class="nut">${nut(DM_PP.map(([k_, t]) => [k_, t]), DM_ST.pp, "dmpp")}</span></div>
-        <div class="bang-boc"><table><thead><tr><th>Mã</th><th>Hiện tại</th>${DM_PP.map(([k_, t]) => `<th${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${esc(t.split(" · ")[0])}</th>`).join("")}<th class="trai">Cân lại theo ${esc((DM_PP.find(p => p[0] === DM_ST.pp) || DM_PP[3])[1].split(" · ")[0])}</th></tr></thead>
-        <tbody>${lenh}<tr class="c1"><td class="trai">Biến động năm dự kiến</td><td>${pt(bd_pp(wn), 1, false)}</td>${DM_PP.map(([k_]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${pt(bd_pp(W[k_]), 1, false)}</td>`).join("")}<td></td></tr>
-        <tr><td class="trai">Sharpe trung vị backtest</td><td>–</td>${DM_PP.map(([k_, , sr]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ""}>${sr}</td>`).join("")}<td></td></tr></tbody></table></div>
-        <p class="m nho dm-ghi">Sharpe trung vị: backtest hệ thống trên 2.000 danh mục ngẫu nhiên Việt Nam (10 loại, 01/2016 → 11/2026, cân đầu tháng, trừ phí + thuế). Markowitz Sharpe tối đa gốc chỉ 0,20 nên không dùng. * GMV kiểm chứng không trần (dồn 34–60% vào 1 mã) – trần 40% là bản an toàn hơn, chưa kiểm chứng riêng. Không phải khuyến nghị đầu tư; lô 100 CP.</p>`);
+        return `<tr><td class="trai"><b>${esc(z.ma)}</b></td><td>${pt(wn[i], 1, false)}</td>${DM_PP.map(([k_]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ' class="dm-khac"'}>${pt(W[k_][i], 1, false)}</td>`).join("")}
+          <td class="trai dm-lenh">${Math.abs(lech) <= 0.05 || !cp ? `<span class="m">giữ (lệch ${pt(-lech, 1)})</span>` : `<b class="${cp > 0 ? "t" : "g"}">${cp > 0 ? "Mua" : "Bán"} ${so(Math.abs(cp), 0)} CP</b> <span class="m nho">≈ ${dm_ty(Math.abs(cp) * z.gia * 1000)}</span>`}</td></tr>`; }).join("");
+      h += the("Tỷ trọng gợi ý", `${co.length} mã · khuyến nghị: GMV${tran < 1 ? ` trần ${Math.round(tran * 100)}%` : ""} (kiểm chứng trên danh mục ${cz} mã) · ${tuan.length - 1} tuần lợi suất · chỉ giao dịch mã lệch quá ±5 điểm %`,
+        `<div class="dm-pp"><span class="nut">${nut(DM_PP.map(([k_]) => [k_, ten_pp(k_) + (k_ === "gmv" ? " ★" : "")]), DM_ST.pp, "dmpp")}</span></div>
+        <div class="bang-boc"><table><thead><tr><th>Mã</th><th>Hiện tại</th>${DM_PP.map(([k_]) => `<th${k_ === DM_ST.pp ? ' class="dm-chon"' : ' class="dm-khac"'}>${esc(ten_pp(k_))}</th>`).join("")}<th class="trai" title="Cân lại theo ${esc(ten_pp(DM_ST.pp))}">Cân lại</th></tr></thead>
+        <tbody>${lenh}<tr class="c1"><td class="trai dm-nhan">Biến động năm dự kiến</td><td>${pt(bd_pp(wn), 1, false)}</td>${DM_PP.map(([k_]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ' class="dm-khac"'}>${pt(bd_pp(W[k_]), 1, false)}</td>`).join("")}<td></td></tr>
+        <tr><td class="trai dm-nhan">Sharpe backtest (${cz} mã)</td><td>–</td>${DM_PP.map(([k_]) => `<td${k_ === DM_ST.pp ? ' class="dm-chon"' : ' class="dm-khac"'}>${srz[k_]}</td>`).join("")}<td></td></tr></tbody></table></div>
+        <p class="m nho dm-ghi">Sharpe trung vị: backtest 300 danh mục ngẫu nhiên ${cz} mã (top 150 thanh khoản, 01/2016 → 11/2026, cân đầu tháng, trừ phí + thuế) – thử ở 2 · 3 · 4 · 5 · 6 · 8 · 10 · 15 mã, GMV (rủi ro thấp nhất, Σ co về tương quan hằng) tốt nhất mọi cỡ; 1/N kém nhất. Trần mỗi mã theo số mã (≤ 2 mã không trần · 3 → 50% · 4 → 40% · từ 5 → 30%) là trần chặt nhất vẫn hiệu quả ngang GMV không trần – bớt dồn tiền vào 1 mã. Chỉ cân lại mã lệch quá ±5 điểm % (giảm ~¼ giao dịch, Sharpe không kém). Markowitz Sharpe tối đa gốc chỉ 0,17–0,24 nên không dùng. Không phải khuyến nghị đầu tư; lô 100 CP.</p>`);
     }
   }
   nd.innerHTML = h;
