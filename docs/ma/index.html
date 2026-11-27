@@ -4137,6 +4137,7 @@ async function mo_sk_pnl(ma, loai) {
       e.stopPropagation(); if (b.dataset.sk) ST.sk = b.dataset.sk; if (b.dataset.cd) ST.cd = b.dataset.cd; ve_sk_pnl(); });
     addEventListener("keydown", e => { if (e.key === "Escape") dong_sk_pnl(); });
   }
+  if (p.parentNode !== goc_noi()) goc_noi().appendChild(p);
   p._ma = ma; p._loai = loai;
   if (loai === "M" || loai === "B") ST.cd = "nb"; else if (loai === "ĐH") ST.sk = "dh"; else if (loai === "K") ST.sk = "tat"; else if (loai === "CT" || loai === "CP") ST.sk = "div";
   await ve_sk_pnl();
@@ -4984,11 +4985,13 @@ document.addEventListener("keydown", e => {
 });
 const PHIM_TAT = [["← →", "mã trước / sau (danh sách bên phải, không mở thì danh sách theo dõi)"], ["Shift + D / W / M", "khung ngày / tuần / tháng"], ["Shift + F", "toàn màn hình"],
   ["Shift + N", "ghi chú cho mã"], ["Shift + G", "chế độ 2×2 / 1 biểu đồ"], ["/ hoặc gõ chữ", "tìm mã"], ["?", "bảng phím tắt"], ["Esc", "đóng / thoát"]];
+const goc_noi = () => document.fullscreenElement || document.webkitFullscreenElement || document.body;   // bảng nổi: gắn vào phần tử
+                                                     // đang toàn màn hình (Fullscreen API chỉ vẽ phần tử đó) – body thì bị ẩn
 function phim_tat_hien() {
   let b = $("#phim-tat"); if (b) return b.remove();
   b = document.createElement("div"); b.id = "phim-tat"; b.className = "phim-tat"; b.setAttribute("role", "dialog"); b.setAttribute("aria-label", "Phím tắt");
   b.innerHTML = `<b>Phím tắt biểu đồ</b><table>${PHIM_TAT.map(([k, t]) => `<tr><td><kbd>${esc(k)}</kbd></td><td>${esc(t)}</td></tr>`).join("")}</table><div class="phu">Vẽ: Alt + chữ (xem thanh công cụ trái) · Ctrl+Z hoàn tác</div>`;
-  b.onclick = () => b.remove(); document.body.appendChild(b);
+  b.onclick = () => b.remove(); goc_noi().appendChild(b);
 }
 document.addEventListener("keydown", e => {                // phím tắt biểu đồ (trang Biểu đồ / toàn màn hình)
   if (!FS || e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.("input,textarea,select,[contenteditable]")) return;
@@ -5019,6 +5022,7 @@ function mo_tim_bd(dau = "") {
   if (!b) { b = document.createElement("div"); b.id = "fs-tim"; b.className = "fs-tim";
     b.innerHTML = `<input placeholder="Gõ mã hoặc tên – chạm để mở" maxlength="20" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="characters" enterkeyhint="go" aria-label="Tìm mã"><ul role="listbox"></ul>`;
     document.body.appendChild(b); }
+  if (b.parentNode !== goc_noi()) goc_noi().appendChild(b);
   const o = b.querySelector("input"), ul = b.querySelector("ul"); let kq = [], i = 0;
   const ve = () => { kq = goi_y_ma(o.value); if (!kq.length && o.value.trim()) { const m = tim_ma(o.value); if (m) kq = [{ma: m, ten: "", san: ""}]; }
     ul.innerHTML = kq.map((r, j) => `<li data-ma="${esc(r.ma)}" class="${j === i ? "chon" : ""}"><b>${esc(r.ma)}</b><span>${esc(ten_ma(r) || r.nganh || "")}</span><i>${esc(r.san || "")}</i></li>`).join(""); };

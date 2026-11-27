@@ -5,6 +5,8 @@
 (() => {
 "use strict";
 const VE = window.BD_VE = {_loi: []};
+// bảng nổi gắn vào phần tử đang TOÀN MÀN HÌNH (Fullscreen API chỉ vẽ phần tử đó + con) – gắn vào body thì bị ẩn
+const goc_fs = () => document.fullscreenElement || document.webkitFullscreenElement || document.body;
 const KHOA = "ma_hinh_ve_2", KHOA_CU = "ma_hinh_ve";
 const uid = () => Math.random().toString(36).slice(2, 10);
 const MAU = ["#2962ff", "#0f8a4a", "#d1342b", "#e8710a", "#9b3fd1", "#00897b", "#1f2430", "#f9a825"];
@@ -181,14 +183,16 @@ function pivot(i0, i1, cao, k = 4, a = null) {          // đỉnh / đáy fract
   }
   return out;
 }
-function xu_huong_tu_dong(l) {                         // 2 đường theo GIÁ ĐÓNG CỬA: hỗ trợ nối 2 đáy gần nhất đi lên / kháng cự nối 2 đỉnh đi xuống
-  const i1 = idx(Math.min(l, C.n - 1)), i0 = Math.max(0, i1 - 160), x = C.x, out = [];
+function xu_huong_tu_dong(l, i0_ = null) {             // 2 đường theo GIÁ ĐÓNG CỬA: hỗ trợ nối 2 đáy gần nhất đi lên / kháng cự nối 2 đỉnh đi xuống
+  // trong [i0, i1] (mặc định 160 nến tới l); độ "lớn" của đỉnh / đáy theo độ dài khoảng (160 nến: 4 nến mỗi bên · 3 năm: ~19)
+  const i1 = idx(Math.min(l, C.n - 1)), i0 = i0_ != null ? Math.max(0, i0_) : Math.max(0, i1 - 160), x = C.x, out = [];
+  const kp = Math.max(3, Math.min(30, Math.round((i1 - i0) / 40)));
   for (const cao of [false, true]) {
-    const a = x.c, pv = pivot(i0, i1, cao, 4, a); let chon = null;
+    const a = x.c, pv = pivot(i0, i1, cao, kp, a); let chon = null;
     for (let u = pv.length - 1; u > 0 && !chon; u--) for (let v = u - 1; v >= 0 && !chon; v--) {
       const p = pv[v], q = pv[u]; if (cao ? a[q] >= a[p] : a[q] <= a[p]) continue;
       const k_ = (a[q] - a[p]) / (q - p); let gay = false;
-      for (let z = q + 1; z <= i1 && !gay; z++) { const y = a[p] + k_ * (z - p); if (cao ? x.c[z] > y * 1.005 : x.c[z] < y * 0.995) gay = true; }
+      for (let z = p + 1; z <= i1 && !gay; z++) { const y = a[p] + k_ * (z - p); if (cao ? x.c[z] > y * 1.005 : x.c[z] < y * 0.995) gay = true; }   // cả đoạn GIỮA 2 điểm (trước: chỉ sau điểm 2 → kháng cự cắt qua đỉnh)
       if (!gay) chon = [p, q];
     }
     for (let u = pv.length - 1; u > 0 && !chon; u--) for (let v = u - 1; v >= 0 && !chon; v--)      // không có đường chưa bị phá: lấy cặp đúng chiều gần nhất
@@ -296,11 +300,55 @@ T("vung", "Vùng hỗ trợ / kháng cự", 2, (g, P) => { if (!P[1]) return g.n
   g.nhan_truc(P[0].y, gia(P[0].v)); g.nhan_truc(P[1].y, gia(P[1].v));
   g.chu(P[0].x + 4, Math.min(P[0].y, P[1].y) - 2, `Vùng ${gia(Math.min(P[0].v, P[1].v))}–${gia(Math.max(P[0].v, P[1].v))} (${pt(Math.abs(P[1].v / P[0].v - 1), 1, false)})`, {c: 11, m: g.m, hit: false}); },
   {mau: "#0f8a4a"});
-T("tu_dong", "Đường xu hướng tự động", 1, (g, P) => { if (P.length < 4) { g.chu(P[0].x, P[0].y - 8, "Bấm để tự nối đỉnh / đáy gần nhất", {can: "giua", c: 11, nen: "#ffffffee", hit: false}); return; }
+function xu_huong_khung(i0, i1) {                     // đường xu hướng CỦA KHOẢNG [i0, i1] theo giá đóng: hỗ trợ từ giá THẤP nhất, kháng cự
+  // từ giá CAO nhất của khoảng (điểm cực ở nến cuối → nối từ trái vào). Điểm thứ 2: đáy / đỉnh LỚN (fractal, độ lớn theo độ dài
+  // khoảng) cho đường SÁT giá nhất mà giá đóng từ điểm cực tới nến cuối không phá quá 3 %; không có → ôm mọi giá đóng (cạnh bao
+  // lồi – không giá nào phá); đường đó cách giá cuối > 35 % → 2 đỉnh / đáy lớn gần nhất chưa bị phá.
+  // → [hỗ trợ 1, hỗ trợ 2, kháng cự 1, kháng cự 2] {t, v}
+  const a = C.x.c, kp = Math.max(3, Math.min(30, Math.round((i1 - i0) / 40))), out = [];
+  for (const cao of [false, true]) {
+    const lon = pivot(i0, i1, cao, kp, a).filter((k, i, ds) => !i || k - ds[i - 1] > kp);   // đỉnh / đáy lớn – gộp chuỗi giá bằng nhau liền nhau
+    let m = i0; for (let i = i0; i <= i1; i++) if (a[i] != null && (cao ? a[i] > a[m] : a[i] < a[m])) m = i;
+    const phai = m < i1, nghieng = k => phai ? (a[k] - a[m]) / (k - m) : (a[m] - a[k]) / (m - k);
+    const tot = (t, s) => s == null || (phai === cao ? t > s : t < s);    // phải: kháng cự dốc lên nhất / hỗ trợ thấp nhất (trái: ngược)
+    const chon = ds => { let j = -1, s = null; for (const k of ds) { const t = nghieng(k); if (tot(t, s)) { s = t; j = k; } } return j; };
+    const pha = (j, tl) => { const s = nghieng(j), z0 = Math.min(m, j);
+      for (let z = z0; z <= i1; z++) { if (a[z] == null) continue; const y = a[m] + s * (z - m); if (cao ? a[z] > y * (1 + tl) : a[z] < y * (1 - tl)) return true; }
+      return false; };
+    const sat = lon.filter(k => phai ? k > m : k < m)                            // đường SÁT giá nhất trước (không phải thoải nhất)
+      .sort((x, y) => (phai === cao ? 1 : -1) * (nghieng(x) - nghieng(y)));
+    let j = sat.find(k => !pha(k, 0.03)) ?? -1;
+    if (j < 0) { const ds = []; for (let k = phai ? m + 1 : i0; k <= (phai ? i1 : m - 1); k++) if (a[k] != null) ds.push(k); j = chon(ds); }
+    let [u, v] = j < 0 ? [m, m] : j < m ? [j, m] : [m, j];
+    // giá đã đi quá xa đường neo ở đỉnh / đáy của khoảng (> 35 % – VD sập sau đỉnh: kháng cự lơ lửng) → 2 đỉnh / đáy lớn GẦN NHẤT
+    // trong khoảng mà giá đóng sau đó không phá quá 3 %
+    const cuoi = u === v ? a[u] : a[u] + (a[v] - a[u]) / (v - u) * (i1 - u);
+    if (Math.abs(cuoi / a[i1] - 1) > 0.35) {
+      const pv = lon;
+      gan: for (let x = pv.length - 1; x > 0; x--) for (let y = x - 1; y >= 0; y--) {
+        const p_ = pv[y], q = pv[x], s = (a[q] - a[p_]) / (q - p_); let ok = true;
+        const ket = a[p_] + s * (i1 - p_); if (!(ket > 0) || Math.abs(ket / a[i1] - 1) > 0.35) continue;      // cũng phải sát giá cuối
+        for (let z = p_ + 1; z <= i1 && ok; z++) { const yy = a[p_] + s * (z - p_); if (cao ? a[z] > yy * 1.03 : a[z] < yy * 0.97) ok = false; }
+        if (ok) { [u, v] = [p_, q]; break gan; }
+      }
+    }
+    out.push({t: C.T[u], v: a[u]}, {t: C.T[v], v: a[v]});
+  }
+  return out;
+}
+const TU_DONG_K = new Map();                           // id hình → khoảng đã tính (khỏi tính lại khi khung không đổi)
+function tu_dong_khung(d, ep = false) {                // đường xu hướng tự động THEO KHOẢNG ĐANG XEM: kéo / phóng / đổi 1N–5N–Tất cả → tính lại
+  const r = C?.ch?.timeScale().getVisibleLogicalRange(); if (!r) return null;
+  const i0 = Math.max(0, Math.ceil(r.from)), i1 = Math.min(C.n - 1, Math.floor(r.to)); if (i1 - i0 < 20) return null;
+  const k = `${C.ma}|${C.khung}|${C.n}|${i0}|${i1}`; if (!ep && TU_DONG_K.get(d.id) === k) return null; TU_DONG_K.set(d.id, k);
+  return xu_huong_khung(i0, i1);
+}
+T("tu_dong", "Đường xu hướng tự động", 1, (g, P) => { if (P.length < 4) { g.chu(P[0].x, P[0].y - 8, "Bấm để tự nối đỉnh / đáy trong khoảng đang xem", {can: "giua", c: 11, nen: "#ffffffee", hit: false}); return; }
   if (P[0] && P[1]) { g.tia(P[0], P[1], {m: "#0f8a4a"}); g.chu(P[1].x, P[1].y + 6, "Hỗ trợ", {can: "giua", doc: "duoi", c: 11, m: "#0f8a4a", hit: false}); }
   if (P[2] && P[3]) { g.tia(P[2], P[3], {m: "#d1342b"}); g.chu(P[3].x, P[3].y - 6, "Kháng cự", {can: "giua", c: 11, m: "#d1342b", hit: false}); } },
-  {tao: d => { const ds = xu_huong_tu_dong(t2l(d.p[0].t)); d.p = ds.map(p => p || {t: d.p[0].t, v: d.p[0].v}); },
-   goi_y: "Bấm 1 lần: tự tìm 2 đáy gần nhất đi lên (hỗ trợ) và 2 đỉnh gần nhất đi xuống (kháng cự) chưa bị phá"});
+  {tao: d => { d.p = tu_dong_khung(d, true) || xu_huong_tu_dong(t2l(d.p[0].t)).map(p => p || {t: d.p[0].t, v: d.p[0].v}); },
+   theo_khung: d => tu_dong_khung(d),
+   goi_y: "Bấm 1 lần: hỗ trợ từ giá thấp nhất và kháng cự từ giá cao nhất CỦA KHOẢNG ĐANG XEM, không giá đóng nào phá – kéo / phóng / đổi 1N–5N–Tất cả là đường tính lại theo khoảng mới"});
 
 // ---------------------------------------------------------------- 3. FIBONACCI, GANN
 nhom("fib", "Fibonacci, Gann", IC.fib);
@@ -556,6 +604,7 @@ function ve_tat_ca(ctx) {
   for (const d of ds) {
     const cg = CONG[d.c]; if (!cg?.ve) continue;
     try {
+      if (cg.theo_khung && d !== TAM) { const p = cg.theo_khung(d); if (p) d.p = p; }
       const P = d.p.map(px); NEO_THEM = [];
       ctx.save(); const g = G(ctx, d); if (d.id === HOVER && d.id !== CHON) ctx.globalAlpha = 0.9;
       cg.ve(g, P, d); ctx.restore();
@@ -688,7 +737,8 @@ function kinh(p) {
       const goc = C.ch.chartElement(), rg = goc.getBoundingClientRect(), rp = C.vung.getBoundingClientRect(), shot = C.ch.takeScreenshot();
       const k = shot.width / rg.width, cx = (rp.left - rg.left + p.x) * k, cy = (rp.top - rg.top + p.y) * k, R = 30 * k;
       let b = document.querySelector(".ve-kinh");
-      if (!b) { b = Object.assign(document.createElement("canvas"), {className: "ve-kinh", width: 240, height: 240}); document.body.appendChild(b); }
+      if (!b) b = Object.assign(document.createElement("canvas"), {className: "ve-kinh", width: 240, height: 240});
+      if (b.parentNode !== goc_fs()) goc_fs().appendChild(b);
       b.style.left = (p.x > rp.width / 2 ? rp.left + 8 : rp.right - 136) + "px"; b.style.top = (rp.top + 8) + "px";
       const g = b.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 240, 240);
       g.drawImage(shot, cx - R, cy - R, 2 * R, 2 * R, 0, 0, 240, 240);
@@ -820,7 +870,7 @@ function mo_ds(gk, nut) {
   const g = NHOM.find(z => z.k === gk), r = nut.getBoundingClientRect(), b = document.createElement("div");
   b.className = "ve-ds"; b.dataset.g = gk;
   b.innerHTML = `<div class="dau">${esc(g.ten.toUpperCase())} · ${g.ds.length} công cụ</div>` + g.ds.map(k => `<button data-vk2="${k}" aria-pressed="${CONG_HT === k}"><span>${esc(CONG[k].ten)}</span>${CONG[k].phim ? `<i>${CONG[k].phim}</i>` : ""}</button>`).join("");
-  document.body.appendChild(b);
+  goc_fs().appendChild(b);
   const h = b.offsetHeight; b.style.left = (r.right + 6) + "px"; b.style.top = Math.max(8, Math.min(r.top - 8, innerHeight - h - 8)) + "px";
   if (r.right + 6 + b.offsetWidth > innerWidth) b.style.left = Math.max(8, innerWidth - b.offsetWidth - 8) + "px";
   b.onclick = e => { const k = e.target.closest("[data-vk2]")?.dataset.vk2; if (k) { dong_bang(); dat_cong(k); } };
@@ -833,7 +883,7 @@ function mo_tim() {
     <div class="tac"><label><input type="checkbox" data-vt="an"${KHO._cfg.an ? " checked" : ""}> Ẩn mọi hình vẽ</label><label><input type="checkbox" data-vt="khoa"${KHO._cfg.khoa ? " checked" : ""}> Khoá mọi hình vẽ</label>
     <label><input type="checkbox" data-vt="giu"${KHO._cfg.giu ? " checked" : ""}> Giữ công cụ sau khi vẽ</label>
     <button data-vxm>Xoá ${so_ma} hình của ${esc(C?.ma || "")}</button><button data-vxt>Xoá hình vẽ mọi mã</button></div>`;
-  document.body.appendChild(b);
+  goc_fs().appendChild(b);
   const o = b.querySelector("input"), kq = b.querySelector(".kq");
   const ve = () => { const q = bo_dau(o.value).trim();
     kq.innerHTML = NHOM.filter(g => g.k !== "tro" || !q).map(g => { const ds = g.ds.filter(k => !q || bo_dau(CONG[k].ten).includes(q) || bo_dau(g.ten).includes(q)); if (!ds.length) return "";
@@ -859,7 +909,7 @@ function tom_net(d) {                                  // mô tả ngắn: ngày
 }
 function mo_danh_sach() {
   const cu = document.querySelector(".ve-dsnet"); dong_bang(); if (cu || !C) return;
-  const b = document.createElement("div"); b.className = "ve-tim ve-dsnet"; document.body.appendChild(b);
+  const b = document.createElement("div"); b.className = "ve-tim ve-dsnet"; goc_fs().appendChild(b);
   const ve = () => {
     const ds = KHO[C.ma] || [], ma_khac = Object.keys(KHO).filter(k => k !== "_cfg" && k !== C.ma && (KHO[k] || []).length);
     b.innerHTML = `<div class="dau">NÉT VẼ CỦA ${esc(C.ma)} · ${ds.length}${ma_khac.length ? ` · còn ${ma_khac.reduce((a, k) => a + KHO[k].length, 0)} nét ở ${ma_khac.length} mã khác` : ""}</div>` +
@@ -919,5 +969,5 @@ function nhap_net(j) {                                  // file ngoài = dữ li
 }
 document.addEventListener("pointerdown", e => { if (!e.target.closest(".ve-ds,.ve-tim,[data-vmo],[data-vn],[data-vtim],[data-vds]")) dong_bang(); }, true);
 VE.CONG = CONG; VE.NHOM = NHOM;
-VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, nhip_kc, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }, nhap_net, tom_net};
+VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, xu_huong_khung, nhip_kc, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }, nhap_net, tom_net};
 })();
