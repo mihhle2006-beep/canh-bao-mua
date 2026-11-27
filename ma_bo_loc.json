@@ -1,15 +1,5 @@
 {
  "ma": {
-  "HHV": {
-   "ngay_them": "2026-11-04",
-   "het_han": "2026-11-27",
-   "chien_luoc": [
-    "quy_b"
-   ],
-   "dat_mua": "2026-11-04",
-   "dat_gan_nhat": "2026-11-20",
-   "loc_gan_nhat": "2026-11-19"
-  },
   "DXG": {
    "ngay_them": "2026-11-06",
    "het_han": "2026-12-02",
@@ -30,16 +20,6 @@
    "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
-  "PDR": {
-   "ngay_them": "2026-11-06",
-   "het_han": "2026-11-27",
-   "chien_luoc": [
-    "quy_b"
-   ],
-   "dat_mua": "2026-11-06",
-   "dat_gan_nhat": "2026-11-20",
-   "loc_gan_nhat": "2026-11-19"
-  },
   "DBC": {
    "ngay_them": "2026-11-09",
    "het_han": "2026-12-02",
@@ -57,7 +37,7 @@
     "quy_b"
    ],
    "dat_mua": "2026-11-09",
-   "dat_gan_nhat": "2026-11-27",
+   "dat_gan_nhat": "2026-11-28",
    "loc_gan_nhat": "2026-11-27"
   },
   "FRT": {
@@ -68,7 +48,7 @@
     "xu_huong"
    ],
    "dat_mua": "2026-11-11",
-   "dat_gan_nhat": "2026-11-27",
+   "dat_gan_nhat": "2026-11-28",
    "loc_gan_nhat": "2026-11-27"
   },
   "IDC": {
@@ -78,18 +58,8 @@
     "quy_b"
    ],
    "dat_mua": "2026-11-11",
-   "dat_gan_nhat": "2026-11-27",
+   "dat_gan_nhat": "2026-11-28",
    "loc_gan_nhat": "2026-11-27"
-  },
-  "TPB": {
-   "ngay_them": "2026-11-11",
-   "het_han": "2026-11-27",
-   "chien_luoc": [
-    "quy_b"
-   ],
-   "dat_mua": "2026-11-11",
-   "dat_gan_nhat": "2026-11-20",
-   "loc_gan_nhat": "2026-11-19"
   },
   "DIG": {
    "ngay_them": "2026-11-13",
@@ -131,17 +101,6 @@
    "dat_gan_nhat": "2026-11-26",
    "loc_gan_nhat": "2026-11-25"
   },
-  "NAB": {
-   "ngay_them": "2026-11-17",
-   "het_han": "2026-11-27",
-   "chien_luoc": [
-    "quy_b",
-    "xu_huong"
-   ],
-   "dat_mua": "2026-11-17",
-   "dat_gan_nhat": "2026-11-20",
-   "loc_gan_nhat": "2026-11-19"
-  },
   "VC3": {
    "ngay_them": "2026-11-25",
    "het_han": "2026-12-03",
@@ -149,7 +108,7 @@
     "quy_b"
    ],
    "dat_mua": "2026-11-25",
-   "dat_gan_nhat": "2026-11-27",
+   "dat_gan_nhat": "2026-11-28",
    "loc_gan_nhat": "2026-11-27"
   }
  },
