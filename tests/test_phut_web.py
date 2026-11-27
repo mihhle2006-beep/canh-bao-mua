@@ -95,3 +95,38 @@ def test_va_gia_ngay_tu_nen_5_phut(tmp_path):
     assert r["o"][1:] == [10.3, 10.9] and r["h"][1:] == [10.8, 11.3] and r["l"][1:] == [10.2, 10.8] and r["c"][1:] == [10.5, 11.2]
     assert r["v"][1:] == [300, 700] and r["nn"] == [0.5, None, None] and r["nn_pt"] == [3.1, 3.1, 3.1]
     assert P.va_gia_ngay(str(tmp_path), "VIC", "2026-11-27") == 0          # chạy lại không thêm trùng
+
+
+def test_va_gia_ngay_nen_phang_ngay_khong_khop_va_khoi_ngoai_bang(tmp_path):
+    from datetime import datetime
+    (tmp_path / "gia").mkdir()
+    (tmp_path / "phut" / "5").mkdir(parents=True)
+    g = {"d": ["2026-11-23"], "o": [5.0], "h": [5.0], "l": [5.0], "c": [5.0], "c0": [5.0], "v": [200], "gt": [0.001],
+         "nn": [0.0], "nn_m": [0.0], "nn_b": [0.0], "dat_m": [10]}
+    (tmp_path / "gia" / "NED.json").write_text(json.dumps(g))
+    s = lambda d, gio: int(datetime.fromisoformat(f"{d}T{gio}:00+07:00").timestamp())          # noqa: E731
+    t = [s("2026-11-23", "10:00"), s("2026-11-25", "10:00"), s("2026-11-25", "14:45")]       # 24 + 26: không khớp
+    (tmp_path / "phut" / "5" / "NED.json").write_text(json.dumps(P.ma_hoa(t, [5.0, 5.1, 5.2], [5.0, 5.2, 5.3], [5.0, 5.1, 5.1],
+                                                                            [5.0, 5.2, 5.25], [200, 300, 100])))
+    phien = {"2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26"}
+    bang = ("2026-11-25", {"NED": {"nn": 0.3, "gt": 0.0021, "co_gd": 1}})
+    assert P.va_gia_ngay(str(tmp_path), "NED", "2026-11-27", phien, bang) == 3
+    r = json.loads((tmp_path / "gia" / "NED.json").read_text())
+    assert r["d"] == ["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26"]
+    assert [r["o"][1], r["h"][1], r["l"][1], r["c"][1], r["v"][1], r["nn"][1]] == [5.0, 5.0, 5.0, 5.0, 0, 0.0]   # nến phẳng
+    assert r["c"][2] == 5.25 and r["v"][2] == 400 and r["nn"][2] == 0.3 and r["gt"][2] == 0.0021 and r["nn_m"][2] is None
+    assert r["c"][3] == 5.25 and r["v"][3] == 0 and r["dat_m"] == [10, None, None, None]                          # phẳng theo giá mới
+    # mã không khớp lệnh nào 10 phiên gần nhất (ngừng giao dịch) → không vẽ nến phẳng
+    (tmp_path / "gia" / "OLD.json").write_text(json.dumps({**g, "d": ["2026-11-23"]}))
+    (tmp_path / "phut" / "5" / "OLD.json").write_text(json.dumps(P.ma_hoa([s("2026-10-01", "10:00")], [5.0], [5.0], [5.0], [5.0], [1])))
+    nhieu = phien | {f"2026-11-{x:02d}" for x in range(2, 23)}
+    assert P.va_gia_ngay(str(tmp_path), "OLD", "2026-11-27", nhieu) == 0
+
+
+def test_doc_bang_chi_nhan_bang_chot_phien(tmp_path):
+    f = tmp_path / "b.json"
+    f.write_text(json.dumps({"phien": "2026-11-27", "dang_gd": False, "loc": {"cot": ["ma", "gia", "nn", "gt", "co_gd"],
+                                                                              "dong": [["VIC", 243, -6.1, 360.9, 1]]}}))
+    assert P.doc_bang(str(f)) == ("2026-11-27", {"VIC": {"nn": -6.1, "gt": 360.9, "co_gd": 1}})
+    f.write_text(json.dumps({"phien": "2026-11-27", "dang_gd": True, "loc": {"cot": ["ma"], "dong": []}}))
+    assert P.doc_bang(str(f)) is None and P.doc_bang(str(tmp_path / "khong.json")) is None

@@ -108,11 +108,41 @@ def cap_nhat(thu_muc, ma, res, bay_gio):
     return len(tg)
 
 
-def va_gia_ngay(thu_muc, ma, han):
+def _ngay_vn(s):
+    return datetime.fromtimestamp(s, VN).strftime("%Y-%m-%d")
+
+
+def ngay_5p(thu_muc, ma):
+    """Các ngày (giờ VN) mã có nến 5' – đếm ngày phiên của thị trường."""
+    try:
+        with open(os.path.join(thu_muc, "phut", "5", f"{ma}.json"), encoding="utf-8") as f:
+            return {_ngay_vn(s) for s in giai_ma(json.load(f))[0]}
+    except (OSError, ValueError, KeyError, TypeError):
+        return set()
+
+
+def doc_bang(duong):
+    """du_lieu.json Bảng thị trường CHỐT PHIÊN (dang_gd false) → (ngày phiên, {MÃ: {nn, gt, co_gd}}) | None."""
+    try:
+        with open(duong, encoding="utf-8") as f:
+            j = json.load(f)
+        if j.get("dang_gd") or not j.get("phien"):
+            return None
+        c = j["loc"]["cot"]
+        return j["phien"], {r[c.index("ma")]: {k: r[c.index(k)] for k in ("nn", "gt", "co_gd") if k in c} for r in j["loc"]["dong"]}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
+def va_gia_ngay(thu_muc, ma, han, phien=(), bang=None):
     """gia/<MÃ>.json thiếu các phiên gần đây (tra_cuu_dn xoay vòng – mỗi mã vài ngày mới tới lượt → biểu đồ nhảy cóc từ phiên cuối
-    tới nến hôm nay) → thêm nến NGÀY gộp từ nến 5' của các ngày < han (phiên chưa đóng: trang tự thêm nến tạm): mở = nến đầu,
-    cao / thấp, đóng = nến cuối, KL cộng, GT ≈ Σ KL × giá. Khối ngoại / thoả thuận để trống (% sở hữu giữ mức cũ); lượt xoay vòng sau tải Vietcap đè lên
-    (noi_gia: ngày mới đè ngày trùng). → số phiên đã thêm."""
+    tới nến hôm nay) → thêm nến NGÀY cho các ngày < han (phiên chưa đóng: trang tự thêm nến tạm):
+      • có nến 5': mở = nến đầu, cao / thấp, đóng = nến cuối, KL cộng, GT ≈ Σ KL × giá;
+      • phiên thị trường (phien) mà mã KHÔNG có nến 5' = không khớp lệnh → nến PHẲNG như Vietcap (mở = cao = thấp = đóng = giá
+        phiên trước, KL 0, khối ngoại 0) – chỉ khi mã có khớp trong 10 phiên gần nhất (mã ngừng giao dịch: không vẽ thêm);
+      • bang = (ngày, {MÃ: {nn, gt}}) Bảng thị trường chốt phiên → khối ngoại ròng + GTGD đúng của ngày đó.
+    Mua / bán tách của khối ngoại, cung cầu, tự doanh để trống; lượt xoay vòng sau tải Vietcap đè lên (noi_gia: ngày mới đè
+    ngày trùng). → số phiên đã thêm."""
     pg = os.path.join(thu_muc, "gia", f"{ma}.json")
     try:
         with open(pg, encoding="utf-8") as f:
@@ -121,27 +151,41 @@ def va_gia_ngay(thu_muc, ma, han):
             t, o, h, l_, c, v = giai_ma(json.load(f))
     except (OSError, ValueError, KeyError, TypeError):
         return 0
-    if not g.get("d") or not t:
+    if not g.get("d") or not g.get("c"):
         return 0
     ngay = {}
     for i, s in enumerate(t):
-        d = datetime.fromtimestamp(s, VN).strftime("%Y-%m-%d")
-        if g["d"][-1] < d < han:
-            ngay.setdefault(d, []).append(i)
+        ngay.setdefault(_ngay_vn(s), []).append(i)
+    ps = sorted(d for d in phien if d < han)
+    phang = set(ps) if set(ps[-10:]) & set(ngay) else set()
+    them = sorted(d for d in set(ngay) | phang if g["d"][-1] < d < han)
+    bd, bm = bang if bang else (None, {})
     n = len(g["d"])
-    for d, ix in sorted(ngay.items()):
-        moi = {"d": d, "o": o[ix[0]], "h": max(h[i] for i in ix), "l": min(l_[i] for i in ix), "c": c[ix[-1]], "c0": c[ix[-1]],
-               "v": sum(v[i] for i in ix), "gt": round(sum(v[i] * c[i] for i in ix) / 1e6, 2)}
+    for d in them:
+        ix = ngay.get(d)
+        if ix:
+            moi = {"o": o[ix[0]], "h": max(h[i] for i in ix), "l": min(l_[i] for i in ix), "c": c[ix[-1]], "c0": c[ix[-1]],
+                   "v": sum(v[i] for i in ix), "gt": round(sum(v[i] * c[i] for i in ix) / 1e6, 2)}
+            r = bm.get(ma) if d == bd else None
+            if r and r.get("gt") is not None:
+                moi["gt"] = r["gt"]
+            if r and r.get("nn") is not None:
+                moi["nn"] = r["nn"]
+        else:
+            c0 = g["c"][-1]
+            moi = {"o": c0, "h": c0, "l": c0, "c": c0, "c0": (g.get("c0") or g["c"])[-1], "v": 0, "gt": 0.0,
+                   "tt": 0.0, "nn_m": 0.0, "nn_b": 0.0, "nn": 0.0}
+        moi["d"] = d
         for k, a in g.items():
             if isinstance(a, list) and len(a) == n:
                 a.append(moi.get(k, a[-1] if k == "nn_pt" else None))     # % sở hữu NN: giữ mức phiên trước
         n += 1
-    if ngay:
+    if them:
         tam = pg + ".tam"
         with open(tam, "w", encoding="utf-8") as f:
             json.dump(g, f, ensure_ascii=False, separators=(",", ":"))
         os.replace(tam, pg)
-    return len(ngay)
+    return len(them)
 
 
 def ma_them(them="", them_file=None, tin_hieu=None, bo_loc=None):
@@ -178,6 +222,7 @@ def main(argv=None):
     ap.add_argument("--bo_loc", default=None)
     ap.add_argument("--trong_phien", action="store_true")
     ap.add_argument("--luong", type=int, default=8)
+    ap.add_argument("--bang", default=None, help="du_lieu.json Bảng thị trường chốt phiên – khối ngoại ròng / GTGD cho nến vá")
     a = ap.parse_args(argv)
     so_ma = a.so_ma if a.so_ma is not None else SO_MA_PHIEN if a.trong_phien else SO_MA
     ds = ma_thanh_khoan(a.ra, so_ma, ma_them(a.them, a.them_file, a.tin_hieu, a.bo_loc))
@@ -191,8 +236,15 @@ def main(argv=None):
     if not a.trong_phien:                                  # lịch sử ngày còn thiếu phiên (mã chưa tới lượt xoay vòng) → vá từ nến 5'
         bay = datetime.now(VN)                             # từ 15:00 phiên hôm nay đã đóng (ATC 14:45) → gộp cả hôm nay
         han = (bay + timedelta(days=1 if bay.hour >= 15 else 0)).strftime("%Y-%m-%d")
-        so = [va_gia_ngay(a.ra, m, han) for m in co["5"]]
-        print(f"Vá nến ngày từ nến 5': {sum(1 for x in so if x)} mã · {sum(so)} phiên")
+        dem = {}
+        for m in co["5"]:
+            for d in ngay_5p(a.ra, m):
+                dem[d] = dem.get(d, 0) + 1
+        phien = {d for d, k in dem.items() if k >= 50}            # ngày ≥ 50 mã có nến = phiên giao dịch (bỏ ngày lễ)
+        bang = doc_bang(a.bang) if a.bang else None
+        so = [va_gia_ngay(a.ra, m, han, phien, bang) for m in co["5"]]
+        print(f"Vá nến ngày từ nến 5': {sum(1 for x in so if x)} mã · {sum(so)} phiên"
+              + (f" · khối ngoại / GTGD phiên {bang[0]} từ Bảng thị trường ({len(bang[1])} mã)" if bang else " · không có bảng chốt phiên"))
     if a.trong_phien:                                      # trong phiên: giữ file / danh sách mã khác (dựng hằng ngày)
         try:
             cu = json.load(open(os.path.join(a.ra, "phut", "ds.json"), encoding="utf-8"))
