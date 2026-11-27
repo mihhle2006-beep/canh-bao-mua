@@ -1,7 +1,8 @@
-# XUẤT CSV GIÁ NGÀY – bấm "Run workflow", nhập mã (VD GMD,MWG,DHC,VNINDEX) → MỘT file gia_<ngày>.csv (mã, ngày, mở,
-# cao, thấp, đóng, KL – các mã nối dọc) gửi Telegram + artifact. Nguồn đầu thiếu lịch sử cũ → nối từ nguồn khác.
-# Chỉ giá công khai; không đọc danh mục thật (CONG_KHAI).
-name: Xuat CSV gia
+# XUẤT GIÁ RA EXCEL – bấm "Run workflow", nhập mã (VD GMD,MWG,DHC,VNINDEX) → MỘT file gia_<ngày>.xlsx (27/11/2026, chủ quỹ:
+# "dùng file excel, đừng dùng csv nữa"): Tổng quan · Thông tin giá (đóng cửa tuần, mã thành cột – cấu trúc bảng Markowitz) ·
+# % thay đổi (Tuần) · mỗi mã 1 sheet giá ngày (mới nhất trên) – thi_truong/xuat_excel_gia.py. Gửi Telegram + artifact. Nguồn
+# đầu thiếu lịch sử cũ → nối từ nguồn khác. Chỉ giá công khai; không đọc danh mục thật (CONG_KHAI). In thời gian từng bước.
+name: Xuat gia Excel
 
 on:
   workflow_dispatch:
@@ -26,6 +27,12 @@ jobs:
       CONG_KHAI: "1"
     timeout-minutes: 20
     steps:
+      - uses: actions/checkout@v5                  # bộ ghi Excel (repo này) – chỉ 1 file
+        with:
+          path: cbm
+          persist-credentials: false
+          sparse-checkout: thi_truong/xuat_excel_gia.py
+          sparse-checkout-cone-mode: false
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
@@ -56,8 +63,10 @@ jobs:
       - name: Cài thư viện
         if: steps.cache_py.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
+      - name: Cài XlsxWriter (ghi Excel kèm giá trị công thức)
+        run: python -c "import xlsxwriter" 2>/dev/null || pip install -q xlsxwriter
 
-      - name: Tải giá & ghi CSV
+      - name: Tải giá & ghi Excel
         env:
           MA: ${{ inputs.ma }}
           TU: ${{ inputs.tu_ngay }}
@@ -65,8 +74,13 @@ jobs:
           mkdir -p xuat_csv
           python - <<'PY'
           import os
+          import sys
+          import time
           import pandas as pd
           from ptcp import du_lieu as D
+          sys.path.insert(0, os.path.join(os.environ["GITHUB_WORKSPACE"], "cbm", "thi_truong"))
+          from xuat_excel_gia import ghi_excel
+          t0 = time.time()
           tu, den = os.environ["TU"], pd.Timestamp.today().strftime("%Y-%m-%d")
           gop = []
           for ma in [m.strip().upper() for m in os.environ["MA"].split(",") if m.strip()]:
@@ -89,23 +103,25 @@ jobs:
               if df is None or not len(df):
                   print(f"{ma}: không lấy được"); continue
               gop.append(df.rename_axis("ngay").reset_index().assign(ma=ma))
-              print(f"{ma}: {len(df)} phiên {df.index[0]:%d/%m/%Y} → {df.index[-1]:%d/%m/%Y}")
+              print(f"{ma}: {len(df)} phiên {df.index[0]:%d/%m/%Y} → {df.index[-1]:%d/%m/%Y} · {time.time() - t0:.1f} giây")
           if gop:
               d = pd.concat(gop)[["ma", "ngay", "open", "high", "low", "close", "volume"]]
-              d.to_csv(f"xuat_csv/gia_{den}.csv", index=False, date_format="%Y-%m-%d")
+              t1 = time.time()
+              ghi_excel(d, f"xuat_csv/gia_{den}.xlsx", den)
+              print(f"Excel: {len(d):,} dòng · ghi {time.time() - t1:.1f} giây · tổng {time.time() - t0:.1f} giây")
           PY
 
       - uses: actions/upload-artifact@v6
         with:
-          name: csv-gia
-          path: danh-muc/xuat_csv/*.csv
+          name: excel-gia
+          path: danh-muc/xuat_csv/*.xlsx
 
       - name: Gửi Telegram
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_DANH_MUC || secrets.TELEGRAM_TOKEN }}   # kênh nghiên cứu
           TELEGRAM_CHAT_ID: ${{ !contains(secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU, ':') && secrets.TELEGRAM_CHAT_ID_NGHIEN_CUU || secrets.TELEGRAM_TOKEN_NGHIEN_CUU && secrets.TELEGRAM_CHAT_ID || secrets.TELEGRAM_CHAT_ID_DANH_MUC || secrets.TELEGRAM_CHAT_ID }}
         run: |
-          for f in xuat_csv/*.csv; do
+          for f in xuat_csv/*.xlsx; do
             curl -sf -o /dev/null -F chat_id="$TELEGRAM_CHAT_ID" -F document=@"$f" \
               "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendDocument" || echo "không gửi được $f"
           done
