@@ -27,12 +27,6 @@ jobs:
       CONG_KHAI: "1"
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5                  # bộ ghi Excel (repo này) – chỉ 1 file
-        with:
-          path: cbm
-          persist-credentials: false
-          sparse-checkout: thi_truong/xuat_excel_gia.py
-          sparse-checkout-cone-mode: false
       - uses: actions/checkout@v5
         with:
           repository: ${{ vars.DANH_MUC_REPO || 'mihhle2006-beep/danh-muc' }}
@@ -63,8 +57,12 @@ jobs:
       - name: Cài thư viện
         if: steps.cache_py.outputs.cache-hit != 'true'
         run: pip install -r requirements.txt
-      - name: Cài XlsxWriter (ghi Excel kèm giá trị công thức)
-        run: python -c "import xlsxwriter" 2>/dev/null || pip install -q xlsxwriter
+      - name: Bộ ghi Excel (1 file của repo này, đúng commit đang chạy – nhanh hơn checkout ~5 giây) + XlsxWriter
+        env:
+          URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/thi_truong/xuat_excel_gia.py
+        run: |
+          mkdir -p ../cbm && curl -sfL --retry 3 -o ../cbm/xuat_excel_gia.py "$URL"
+          python -c "import xlsxwriter" 2>/dev/null || pip install -q xlsxwriter
 
       - name: Tải giá & ghi Excel
         env:
@@ -78,7 +76,7 @@ jobs:
           import time
           import pandas as pd
           from ptcp import du_lieu as D
-          sys.path.insert(0, os.path.join(os.environ["GITHUB_WORKSPACE"], "cbm", "thi_truong"))
+          sys.path.insert(0, os.path.join(os.environ["GITHUB_WORKSPACE"], "cbm"))
           from xuat_excel_gia import ghi_excel
           t0 = time.time()
           tu, den = os.environ["TU"], pd.Timestamp.today().strftime("%Y-%m-%d")
