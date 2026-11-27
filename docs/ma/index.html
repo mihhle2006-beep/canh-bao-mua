@@ -1609,7 +1609,7 @@ function cb_co_tuc(d, c, sk) {                            // tỷ suất cổ t�
 const KHOA_CB = "ma_chi_bao";
 // lớp phân tích tự động (menu ⋯ kiểu FireAnt – vẽ bằng doc_bd.js, bật riêng từng lớp): [khoá, tên trong menu, tên gọn ở chú giải, giải thích]
 const LP_DS = [["vung", "Vùng hỗ trợ / kháng cự", "Hỗ trợ / kháng cự", "Đỉnh / đáy cục bộ (5 nến hai bên) gộp trong 0,6 ATR – vùng ≥ 2 lần chạm, 250 nến gần nhất"],
-  ["xh", "Đường xu hướng tự động", "Xu hướng", "Nối 2 đỉnh thấp dần (xu hướng giảm) / 2 đáy cao dần (tăng) gần nhất theo giá đóng cửa; ghi rõ khi đã bị phá"],
+  ["xh", "Đường xu hướng tự động", "Xu hướng", "Theo KHOẢNG ĐANG XEM (kéo / phóng / 1N–5N là tính lại): hỗ trợ từ giá thấp nhất, kháng cự từ giá cao nhất, không giá đóng nào phá · nét đứt = đường gần nhất vừa bị phá · chấm cong = đường theo %"],
   ["nen", "Mẫu nến tự nhận diện", "Mẫu nến", "10 mẫu nến (búa, nhấn chìm, sao mai / hôm, 3 chàng lính, 3 con quạ…) trên toàn biểu đồ: ▲ tăng · ▼ giảm, kèm thống kê đúng hướng trên chính mã"],
   ["mh", "Mẫu hình giá", "Mẫu hình", "Hai đỉnh / hai đáy, tam giác, vai-đầu-vai, cờ, nêm – mức xác nhận và mức vô hiệu"],
   ["smc", "Cấu trúc thị trường (SMC)", "SMC", "BOS / CHoCH, khoảng trống giá FVG chưa lấp, Order Block còn hiệu lực"]];
