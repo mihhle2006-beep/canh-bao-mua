@@ -300,55 +300,111 @@ T("vung", "Vùng hỗ trợ / kháng cự", 2, (g, P) => { if (!P[1]) return g.n
   g.nhan_truc(P[0].y, gia(P[0].v)); g.nhan_truc(P[1].y, gia(P[1].v));
   g.chu(P[0].x + 4, Math.min(P[0].y, P[1].y) - 2, `Vùng ${gia(Math.min(P[0].v, P[1].v))}–${gia(Math.max(P[0].v, P[1].v))} (${pt(Math.abs(P[1].v / P[0].v - 1), 1, false)})`, {c: 11, m: g.m, hit: false}); },
   {mau: "#0f8a4a"});
-function xu_huong_khung(i0, i1) {                     // đường xu hướng CỦA KHOẢNG [i0, i1] theo giá đóng: hỗ trợ từ giá THẤP nhất, kháng cự
-  // từ giá CAO nhất của khoảng (điểm cực ở nến cuối → nối từ trái vào). Điểm thứ 2: đáy / đỉnh LỚN (fractal, độ lớn theo độ dài
-  // khoảng) cho đường SÁT giá nhất mà giá đóng từ điểm cực tới nến cuối không phá quá 3 %; không có → ôm mọi giá đóng (cạnh bao
-  // lồi – không giá nào phá); đường đó cách giá cuối > 35 % → 2 đỉnh / đáy lớn gần nhất chưa bị phá.
-  // → [hỗ trợ 1, hỗ trợ 2, kháng cự 1, kháng cự 2] {t, v}
-  const a = C.x.c, kp = Math.max(3, Math.min(30, Math.round((i1 - i0) / 40))), out = [];
+function pivot_m(a, i0, i1, cao, k) {                  // đỉnh / đáy LỚN trên mảng giá a (k nến hai bên), gộp chuỗi giá bằng nhau liền nhau
+  const n = a.length, out = [];
+  for (let i = Math.max(i0, k); i <= Math.min(i1, n - 1 - k); i++) { if (a[i] == null) continue; let ok = true;
+    for (let j = i - k; j <= i + k && ok; j++) if (j !== i && a[j] != null && (cao ? a[j] > a[i] : a[j] < a[i])) ok = false;
+    if (ok) out.push(i); }
+  return out.filter((q, i, ds) => !i || q - ds[i - 1] > k);
+}
+function xh_mang(a, i0, i1) {                         // ĐƯỜNG XU HƯỚNG của khoảng [i0, i1] trên mảng giá đóng a – dùng chung công cụ vẽ & lớp
+  // "Xu hướng" (doc_bd.js). → chỉ số nến {ht: [u, v], kc: [u, v], dut: [{cao, u, v, pha}], cong: [{cao, u, s (log / nến)}]}
+  //  CHÍNH – hỗ trợ từ giá thấp nhất, kháng cự từ giá cao nhất của khoảng (điểm cực ở nến cuối → nối từ trái vào); điểm 2: đáy /
+  //        đỉnh lớn (độ lớn theo độ dài khoảng) cho đường SÁT giá nhất mà giá đóng không phá quá 3 %; không có → ôm mọi giá đóng
+  //        (cạnh bao lồi); đường đó cách giá cuối > 35 % (sập sau đỉnh) → 2 đỉnh / đáy lớn gần nhất chưa bị phá, sát giá.
+  //  ĐỨT – đường xu hướng gần nhất VỪA BỊ PHÁ: 2 đỉnh lớn giảm dần (KC) / 2 đáy lớn tăng dần (HT), chưa phá trước điểm 2, phá
+  //        (> 3 %) trong 1/4 cuối khoảng (≥ 20 nến) – tín hiệu thoát xu hướng.
+  //  CONG – đường theo % (thẳng trên thang log): từ giá cao / thấp nhất tới đỉnh / đáy lớn cho đường sát giá nhất chưa bị phá
+  //        (≤ 3 %), chỉ khi cong rõ (lệch dây cung > 3 %) và sát giá cuối (≤ 35 %).
+  const kp = Math.max(3, Math.min(30, Math.round((i1 - i0) / 40))), gan = Math.max(20, Math.round((i1 - i0) / 4));
+  const L = i => a[i] > 0 ? Math.log(a[i]) : null, tl = Math.log(1.03), out = {dut: [], cong: []};
   for (const cao of [false, true]) {
-    const lon = pivot(i0, i1, cao, kp, a).filter((k, i, ds) => !i || k - ds[i - 1] > kp);   // đỉnh / đáy lớn – gộp chuỗi giá bằng nhau liền nhau
-    let m = i0; for (let i = i0; i <= i1; i++) if (a[i] != null && (cao ? a[i] > a[m] : a[i] < a[m])) m = i;
+    const lon = pivot_m(a, i0, i1, cao, kp);
+    let m = -1; for (let i = i0; i <= i1; i++) if (a[i] != null && (m < 0 || (cao ? a[i] > a[m] : a[i] < a[m]))) m = i;
+    if (m < 0) continue;
+    // 1. CHÍNH
     const phai = m < i1, nghieng = k => phai ? (a[k] - a[m]) / (k - m) : (a[m] - a[k]) / (m - k);
-    const tot = (t, s) => s == null || (phai === cao ? t > s : t < s);    // phải: kháng cự dốc lên nhất / hỗ trợ thấp nhất (trái: ngược)
+    const tot = (t, s) => s == null || (phai === cao ? t > s : t < s);
     const chon = ds => { let j = -1, s = null; for (const k of ds) { const t = nghieng(k); if (tot(t, s)) { s = t; j = k; } } return j; };
-    const pha = (j, tl) => { const s = nghieng(j), z0 = Math.min(m, j);
-      for (let z = z0; z <= i1; z++) { if (a[z] == null) continue; const y = a[m] + s * (z - m); if (cao ? a[z] > y * (1 + tl) : a[z] < y * (1 - tl)) return true; }
+    const pha = (j, tl_) => { const s = nghieng(j);
+      for (let z = Math.min(m, j); z <= i1; z++) { if (a[z] == null) continue; const y = a[m] + s * (z - m); if (cao ? a[z] > y * (1 + tl_) : a[z] < y * (1 - tl_)) return true; }
       return false; };
-    const sat = lon.filter(k => phai ? k > m : k < m)                            // đường SÁT giá nhất trước (không phải thoải nhất)
-      .sort((x, y) => (phai === cao ? 1 : -1) * (nghieng(x) - nghieng(y)));
+    const sat = lon.filter(k => phai ? k > m : k < m).sort((x, y) => (phai === cao ? 1 : -1) * (nghieng(x) - nghieng(y)));
     let j = sat.find(k => !pha(k, 0.03)) ?? -1;
     if (j < 0) { const ds = []; for (let k = phai ? m + 1 : i0; k <= (phai ? i1 : m - 1); k++) if (a[k] != null) ds.push(k); j = chon(ds); }
     let [u, v] = j < 0 ? [m, m] : j < m ? [j, m] : [m, j];
-    // giá đã đi quá xa đường neo ở đỉnh / đáy của khoảng (> 35 % – VD sập sau đỉnh: kháng cự lơ lửng) → 2 đỉnh / đáy lớn GẦN NHẤT
-    // trong khoảng mà giá đóng sau đó không phá quá 3 %
     const cuoi = u === v ? a[u] : a[u] + (a[v] - a[u]) / (v - u) * (i1 - u);
     if (Math.abs(cuoi / a[i1] - 1) > 0.35) {
-      const pv = lon;
-      gan: for (let x = pv.length - 1; x > 0; x--) for (let y = x - 1; y >= 0; y--) {
-        const p_ = pv[y], q = pv[x], s = (a[q] - a[p_]) / (q - p_); let ok = true;
-        const ket = a[p_] + s * (i1 - p_); if (!(ket > 0) || Math.abs(ket / a[i1] - 1) > 0.35) continue;      // cũng phải sát giá cuối
-        for (let z = p_ + 1; z <= i1 && ok; z++) { const yy = a[p_] + s * (z - p_); if (cao ? a[z] > yy * 1.03 : a[z] < yy * 0.97) ok = false; }
-        if (ok) { [u, v] = [p_, q]; break gan; }
+      gan_: for (let x = lon.length - 1; x > 0; x--) for (let y = x - 1; y >= 0; y--) {
+        const p_ = lon[y], q = lon[x], s = (a[q] - a[p_]) / (q - p_), ket = a[p_] + s * (i1 - p_);
+        if (!(ket > 0) || Math.abs(ket / a[i1] - 1) > 0.35) continue;
+        let ok = true; for (let z = p_ + 1; z <= i1 && ok; z++) { const yy = a[p_] + s * (z - p_); if (cao ? a[z] > yy * 1.03 : a[z] < yy * 0.97) ok = false; }
+        if (ok) { [u, v] = [p_, q]; break gan_; }
       }
     }
-    out.push({t: C.T[u], v: a[u]}, {t: C.T[v], v: a[v]});
+    out[cao ? "kc" : "ht"] = [u, v];
+    // 2. ĐỨT
+    tim: for (let x = lon.length - 1; x > 0; x--) for (let y = x - 1; y >= 0; y--) {
+      const p_ = lon[y], q = lon[x]; if (cao ? a[q] >= a[p_] : a[q] <= a[p_]) continue;
+      const s = (a[q] - a[p_]) / (q - p_); let z_ = -1, hong = false;
+      for (let z = p_ + 1; z <= i1; z++) { const yy = a[p_] + s * (z - p_); if (!(yy > 0)) { hong = true; break; }
+        if (a[z] != null && (cao ? a[z] > yy * 1.03 : a[z] < yy * 0.97)) { if (z <= q) hong = true; else z_ = z; break; } }
+      if (hong || z_ < 0) continue;
+      if (z_ >= i1 - gan) out.dut.push({cao, u: p_, v: q, pha: z_});
+      break tim;                                                    // chỉ đường gần nhất
+    }
+    // 3. CONG (theo %)
+    if (m >= i1 || L(m) == null) continue;
+    const ng = k => (L(k) - L(m)) / (k - m);
+    for (const k of lon.filter(z => z > m && L(z) != null).sort((x, y) => (cao ? 1 : -1) * (ng(x) - ng(y)))) {
+      const sl = ng(k), f = z => L(m) + sl * (z - m); let ok = true;
+      for (let z = m + 1; z <= i1 && ok; z++) if (L(z) != null && (cao ? L(z) > f(z) + tl : L(z) < f(z) - tl)) ok = false;
+      if (!ok) continue;
+      const giua = Math.round((m + k) / 2), day = a[m] + (a[k] - a[m]) * (giua - m) / (k - m);
+      if (Math.abs(Math.exp(f(i1)) / a[i1] - 1) <= 0.35 && Math.abs(Math.exp(f(giua)) / day - 1) > 0.03) out.cong.push({cao, u: m, s: sl});
+      break;
+    }
   }
   return out;
 }
+function xu_huong_khung(i0, i1, r = xh_mang(C.x.c, i0, i1)) {   // → [hỗ trợ 1, hỗ trợ 2, kháng cự 1, kháng cự 2] {t, v}
+  const a = C.x.c, p = i => ({t: C.T[i], v: a[i]}), ht = r.ht || [i1, i1], kc = r.kc || [i1, i1];
+  return [p(ht[0]), p(ht[1]), p(kc[0]), p(kc[1])];
+}
+function xu_huong_them(i0, i1, r = xh_mang(C.x.c, i0, i1)) {    // → {dut: [{cao, p: [{t, v} ×2], pha: {t, v}}], cong: [{cao, u: {t, v}, s, i1}]}
+  const a = C.x.c, p = i => ({t: C.T[i], v: a[i]});
+  return {dut: r.dut.map(z => ({cao: z.cao, p: [p(z.u), p(z.v)], pha: {t: C.T[z.pha], v: a[z.u] + (a[z.v] - a[z.u]) / (z.v - z.u) * (z.pha - z.u)}})),
+          cong: r.cong.map(z => ({cao: z.cao, u: p(z.u), s: z.s, i1}))};
+}
+VE.xh_mang = xh_mang;
+const TU_DONG_THEM = new Map();                        // id hình → đường bổ sung (đứt / cong) của khoảng đang xem
 const TU_DONG_K = new Map();                           // id hình → khoảng đã tính (khỏi tính lại khi khung không đổi)
 function tu_dong_khung(d, ep = false) {                // đường xu hướng tự động THEO KHOẢNG ĐANG XEM: kéo / phóng / đổi 1N–5N–Tất cả → tính lại
   const r = C?.ch?.timeScale().getVisibleLogicalRange(); if (!r) return null;
   const i0 = Math.max(0, Math.ceil(r.from)), i1 = Math.min(C.n - 1, Math.floor(r.to)); if (i1 - i0 < 20) return null;
   const k = `${C.ma}|${C.khung}|${C.n}|${i0}|${i1}`; if (!ep && TU_DONG_K.get(d.id) === k) return null; TU_DONG_K.set(d.id, k);
-  return xu_huong_khung(i0, i1);
+  const r_ = xh_mang(C.x.c, i0, i1);
+  TU_DONG_THEM.set(d.id, xu_huong_them(i0, i1, r_));
+  return xu_huong_khung(i0, i1, r_);
 }
 T("tu_dong", "Đường xu hướng tự động", 1, (g, P) => { if (P.length < 4) { g.chu(P[0].x, P[0].y - 8, "Bấm để tự nối đỉnh / đáy trong khoảng đang xem", {can: "giua", c: 11, nen: "#ffffffee", hit: false}); return; }
   if (P[0] && P[1]) { g.tia(P[0], P[1], {m: "#0f8a4a"}); g.chu(P[1].x, P[1].y + 6, "Hỗ trợ", {can: "giua", doc: "duoi", c: 11, m: "#0f8a4a", hit: false}); }
-  if (P[2] && P[3]) { g.tia(P[2], P[3], {m: "#d1342b"}); g.chu(P[3].x, P[3].y - 6, "Kháng cự", {can: "giua", c: 11, m: "#d1342b", hit: false}); } },
+  if (P[2] && P[3]) { g.tia(P[2], P[3], {m: "#d1342b"}); g.chu(P[3].x, P[3].y - 6, "Kháng cự", {can: "giua", c: 11, m: "#d1342b", hit: false}); }
+  const th = TU_DONG_THEM.get(g.d.id); if (!th) return;
+  for (const z of th.dut) {                                     // nét ĐỨT: đường xu hướng gần nhất vừa bị phá – vẽ tới điểm phá
+    const m_ = z.cao ? "#d1342b" : "#0f8a4a", A = px(z.p[0]), E = px(z.pha);
+    g.seg(A, E, {k: 1, m: m_ + "bb", w: 1.3, hit: false});
+    g.chu(E.x, E.y + (z.cao ? -6 : 6), `${z.cao ? "KC" : "HT"} đã phá ${ngay_chu(z.pha.t).slice(0, 5)}`, {can: "giua", doc: z.cao ? "tren" : "duoi", c: 10.5, m: m_, nen: "#ffffffd9", hit: false});
+  }
+  for (const z of th.cong) {                                    // đường CONG: theo % (thẳng trên thang log)
+    const m_ = z.cao ? "#d1342b" : "#0f8a4a", l0 = t2l(z.u.t), het = z.i1 + Math.max(5, Math.round((z.i1 - l0) * 0.08)), buoc = Math.max(1, Math.round((het - l0) / 160));
+    const pts = []; for (let l = l0; l <= het; l += buoc) pts.push({x: X(l), y: Y(z.u.v * Math.exp(z.s * (l - l0)))});
+    g.poly(pts, {m: m_ + "aa", k: 2, w: 1.6});
+    const E = pts[pts.length - 1]; if (E?.x != null) g.chu(E.x, E.y + (z.cao ? -6 : 6), `${z.cao ? "KC" : "HT"} theo %`, {can: "giua", doc: z.cao ? "tren" : "duoi", c: 10.5, m: m_, nen: "#ffffffd9", hit: false});
+  } },
   {tao: d => { d.p = tu_dong_khung(d, true) || xu_huong_tu_dong(t2l(d.p[0].t)).map(p => p || {t: d.p[0].t, v: d.p[0].v}); },
    theo_khung: d => tu_dong_khung(d),
-   goi_y: "Bấm 1 lần: hỗ trợ từ giá thấp nhất và kháng cự từ giá cao nhất CỦA KHOẢNG ĐANG XEM, không giá đóng nào phá – kéo / phóng / đổi 1N–5N–Tất cả là đường tính lại theo khoảng mới"});
+   goi_y: "Bấm 1 lần: hỗ trợ từ giá thấp nhất và kháng cự từ giá cao nhất CỦA KHOẢNG ĐANG XEM, không giá đóng nào phá – kéo / phóng / đổi 1N–5N–Tất cả là đường tính lại theo khoảng mới. Nét đứt: đường xu hướng gần nhất vừa bị phá. Chấm cong: đường theo % (tăng / giảm theo cấp số nhân)"});
 
 // ---------------------------------------------------------------- 3. FIBONACCI, GANN
 nhom("fib", "Fibonacci, Gann", IC.fib);
@@ -969,5 +1025,5 @@ function nhap_net(j) {                                  // file ngoài = dữ li
 }
 document.addEventListener("pointerdown", e => { if (!e.target.closest(".ve-ds,.ve-tim,[data-vmo],[data-vn],[data-vtim],[data-vds]")) dong_bang(); }, true);
 VE.CONG = CONG; VE.NHOM = NHOM;
-VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, xu_huong_khung, nhip_kc, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }, nhap_net, tom_net};
+VE._thu = {t2l: t => t2l(t), l2t: l => l2t(l), ve_lai: () => cap_nhat(), get C() { return C; }, hoi_quy, ho_so_kl, vwap, xu_huong_tu_dong, xu_huong_khung, xu_huong_them, nhip_kc, get KHO() { return KHO; }, get CHON() { return CHON; }, get HIT() { return HIT; }, nhap_net, tom_net};
 })();

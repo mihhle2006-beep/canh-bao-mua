@@ -313,13 +313,32 @@ class LopPrim {
         ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(x0, y0 + 1, w + 8, 16, 3) : ctx.rect(x0, y0 + 1, w + 8, 16)); ctx.fill(); ctx.stroke(); ctx.fillStyle = o.m || "#1f2430"; ctx.textBaseline = "middle"; ctx.fillText(txt, x0 + 4, y0 + 9.5); ctx.restore(); };
       const tia = (l1, v1, l2, v2, m, w = 1.6, dash = []) => { const a = {x: X(l1), y: Y(v1)}, b = {x: X(l2), y: Y(v2)}; if ([a.x, a.y, b.x, b.y].some(z => z == null)) return null;
         const k = (b.y - a.y) / ((b.x - a.x) || 1), e = {x: M.width, y: a.y + k * (M.width - a.x)}; ctx.save(); ctx.strokeStyle = m; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(e.x, e.y); ctx.stroke(); ctx.restore(); return a; };
+      // LỚP "XU HƯỚNG": đường theo KHOẢNG ĐANG XEM (bieu_do.js xh_mang – chung công cụ "Đường xu hướng tự động"): hỗ trợ / kháng cự
+      // nét liền · nét đứt = đường gần nhất vừa bị phá · chấm cong = đường theo % (thang log). Chưa nạp bieu_do.js → cách cũ.
+      const E = d.xh && !nen && window.BD_VE?.xh_mang, r_ = E && ts.getVisibleLogicalRange(), B = this.B;
+      if (r_) { const i0 = Math.max(0, Math.ceil(r_.from)), i1 = Math.min(B.n - 1, Math.floor(r_.to)), k = `${B.ma}|${B.n}|${i0}|${i1}`;
+        if (this._xk !== k) { this._xk = k; this._xh = i1 - i0 >= 20 ? E(B.x.c.slice(0, B.n), i0, i1) : null; }
+        const z = this._xh, c = B.x.c, XANH = "#0f8a4a", DO = "#d1342b";
+        if (z) {
+          for (const [ten, cao] of [["ht", false], ["kc", true]]) { const uv = z[ten]; if (!uv || uv[0] === uv[1]) continue; const m_ = cao ? DO : XANH;
+            tia(uv[0], c[uv[0]], uv[1], c[uv[1]], m_, 1.8); const x_ = X(uv[1]), y_ = Y(c[uv[1]]);
+            if (x_ != null && y_ != null) chu(x_ + 4, y_ + (cao ? -14 : 14), cao ? "Kháng cự" : "Hỗ trợ", {vien: m_}); }
+          for (const q of z.dut) { const m_ = q.cao ? DO : XANH, sl = (c[q.v] - c[q.u]) / (q.v - q.u), A = {x: X(q.u), y: Y(c[q.u])}, P = {x: X(q.pha), y: Y(c[q.u] + sl * (q.pha - q.u))};
+            if ([A.x, A.y, P.x, P.y].some(v => v == null)) continue;
+            ctx.save(); ctx.strokeStyle = m_ + "bb"; ctx.lineWidth = 1.4; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(P.x, P.y); ctx.stroke(); ctx.restore();
+            chu(P.x + 4, P.y + (q.cao ? -14 : 14), `${q.cao ? "KC" : "HT"} đã phá`, {vien: m_, c: 9.5}); }
+          for (const q of z.cong) { const m_ = q.cao ? DO : XANH, het = i1 + Math.max(5, Math.round((i1 - q.u) * 0.08)), buoc = Math.max(1, Math.round((het - q.u) / 160));
+            ctx.save(); ctx.strokeStyle = m_ + "aa"; ctx.lineWidth = 1.6; ctx.setLineDash([2, 3]); ctx.beginPath(); let cuoi = null;
+            for (let l = q.u; l <= het; l += buoc) { const x_ = X(l), y_ = Y(c[q.u] * Math.exp(q.s * (l - q.u))); if (x_ == null || y_ == null) continue; cuoi ? ctx.lineTo(x_, y_) : ctx.moveTo(x_, y_); cuoi = {x: x_, y: y_}; }
+            ctx.stroke(); ctx.restore(); if (cuoi) chu(cuoi.x, cuoi.y + (q.cao ? -14 : 14), `${q.cao ? "KC" : "HT"} theo %`, {vien: m_, c: 9.5, can: "phai"}); }
+        } }
       for (const it of d.items) {
         if (it.an) continue;
         if (it.loai === "vung" && nen) { const y1 = Y(it.hi), y2 = Y(it.lo), x0 = Math.max(0, X(it.dau - 3) ?? 0); if (y1 == null || y2 == null) continue;
           ctx.fillStyle = it.ho_tro ? "rgba(15,138,74,0.10)" : it.trong ? "rgba(232,113,10,0.10)" : "rgba(209,52,43,0.10)"; ctx.fillRect(x0, y1, M.width - x0, Math.max(2, y2 - y1));
           ctx.strokeStyle = it.ho_tro ? "rgba(15,138,74,0.5)" : it.trong ? "rgba(232,113,10,0.5)" : "rgba(209,52,43,0.5)"; ctx.lineWidth = 1; ctx.strokeRect(x0, y1, M.width - x0, Math.max(2, y2 - y1)); }
         if (it.loai === "vung" && !nen) { const y1 = Y(it.hi); if (y1 != null) chu(Math.max(4, X(it.dau - 3) ?? 4), y1 - 1, it.nhan, {vien: it.ho_tro ? "#0f8a4a" : it.trong ? "#e8710a" : "#d1342b"}); }
-        if (it.loai === "xh" && !nen) { const [l1, v1, l2, v2] = it.line; const a = tia(l1, v1, l2, v2, it.huong < 0 ? "#d1342b" : "#0f8a4a", 1.8); if (a) chu(a.x + 4, a.y - 14, it.nhan, {vien: it.huong < 0 ? "#d1342b" : "#0f8a4a"}); }
+        if (it.loai === "xh" && !nen && !E) { const [l1, v1, l2, v2] = it.line; const a = tia(l1, v1, l2, v2, it.huong < 0 ? "#d1342b" : "#0f8a4a", 1.8); if (a) chu(a.x + 4, a.y - 14, it.nhan, {vien: it.huong < 0 ? "#d1342b" : "#0f8a4a"}); }
         if (it.loai === "tam_giac" && !nen) { tia(...it.tren, "#9b3fd1", 1.4, [5, 3]); tia(...it.duoi, "#9b3fd1", 1.4, [5, 3]); const y = Y(it.tren[3]); if (y != null) chu(X(it.tren[2]) + 4, y - 14, it.ten, {vien: "#9b3fd1"}); }
         if (it.loai === "hai" && !nen) { const y = Y(it.co); if (y != null) { ctx.save(); ctx.strokeStyle = "#9b3fd1"; ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(X(it.dinh[0]), y); ctx.lineTo(M.width, y); ctx.stroke(); ctx.restore(); chu(X(it.dinh[1]) + 4, y + (it.huong < 0 ? 14 : -14), `${it.ten} · cổ ${so(it.co, 2)}`, {vien: "#9b3fd1"}); } }
         if (it.loai === "fvg" && nen) { const f = it.f, x0 = X(f.i - 2), y1 = Y(f.tren), y2 = Y(f.duoi); if (x0 == null || y1 == null || y2 == null) continue;
@@ -579,7 +598,7 @@ CP.ve = async (B, o) => {                               // B: BD_DK; o: {el (khu
   // lớp vẽ + hộp tóm tắt trên biểu đồ
   if (!B._cp_prim) { B._cp_prim = new LopPrim(B); B.nen.attachPrimitive(B._cp_prim); }
   for (const it of dd.items) { const l = LOP_CUA[it.loai]; it.ve = l === "he" ? !!(o.mo && S.he) : lop.has(l) || !!(o.mo && S.lop && it.loai !== "nen_ls"); }
-  B._cp_prim.d = {items: dd.items.filter(it => it.ve)};
+  B._cp_prim.d = {items: dd.items.filter(it => it.ve), xh: lop.has("xh") || !!(o.mo && S.lop)};
   B._cp_prim.req?.();
   if (o.panel) { if (o.mo) { o.panel.hidden = false; o.panel.innerHTML = panel_html(B, kq, dd, ht, th); gan_panel(o.panel); } else { o.panel.hidden = true; o.panel.innerHTML = ""; } }
 };
