@@ -160,6 +160,11 @@ def va_gia_ngay(thu_muc, ma, han, phien=(), bang=None):
     phang = set(ps) if set(ps[-10:]) & set(ngay) else set()
     them = sorted(d for d in set(ngay) | phang if g["d"][-1] < d < han)
     bd, bm = bang if bang else (None, {})
+    sua = 0
+    if bd in g["d"] and (bm.get(ma) or {}).get("nn") is not None and "nn" in g:   # nến vá trước đó chưa có khối ngoại
+        k = g["d"].index(bd)
+        if k < len(g["nn"]) and g["nn"][k] is None:
+            g["nn"][k], sua = bm[ma]["nn"], 1
     n = len(g["d"])
     for d in them:
         ix = ngay.get(d)
@@ -180,7 +185,7 @@ def va_gia_ngay(thu_muc, ma, han, phien=(), bang=None):
             if isinstance(a, list) and len(a) == n:
                 a.append(moi.get(k, a[-1] if k == "nn_pt" else None))     # % sở hữu NN: giữ mức phiên trước
         n += 1
-    if them:
+    if them or sua:
         tam = pg + ".tam"
         with open(tam, "w", encoding="utf-8") as f:
             json.dump(g, f, ensure_ascii=False, separators=(",", ":"))
