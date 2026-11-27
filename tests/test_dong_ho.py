@@ -21,7 +21,8 @@ KHONG_GAC = {"canh_bao.yml",        # vòng lặp: lượt trùng xếp hàng r�
              "nhip_thi_truong.yml",  # tự chặn khi có máy nhịp khác đang chạy
              "lenh_tele.yml"}       # đọc tin bot – chạy thêm vô hại
 # workflow phân biệt lịch / bấm tay bằng input riêng (đồng hồ truyền input đó) thay vì input "lich"
-INPUT_RIENG = {"canh_bao.yml": {"vong", "che_do"}, "bang_thi_truong.yml": {"chuan_bi"}, "ke_hoach_dhcd.yml": {"con_lai"}}
+INPUT_RIENG = {"canh_bao.yml": {"vong", "che_do"}, "bang_thi_truong.yml": {"chuan_bi"}, "ke_hoach_dhcd.yml": {"con_lai"},
+               "tra_cuu_web.yml": {"sau_phien"}}
 
 
 def _yml(ten):

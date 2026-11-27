@@ -108,9 +108,9 @@ def cap_nhat(thu_muc, ma, res, bay_gio):
     return len(tg)
 
 
-def va_gia_ngay(thu_muc, ma, hom_nay):
+def va_gia_ngay(thu_muc, ma, han):
     """gia/<MÃ>.json thiếu các phiên gần đây (tra_cuu_dn xoay vòng – mỗi mã vài ngày mới tới lượt → biểu đồ nhảy cóc từ phiên cuối
-    tới nến hôm nay) → thêm nến NGÀY gộp từ nến 5' của các ngày < hom_nay (phiên hôm nay trang tự thêm nến tạm): mở = nến đầu,
+    tới nến hôm nay) → thêm nến NGÀY gộp từ nến 5' của các ngày < han (phiên chưa đóng: trang tự thêm nến tạm): mở = nến đầu,
     cao / thấp, đóng = nến cuối, KL cộng, GT ≈ Σ KL × giá. Khối ngoại / thoả thuận để trống (% sở hữu giữ mức cũ); lượt xoay vòng sau tải Vietcap đè lên
     (noi_gia: ngày mới đè ngày trùng). → số phiên đã thêm."""
     pg = os.path.join(thu_muc, "gia", f"{ma}.json")
@@ -126,7 +126,7 @@ def va_gia_ngay(thu_muc, ma, hom_nay):
     ngay = {}
     for i, s in enumerate(t):
         d = datetime.fromtimestamp(s, VN).strftime("%Y-%m-%d")
-        if g["d"][-1] < d < hom_nay:
+        if g["d"][-1] < d < han:
             ngay.setdefault(d, []).append(i)
     n = len(g["d"])
     for d, ix in sorted(ngay.items()):
@@ -189,8 +189,9 @@ def main(argv=None):
         co[res] = sorted(m for m, n in zip(ds, so) if n)
         print(f"Nến {res}': {len(co[res])}/{len(ds)} mã")
     if not a.trong_phien:                                  # lịch sử ngày còn thiếu phiên (mã chưa tới lượt xoay vòng) → vá từ nến 5'
-        hom_nay = datetime.now(VN).strftime("%Y-%m-%d")
-        so = [va_gia_ngay(a.ra, m, hom_nay) for m in co["5"]]
+        bay = datetime.now(VN)                             # từ 15:00 phiên hôm nay đã đóng (ATC 14:45) → gộp cả hôm nay
+        han = (bay + timedelta(days=1 if bay.hour >= 15 else 0)).strftime("%Y-%m-%d")
+        so = [va_gia_ngay(a.ra, m, han) for m in co["5"]]
         print(f"Vá nến ngày từ nến 5': {sum(1 for x in so if x)} mã · {sum(so)} phiên")
     if a.trong_phien:                                      # trong phiên: giữ file / danh sách mã khác (dựng hằng ngày)
         try:

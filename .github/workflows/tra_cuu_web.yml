@@ -10,6 +10,9 @@
 # Kết quả → cache "tra-cuu-*" (không commit vào repo; lấy lại cache cũ trước để mã chưa tới lượt giữ file) → "Bang thi
 # truong" lấy cache khi gói trang → gọi triển khai ngay.
 #   • 06:41 giờ VN T2–T7: sau "BCTC moi hang dem" (04:15) – BCTC / bất thường / định giá mới nhất
+#   • 15:45 giờ VN T2–T6 – SAU PHIÊN (sau danh mục 15:02, tổng kết 15:20): lượt NHẸ – bỏ BCTC / dự phóng CTCK / xoay vòng
+#     Vietcap, chỉ nến 1' / 5' mọi mã → ghép nến ngày còn thiếu vào gia/<MÃ>.json (cả phiên vừa đóng) + bộ lọc → triển
+#     khai: biểu đồ Tra cứu mã đủ phiên ngay chiều hôm đó (27/11/2026: VIC nhảy 23 → 27 vì chưa tới lượt xoay vòng)
 #   • bấm tay khi cần
 # SAO LƯU (19/11/2026): cache Actions không vĩnh viễn (7 ngày không dùng / repo > 10 GB → xoá) – mất thì phải tải lại mọi
 # mã vài giờ, Vietcap IQ dễ chặn. Lượt thứ Bảy (hoặc bấm tay sao_luu) nén docs/ma/du_lieu (dữ liệu CÔNG KHAI, đã đăng
@@ -20,8 +23,13 @@ name: Du lieu tra cuu
 on:
   schedule:
     - cron: "41 23 * * 0-5"        # 06:41 giờ VN thứ Hai – thứ Bảy
+    - cron: "45 8 * * 1-5"         # 15:45 giờ VN T2–T6 – lượt nhẹ sau phiên (đồng hồ gọi sau_phien=true)
   workflow_dispatch:
     inputs:
+      sau_phien:
+        description: "Lượt nhẹ sau phiên: chỉ nến phút → ghép nến ngày + bộ lọc (bỏ BCTC, dự phóng CTCK, xoay vòng Vietcap)"
+        type: boolean
+        default: false
       ma:
         description: "Chỉ lấy dữ liệu doanh nghiệp cho các mã này (trống = xoay vòng mọi mã)"
         default: ""
@@ -66,6 +74,7 @@ jobs:
       actions: write               # gọi bang_thi_truong.yml triển khai trang
     env:
       CONG_KHAI: "1"
+      SAU_PHIEN: ${{ inputs.sau_phien == true || github.event.schedule == '45 8 * * 1-5' }}
     timeout-minutes: 90                         # + nến phút mọi mã ~10–20 phút (lần đầu dài hơn)
     steps:
       - uses: actions/checkout@v5                   # repo này (thi_truong/tra_cuu_dn.py)
@@ -118,6 +127,7 @@ jobs:
           fi
 
       - name: Dựng dữ liệu tra cứu (BCTC, định giá, kế hoạch, bất thường, chiến lược)
+        if: env.SAU_PHIEN != 'true'
         run: |
           python -m ptcp.web_tra_cuu --ra "$GITHUB_WORKSPACE/docs/ma/du_lieu"
           # lệnh backtest luật hệ B theo mã (ptcp/lich_su_ma – workflow "Loc quy But Pha") → biểu đồ "Lệnh của hệ"
@@ -127,16 +137,19 @@ jobs:
       # PDF (chữ lưu đệm, chỉ tải báo cáo mới) → đồng thuận · hệ thống · kết hợp ½–½ → du_phong.json (tab Định giá). Lỗi / quá
       # giờ → giữ file lần trước (cache tra-cuu), các bước khác vẫn chạy.
       - name: Cài pdftotext + OCR tiếng Việt (dự phóng CTCK)
+        if: env.SAU_PHIEN != 'true'
         continue-on-error: true
         timeout-minutes: 6
         run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils tesseract-ocr tesseract-ocr-vie
       - name: Lấy chữ PDF báo cáo CTCK đã đọc (chung với workflow Du phong CTCK)
+        if: env.SAU_PHIEN != 'true'
         uses: actions/cache@v5
         with:
           path: danh-muc/cache_du_lieu/du_phong_ctck
           key: du-phong-ctck-${{ github.run_id }}
           restore-keys: du-phong-ctck-
       - name: Dự phóng LNST CTCK 120 ngày + hệ thống + kết hợp ½–½ → du_phong.json
+        if: env.SAU_PHIEN != 'true'
         continue-on-error: true
         timeout-minutes: 25
         env:
@@ -147,6 +160,7 @@ jobs:
             || echo "::warning::Dự phóng CTCK lỗi – trang giữ du_phong.json lần trước"
 
       - name: Dữ liệu doanh nghiệp & giá (Vietcap IQ / CafeF / Simplize – xoay vòng)
+        if: env.SAU_PHIEN != 'true'
         working-directory: .
         env:
           MA: ${{ inputs.ma }}
