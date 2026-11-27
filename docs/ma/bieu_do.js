@@ -303,9 +303,11 @@ T("vung", "Vùng hỗ trợ / kháng cự", 2, (g, P) => { if (!P[1]) return g.n
 function xu_huong_khung(i0, i1) {                     // đường xu hướng CỦA KHOẢNG [i0, i1] theo giá đóng: hỗ trợ từ giá THẤP nhất, kháng cự
   // từ giá CAO nhất của khoảng (điểm cực ở nến cuối → nối từ trái vào). Điểm thứ 2: đáy / đỉnh LỚN (fractal, độ lớn theo độ dài
   // khoảng) cho đường SÁT giá nhất mà giá đóng từ điểm cực tới nến cuối không phá quá 3 %; không có → ôm mọi giá đóng (cạnh bao
-  // lồi – không giá nào phá). → [hỗ trợ 1, hỗ trợ 2, kháng cự 1, kháng cự 2] {t, v}
+  // lồi – không giá nào phá); đường đó cách giá cuối > 35 % → 2 đỉnh / đáy lớn gần nhất chưa bị phá.
+  // → [hỗ trợ 1, hỗ trợ 2, kháng cự 1, kháng cự 2] {t, v}
   const a = C.x.c, kp = Math.max(3, Math.min(30, Math.round((i1 - i0) / 40))), out = [];
   for (const cao of [false, true]) {
+    const lon = pivot(i0, i1, cao, kp, a).filter((k, i, ds) => !i || k - ds[i - 1] > kp);   // đỉnh / đáy lớn – gộp chuỗi giá bằng nhau liền nhau
     let m = i0; for (let i = i0; i <= i1; i++) if (a[i] != null && (cao ? a[i] > a[m] : a[i] < a[m])) m = i;
     const phai = m < i1, nghieng = k => phai ? (a[k] - a[m]) / (k - m) : (a[m] - a[k]) / (m - k);
     const tot = (t, s) => s == null || (phai === cao ? t > s : t < s);    // phải: kháng cự dốc lên nhất / hỗ trợ thấp nhất (trái: ngược)
@@ -313,11 +315,23 @@ function xu_huong_khung(i0, i1) {                     // đường xu hướng C
     const pha = (j, tl) => { const s = nghieng(j), z0 = Math.min(m, j);
       for (let z = z0; z <= i1; z++) { if (a[z] == null) continue; const y = a[m] + s * (z - m); if (cao ? a[z] > y * (1 + tl) : a[z] < y * (1 - tl)) return true; }
       return false; };
-    const sat = pivot(i0, i1, cao, kp, a).filter(k => phai ? k > m : k < m)      // đường SÁT giá nhất trước (không phải thoải nhất)
+    const sat = lon.filter(k => phai ? k > m : k < m)                            // đường SÁT giá nhất trước (không phải thoải nhất)
       .sort((x, y) => (phai === cao ? 1 : -1) * (nghieng(x) - nghieng(y)));
     let j = sat.find(k => !pha(k, 0.03)) ?? -1;
     if (j < 0) { const ds = []; for (let k = phai ? m + 1 : i0; k <= (phai ? i1 : m - 1); k++) if (a[k] != null) ds.push(k); j = chon(ds); }
-    const [u, v] = j < 0 ? [m, m] : j < m ? [j, m] : [m, j];
+    let [u, v] = j < 0 ? [m, m] : j < m ? [j, m] : [m, j];
+    // giá đã đi quá xa đường neo ở đỉnh / đáy của khoảng (> 35 % – VD sập sau đỉnh: kháng cự lơ lửng) → 2 đỉnh / đáy lớn GẦN NHẤT
+    // trong khoảng mà giá đóng sau đó không phá quá 3 %
+    const cuoi = u === v ? a[u] : a[u] + (a[v] - a[u]) / (v - u) * (i1 - u);
+    if (Math.abs(cuoi / a[i1] - 1) > 0.35) {
+      const pv = lon;
+      gan: for (let x = pv.length - 1; x > 0; x--) for (let y = x - 1; y >= 0; y--) {
+        const p_ = pv[y], q = pv[x], s = (a[q] - a[p_]) / (q - p_); let ok = true;
+        const ket = a[p_] + s * (i1 - p_); if (!(ket > 0) || Math.abs(ket / a[i1] - 1) > 0.35) continue;      // cũng phải sát giá cuối
+        for (let z = p_ + 1; z <= i1 && ok; z++) { const yy = a[p_] + s * (z - p_); if (cao ? a[z] > yy * 1.03 : a[z] < yy * 0.97) ok = false; }
+        if (ok) { [u, v] = [p_, q]; break gan; }
+      }
+    }
     out.push({t: C.T[u], v: a[u]}, {t: C.T[v], v: a[v]});
   }
   return out;
