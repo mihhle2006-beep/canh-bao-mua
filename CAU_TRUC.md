@@ -75,7 +75,7 @@ Kết quả: tin / file Telegram, hoặc mục **Artifacts** cuối trang lần 
 | Kiem du lieu thi truong moi noi | thị trường, … | đủ dữ liệu để thử luật ở thị trường khác không | danh-muc |
 | Chan doan nguon | nhiều ô | in mẫu dữ liệu các nguồn giá / BCTC khi nghi lỗi nguồn | danh-muc |
 | Du phong CTCK | mã, từ ngày, tối đa báo cáo / mã | đọc PDF báo cáo CTCK → dự phóng LNST, so thực tế và dự phóng hệ thống (đồng thuận, trộn ½ – ½) | danh-muc `ptcp/du_phong_ctck.py` |
-| Xuat CSV gia | mã, từ ngày | 1 file CSV giá ngày → Telegram | danh-muc |
+| Xuat gia Excel (`xuat_csv.yml`) | mã, từ ngày | 1 file Excel (tổng quan · giá tuần mã thành cột · % tuần · mỗi mã 1 sheet giá ngày, mới nhất trên – `thi_truong/xuat_excel_gia.py`) → Telegram | danh-muc |
 | Kiem tra DNSE API | – | gọi thử API DNSE (chỉ đọc) – log chỉ in mã phản hồi / số lượng / tên trường | danh-muc `dmuc/dnse_api.py` |
 | Doc trang | URL | in nội dung trang công khai (VD hướng dẫn DNSE) | – |
 | Don nhanh da gop | repo, chi_xem | xoá nhánh có đầu nhánh trùng commit PR đã gộp (giữ nhánh mặc định, PR mở, nhánh có commit sau gộp); repo kín chỉ in số lượng | repo này |
