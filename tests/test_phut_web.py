@@ -116,6 +116,10 @@ def test_va_gia_ngay_nen_phang_ngay_khong_khop_va_khoi_ngoai_bang(tmp_path):
     assert [r["o"][1], r["h"][1], r["l"][1], r["c"][1], r["v"][1], r["nn"][1]] == [5.0, 5.0, 5.0, 5.0, 0, 0.0]   # nến phẳng
     assert r["c"][2] == 5.25 and r["v"][2] == 400 and r["nn"][2] == 0.3 and r["gt"][2] == 0.0021 and r["nn_m"][2] is None
     assert r["c"][3] == 5.25 and r["v"][3] == 0 and r["dat_m"] == [10, None, None, None]                          # phẳng theo giá mới
+    r["nn"][2] = None                                                       # nến vá lượt trước, chưa có khối ngoại
+    (tmp_path / "gia" / "NED.json").write_text(json.dumps(r))
+    assert P.va_gia_ngay(str(tmp_path), "NED", "2026-11-27", phien, bang) == 0
+    assert json.loads((tmp_path / "gia" / "NED.json").read_text())["nn"][2] == 0.3
     # mã không khớp lệnh nào 10 phiên gần nhất (ngừng giao dịch) → không vẽ nến phẳng
     (tmp_path / "gia" / "OLD.json").write_text(json.dumps({**g, "d": ["2026-11-23"]}))
     (tmp_path / "phut" / "5" / "OLD.json").write_text(json.dumps(P.ma_hoa([s("2026-10-01", "10:00")], [5.0], [5.0], [5.0], [5.0], [1])))
